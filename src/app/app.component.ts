@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { WeatherforecastService } from './weatherforecast.service';
 
 @Component({
   selector: 'app-root',
@@ -8,5 +9,12 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  title = 'tesis-gestor-web';
+  weatherForecastService = inject(WeatherforecastService);
+  weathers: any[] = [];
+  
+  constructor() {
+    this.weatherForecastService.getWeatherForecast().subscribe((data) => {
+      this.weathers = data;
+    });
+  }
 }
