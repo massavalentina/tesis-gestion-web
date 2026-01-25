@@ -2,11 +2,5 @@
 
 <img src="perrito.jpg" alt="chamaco" width="120" height="120" />
 
-@for (weather of weathers; track weather.date) {
-  <div class="weather">
-    <h2>{{ weather.date }}</h2>
-    <p>Temperature: {{ weather.temperatureC }} °C / {{ weather.temperatureF }} °F</p>
-    <p>Summary: {{ weather.summary }}</p>
-  </div>
-  <hr />
-}
+<router-outlet></router-outlet>
+

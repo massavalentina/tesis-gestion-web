@@ -1,3 +1,5 @@
+
 export const environment = {
-    apiUrl: 'pending'
+  production: true,
+  apiUrl: 'https://tesis-gestion-api-5go5.onrender.com'
 };

@@ -1,0 +1,10 @@
+<h2>Weather Test</h2>
+
+@for (f of weathers; track f.date) {
+  <li>{{ f.date }} - {{ f.temperatureC }}°C</li>
+}
+
+
+<ng-template #loading>
+  <p>Cargando...</p>
+</ng-template>
