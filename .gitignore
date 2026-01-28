@@ -26,3 +26,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Windows system files
+desktop.ini
+[Dd]esktop.ini
+Thumbs.db
