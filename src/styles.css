@@ -1,1 +1,60 @@
 /* You can add global styles to this file, and also import other style files */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ================================
+   MAT-MENU — MISMO ESTILO SIDEBAR
+   ================================ */
+
+/* PANEL */
+.mat-mdc-menu-panel {
+  background-color: white !important;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  padding: 0.25rem;
+  min-width: 180px;  
+}
+
+
+/* ITEM BASE */
+.mat-mdc-menu-item {
+  height: 38px;            
+  padding: 0 0.6rem;    
+
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;             
+
+  border-radius: 12px;
+  font-size: 0.85rem;     
+  font-weight: 400;
+  font-family: inherit;
+  color: #334155;
+
+  transition: color 0.2s ease;
+}
+
+.mat-mdc-menu-item .mdc-list-item__ripple::before {
+  border-radius: 14px;
+}
+
+/* HOVER REAL (fondo celeste) */
+.mat-mdc-menu-item:hover .mdc-list-item__ripple::before {
+  background-color: #e0f2fe;
+  opacity: 1;
+}
+
+.mat-mdc-menu-item:hover {
+  color: #0284c7;
+}
+
+/* ICONOS */
+.mat-mdc-menu-item mat-icon {
+  font-size: 18px;      
+  color: inherit;
+}
+
