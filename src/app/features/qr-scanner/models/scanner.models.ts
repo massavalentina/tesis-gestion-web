@@ -1,19 +1,41 @@
 
 
-export type Turno = 'MANIANA' | 'TARDE';
+export type Turno = 'Mañana' | 'Tarde';;
 
 export interface ScanConfig {
-  turno: Turno;
-  attendanceTypeId: number;
+  turno: 'Mañana' | 'Tarde';
+  attendanceTypeId: string;
 }
 
-export interface AttendanceType {
-  id: number;
-  name: string;
-}
-
-export interface ScanPayload {
+export interface AttendanceScanRequest {
   qr: string;
-  turno: Turno;
-  attendanceTypeId: number;
+  turno: 'Mañana' | 'Tarde';
+  attendanceTypeId: string;
 }
+
+export interface AttendanceScanResponse {
+  student: {
+    id: string;
+    name: string;
+    lastName: string;
+    course: string;
+  };
+  attendance: {
+    time: string;
+    attendanceType: string;
+    turno: string;
+  };
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
+export interface ScannedStudent {
+  id: string;
+  name: string;
+  lastName: string;
+  course: string;
+}
+

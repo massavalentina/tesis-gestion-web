@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
@@ -29,8 +29,8 @@ import { ScanConfig, Turno } from '../models/scanner.models';
             <mat-form-field appearance="fill" class="pill">
             <mat-label>Turno</mat-label>
             <mat-select [(ngModel)]="turno">
-                <mat-option value="MANIANA">Mañana</mat-option>
-                <mat-option value="TARDE">Tarde</mat-option>
+                <mat-option value="Mañana">Mañana</mat-option>
+                <mat-option value="Tarde">Tarde</mat-option>
             </mat-select>
             </mat-form-field>
 
@@ -46,18 +46,22 @@ import { ScanConfig, Turno } from '../models/scanner.models';
         <div class="action-buttons">
 
             <button
-                mat-raised-button
-                class="pill-btn disabled"
-                >
-                Cargar<br />registro
-            </button>
+  mat-raised-button
+  class="pill-btn"
+  [disabled]="!canSubmit"
+  (click)="onConfirmRegister()">
+  Cargar<br />registro
+</button>
+
 
             <button
-                mat-raised-button
-                class="pill-btn disabled"
-                >
-                Cancelar<br />registro
-            </button>
+  mat-raised-button
+  class="pill-btn"
+  [disabled]="!canSubmit"
+  (click)="onCancelRegister()">
+  Cancelar<br />registro
+</button>
+
 
             </div>
 
@@ -70,13 +74,33 @@ export class ScanConfigComponent {
 
   curso?: string;
   turno?: Turno;
-  attendanceTypeId?: number;
+  attendanceTypeId?: string;
 
   cursos = ['1° A', '1° B', '2° A'];
   attendanceTypes = [
-    { id: 1, name: 'Presente' },
-    { id: 2, name: 'Llegada tarde' }
-  ];
+  {
+    id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    name: 'Presente'
+  },
+  {
+    id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    name: 'Llegada tarde'
+  }
+];
+
+@Input() canSubmit = false;
+@Output() confirmRegister = new EventEmitter<void>();
+
+onConfirmRegister() {
+  this.confirmRegister.emit();
+}
+
+@Output() cancelRegister = new EventEmitter<void>();
+
+onCancelRegister() {
+  this.cancelRegister.emit();
+}
+
 
   isValid(): boolean {
     return !!(this.curso && this.turno && this.attendanceTypeId);
