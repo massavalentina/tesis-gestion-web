@@ -1,0 +1,83 @@
+<div class="contenedor">
+
+  <!-- Buscador -->
+  <mat-form-field appearance="outline" class="buscador">
+    <mat-label>Buscar estudiante</mat-label>
+    <input matInput [formControl]="buscador" />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <p class="hint">Ingrese al menos 3 caracteres</p>
+
+  <!-- Spinner -->
+  <div class="spinner" *ngIf="cargando">
+    <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+  </div>
+
+  <!-- Sin resultados -->
+  <p class="sin-resultados" *ngIf="sinResultados">
+    No se encontraron estudiantes
+  </p>
+
+  <!-- Lista -->
+  <mat-list *ngIf="!alumnoSeleccionado && !alumnoConfirmado">
+    <mat-list-item
+      *ngFor="let alumno of resultados$ | async"
+      (click)="seleccionarAlumno(alumno)">
+
+      <div class="info">
+        <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
+        <span>{{ alumno.curso }} · DNI {{ alumno.dni }}</span>
+      </div>
+
+      <span class="estado"
+        [class.ok]="!alumno.registradoHoy"
+        [class.error]="alumno.registradoHoy">
+        {{ alumno.registradoHoy ? 'Registrado' : 'No registrado' }}
+      </span>
+
+    </mat-list-item>
+  </mat-list>
+
+  <!-- Confirmación -->
+  <div class="confirmacion" *ngIf="alumnoSeleccionado && !alumnoConfirmado">
+
+    <h3>¿Desea registrar la operación?</h3>
+    <p>{{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}</p>
+    <p>{{ alumnoSeleccionado.curso }}</p>
+
+    <!-- Tipo de llegada tarde -->
+    <mat-form-field appearance="outline" class="buscador">
+      <mat-label>Tipo de llegada tarde</mat-label>
+      <mat-select [(value)]="tipoLlegadaSeleccionado">
+        <mat-option *ngFor="let tipo of tiposLlegadaTarde" [value]="tipo.codigo">
+          {{ tipo.descripcion }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <p class="error-text" *ngIf="!tipoLlegadaSeleccionado">
+      Debe seleccionar un tipo de llegada tarde
+    </p>
+
+    <div class="acciones">
+      <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="confirmarRegistro()"
+        [disabled]="!tipoLlegadaSeleccionado">
+        Confirmar
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Éxito -->
+  <div class="confirmacion" *ngIf="alumnoConfirmado">
+    <h2>¡Operación realizada con éxito!</h2>
+    <p>{{ alumnoConfirmado.apellido }}, {{ alumnoConfirmado.nombre }}</p>
+    <p>{{ fechaHoraRegistro | date:'short' }}</p>
+  </div>
+
+</div>

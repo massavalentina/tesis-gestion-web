@@ -5,18 +5,24 @@ import { LayoutComponent } from './layouts/layout.component';
 export const routes: Routes = [
   {
     path: 'weather-test',
-    component: WeatherComponent
+    component: WeatherComponent,
   },
   {
-     path: '',
+    path: '',
     component: LayoutComponent,
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('../app/features/home/home/home.component').then(m => m.HomeComponent),
+          import('../app/features/home/home/home.component')
+            .then(m => m.HomeComponent),
       },
+      {
+        path: 'asistencia-rapida',
+        loadComponent: () =>
+          import('../app/features/asistencia-rapida/components/asistencia-rapida/asistencia-rapida.component')
+            .then(m => m.AsistenciaRapidaComponent),
+      }
     ],
   }
-  
 ];
