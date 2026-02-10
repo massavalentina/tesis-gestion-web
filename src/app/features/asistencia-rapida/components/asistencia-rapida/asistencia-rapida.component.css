@@ -2,13 +2,10 @@
   padding: 16px;
 }
 
-.buscador {
-  width: 100%;
-}
-
 .hint {
   font-size: 12px;
   color: gray;
+  margin-bottom: 8px;
 }
 
 .spinner {
@@ -22,8 +19,16 @@
   color: gray;
 }
 
-mat-list-item {
+.item-alumno {
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-alumno.registrado {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .info {
@@ -31,12 +36,17 @@ mat-list-item {
   flex-direction: column;
 }
 
+.estado {
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .estado.ok {
   color: green;
 }
 
 .estado.error {
-  color: red;
+  color: #d32f2f;
 }
 
 .confirmacion {
@@ -44,14 +54,31 @@ mat-list-item {
   margin-top: 32px;
 }
 
+.alumno {
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.select-tipo {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
 .acciones {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ok-text {
+  color: green;
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 .error-text {
   color: #d32f2f;
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 13px;
+  margin-top: 8px;
 }
