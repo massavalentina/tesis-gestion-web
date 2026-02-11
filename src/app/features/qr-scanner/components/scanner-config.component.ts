@@ -1,10 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
-import { ScanConfig, Turno } from '../models/scanner.models';
+import { ScanConfig, SelectOption } from '../models/scanner.models';
+import { TipoAsistenciaService } from '../services/tipoasistencia.service';
+import { TurnoService } from '../services/turno.service';
+import { CursoService } from '../services/curso.service';
+
 
 @Component({
   selector: 'app-scan-config',
@@ -15,78 +17,91 @@ import { ScanConfig, Turno } from '../models/scanner.models';
     MatSelectModule
   ],
   template: `
-    <div class="config">
+   <div class="config">
 
-        <mat-form-field appearance="fill" class="pill">
-            <mat-label>Curso</mat-label>
-            <mat-select [(ngModel)]="curso">
-                <mat-option *ngFor="let c of cursos" [value]="c">
-                {{ c }}
-                </mat-option>
-            </mat-select>
-            </mat-form-field>
+  <!-- CURSO -->
+  <mat-form-field appearance="fill" class="pill">
+    <mat-label>Curso</mat-label>
+    <mat-select [(ngModel)]="curso">
+      <mat-option *ngFor="let c of cursos" [value]="c.id">
+        {{ c.label }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
 
-            <mat-form-field appearance="fill" class="pill">
-            <mat-label>Turno</mat-label>
-            <mat-select [(ngModel)]="turno">
-                <mat-option value="Mañana">Mañana</mat-option>
-                <mat-option value="Tarde">Tarde</mat-option>
-            </mat-select>
-            </mat-form-field>
+  <!-- TURNO -->
+  <mat-form-field appearance="fill" class="pill">
+    <mat-label>Turno</mat-label>
+    <mat-select [(ngModel)]="turno">
+      <mat-option *ngFor="let t of turnos" [value]="t.id">
+        {{ t.label }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
 
-            <mat-form-field appearance="fill" class="pill">
-            <mat-label>Tipo de asistencia</mat-label>
-            <mat-select [(ngModel)]="attendanceTypeId">
-                <mat-option *ngFor="let t of attendanceTypes" [value]="t.id">
-                {{ t.name }}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+  <!-- TIPO ASISTENCIA -->
+  <mat-form-field appearance="fill" class="pill">
+    <mat-label>Tipo de asistencia</mat-label>
+    <mat-select [(ngModel)]="attendanceTypeId">
+      <mat-option *ngFor="let t of attendanceTypes" [value]="t.id">
+        {{ t.label }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
 
-        <div class="action-buttons">
+  <div class="action-buttons">
 
-            <button
-  mat-raised-button
-  class="pill-btn"
-  [disabled]="!canSubmit"
-  (click)="onConfirmRegister()">
-  Cargar<br />registro
-</button>
+    <button
+      mat-raised-button
+      class="pill-btn"
+      [disabled]="!canSubmit"
+      (click)="onConfirmRegister()">
+      Cargar<br />registro
+    </button>
 
+    <button
+      mat-raised-button
+      class="pill-btn"
+      [disabled]="!canSubmit"
+      (click)="onCancelRegister()">
+      Cancelar<br />registro
+    </button>
 
-            <button
-  mat-raised-button
-  class="pill-btn"
-  [disabled]="!canSubmit"
-  (click)="onCancelRegister()">
-  Cancelar<br />registro
-</button>
+  </div>
 
+</div>
 
-            </div>
-
-
-    </div>
   `,
   styleUrls: ['../scss/scanner-config.component.scss']
 })
-export class ScanConfigComponent {
+export class ScanConfigComponent implements OnInit {
 
   curso?: string;
-  turno?: Turno;
+  turno?: string;
   attendanceTypeId?: string;
 
-  cursos = ['1° A', '1° B', '2° A'];
-  attendanceTypes = [
-  {
-    id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    name: 'Presente'
-  },
-  {
-    id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-    name: 'Llegada tarde'
-  }
-];
+  cursos: SelectOption[] = [];
+  turnos: SelectOption[] = [];
+  attendanceTypes: SelectOption[] = [];
+
+  constructor(
+    private cursoService: CursoService,
+    private turnoService: TurnoService,
+    private tipoAsistenciaService: TipoAsistenciaService
+  ) {}
+
+
+  ngOnInit(): void {
+  this.cursoService.getCursos()
+    .subscribe(res => this.cursos = res);
+
+  this.turnoService.getTurnos()
+    .subscribe(res => this.turnos = res);
+
+  this.tipoAsistenciaService.getTipos()
+    .subscribe(res => this.attendanceTypes = res);
+}
+
 
 @Input() canSubmit = false;
 @Output() confirmRegister = new EventEmitter<void>();
@@ -103,17 +118,17 @@ onCancelRegister() {
 
 
   isValid(): boolean {
-    return !!(this.curso && this.turno && this.attendanceTypeId);
-  }
+  return !!(this.curso && this.turno && this.attendanceTypeId);
+}
 
-  getConfig(): ScanConfig | null {
-    if (!this.isValid()) return null;
+getConfig(): ScanConfig | null {
+  if (!this.isValid()) return null;
 
-    return {
-      turno: this.turno!,
-      attendanceTypeId: this.attendanceTypeId!
-    };
-  }
+  return {
+    turno: this.turno!,
+    attendanceTypeId: this.attendanceTypeId!
+  };
+}
 
 
 }

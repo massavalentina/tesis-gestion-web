@@ -1,15 +1,13 @@
 
 
-export type Turno = 'Mañana' | 'Tarde';;
-
 export interface ScanConfig {
-  turno: 'Mañana' | 'Tarde';
+  turno: string;
   attendanceTypeId: string;
 }
 
 export interface AttendanceScanRequest {
   qr: string;
-  turno: 'Mañana' | 'Tarde';
+  turno: string;
   attendanceTypeId: string;
 }
 
@@ -38,4 +36,11 @@ export interface ScannedStudent {
   lastName: string;
   course: string;
 }
+
+
+export interface SelectOption {
+  id: string;
+  label: string;
+}
+
 

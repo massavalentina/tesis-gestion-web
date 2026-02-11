@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScanConfigComponent } from '../components/scanner-config.component';
-import { AttendanceScanResponse, ScanConfig, ScannedStudent, Turno } from '../models/scanner.models';
+import { AttendanceScanResponse, ScanConfig, ScannedStudent } from '../models/scanner.models';
 import { QrScannerService } from '../services/scanner.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -72,7 +72,7 @@ export class AttendanceScanPage {
   scannerActive = false;
   isProcessing = false;
 
-  turno!: Turno;
+  turno!: string;
   attendanceTypeId!: string;
 
   constructor(private scanner: QrScannerService, private attendanceService: AttendanceService, private dialog: MatDialog

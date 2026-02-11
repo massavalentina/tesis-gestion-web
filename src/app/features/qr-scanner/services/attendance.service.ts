@@ -3,8 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   AttendanceScanRequest,
-  AttendanceScanResponse,
-  Turno
+  AttendanceScanResponse
 } from '../models/scanner.models';
 
 @Injectable({ providedIn: 'root' })
@@ -29,9 +28,9 @@ export class AttendanceService {
     );
   }
 
-  // 💾 CONFIRMAR — guarda todas las asistencias
+
   confirm(payload: {
-    turno: Turno;
+    turno: string;
     attendanceTypeId: string;
     studentIds: string[];
   }): Observable<void> {
