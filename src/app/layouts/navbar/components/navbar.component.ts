@@ -5,13 +5,11 @@ import { LayoutModule } from '@angular/cdk/layout';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { SearchBusService } from '../../../core/services/search-bus.service';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-navbar',
@@ -20,38 +18,26 @@ import { SearchBusService } from '../../../core/services/search-bus.service';
     NgIf,
     LayoutModule,
     ReactiveFormsModule,
-
     MatToolbarModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatMenuModule,
-    MatButtonModule
+    MatButtonModule,
+    MatInputModule
   ],
   template: `
     <div class="navbar">
 
-      <!-- Search -->
       <div class="search-container">
         <div class="search-box">
           <mat-icon>search</mat-icon>
-
-          <input
-            type="text"
-            placeholder="Buscar..."
-            [formControl]="searchCtrl"
-          />
+          <input type="text" placeholder="Buscar..." [formControl]="searchCtrl" />
         </div>
       </div>
 
-      <!-- Usuario (desktop) -->
       <div class="user-area" *ngIf="!isMobile">
         <span class="username">Preceptor, Daniel</span>
 
-        <button
-          mat-icon-button
-          class="avatar-btn"
-          [matMenuTriggerFor]="userMenu">
+        <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
           <mat-icon class="avatar">account_circle</mat-icon>
         </button>
 
@@ -67,7 +53,6 @@ import { SearchBusService } from '../../../core/services/search-bus.service';
           </button>
         </mat-menu>
       </div>
-
     </div>
   `,
   styleUrls: ['../scss/navbar.component.scss'],
@@ -75,22 +60,12 @@ import { SearchBusService } from '../../../core/services/search-bus.service';
 export class NavbarComponent {
   isMobile = false;
 
-  // ✅ control del input
+  // por ahora sin lógica
   searchCtrl = new FormControl<string>('', { nonNullable: true });
 
-  constructor(
-    private breakpointObserver: BreakpointObserver,
-    private searchBus: SearchBusService
-  ) {
-    this.breakpointObserver
-      .observe([Breakpoints.Handset])
-      .subscribe(result => {
-        this.isMobile = result.matches;
-      });
-
-    // ✅ emitir cada vez que escriben
-    this.searchCtrl.valueChanges.subscribe(value => {
-      this.searchBus.setQuery(value);
+  constructor(private breakpointObserver: BreakpointObserver) {
+    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
+      this.isMobile = result.matches;
     });
   }
 }

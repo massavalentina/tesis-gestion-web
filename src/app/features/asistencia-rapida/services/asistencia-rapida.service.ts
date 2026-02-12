@@ -26,5 +26,10 @@ export class AsistenciaRapidaService {
   registrarAsistencia(dto: RegistrarAsistenciaRapida): Observable<AsistenciaRapidaResponse> {
     return this.http.post<AsistenciaRapidaResponse>(`${this.apiUrl}`, dto);
   }
+
+  // ✅ server time para el modal
+  getServerTime(): Observable<{ fecha: string; hora: string }> {
+    return this.http.get<{ fecha: string; hora: string }>(`${this.apiUrl}/servertime`);
+  }
 }
 

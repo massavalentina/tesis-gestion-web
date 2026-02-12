@@ -1,9 +1,13 @@
 <div class="contenedor">
 
-  <!-- Hint debajo del navbar -->
-  <p class="hint">
-    Ingrese al menos 3 caracteres en la barra de búsqueda superior
-  </p>
+  <!-- Buscador local -->
+  <mat-form-field appearance="outline" class="buscador">
+    <mat-label>Buscar estudiante</mat-label>
+    <input matInput [formControl]="searchCtrl" placeholder="DNI, nombre o apellido" />
+    <mat-hint *ngIf="searchCtrl.value.trim().length < 3">
+      Ingrese al menos 3 caracteres
+    </mat-hint>
+  </mat-form-field>
 
   <!-- Loading -->
   <div class="spinner" *ngIf="cargando">
@@ -36,11 +40,10 @@
             [class.ok]="!alumno.registradoHoy">
         {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
       </span>
-
     </mat-list-item>
   </mat-list>
 
-  <!-- Confirmación -->
+  <!-- Panel selección -->
   <div class="confirmacion" *ngIf="alumnoSeleccionado">
     <h3>Registrar llegada tarde</h3>
 
@@ -77,10 +80,6 @@
         Cancelar
       </button>
     </div>
-
-    <p class="ok-text" *ngIf="okMsg">{{ okMsg }}</p>
-    <p class="error-text" *ngIf="errorRegistro">{{ errorRegistro }}</p>
   </div>
 
 </div>
-

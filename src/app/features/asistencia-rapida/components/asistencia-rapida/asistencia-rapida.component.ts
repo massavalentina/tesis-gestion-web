@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatListModule } from '@angular/material/list';
@@ -7,7 +7,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs/operators';
 
@@ -17,24 +20,40 @@ import { RegistrarAsistenciaRapida } from '../../models/registrar-asistencia-rap
 import { AsistenciaRapidaResponse } from '../../models/asistencia-rapida-response.model';
 import { EstudianteBusquedaRapida } from '../../models/estudiante-busqueda-rapida.model';
 
-import { SearchBusService } from '../../../../core/services/search-bus.service';
+import {
+  AsistenciaConfirmDialogComponent,
+  AsistenciaConfirmDialogData
+} from '../asistencia-confirm-dialog/asistencia-confirm-dialog.component';
+
+import {
+  AsistenciaSuccessDialogComponent,
+  AsistenciaSuccessDialogData
+} from '../asistencia-success-dialog/asistencia-success-dialog.component';
 
 @Component({
   selector: 'app-asistencia-rapida',
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
+    MatInputModule,
+
     MatListModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
     MatSelectModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+
+    MatDialogModule
   ],
   templateUrl: './asistencia-rapida.component.html',
   styleUrls: ['./asistencia-rapida.component.css']
 })
 export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
+
+  // ✅ buscador local
+  searchCtrl = new FormControl<string>('', { nonNullable: true });
 
   // ===== TIPOS =====
   tipos: TipoAsistenciaRapida[] = [];
@@ -44,17 +63,12 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   // ===== RESULTADOS =====
   resultados$: Observable<EstudianteBusquedaRapida[]> = of([]);
   sinResultados = false;
-  textoActual = ''; // para mostrar el hint
 
   alumnoSeleccionado: EstudianteBusquedaRapida | null = null;
 
   // ===== REGISTRO =====
   turnoSeleccionado: 'MANANA' | 'TARDE' = 'MANANA';
   registrando = false;
-
-  okMsg = '';
-  errorRegistro = '';
-  respuesta: AsistenciaRapidaResponse | null = null;
 
   // ===== DROPDOWN OBLIGATORIO =====
   tipoSeleccionadoId: string | null = null;
@@ -64,17 +78,16 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
   constructor(
     private asistenciaRapidaService: AsistenciaRapidaService,
-    private searchBus: SearchBusService
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
     this.cargarTipos();
-    this.escucharBarraGlobal();
+    this.escucharBuscadorLocal();
   }
 
   ngOnDestroy(): void {
     this.searchSub?.unsubscribe();
-    this.searchBus.clear(); // limpia la barra cuando salís
   }
 
   cargarTipos(): void {
@@ -83,31 +96,31 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
     this.asistenciaRapidaService.getTiposAsistencia()
       .subscribe({
-        next: (data: TipoAsistenciaRapida[]) => {
-          // Solo LLT / LLTE / LLTC
+        next: (data) => {
+          // ✅ solo llegadas tarde para esta vista
           this.tipos = data.filter(t => ['LLT', 'LLTE', 'LLTC'].includes(t.codigo));
         },
-        error: (err: any) => {
-          this.errorMsg = 'Error llamando al backend (mirá consola).';
+        error: (err) => {
           console.error('Error cargando tipos', err);
+          this.errorMsg = 'Error llamando al backend (mirá consola).';
           this.cargando = false;
         },
         complete: () => this.cargando = false
       });
   }
 
-  private escucharBarraGlobal(): void {
-    this.searchSub = this.searchBus.query$
+  private escucharBuscadorLocal(): void {
+    this.searchSub = this.searchCtrl.valueChanges
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
         tap(q => {
-          this.textoActual = (q ?? '').trim();
-          // Si es corto, limpiamos resultados sin pegarle al backend
-          if (this.textoActual.length < 3) {
+          const texto = (q ?? '').trim();
+          if (texto.length < 3) {
             this.resultados$ = of([]);
             this.sinResultados = false;
             this.cargando = false;
+            this.errorMsg = '';
           }
         }),
         filter(q => (q ?? '').trim().length >= 3),
@@ -130,9 +143,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.alumnoSeleccionado = null;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
-    this.okMsg = '';
-    this.errorRegistro = '';
-    this.respuesta = null;
+    this.errorMsg = '';
   }
 
   private aplicarResultados(alumnos: EstudianteBusquedaRapida[]): void {
@@ -146,8 +157,6 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.alumnoSeleccionado = a;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
-    this.okMsg = '';
-    this.errorRegistro = '';
   }
 
   cancelarSeleccion(): void {
@@ -161,6 +170,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.tipoError = false;
   }
 
+  // ✅ flujo: ServerTime -> ConfirmDialog -> POST -> SuccessDialog
   confirmarRegistro(): void {
     if (!this.alumnoSeleccionado) return;
 
@@ -171,30 +181,92 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
     this.registrando = true;
 
-    const dto: RegistrarAsistenciaRapida = {
-      estudianteId: this.alumnoSeleccionado.id,
-      fecha: new Date().toISOString().slice(0, 10),
-      turno: this.turnoSeleccionado,
-      tipoAsistenciaId: this.tipoSeleccionadoId
-    };
+    // 1) Traer fecha/hora del servidor
+    this.asistenciaRapidaService.getServerTime().subscribe({
+      next: (st) => {
 
-    this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
-      next: (resp: AsistenciaRapidaResponse) => {
-        this.respuesta = resp;
-        this.okMsg = resp.mensaje ?? 'Registrado correctamente';
-        this.registrando = false;
+        const tipo = this.tipos.find(t => t.id === this.tipoSeleccionadoId);
+        const tipoTexto = tipo ? `${tipo.codigo} - ${tipo.descripcion}` : 'Tipo seleccionado';
 
-        this.alumnoSeleccionado = null;
-        this.tipoSeleccionadoId = null;
-        this.resultados$ = of([]);
-        this.searchBus.clear(); // borra el input de la navbar
+        // 2) Abrir confirm modal con fecha/hora servidor
+        const data: AsistenciaConfirmDialogData = {
+          titulo: '¿Desea registrar la operación?',
+          alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
+          curso: this.alumnoSeleccionado!.curso ?? '-',
+          fecha: st.fecha,
+          hora: st.hora,
+          tipoTexto
+        };
+
+        const ref = this.dialog.open(AsistenciaConfirmDialogComponent, {
+          width: '360px',
+          disableClose: true,
+          data
+        });
+
+        ref.afterClosed().subscribe(confirmado => {
+          if (!confirmado) {
+            this.registrando = false;
+            return;
+          }
+
+          // 3) POST (sin cambiar response/DTO; mandamos fecha servidor)
+          const dto: RegistrarAsistenciaRapida = {
+            estudianteId: this.alumnoSeleccionado!.id,
+            fecha: st.fecha,
+            turno: this.turnoSeleccionado,
+            tipoAsistenciaId: this.tipoSeleccionadoId!
+          };
+
+          this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
+            next: (resp: AsistenciaRapidaResponse) => {
+              // 4) Success modal
+              const msg = `${resp.mensaje ?? 'Registrado correctamente'} (${st.fecha} ${st.hora})`;
+
+              const sdata: AsistenciaSuccessDialogData = { mensaje: msg };
+              const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
+                width: '360px',
+                disableClose: true,
+                data: sdata
+              });
+
+              sref.afterClosed().subscribe(() => {
+                // ✅ reset visual
+                this.registrando = false;
+                this.alumnoSeleccionado = null;
+                this.tipoSeleccionadoId = null;
+
+                // refrescar lista si hay texto
+                const q = this.searchCtrl.value.trim();
+                if (q.length >= 3) {
+                  this.prepararBusqueda();
+                  this.asistenciaRapidaService.buscarEstudiantesRapido(q)
+                    .subscribe({
+                      next: (al) => this.aplicarResultados(al),
+                      error: (err) => {
+                        console.error(err);
+                        this.cargando = false;
+                        this.errorMsg = 'Error refrescando resultados.';
+                      }
+                    });
+                } else {
+                  this.resultados$ = of([]);
+                }
+              });
+            },
+            error: (err: any) => {
+              console.error(err);
+              this.registrando = false;
+              this.errorMsg = 'Error al registrar asistencia (mirá consola / Network).';
+            }
+          });
+        });
       },
-      error: (err: any) => {
+      error: (err) => {
         console.error(err);
-        this.errorRegistro = 'Error al registrar asistencia';
         this.registrando = false;
+        this.errorMsg = 'No se pudo obtener la hora del servidor.';
       }
     });
   }
 }
-
