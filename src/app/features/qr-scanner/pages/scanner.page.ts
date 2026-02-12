@@ -151,30 +151,54 @@ export class AttendanceScanPage {
 
 
   onQrScanned(qr: string): void {
-    if (this.isProcessing) return;
-    this.isProcessing = true;
+  if (this.isProcessing) return;
+  this.isProcessing = true;
 
-    this.scanner.stop();
+  this.scanner.stop();
 
-    this.attendanceService.preview(qr).subscribe({
-      next: (res) => {
-        this.openConfirmDialog(res);
-      },
-      error: (err) => {
-        const apiError = err?.error;
+  this.attendanceService.preview(qr, this.turno).subscribe({
 
+    next: (res) => {
+
+      // 🔴 VALIDACIÓN DE SESIÓN (ACÁ ESTABA EL PROBLEMA)
+      const alreadyAdded = this.scannedStudents.some(
+        s => s.id === res.student.id
+      );
+
+      if (alreadyAdded) {
         this.dialog.open(ScanErrorDialogComponent, {
           disableClose: true,
           data: {
             title: 'Atención',
-            message: apiError?.message ?? 'Código no reconocido'
+            message: 'Este alumno ya fue escaneado en esta sesión'
           }
         }).afterClosed().subscribe(() => {
           this.resumeScanner();
         });
+
+        return;
       }
-    });
-  }
+
+      // ✅ Solo si NO está en la sesión
+      this.openConfirmDialog(res);
+    },
+
+    error: (err) => {
+      const apiError = err?.error;
+
+      this.dialog.open(ScanErrorDialogComponent, {
+        disableClose: true,
+        data: {
+          title: 'Atención',
+          message: apiError?.message ?? 'Código no reconocido'
+        }
+      }).afterClosed().subscribe(() => {
+        this.resumeScanner();
+      });
+    }
+  });
+}
+
 
   showScanWarning = false;
 

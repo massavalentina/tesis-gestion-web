@@ -21,10 +21,13 @@ export class AttendanceService {
   }
 
 
-   preview(qr: string): Observable<AttendanceScanResponse> {
+  preview(qr: string, turno: string): Observable<AttendanceScanResponse> {
     return this.http.post<AttendanceScanResponse>(
       `${this.baseUrl}/preview`,
-      { qr }
+      {
+        qr,
+        turno
+      }
     );
   }
 
