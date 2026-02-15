@@ -3,13 +3,39 @@
   width: 220px;
   height: 100vh;
   padding: 1rem 0.75rem;
-  margin-left: 1rem; 
+  margin-left: 1rem;
   background: white;
   border-radius: 22px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
 }
 
+/* Quitar subrayado */
+.sidebar a,
+.logo-item,
+.item,
+.subitem {
+  text-decoration: none !important;
+}
+
+/* TODOS los elementos ocupan el mismo ancho */
+.logo-item,
+.item,
+.subitem,
+.item.parent {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Resetear estilos del botón para que se vea IGUAL que los links */
+.item.parent {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+/* Logo */
 .logo-item {
   display: flex;
   justify-content: center;
@@ -17,16 +43,12 @@
   margin-bottom: 0.5rem;
   border-radius: 16px;
   cursor: pointer;
-
-
 }
 
 .logo-placeholder {
   width: 48px;
   height: 48px;
-
   border-radius: 14px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +64,6 @@
     object-fit: contain;
   }
 }
-
 
 /* 📱 Botón hamburguesa */
 .mobile-menu-btn {
@@ -65,7 +86,6 @@
     font-size: 28px;
   }
 }
-
 
 /* 📱 Overlay */
 .overlay {
@@ -91,12 +111,16 @@
   z-index: 1101;
 }
 
-/* Items */
+/* Nav */
 nav {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
+
+/* ============================= */
+/* ITEMS PRINCIPALES */
+/* ============================= */
 
 .item {
   height: 44px;
@@ -116,12 +140,74 @@ nav {
   mat-icon {
     font-size: 22px;
   }
-
-  &:hover {
-    background: #e0f2fe;
-    color: #0284c7;
-  }
 }
 
+/* Hover/touch igual para TODOS */
+.item:hover,
+.item:active,
+.item:focus-visible {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
 
+/* Activo por ruta */
+.item.is-active {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  font-weight: 600;
+}
 
+/* ============================= */
+/* SUBMENÚ */
+/* ============================= */
+
+.submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  margin-left: 2.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.subitem {
+  height: 40px;
+  padding: 0 0.75rem;
+
+  display: flex;
+  align-items: center;
+
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #334155;
+
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.subitem:hover,
+.subitem:active,
+.subitem:focus-visible {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+.subitem.is-active-sub {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  font-weight: 600;
+}
+
+/* ============================= */
+/* FLECHITA */
+/* ============================= */
+
+.chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}

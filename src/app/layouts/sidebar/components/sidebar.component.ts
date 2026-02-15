@@ -5,6 +5,7 @@ import { MatRippleModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-sidebar',
@@ -14,39 +15,100 @@ import { LayoutModule } from '@angular/cdk/layout';
     MatIconModule,
     MatRippleModule,
     MatButtonModule,
-    LayoutModule
-  
+    LayoutModule,
+    RouterLink,
+    RouterLinkActive,
   ],
   template: `
     <!-- 🖥 Desktop: sidebar fija -->
-<aside class="sidebar desktop" *ngIf="!isMobile">
-  <nav>
+    <aside class="sidebar desktop" *ngIf="!isMobile">
+      <nav>
 
-    <!-- Logo / Home -->
-    <a class="logo-item" matRipple>
-    <h2 class="logo-text">LOGO APP</h2>
-      <div class="logo-placeholder">
-        <!-- opción 1: icono -->
-        <mat-icon>school</mat-icon>
+        <!-- Logo / Home -->
+        <a class="logo-item" matRipple routerLink="/">
+          <h2 class="logo-text">LOGO APP</h2>
+          <div class="logo-placeholder">
+            <mat-icon>school</mat-icon>
+          </div>
+        </a>
 
-        <!-- opción 2 (después): imagen -->
-        <!-- <img src="assets/logo.png" alt="Logo" /> -->
-      </div>
-    </a>
+        <!-- Inicio -->
+        <a class="item"
+           matRipple
+           routerLink="/"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }">
+          <mat-icon>home</mat-icon>
+          <span>Inicio</span>
+        </a>
 
-    <a class="item" matRipple>
-      <mat-icon>home</mat-icon>
-      <span>Inicio</span>
-    </a>
+        <!-- Asistencia (padre desplegable) -->
+        <button class="item parent"
+                type="button"
+                matRipple
+                (click)="toggleAsistencia()">
+          <mat-icon>how_to_reg</mat-icon>
+          <span>Asistencia</span>
+          <mat-icon class="chevron" [class.open]="asistenciaOpen">expand_more</mat-icon>
+        </button>
 
-    <a class="item" matRipple>
-      <mat-icon>person</mat-icon>
-      <span>Cuenta</span>
-    </a>
+        <!-- Submenú asistencia -->
+        <div class="submenu" *ngIf="asistenciaOpen">
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-rapida"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }">
+            Toma de asistencia por búsqueda rápida
+          </a>
 
-  </nav>
-</aside>
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-qr"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }">
+            Toma de asistencia por escaneo QR
+          </a>
 
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-manual-curso"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }">
+            Toma de asistencia manual por curso
+          </a>
+
+          <a class="subitem"
+             matRipple
+             routerLink="/parte-diario-digital"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }">
+            Parte diario digital
+          </a>
+        </div>
+
+        <!-- Credenciales QR -->
+        <a class="item"
+           matRipple
+           routerLink="/credenciales-qr"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }">
+          <mat-icon>qr_code</mat-icon>
+          <span>Credenciales QR</span>
+        </a>
+
+        <!-- Cuenta -->
+        <a class="item"
+           matRipple
+           routerLink="/cuenta"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }">
+          <mat-icon>person</mat-icon>
+          <span>Cuenta</span>
+        </a>
+
+      </nav>
+    </aside>
 
     <!-- 📱 Mobile: botón hamburguesa -->
     <button
@@ -65,60 +127,125 @@ import { LayoutModule } from '@angular/cdk/layout';
     </div>
 
     <!-- 📱 Mobile: panel -->
-    <aside
-  class="sidebar mobile"
-  *ngIf="isMobile && open">
+    <aside class="sidebar mobile" *ngIf="isMobile && open">
 
-  <!-- Header mobile -->
-  <!-- Header mobile -->
-<div class="mobile-header">
-  <button
-    mat-icon-button
-    class="close-btn"
-    (click)="open = false">
-    <mat-icon>chevron_left</mat-icon>
-  </button>
-</div>
+      <div class="mobile-header">
+        <button mat-icon-button class="close-btn" (click)="open = false">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+      </div>
 
+      <nav>
 
-  <nav>
-    <a class="item" matRipple>
-      <mat-icon>home</mat-icon>
-      <span>Inicio</span>
-    </a>
+        <!-- Inicio -->
+        <a class="item"
+           matRipple
+           routerLink="/"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeMobile()">
+          <mat-icon>home</mat-icon>
+          <span>Inicio</span>
+        </a>
 
-    <a class="item" matRipple>
-      <mat-icon>person</mat-icon>
-      <span>Cuenta</span>
-    </a>
+        <!-- Asistencia -->
+        <button class="item parent"
+                type="button"
+                matRipple
+                (click)="toggleAsistencia()">
+          <mat-icon>how_to_reg</mat-icon>
+          <span>Asistencia</span>
+          <mat-icon class="chevron" [class.open]="asistenciaOpen">expand_more</mat-icon>
+        </button>
 
-    <a class="item" matRipple>
-      <mat-icon>logout</mat-icon>
-      <span>Cerrar sesión</span>
-    </a>
-  </nav>
+        <div class="submenu" *ngIf="asistenciaOpen">
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-rapida"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Toma de asistencia por búsqueda rápida
+          </a>
 
-</aside>
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-qr"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Toma de asistencia por escaneo QR
+          </a>
 
+          <a class="subitem"
+             matRipple
+             routerLink="/asistencia-manual-curso"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Toma de asistencia manual por curso
+          </a>
+
+          <a class="subitem"
+             matRipple
+             routerLink="/parte-diario-digital"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Parte diario digital
+          </a>
+        </div>
+
+        <!-- Credenciales QR -->
+        <a class="item"
+           matRipple
+           routerLink="/credenciales-qr"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeMobile()">
+          <mat-icon>qr_code</mat-icon>
+          <span>Credenciales QR</span>
+        </a>
+
+        <!-- Cuenta -->
+        <a class="item"
+           matRipple
+           routerLink="/cuenta"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeMobile()">
+          <mat-icon>person</mat-icon>
+          <span>Cuenta</span>
+        </a>
+
+        <!-- Cerrar sesión -->
+        <a class="item" matRipple (click)="closeMobile()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </a>
+
+      </nav>
+    </aside>
   `,
   styleUrls: ['../scss/sidebar.component.scss'],
 })
 export class SidebarComponent {
   isMobile = false;
   open = false;
+  asistenciaOpen = false;
 
   constructor(private breakpointObserver: BreakpointObserver) {
-    this.breakpointObserver
-      .observe([Breakpoints.Handset])
-      .subscribe(result => {
-        this.isMobile = result.matches;
+    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
+      this.isMobile = result.matches;
+      if (!this.isMobile) this.open = false;
+    });
+  }
 
-        // Si pasa a desktop, cerramos el menú mobile
-        if (!this.isMobile) {
-          this.open = false;
-        }
-      });
+  toggleAsistencia() {
+    this.asistenciaOpen = !this.asistenciaOpen;
+  }
+
+  closeMobile() {
+    if (this.isMobile) this.open = false;
   }
 }
-
-
