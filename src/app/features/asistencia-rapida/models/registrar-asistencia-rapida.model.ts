@@ -1,6 +1,7 @@
 export interface RegistrarAsistenciaRapida {
   estudianteId: string;
-  fecha: string;           // ISO: '2026-02-09'
+  fecha: string;
   turno: 'MANANA' | 'TARDE';
   tipoAsistenciaId: string;
+  hora?: string; // ✅ NUEVO (HH:mm:ss)
 }

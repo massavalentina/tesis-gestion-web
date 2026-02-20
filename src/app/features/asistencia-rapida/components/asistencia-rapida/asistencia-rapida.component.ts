@@ -52,35 +52,35 @@ import {
 })
 export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
-  // ✅ buscador local
+  // ===== Buscador local =====
   searchCtrl = new FormControl<string>('', { nonNullable: true });
+  private searchSub?: Subscription;
 
-  // ===== TIPOS =====
+  // ===== Tipos =====
   tipos: TipoAsistenciaRapida[] = [];
   cargando = false;
   errorMsg = '';
 
-  // ===== RESULTADOS =====
+  // ===== Resultados =====
   resultados$: Observable<EstudianteBusquedaRapida[]> = of([]);
   sinResultados = false;
 
   alumnoSeleccionado: EstudianteBusquedaRapida | null = null;
 
-  // ===== REGISTRO =====
+  // ===== Registro =====
   turnoSeleccionado: 'MANANA' | 'TARDE' = 'MANANA';
-  registrando = false;
-
-  // ===== DROPDOWN OBLIGATORIO =====
   tipoSeleccionadoId: string | null = null;
   tipoError = false;
-
-  private searchSub?: Subscription;
+  registrando = false;
 
   constructor(
     private asistenciaRapidaService: AsistenciaRapidaService,
     private dialog: MatDialog
   ) {}
 
+  // =============================
+  // Ciclo de vida
+  // =============================
   ngOnInit(): void {
     this.cargarTipos();
     this.escucharBuscadorLocal();
@@ -90,49 +90,54 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.searchSub?.unsubscribe();
   }
 
+  // =============================
+  // Tipos de asistencia
+  // =============================
   cargarTipos(): void {
     this.cargando = true;
     this.errorMsg = '';
 
-    this.asistenciaRapidaService.getTiposAsistencia()
-      .subscribe({
-        next: (data) => {
-          // ✅ solo llegadas tarde para esta vista
-          this.tipos = data.filter(t => ['LLT', 'LLTE', 'LLTC'].includes(t.codigo));
-        },
-        error: (err) => {
-          console.error('Error cargando tipos', err);
-          this.errorMsg = 'Error llamando al backend (mirá consola).';
-          this.cargando = false;
-        },
-        complete: () => this.cargando = false
-      });
+    this.asistenciaRapidaService.getTiposAsistencia().subscribe({
+      next: (data) => {
+        // Solo llegadas tarde
+        this.tipos = data.filter(t => ['LLT', 'LLTE', 'LLTC'].includes(t.codigo));
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMsg = 'Error cargando tipos';
+        this.cargando = false;
+      },
+      complete: () => this.cargando = false
+    });
   }
 
+  // =============================
+  // Búsqueda local
+  // =============================
   private escucharBuscadorLocal(): void {
     this.searchSub = this.searchCtrl.valueChanges
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
-        tap(q => {
-          const texto = (q ?? '').trim();
-          if (texto.length < 3) {
+        tap(texto => {
+          if (texto.trim().length < 3) {
             this.resultados$ = of([]);
             this.sinResultados = false;
             this.cargando = false;
-            this.errorMsg = '';
           }
         }),
-        filter(q => (q ?? '').trim().length >= 3),
+        filter(texto => texto.trim().length >= 3),
         tap(() => this.prepararBusqueda()),
-        switchMap(q => this.asistenciaRapidaService.buscarEstudiantesRapido((q ?? '').trim()))
+        switchMap(texto =>
+          this.asistenciaRapidaService.buscarEstudiantesRapido(texto.trim())
+        )
       )
       .subscribe({
-        next: (alumnos) => this.aplicarResultados(alumnos),
-        error: (err) => {
-          console.error('Error buscando estudiantes', err);
+        next: alumnos => this.aplicarResultados(alumnos),
+        error: err => {
+          console.error(err);
+          this.errorMsg = 'Error buscando estudiantes';
           this.cargando = false;
-          this.errorMsg = 'Error buscando estudiantes (mirá consola).';
         }
       });
   }
@@ -152,6 +157,9 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.resultados$ = of(alumnos);
   }
 
+  // =============================
+  // Selección
+  // =============================
   seleccionarAlumno(a: EstudianteBusquedaRapida): void {
     if (a.registradoHoy) return;
     this.alumnoSeleccionado = a;
@@ -170,7 +178,9 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.tipoError = false;
   }
 
-  // ✅ flujo: ServerTime -> ConfirmDialog -> POST -> SuccessDialog
+  // =============================
+  // Registro (CLAVE)
+  // =============================
   confirmarRegistro(): void {
     if (!this.alumnoSeleccionado) return;
 
@@ -181,14 +191,16 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
     this.registrando = true;
 
-    // 1) Traer fecha/hora del servidor
+    // 1) Hora del servidor
     this.asistenciaRapidaService.getServerTime().subscribe({
-      next: (st) => {
+      next: st => {
 
         const tipo = this.tipos.find(t => t.id === this.tipoSeleccionadoId);
-        const tipoTexto = tipo ? `${tipo.codigo} - ${tipo.descripcion}` : 'Tipo seleccionado';
+        const tipoTexto = tipo
+          ? `${tipo.codigo} - ${tipo.descripcion}`
+          : 'Tipo seleccionado';
 
-        // 2) Abrir confirm modal con fecha/hora servidor
+        // 2) Confirm modal
         const data: AsistenciaConfirmDialogData = {
           titulo: '¿Desea registrar la operación?',
           alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
@@ -210,20 +222,22 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // 3) POST (sin cambiar response/DTO; mandamos fecha servidor)
+          // 3) POST — ACA ESTÁ LA CLAVE
           const dto: RegistrarAsistenciaRapida = {
             estudianteId: this.alumnoSeleccionado!.id,
             fecha: st.fecha,
             turno: this.turnoSeleccionado,
-            tipoAsistenciaId: this.tipoSeleccionadoId!
+            tipoAsistenciaId: this.tipoSeleccionadoId!,
+            hora: st.hora // 🔥 ESTO ES LO QUE FALTABA
           };
 
           this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
             next: (resp: AsistenciaRapidaResponse) => {
-              // 4) Success modal
-              const msg = `${resp.mensaje ?? 'Registrado correctamente'} (${st.fecha} ${st.hora})`;
 
+              // 4) Success modal
+              const msg = `${resp.mensaje} (${st.fecha} ${st.hora})`;
               const sdata: AsistenciaSuccessDialogData = { mensaje: msg };
+
               const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
                 width: '360px',
                 disableClose: true,
@@ -231,41 +245,23 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
               });
 
               sref.afterClosed().subscribe(() => {
-                // ✅ reset visual
                 this.registrando = false;
                 this.alumnoSeleccionado = null;
                 this.tipoSeleccionadoId = null;
-
-                // refrescar lista si hay texto
-                const q = this.searchCtrl.value.trim();
-                if (q.length >= 3) {
-                  this.prepararBusqueda();
-                  this.asistenciaRapidaService.buscarEstudiantesRapido(q)
-                    .subscribe({
-                      next: (al) => this.aplicarResultados(al),
-                      error: (err) => {
-                        console.error(err);
-                        this.cargando = false;
-                        this.errorMsg = 'Error refrescando resultados.';
-                      }
-                    });
-                } else {
-                  this.resultados$ = of([]);
-                }
               });
             },
-            error: (err: any) => {
+            error: err => {
               console.error(err);
+              this.errorMsg = 'Error al registrar asistencia';
               this.registrando = false;
-              this.errorMsg = 'Error al registrar asistencia (mirá consola / Network).';
             }
           });
         });
       },
-      error: (err) => {
+      error: err => {
         console.error(err);
+        this.errorMsg = 'No se pudo obtener hora del servidor';
         this.registrando = false;
-        this.errorMsg = 'No se pudo obtener la hora del servidor.';
       }
     });
   }
