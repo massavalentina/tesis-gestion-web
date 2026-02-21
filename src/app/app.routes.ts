@@ -22,6 +22,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/asistencia-rapida/components/asistencia-rapida/asistencia-rapida.component')
             .then(m => m.AsistenciaRapidaComponent),
+      },
+      {
+        path: 'credenciales-qr',
+        loadComponent: () =>
+          import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
+            .then(m => m.CredencialesQrComponent),
       }
     ],
   }

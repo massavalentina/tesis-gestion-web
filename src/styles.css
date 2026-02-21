@@ -2,7 +2,8 @@
 html, body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow: hidden; /* ✅ mantenemos tu enfoque "mobile/app" */
+  background: #f0f5fa;
 }
 
 /* ================================
@@ -14,23 +15,21 @@ html, body {
   background-color: white !important;
   border-radius: 18px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-
   padding: 0.25rem;
-  min-width: 180px;  
+  min-width: 180px;
 }
-
 
 /* ITEM BASE */
 .mat-mdc-menu-item {
-  height: 38px;            
-  padding: 0 0.6rem;    
+  height: 38px;
+  padding: 0 0.6rem;
 
   display: flex;
   align-items: center;
-  gap: 0.1rem;             
+  gap: 0.1rem;
 
   border-radius: 12px;
-  font-size: 0.85rem;     
+  font-size: 0.85rem;
   font-weight: 400;
   font-family: inherit;
   color: #334155;
@@ -54,7 +53,47 @@ html, body {
 
 /* ICONOS */
 .mat-mdc-menu-item mat-icon {
-  font-size: 18px;      
+  font-size: 18px;
   color: inherit;
 }
 
+/* ================================
+   MAT-SELECT — FIX NO TRANSPARENTE (DEFINITIVO)
+   (el select vive en overlay, por eso va acá global)
+   ================================ */
+
+/* Panel del select (MDC) */
+.cdk-overlay-pane .mat-mdc-select-panel,
+.cdk-overlay-pane .mdc-menu-surface {
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  border: 1px solid #c7d9eb !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18) !important;
+
+  /* mata cualquier efecto de transparencia */
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+/* Opciones */
+.cdk-overlay-pane .mat-mdc-option {
+  background: #ffffff !important;
+  border-radius: 10px !important;
+  margin: 2px 0 !important;
+}
+
+/* Hover / seleccionado */
+.cdk-overlay-pane .mat-mdc-option:hover,
+.cdk-overlay-pane .mat-mdc-option.mdc-list-item--selected {
+  background: #f0f5fa !important;
+}
+
+/* Texto */
+.cdk-overlay-pane .mat-mdc-option .mdc-list-item__primary-text {
+  color: #000 !important;
+}
+
+/* Backdrop del overlay (cuando abre select/dialog) */
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
