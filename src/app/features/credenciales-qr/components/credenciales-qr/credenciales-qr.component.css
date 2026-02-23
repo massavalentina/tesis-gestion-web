@@ -1,6 +1,6 @@
 :host {
   display: block;
-  height: 100vh;          /* ocupa toda la pantalla */
+  height: 100vh;
   background: #f0f5fa;
 }
 
@@ -11,7 +11,7 @@
   overflow-x: hidden;
 
   padding: 28px;
-  padding-bottom: 80px;
+  padding-bottom: 110px; /* ✅ más aire abajo */
 
   max-width: 1200px;
   margin: 0 auto;
@@ -89,7 +89,6 @@
   width: 260px;
 }
 
-/* Mat form fields: look moderno */
 mat-form-field{
   background: #f0f5fa;
   border-radius: 14px;
@@ -245,11 +244,30 @@ mat-form-field{
   border-radius: 12px;
 }
 
+/* ✅ Empty state con espacio (no corta visualmente) */
 .empty{
-  padding: 18px;
+  padding: 26px 18px 34px;
   text-align:center;
   color:#5c6b7a;
   font-weight: 700;
+
+  min-height: 140px;  /* ✅ deja “aire” aunque no haya filas */
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 6px;
+}
+
+.empty__title{
+  font-weight: 900;
+  color:#0f2f4b;
+}
+
+.empty__hint{
+  font-weight: 700;
+  font-size: 12px;
+  opacity: .9;
 }
 
 /* ===== Chips ===== */
@@ -271,4 +289,3 @@ mat-chip.chip-no-generado{
   color:#5a1a1a !important;
   font-weight: 900 !important;
 }
-

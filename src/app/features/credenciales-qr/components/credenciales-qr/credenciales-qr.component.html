@@ -30,12 +30,6 @@
       </mat-slide-toggle>
 
       <div class="spacer"></div>
-
-      <button mat-raised-button class="btn-primary"
-              (click)="verResumen()"
-              [disabled]="cargandoResumen || enviando">
-        Ver resumen
-      </button>
     </div>
 
     <div class="loading" *ngIf="cargandoResumen">
@@ -158,7 +152,8 @@
       </table>
 
       <div class="empty" *ngIf="!cargandoTabla && alumnos.length === 0">
-        No hay registros para mostrar.
+        <div class="empty__title">No hay registros para mostrar</div>
+        <div class="empty__hint">Probá cambiar filtros o refrescar.</div>
       </div>
     </div>
   </mat-card>

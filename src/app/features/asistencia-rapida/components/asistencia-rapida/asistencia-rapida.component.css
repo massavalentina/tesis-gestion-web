@@ -1,6 +1,8 @@
-/* ============================= */
-/* CONTENEDOR GENERAL */
-/* ============================= */
+/* Paleta:
+   #3c78b4 primary
+   #f0f5fa bg
+   #c7d9eb border
+*/
 
 .contenedor {
   padding: 18px;
@@ -9,29 +11,81 @@
 }
 
 /* ============================= */
-/* BUSCADOR */
+/* SEARCH BOX */
 /* ============================= */
 
-.buscador {
+.search-container{
   width: 100%;
   margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Aire interno al form field */
-.buscador :is(.mat-mdc-text-field-wrapper) {
-  padding-left: 6px;
-  padding-right: 6px;
+.search-box{
+  width: min(520px, 100%);
+  height: 42px;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: #f0f5fa;
+  border: 1px solid #c7d9eb;
+  border-radius: 14px;
+
+  box-shadow: 0 8px 18px rgba(0,0,0,0.04);
 }
 
-/* Evita que la primera letra toque el borde */
-.buscador :is(input.mat-mdc-input-element) {
-  padding-left: 12px !important;
-  padding-right: 12px !important;
+.search-ico{
+  color: #3c78b4;
+  opacity: .95;
 }
 
-/* Hint debajo prolijo */
-.buscador .mat-mdc-form-field-subscript-wrapper {
-  margin-top: 6px;
+.search-box input{
+  border: none;
+  outline: none;
+  background: transparent;
+
+  width: 100%;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: #0f2f4b;
+}
+
+.search-box input::placeholder{
+  color: rgba(60,120,180,.60);
+  font-weight: 550;
+}
+
+.clear-btn{
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+
+  display: grid;
+  place-items: center;
+}
+
+.clear-btn mat-icon{
+  color: #3c78b4;
+}
+
+.clear-btn:hover{
+  background: rgba(60,120,180,.10);
+}
+
+.hint{
+  width: min(520px, 100%);
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(15,47,75,.65);
 }
 
 /* ============================= */
@@ -49,10 +103,11 @@
   text-align: center;
   font-size: 13px;
   margin: 10px 0;
+  font-weight: 700;
 }
 
 .sin-resultados {
-  color: #64748b;
+  color: rgba(15,47,75,.65);
 }
 
 .error-text {
@@ -67,7 +122,6 @@ mat-list {
   padding: 0 !important;
 }
 
-/* Card alumno */
 .item-alumno {
   cursor: pointer;
   display: flex;
@@ -81,30 +135,29 @@ mat-list {
   border-radius: 16px;
 
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(199, 217, 235, 0.95);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.05);
 
   transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .item-alumno:hover {
-  background: #f8fafc;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  background: #f0f5fa;
+  box-shadow: 0 14px 26px rgba(60,120,180,0.10);
   transform: translateY(-1px);
 }
 
-/* Estado deshabilitado */
 .item-alumno.registrado {
-  opacity: 0.6;
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
 .item-alumno.registrado:hover {
-  box-shadow: none;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.05);
   transform: none;
   background: #ffffff;
 }
 
-/* Info izquierda */
 .info {
   display: flex;
   flex-direction: column;
@@ -114,56 +167,55 @@ mat-list {
   padding-right: 12px;
 }
 
-/* Nombre */
 .info strong {
   font-size: 15px;
-  color: #0f172a;
+  font-weight: 900;
+  color: #0f2f4b;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Curso + DNI */
 .info span {
   font-size: 13px;
-  color: #64748b;
+  color: rgba(15,47,75,.65);
+  font-weight: 700;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ============================= */
 /* BADGE ESTADO */
-/* ============================= */
-
 .estado {
   font-size: 12.5px;
-  font-weight: 800;
+  font-weight: 900;
 
   padding: 8px 14px;
   border-radius: 999px;
 
   margin-left: 12px;
 
-  white-space: nowrap;     /* evita salto de línea */
-  min-width: 140px;        /* evita que se corte el texto */
+  white-space: nowrap;
+  min-width: 160px;
   text-align: center;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  border: 1px solid rgba(199,217,235,.9);
 }
 
 .estado.ok {
-  color: #15803d;
-  background: rgba(21, 128, 61, 0.14);
+  color: #1a4d2e;
+  background: #c9f7d5;
 }
 
 .estado.error {
-  color: #b91c1c;
-  background: rgba(185, 28, 28, 0.14);
+  color: #5a1a1a;
+  background: #ffcdd2;
 }
 
 /* ============================= */
@@ -175,32 +227,51 @@ mat-list {
   padding: 18px;
 
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(199,217,235,.95);
   border-radius: 16px;
 
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.06);
 }
 
 .confirmacion h3 {
   margin: 0 0 12px 0;
   font-size: 16px;
-  color: #0f172a;
+  font-weight: 1000;
+  color: #0f2f4b;
 }
 
 .alumno {
-  font-weight: 800;
+  font-weight: 900;
   margin: 0 0 14px 0;
-  color: #0f172a;
+  color: #0f2f4b;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* ✅ Bloque del select + botones (estilo suave) */
+.form-block{
+  padding: 12px;
+  border-radius: 16px;
+  background: #f0f5fa;
+  border: 1px solid rgba(199,217,235,.95);
+}
+
 /* Select */
 .select-tipo {
   width: 100%;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+}
+
+/* Suaviza el mat-form-field (sin romper) */
+:host ::ng-deep .select-tipo .mat-mdc-text-field-wrapper{
+  border-radius: 14px;
+}
+
+:host ::ng-deep .select-tipo .mat-mdc-form-field-flex{
+  background: #ffffff;
+  border-radius: 14px;
 }
 
 /* Botones */
@@ -208,7 +279,31 @@ mat-list {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 4px;
+}
+
+/* Botón principal */
+.btn-primary{
+  background-color: #3c78b4 !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-weight: 900 !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 10px 22px rgba(60,120,180,.22) !important;
+}
+
+/* Botón secundario */
+.btn-ghost{
+  border-color: #c7d9eb !important;
+  color: #3c78b4 !important;
+  border-radius: 12px !important;
+  font-weight: 900 !important;
+  padding: 10px 14px !important;
+  background: #ffffff !important;
+}
+
+.btn-ghost:hover{
+  background: #f0f5fa !important;
 }
 
 /* ============================= */
@@ -220,6 +315,11 @@ mat-list {
     padding: 14px;
   }
 
+  .search-box,
+  .hint{
+    width: 100%;
+  }
+
   .item-alumno {
     padding: 16px;
     min-height: 74px;
@@ -228,7 +328,7 @@ mat-list {
   .estado {
     font-size: 12px;
     padding: 8px 10px;
-    min-width: 130px;
+    min-width: 150px;
   }
 
   .acciones {
@@ -238,5 +338,9 @@ mat-list {
 
   .acciones button {
     width: 100%;
+  }
+
+  .form-block{
+    padding: 10px;
   }
 }
