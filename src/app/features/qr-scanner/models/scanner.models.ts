@@ -1,12 +1,15 @@
 
 
 export interface ScanConfig {
+  courseId: string;
   turno: string;
   attendanceTypeId: string;
+  attendanceTypeLabel: string;
 }
 
 export interface AttendanceScanRequest {
   qr: string;
+  idCurso: string;
   turno: string;
   attendanceTypeId: string;
 }
@@ -42,5 +45,3 @@ export interface SelectOption {
   id: string;
   label: string;
 }
-
-

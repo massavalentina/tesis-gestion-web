@@ -73,7 +73,9 @@ export class AttendanceScanPage {
   isProcessing = false;
 
   turno!: string;
+  courseId!: string;
   attendanceTypeId!: string;
+  attendanceTypeLabel!: string;
 
   constructor(private scanner: QrScannerService, private attendanceService: AttendanceService, private dialog: MatDialog
   ) {}
@@ -84,8 +86,10 @@ export class AttendanceScanPage {
   const config: ScanConfig | null = configComponent.getConfig();
   if (!config) return;
 
+  this.courseId = config.courseId;
   this.turno = config.turno;
   this.attendanceTypeId = config.attendanceTypeId;
+  this.attendanceTypeLabel = config.attendanceTypeLabel;
 
   this.scannerActive = true;
 
@@ -137,7 +141,7 @@ export class AttendanceScanPage {
         lastName: res.student.lastName,
         course: res.student.course,
         turno: this.turno,
-        attendanceType: this.attendanceTypeId
+        attendanceType: this.attendanceTypeLabel
       }
     });
 
@@ -156,11 +160,10 @@ export class AttendanceScanPage {
 
   this.scanner.stop();
 
-  this.attendanceService.preview(qr, this.turno).subscribe({
+  this.attendanceService.preview(qr, this.courseId, this.turno).subscribe({
 
     next: (res) => {
 
-      // 🔴 VALIDACIÓN DE SESIÓN (ACÁ ESTABA EL PROBLEMA)
       const alreadyAdded = this.scannedStudents.some(
         s => s.id === res.student.id
       );
@@ -237,8 +240,13 @@ export class AttendanceScanPage {
   }
 
   persistAttendance() {
+    const turnoApi =
+  this.turno?.trim().toUpperCase() === 'MAÑANA' || this.turno?.trim().toUpperCase() === 'MANANA'
+    ? 'MANANA'
+    : 'TARDE';
+    
     const payload = {
-      turno: this.turno,
+      turno: turnoApi,
       attendanceTypeId: this.attendanceTypeId,
       studentIds: this.scannedStudents.map(s => s.id)
     };
@@ -270,7 +278,7 @@ export class AttendanceScanPage {
       data: {
         course: this.scannedStudents[0]?.course,
         turno: this.turno,
-        attendanceType: this.attendanceTypeId,
+        attendanceType: this.attendanceTypeLabel,
         scannedCount: this.scannedStudents.length,
         totalStudents: 30 
       }
@@ -296,5 +304,3 @@ cancelRegister() {
   }
 
 }
-
-

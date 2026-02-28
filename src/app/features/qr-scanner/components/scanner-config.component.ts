@@ -33,7 +33,7 @@ import { CursoService } from '../services/curso.service';
   <mat-form-field appearance="fill" class="pill">
     <mat-label>Turno</mat-label>
     <mat-select [(ngModel)]="turno">
-      <mat-option *ngFor="let t of turnos" [value]="t.id">
+      <mat-option *ngFor="let t of turnos" [value]="t">
         {{ t.label }}
       </mat-option>
     </mat-select>
@@ -77,7 +77,7 @@ import { CursoService } from '../services/curso.service';
 export class ScanConfigComponent implements OnInit {
 
   curso?: string;
-  turno?: string;
+  turno?: SelectOption;
   attendanceTypeId?: string;
 
   cursos: SelectOption[] = [];
@@ -124,12 +124,17 @@ onCancelRegister() {
 getConfig(): ScanConfig | null {
   if (!this.isValid()) return null;
 
+  const selectedAttendanceType = this.attendanceTypes.find(
+    type => type.id === this.attendanceTypeId
+  );
+
   return {
-    turno: this.turno!,
-    attendanceTypeId: this.attendanceTypeId!
+    courseId: this.curso!,
+    turno: this.turno!.label,
+    attendanceTypeId: this.attendanceTypeId!,
+    attendanceTypeLabel: selectedAttendanceType?.label ?? this.attendanceTypeId!
   };
 }
 
 
 }
-

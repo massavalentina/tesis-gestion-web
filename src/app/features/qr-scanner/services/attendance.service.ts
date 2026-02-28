@@ -13,19 +13,12 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  scan(request: AttendanceScanRequest): Observable<AttendanceScanResponse> {
-    return this.http.post<AttendanceScanResponse>(
-      `${this.baseUrl}/scan`,
-      request
-    );
-  }
-
-
-  preview(qr: string, turno: string): Observable<AttendanceScanResponse> {
+  preview(qr: string, idCurso: string, turno: string): Observable<AttendanceScanResponse> {
     return this.http.post<AttendanceScanResponse>(
       `${this.baseUrl}/preview`,
       {
         qr,
+        idCurso,
         turno
       }
     );
