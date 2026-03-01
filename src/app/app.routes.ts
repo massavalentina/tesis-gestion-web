@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { WeatherComponent } from '../app/deploy-test/weather.component';
-import { AttendanceScanPage } from './features/qr-scanner/pages/scanner.page';
+import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 
 export const routes: Routes = [
   {
@@ -9,6 +9,6 @@ export const routes: Routes = [
   },
   {
     path: 'attendance/scan',
-    component: AttendanceScanPage
+    component: PaginaEscanerAsistencia
   }
 ];

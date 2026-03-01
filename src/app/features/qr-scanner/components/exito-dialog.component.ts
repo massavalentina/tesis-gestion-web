@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-success-dialog',
+  selector: 'app-exito-dialog',
   standalone: true,
   imports: [
     MatDialogModule,
@@ -19,9 +19,9 @@ import { MatIconModule } from '@angular/material/icon';
 
       <h2>Éxito</h2>
 
-      <p>{{ data.message }}</p>
+      <p>{{ data.mensaje }}</p>
 
-      <button mat-raised-button color="primary" (click)="close()">
+      <button mat-raised-button color="primary" (click)="cerrar()">
         Aceptar
       </button>
     </div>
@@ -51,13 +51,13 @@ import { MatIconModule } from '@angular/material/icon';
     }
   `]
 })
-export class SuccessDialogComponent {
+export class DialogoExitoComponent {
   constructor(
-    private dialogRef: MatDialogRef<SuccessDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { message: string }
+    private referenciaDialogo: MatDialogRef<DialogoExitoComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { mensaje: string }
   ) {}
 
-  close() {
-    this.dialogRef.close();
+  cerrar() {
+    this.referenciaDialogo.close();
   }
 }

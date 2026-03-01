@@ -3,7 +3,7 @@ import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-cancel-register-dialog',
+  selector: 'app-cancelar-registro-dialog',
   standalone: true,
   imports: [
     MatDialogModule,
@@ -21,23 +21,23 @@ import { MatButtonModule } from '@angular/material/button';
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
-      <button mat-button (click)="cancel()">Volver</button>
-      <button mat-raised-button color="warn" (click)="confirm()">
+      <button mat-button (click)="cancelar()">Volver</button>
+      <button mat-raised-button color="warn" (click)="confirmar()">
         Cancelar registro
       </button>
     </mat-dialog-actions>
   `
 })
-export class CancelRegisterDialogComponent {
+export class DialogoCancelarRegistroComponent {
   constructor(
-    private dialogRef: MatDialogRef<CancelRegisterDialogComponent>
+    private referenciaDialogo: MatDialogRef<DialogoCancelarRegistroComponent>
   ) {}
 
-  confirm() {
-    this.dialogRef.close(true);
+  confirmar() {
+    this.referenciaDialogo.close(true);
   }
 
-  cancel() {
-    this.dialogRef.close(false);
+  cancelar() {
+    this.referenciaDialogo.close(false);
   }
 }

@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SelectOption } from '../models/scanner.models';
+import { OpcionSeleccion } from '../models/escaner.models';
 
 @Injectable({ providedIn: 'root' })
-export class TipoAsistenciaService {
+export class ServicioTipoAsistencia {
 
-  private readonly baseUrl =
+  private readonly urlBase =
     'http://localhost:5050/api/attendance/tipos-asistencia';
 
   constructor(private http: HttpClient) {}
 
-  getTipos(): Observable<SelectOption[]> {
-    return this.http.get<SelectOption[]>(this.baseUrl);
+  obtenerTipos(): Observable<OpcionSeleccion[]> {
+    return this.http.get<OpcionSeleccion[]>(this.urlBase);
   }
 }

@@ -1,8 +1,7 @@
-
 import { Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'app-scan-feedback',
+  selector: 'app-retroalimentacion-escaneo',
   standalone: true,
   template: `
     <div *ngIf="visible" class="feedback success">
@@ -22,6 +21,6 @@ import { Component, Input } from '@angular/core';
     }
   `]
 })
-export class ScanFeedbackComponent {
+export class ComponenteRetroalimentacionEscaneo {
   @Input() visible = false;
 }

@@ -3,13 +3,13 @@ import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
-export interface ScanErrorData {
-  title: string;
-  message: string;
+export interface DatosErrorEscaneo {
+  titulo: string;
+  mensaje: string;
 }
 
 @Component({
-  selector: 'app-scan-error-dialog',
+  selector: 'app-error-escaneo-dialog',
   standalone: true,
   imports: [
     MatDialogModule,
@@ -18,15 +18,15 @@ export interface ScanErrorData {
   ],
   template: `
     <div class="error-dialog">
-      <button class="close-btn" (click)="close()">✕</button>
+      <button class="close-btn" (click)="cerrar()">✕</button>
 
       <div class="icon">
         <mat-icon>error</mat-icon>
       </div>
 
-      <h2>{{ data.title }}</h2>
+      <h2>{{ data.titulo }}</h2>
 
-      <p [innerHTML]="data.message"></p>
+      <p [innerHTML]="data.mensaje"></p>
     </div>
   `,
   styles: [`
@@ -65,13 +65,13 @@ export interface ScanErrorData {
     }
   `]
 })
-export class ScanErrorDialogComponent {
+export class DialogoErrorEscaneoComponent {
   constructor(
-    private dialogRef: MatDialogRef<ScanErrorDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: ScanErrorData
+    private referenciaDialogo: MatDialogRef<DialogoErrorEscaneoComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: DatosErrorEscaneo
   ) {}
 
-  close() {
-    this.dialogRef.close();
+  cerrar() {
+    this.referenciaDialogo.close();
   }
 }
