@@ -6,6 +6,7 @@ import {
   ProgresoGeneracionQr,
   RespuestaInicioJobQr,
   ResumenGeneracionQr,
+  SolicitudCancelacionJobQr,
   SolicitudGeneracionQr
 } from '../models/qr-credential-generation.models';
 
@@ -15,6 +16,9 @@ export class ServicioGeneracionCredencialesQr {
   private readonly summaryUrl = 'http://localhost:5050/api/qr-credentials/summary';
   private readonly startJobUrl = 'http://localhost:5050/api/qr-credentials/generation/start-job';
   private readonly progressUrl = 'http://localhost:5050/api/qr-credentials/generation/progress';
+  private readonly pauseUrl = 'http://localhost:5050/api/qr-credentials/generation/pause';
+  private readonly resumeUrl = 'http://localhost:5050/api/qr-credentials/generation/resume';
+  private readonly cancelUrl = 'http://localhost:5050/api/qr-credentials/generation/cancel';
 
   constructor(private http: HttpClient) {}
 
@@ -38,5 +42,17 @@ export class ServicioGeneracionCredencialesQr {
 
   obtenerProgreso(jobId: string): Observable<ProgresoGeneracionQr> {
     return this.http.get<ProgresoGeneracionQr>(`${this.progressUrl}/${jobId}`);
+  }
+
+  pausarJob(jobId: string): Observable<ProgresoGeneracionQr> {
+    return this.http.post<ProgresoGeneracionQr>(`${this.pauseUrl}/${jobId}`, {});
+  }
+
+  reanudarJob(jobId: string): Observable<ProgresoGeneracionQr> {
+    return this.http.post<ProgresoGeneracionQr>(`${this.resumeUrl}/${jobId}`, {});
+  }
+
+  cancelarJob(jobId: string, payload: SolicitudCancelacionJobQr): Observable<ProgresoGeneracionQr> {
+    return this.http.post<ProgresoGeneracionQr>(`${this.cancelUrl}/${jobId}`, payload);
   }
 }

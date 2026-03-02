@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
 export interface DatosResultadoGeneracionQr {
@@ -19,53 +19,56 @@ export interface DatosResultadoGeneracionQr {
   standalone: true,
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <div class="result-shell">
+    <div class="dlg">
       <div class="icon" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
         <mat-icon>{{ data.icono }}</mat-icon>
+      </div>
+
+      <div class="badge" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
+        {{ data.color === 'warn' ? 'Con incidencias' : 'Proceso finalizado' }}
       </div>
 
       <h2>{{ data.titulo }}</h2>
       <p class="message">{{ data.mensaje }}</p>
 
-      <div class="totals">
-        <span>Generados: {{ data.generados }}</span>
-        <span>Desactivados: {{ data.desactivados }}</span>
-        <span>Omitidos: {{ data.omitidos }}</span>
-        <span>Errores: {{ data.errores }}</span>
+      <div class="actions">
+        <button mat-raised-button class="btn-primary" (click)="cerrar()">
+          Salir
+        </button>
       </div>
-
-      <button mat-raised-button [color]="data.color" (click)="cerrar()">
-        Aceptar
-      </button>
     </div>
   `,
   styles: [`
-    .result-shell {
+    .dlg {
       text-align: center;
-      padding: 24px;
-      max-width: 360px;
+      padding: 8px 4px 4px;
+      max-width: 92vw;
+      color: #0f2f4b;
     }
 
     .icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: #dcefe9;
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: #dff3e8;
       color: #1f6a5c;
       margin-bottom: 12px;
+      border: 1px solid #cae8d8;
     }
 
     .icon.warn {
-      background: #f9d7d4;
+      background: #f9e0dd;
       color: #b3261e;
+      border-color: #efcbc7;
     }
 
     .icon.accent {
-      background: #f2e4c2;
+      background: #fff1d7;
       color: #9a6700;
+      border-color: #f4dfb0;
     }
 
     .icon mat-icon {
@@ -74,17 +77,64 @@ export interface DatosResultadoGeneracionQr {
       height: 34px;
     }
 
-    .message {
-      color: #48625d;
-      margin-bottom: 20px;
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f0f8f3;
+      border: 1px solid #cae8d8;
+      color: #1f6a5c;
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 12px;
     }
 
-    .totals {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 20px;
-      color: #2a433f;
-      font-weight: 500;
+    .badge.warn {
+      background: #fff3f1;
+      border-color: #efcbc7;
+      color: #b0473f;
+    }
+
+    .badge.accent {
+      background: #fff8e7;
+      border-color: #f4dfb0;
+      color: #9a6700;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+    }
+
+    .message {
+      color: rgba(15, 47, 75, 0.74);
+      margin: 0 0 18px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background-color: #86b8ea !important;
+      color: #fff !important;
+      border-radius: 12px !important;
+      font-weight: 900 !important;
+      padding: 10px 18px !important;
+      box-shadow: 0 10px 22px rgba(134, 184, 234, 0.34) !important;
+    }
+
+    @media (max-width: 560px) {
+      h2 {
+        font-size: 20px;
+      }
     }
   `]
 })

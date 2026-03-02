@@ -23,6 +23,15 @@ import {
 } from '../components/confirm-generation-dialog.component';
 import { DialogoProgresoGeneracionQrComponent } from '../components/generation-progress-dialog.component';
 import { DialogoResultadoGeneracionQrComponent } from '../components/generation-result-dialog.component';
+import {
+  DatosCancelacionGeneracionQr,
+  DialogoCancelacionGeneracionQrComponent,
+  ResultadoCancelacionGeneracionQr
+} from '../components/cancel-generation-dialog.component';
+import {
+  DatosFeedbackGeneracionQr,
+  DialogoFeedbackGeneracionQrComponent
+} from '../components/generation-feedback-dialog.component';
 
 @Component({
   selector: 'app-qr-credential-generation-page',
@@ -118,7 +127,11 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private pollingSubscription?: Subscription;
   private progressDialogRef?: MatDialogRef<DialogoProgresoGeneracionQrComponent>;
+  private cancelDialogRef?: MatDialogRef<DialogoCancelacionGeneracionQrComponent>;
+  private feedbackDialogRef?: MatDialogRef<DialogoFeedbackGeneracionQrComponent>;
   private closeProgressDialogTimeoutId?: number;
+  private currentJobId: string | null = null;
+  private esperandoPausaParaCancelar = false;
 
   cursos: OpcionCurso[] = [];
   cursoSeleccionadoId: string | null = null;
@@ -136,6 +149,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.destroyRef.onDestroy(() => {
       this.detenerPolling();
       this.cancelarCierreDialogoProgresoPendiente();
+      this.cerrarDialogoCancelacion();
+      this.cerrarDialogoFeedback();
       this.cerrarDialogoProgreso();
     });
   }
@@ -158,9 +173,11 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   alCambiarCurso(): void {
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
+    this.cerrarDialogoCancelacion();
     this.cerrarDialogoProgreso();
     this.progreso = null;
     this.errorMensaje = '';
+    this.esperandoPausaParaCancelar = false;
     this.cargarResumen();
   }
 
@@ -189,7 +206,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
     const dialogRef = this.dialog.open(DialogoConfirmacionGeneracionQrComponent, {
       width: '480px',
-      data: this.construirDatosConfirmacion()
+      data: this.construirDatosConfirmacion(),
+      panelClass: 'qr-generation-dialog'
     });
 
     dialogRef.afterClosed()
@@ -211,6 +229,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.cancelarCierreDialogoProgresoPendiente();
     this.progreso = null;
     this.ejecutandoJob = true;
+    this.esperandoPausaParaCancelar = false;
 
     this.servicio.iniciarJob({
       idCurso: this.cursoSeleccionadoId,
@@ -219,6 +238,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ jobId }) => {
+          this.currentJobId = jobId;
           this.abrirDialogoProgreso();
           this.iniciarPolling(jobId);
         },
@@ -244,16 +264,34 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
           this.progreso = progresoNormalizado;
           this.actualizarDialogoProgreso(progresoNormalizado);
 
-          if (progresoNormalizado.estado === 'COMPLETED' || progresoNormalizado.estado === 'FAILED') {
+          if (progresoNormalizado.estado === 'PAUSED' && this.esperandoPausaParaCancelar) {
+            this.esperandoPausaParaCancelar = false;
+            this.cerrarDialogoFeedback();
+            this.abrirDialogoDecisionCancelacion();
+          }
+
+          if (
+            progresoNormalizado.estado === 'COMPLETED' ||
+            progresoNormalizado.estado === 'FAILED' ||
+            progresoNormalizado.estado === 'CANCELLED'
+          ) {
             this.detenerPolling();
             this.ejecutandoJob = false;
+            this.currentJobId = null;
+            this.esperandoPausaParaCancelar = false;
+            this.cerrarDialogoCancelacion();
+            this.cerrarDialogoFeedback();
             this.programarCierreDialogoProgreso(progresoNormalizado);
           }
         },
         error: error => {
           this.detenerPolling();
           this.ejecutandoJob = false;
+          this.currentJobId = null;
+          this.esperandoPausaParaCancelar = false;
           this.cancelarCierreDialogoProgresoPendiente();
+          this.cerrarDialogoCancelacion();
+          this.cerrarDialogoFeedback();
           this.cerrarDialogoProgreso();
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del job.');
         }
@@ -308,10 +346,14 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
     this.progressDialogRef = this.dialog.open(DialogoProgresoGeneracionQrComponent, {
       width: '520px',
-      disableClose: true
+      disableClose: true,
+      panelClass: 'qr-generation-dialog'
     });
 
     this.progressDialogRef.componentInstance.progress = this.progreso;
+    this.progressDialogRef.componentInstance.solicitarCancelacion
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.confirmarCancelacion());
   }
 
   private actualizarDialogoProgreso(progreso: ProgresoGeneracionQr): void {
@@ -324,6 +366,85 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.cancelarCierreDialogoProgresoPendiente();
     this.progressDialogRef?.close();
     this.progressDialogRef = undefined;
+  }
+
+  private confirmarCancelacion(): void {
+    if (!this.progreso || !this.currentJobId || this.progreso.estado !== 'RUNNING') {
+      return;
+    }
+
+    this.esperandoPausaParaCancelar = true;
+    this.abrirDialogoFeedback({
+      titulo: 'Pausando la generación',
+      mensaje: 'Vamos a terminar el alumno actual y pausar el proceso para que elijas cómo seguir.',
+      modo: 'loading'
+    });
+
+    this.servicio.pausarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+
+          if (progreso.estado === 'PAUSED') {
+            this.esperandoPausaParaCancelar = false;
+            this.cerrarDialogoFeedback();
+            this.abrirDialogoDecisionCancelacion();
+          }
+        },
+        error: error => {
+          this.esperandoPausaParaCancelar = false;
+          this.cerrarDialogoFeedback();
+          this.dialog.open(DialogoFeedbackGeneracionQrComponent, {
+            width: '430px',
+            data: {
+              titulo: 'No pudimos pausar el proceso',
+              mensaje: this.obtenerMensajeError(
+                error,
+                'Ocurrió un problema al intentar pausar la generación. Podés volver a intentarlo.'
+              ),
+              modo: 'error'
+            } satisfies DatosFeedbackGeneracionQr,
+            panelClass: 'qr-generation-dialog'
+          });
+        }
+      });
+  }
+
+  private abrirDialogoDecisionCancelacion(): void {
+    if (!this.progreso || !this.currentJobId || this.progreso.estado !== 'PAUSED') {
+      return;
+    }
+
+    this.cerrarDialogoCancelacion();
+
+    this.cancelDialogRef = this.dialog.open(DialogoCancelacionGeneracionQrComponent, {
+      width: '480px',
+      data: this.construirDatosCancelacion(),
+      panelClass: 'qr-generation-dialog'
+    });
+
+    this.cancelDialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado?: ResultadoCancelacionGeneracionQr) => {
+        this.cancelDialogRef = undefined;
+
+        if (!resultado || !this.currentJobId) {
+          return;
+        }
+
+        if (!this.progreso || this.progreso.estado !== 'PAUSED') {
+          return;
+        }
+
+        if (resultado.accion === 'resume') {
+          this.reanudarGeneracion();
+          return;
+        }
+
+        this.ejecutarCancelacion(resultado.mantenerGenerados);
+      });
   }
 
   private programarCierreDialogoProgreso(progreso: ProgresoGeneracionQr): void {
@@ -363,6 +484,13 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
           icono: 'error',
           color: 'warn' as const
         }
+      : progreso.estado === 'CANCELLED'
+        ? {
+            titulo: 'Proceso cancelado',
+            mensaje: progreso.ultimoMensaje ?? 'La generación se detuvo antes de completarse.',
+            icono: 'info',
+            color: 'accent' as const
+          }
       : progreso.errores > 0
         ? {
             titulo: 'Proceso finalizado con observaciones',
@@ -385,8 +513,114 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
         desactivados: progreso.desactivados,
         omitidos: progreso.omitidos,
         errores: progreso.errores
-      }
+      },
+      panelClass: 'qr-generation-dialog'
     });
+  }
+
+  private construirDatosCancelacion(): DatosCancelacionGeneracionQr {
+    return {
+      procesados: this.progreso?.procesados ?? 0,
+      total: this.progreso?.total ?? 0,
+      generados: this.progreso?.generados ?? 0
+    };
+  }
+
+  private ejecutarCancelacion(mantenerGenerados: boolean): void {
+    if (!this.currentJobId) {
+      return;
+    }
+
+    this.abrirDialogoFeedback({
+      titulo: 'Estamos deteniendo la generación',
+      mensaje: mantenerGenerados
+        ? 'Vamos a terminar el alumno que está en curso y a conservar los QRs generados hasta ahora.'
+        : 'Vamos a terminar el alumno que está en curso y luego a revertir los QRs generados hasta ahora.',
+      modo: 'loading'
+    });
+
+    this.servicio.cancelarJob(this.currentJobId, { mantenerGenerados })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.cerrarDialogoFeedback();
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+        },
+        error: error => {
+          this.cerrarDialogoFeedback();
+          this.dialog.open(DialogoFeedbackGeneracionQrComponent, {
+            width: '430px',
+            data: {
+              titulo: 'No pudimos cancelar el proceso',
+              mensaje: this.obtenerMensajeError(
+                error,
+                'Ocurrió un problema al intentar detener la generación. Podés volver a intentarlo.'
+              ),
+              modo: 'error'
+            } satisfies DatosFeedbackGeneracionQr,
+            panelClass: 'qr-generation-dialog'
+          });
+        }
+      });
+  }
+
+  private reanudarGeneracion(): void {
+    if (!this.currentJobId) {
+      return;
+    }
+
+    this.abrirDialogoFeedback({
+      titulo: 'Reanudando la generación',
+      mensaje: 'Volvemos a poner el proceso en marcha.',
+      modo: 'loading'
+    });
+
+    this.servicio.reanudarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.cerrarDialogoFeedback();
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+        },
+        error: error => {
+          this.cerrarDialogoFeedback();
+          this.dialog.open(DialogoFeedbackGeneracionQrComponent, {
+            width: '430px',
+            data: {
+              titulo: 'No pudimos reanudar el proceso',
+              mensaje: this.obtenerMensajeError(
+                error,
+                'Ocurrió un problema al intentar reanudar la generación. Podés volver a intentarlo.'
+              ),
+              modo: 'error'
+            } satisfies DatosFeedbackGeneracionQr,
+            panelClass: 'qr-generation-dialog'
+          });
+        }
+      });
+  }
+
+  private abrirDialogoFeedback(data: DatosFeedbackGeneracionQr): void {
+    this.cerrarDialogoFeedback();
+
+    this.feedbackDialogRef = this.dialog.open(DialogoFeedbackGeneracionQrComponent, {
+      width: '430px',
+      disableClose: data.modo === 'loading',
+      data,
+      panelClass: 'qr-generation-dialog'
+    });
+  }
+
+  private cerrarDialogoFeedback(): void {
+    this.feedbackDialogRef?.close();
+    this.feedbackDialogRef = undefined;
+  }
+
+  private cerrarDialogoCancelacion(): void {
+    this.cancelDialogRef?.close();
+    this.cancelDialogRef = undefined;
   }
 
   private obtenerLabelCursoSeleccionado(): string {

@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { ConfiguracionEscaneo, OpcionSeleccion } from '../models/escaner.models';
@@ -13,63 +15,57 @@ import { ServicioCurso } from '../services/curso.service';
   imports: [
     CommonModule,
     FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
     MatSelectModule
   ],
   template: `
-   <div class="config">
+    <div class="config">
+      <mat-form-field appearance="fill" class="pill">
+        <mat-label>Curso</mat-label>
+        <mat-select [(ngModel)]="idCurso">
+          <mat-option *ngFor="let curso of cursos" [value]="curso.id">
+            {{ curso.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
-  <!-- CURSO -->
-  <mat-form-field appearance="fill" class="pill">
-    <mat-label>Curso</mat-label>
-    <mat-select [(ngModel)]="idCurso">
-      <mat-option *ngFor="let curso of cursos" [value]="curso.id">
-        {{ curso.label }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+      <mat-form-field appearance="fill" class="pill">
+        <mat-label>Turno</mat-label>
+        <mat-select [(ngModel)]="turnoSeleccionado">
+          <mat-option *ngFor="let turno of turnos" [value]="turno">
+            {{ turno.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
-  <!-- TURNO -->
-  <mat-form-field appearance="fill" class="pill">
-    <mat-label>Turno</mat-label>
-    <mat-select [(ngModel)]="turnoSeleccionado">
-      <mat-option *ngFor="let turno of turnos" [value]="turno">
-        {{ turno.label }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+      <mat-form-field appearance="fill" class="pill">
+        <mat-label>Tipo de Asistencia</mat-label>
+        <mat-select [(ngModel)]="idTipoAsistencia">
+          <mat-option *ngFor="let tipo of tiposAsistencia" [value]="tipo.id">
+            {{ tipo.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
-  <!-- TIPO ASISTENCIA -->
-  <mat-form-field appearance="fill" class="pill">
-    <mat-label>Tipo de asistencia</mat-label>
-    <mat-select [(ngModel)]="idTipoAsistencia">
-      <mat-option *ngFor="let tipo of tiposAsistencia" [value]="tipo.id">
-        {{ tipo.label }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+      <div class="action-buttons">
+        <button
+          mat-raised-button
+          class="pill-btn"
+          [disabled]="!puedeEnviar"
+          (click)="alConfirmarRegistro()">
+          Cargar<br />registro
+        </button>
 
-  <div class="action-buttons">
-
-    <button
-      mat-raised-button
-      class="pill-btn"
-      [disabled]="!puedeEnviar"
-      (click)="alConfirmarRegistro()">
-      Cargar<br />registro
-    </button>
-
-    <button
-      mat-raised-button
-      class="pill-btn"
-      [disabled]="!puedeEnviar"
-      (click)="alCancelarRegistro()">
-      Cancelar<br />registro
-    </button>
-
-  </div>
-
-</div>
-
+        <button
+          *ngIf="puedeEnviar"
+          mat-stroked-button
+          class="pill-btn pill-btn--secondary"
+          (click)="alCancelarRegistro()">
+          Cancelar<br />registro
+        </button>
+      </div>
+    </div>
   `,
   styleUrls: ['../scss/configuracion-escaner.component.scss']
 })

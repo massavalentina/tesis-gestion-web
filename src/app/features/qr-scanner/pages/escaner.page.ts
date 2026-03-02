@@ -1,5 +1,6 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BreakpointObserver, Breakpoints, LayoutModule } from '@angular/cdk/layout';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,6 +23,7 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
   standalone: true,
   imports: [
     CommonModule,
+    LayoutModule,
     MatButtonModule,
     MatIconModule,
     ComponenteConfiguracionEscaner,
@@ -29,12 +31,30 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
   ],
   template: `
     <div class="page-content">
-      <app-configuracion-escaner
-        #config
-        [puedeEnviar]="alumnosEscaneados.length > 0 && !escanerActivo"
-        (confirmarRegistro)="confirmarRegistro()"
-        (cancelarRegistro)="cancelarRegistro()">
-      </app-configuracion-escaner>
+      <section class="scanner-shell">
+        <div class="scanner-copy">
+          <div class="scanner-badge">Escaneo QR</div>
+          <h1>Toma de asistencia por escaneo QR</h1>
+          <p>
+            Selecciona curso, turno y tipo de asistencia antes de abrir la camara.
+          </p>
+        </div>
+
+        <app-configuracion-escaner
+          #config
+          [puedeEnviar]="alumnosEscaneados.length > 0 && !escanerActivo"
+          (confirmarRegistro)="confirmarRegistro()"
+          (cancelarRegistro)="cancelarRegistro()">
+        </app-configuracion-escaner>
+
+        <div class="scan-counter" *ngIf="alumnosEscaneados.length > 0">
+          {{ alumnosEscaneados.length }} alumno(s) escaneado(s)
+        </div>
+
+        <div class="scan-error" *ngIf="errorEscaner">
+          {{ errorEscaner }}
+        </div>
+      </section>
     </div>
 
     <div *ngIf="escanerActivo" class="scanner-container">
@@ -42,33 +62,44 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
       <video #video autoplay muted playsinline></video>
     </div>
 
-    <div class="scan-counter" *ngIf="alumnosEscaneados.length > 0">
-      {{ alumnosEscaneados.length }} alumno(s) escaneado(s)
-    </div>
+    <div class="bottom-bar" *ngIf="esMobile">
+      <div class="bottom-bar__glow"></div>
 
-    <div class="bottom-bar">
       <button
         mat-fab
         color="primary"
         class="scan-btn"
-        [class.disabled]="!config.esValido() || escanerActivo"
+        [disabled]="!puedeEscanear(config)"
+        [class.scan-btn--disabled]="!puedeEscanear(config)"
+        [class.scan-btn--ready]="puedeEscanear(config)"
         (click)="alHacerClickEnEscanear(config)">
         <mat-icon>qr_code_scanner</mat-icon>
       </button>
 
       <div class="scan-warning" *ngIf="mostrarAdvertenciaEscaneo">
-        ⚠️ Completá los campos para comenzar
+        Completá los campos para comenzar
       </div>
+
+      <div class="scan-status" [class.scan-status--ready]="puedeEscanear(config)">
+        {{ puedeEscanear(config) ? 'Escáner habilitado' : 'Completá la configuración para habilitar el escáner' }}
+      </div>
+    </div>
+
+    <div class="scan-warning scan-warning--desktop" *ngIf="!esMobile">
+      El escaneo QR está disponible solo en dispositivos móviles.
     </div>
   `,
   styleUrls: ['../scss/escaner.page.scss']
 })
-export class PaginaEscanerAsistencia {
-  @ViewChild('video') video!: ElementRef<HTMLVideoElement>;
+export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
+  @ViewChild('video') video?: ElementRef<HTMLVideoElement>;
 
   escanerActivo = false;
   procesando = false;
   mostrarAdvertenciaEscaneo = false;
+  esMobile = false;
+  errorEscaner = '';
+  private inicioPendiente = false;
 
   turno!: string;
   idCurso!: string;
@@ -80,10 +111,37 @@ export class PaginaEscanerAsistencia {
   constructor(
     private servicioEscanerQr: ServicioEscanerQr,
     private servicioAsistencia: ServicioAsistencia,
-    private dialogo: MatDialog
-  ) {}
+    private dialogo: MatDialog,
+    private breakpointObserver: BreakpointObserver
+  ) {
+    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
+      this.esMobile = result.matches;
+
+      if (!this.esMobile && this.escanerActivo) {
+        this.cerrarEscaner();
+      }
+    });
+  }
+
+  ngAfterViewChecked(): void {
+    if (!this.inicioPendiente || !this.video) {
+      return;
+    }
+
+    this.inicioPendiente = false;
+    void this.iniciarCamara();
+  }
+
+  ngOnDestroy(): void {
+    this.servicioEscanerQr.detener();
+  }
 
   iniciarEscaneo(componenteConfiguracion: ComponenteConfiguracionEscaner): void {
+    if (!this.esMobile) {
+      this.errorEscaner = 'El escaneo QR está disponible solo en dispositivos móviles.';
+      return;
+    }
+
     const configuracion: ConfiguracionEscaneo | null =
       componenteConfiguracion.obtenerConfiguracion();
 
@@ -93,19 +151,21 @@ export class PaginaEscanerAsistencia {
     this.turno = configuracion.turno;
     this.idTipoAsistencia = configuracion.idTipoAsistencia;
     this.etiquetaTipoAsistencia = configuracion.etiquetaTipoAsistencia;
+    this.errorEscaner = '';
     this.escanerActivo = true;
-
-    setTimeout(() => {
-      console.log('Video element:', this.video);
-      this.servicioEscanerQr.iniciar(this.video, qr => this.alEscanearQr(qr));
-    }, 0);
+    this.inicioPendiente = true;
   }
 
   reanudarEscaner() {
     this.procesando = false;
+    this.errorEscaner = '';
 
     setTimeout(() => {
-      this.servicioEscanerQr.iniciar(this.video, qr => this.alEscanearQr(qr));
+      if (!this.video || !this.escanerActivo) {
+        return;
+      }
+
+      void this.iniciarCamara();
     }, 500);
   }
 
@@ -198,15 +258,11 @@ export class PaginaEscanerAsistencia {
   }
 
   alHacerClickEnEscanear(componenteConfiguracion: ComponenteConfiguracionEscaner): void {
-    console.log('CLICK scan');
-
-    if (!componenteConfiguracion.esValido() || this.escanerActivo) {
-      console.log('Config inválida o scanner activo');
+    if (!this.puedeEscanear(componenteConfiguracion)) {
       this.mostrarAdvertenciaTemporal();
       return;
     }
 
-    console.log('Config válida, iniciando scan');
     this.iniciarEscaneo(componenteConfiguracion);
   }
 
@@ -222,6 +278,7 @@ export class PaginaEscanerAsistencia {
     this.servicioEscanerQr.detener();
     this.escanerActivo = false;
     this.procesando = false;
+    this.inicioPendiente = false;
   }
 
   reiniciarSesion() {
@@ -293,5 +350,26 @@ export class PaginaEscanerAsistencia {
         this.reiniciarSesion();
       }
     });
+  }
+
+  puedeEscanear(componenteConfiguracion: ComponenteConfiguracionEscaner): boolean {
+    return componenteConfiguracion.esValido() && !this.escanerActivo;
+  }
+
+  private async iniciarCamara(): Promise<void> {
+    if (!this.video) {
+      this.inicioPendiente = true;
+      return;
+    }
+
+    try {
+      await this.servicioEscanerQr.iniciar(this.video, qr => this.alEscanearQr(qr));
+    } catch {
+      this.servicioEscanerQr.detener();
+      this.escanerActivo = false;
+      this.procesando = false;
+      this.errorEscaner =
+        'No se pudo abrir la cámara. Revisá los permisos del navegador e intentá nuevamente.';
+    }
   }
 }

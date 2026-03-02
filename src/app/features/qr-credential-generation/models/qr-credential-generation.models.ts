@@ -22,9 +22,13 @@ export interface RespuestaInicioJobQr {
   jobId: string;
 }
 
+export interface SolicitudCancelacionJobQr {
+  mantenerGenerados: boolean;
+}
+
 export interface ProgresoGeneracionQr {
   jobId: string;
-  estado: 'RUNNING' | 'COMPLETED' | 'FAILED';
+  estado: 'RUNNING' | 'PAUSING' | 'PAUSED' | 'CANCELLING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   total: number;
   procesados: number;
   generados: number;

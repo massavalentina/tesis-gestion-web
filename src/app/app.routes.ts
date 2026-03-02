@@ -14,10 +14,6 @@ export const routes: Routes = [
     component: PaginaGeneracionCredencialesQr
   },
   {
-    path: 'attendance/scan',
-    component: PaginaEscanerAsistencia
-  },
-  {
     path: '',
     component: LayoutComponent,
     children: [
@@ -32,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/asistencia-rapida/components/asistencia-rapida/asistencia-rapida.component')
             .then(m => m.AsistenciaRapidaComponent),
+      },
+      {
+        path: 'attendance/scan',
+        component: PaginaEscanerAsistencia
       },
       {
         path: 'credenciales-qr',
