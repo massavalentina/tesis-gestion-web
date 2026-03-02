@@ -9,7 +9,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ServicioAsistencia {
 
-  private readonly urlBase = 'http://localhost:5050/api/attendance';
+  private readonly urlBase = 'http://localhost:5050/api/asistencia/scanner';
 
   constructor(private http: HttpClient) {}
 

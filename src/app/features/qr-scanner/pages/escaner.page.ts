@@ -272,7 +272,7 @@ export class PaginaEscanerAsistencia {
         turno: this.turno,
         tipoAsistencia: this.etiquetaTipoAsistencia,
         cantidadEscaneados: this.alumnosEscaneados.length,
-        totalAlumnos: 30
+        totalAlumnos: 30 //TODO: traer esto del backend getEstudiantesPorCurso o algo así
       }
     });
 

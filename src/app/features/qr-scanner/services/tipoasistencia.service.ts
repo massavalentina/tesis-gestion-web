@@ -7,7 +7,7 @@ import { OpcionSeleccion } from '../models/escaner.models';
 export class ServicioTipoAsistencia {
 
   private readonly urlBase =
-    'http://localhost:5050/api/attendance/tipos-asistencia';
+    'http://localhost:5050/api/asistencia/scanner/tipos-asistencia';
 
   constructor(private http: HttpClient) {}
 

@@ -6,7 +6,7 @@ import { OpcionSeleccion } from '../models/escaner.models';
 @Injectable({ providedIn: 'root' })
 export class ServicioCurso {
 
-  private readonly urlBase = 'http://localhost:5050/api/attendance/cursos';
+  private readonly urlBase = 'http://localhost:5050/api/asistencia/scanner/cursos';
 
   constructor(private http: HttpClient) {}
 
