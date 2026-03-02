@@ -22,7 +22,37 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/asistencia-rapida/components/asistencia-rapida/asistencia-rapida.component')
             .then(m => m.AsistenciaRapidaComponent),
-      }
+      },
+      {
+        path: 'asistencia-manual-curso',
+        loadComponent: () =>
+          import('../app/features/asistencia-general-manual/components/asistencia-general-manual.component')
+            .then(m => m.AsistenciaGeneralManualComponent),
+      },
+      {
+        path: 'asistencia-qr',
+        loadComponent: () =>
+          import('../app/features/proximamente/proximamente.component')
+            .then(m => m.ProximamenteComponent),
+      },
+      {
+        path: 'parte-diario-digital',
+        loadComponent: () =>
+          import('../app/features/proximamente/proximamente.component')
+            .then(m => m.ProximamenteComponent),
+      },
+      {
+        path: 'credenciales-qr',
+        loadComponent: () =>
+          import('../app/features/proximamente/proximamente.component')
+            .then(m => m.ProximamenteComponent),
+      },
+      {
+        path: 'cuenta',
+        loadComponent: () =>
+          import('../app/features/proximamente/proximamente.component')
+            .then(m => m.ProximamenteComponent),
+      },
     ],
   }
 ];

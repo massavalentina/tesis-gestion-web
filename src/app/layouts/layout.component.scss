@@ -21,5 +21,7 @@ app-navbar {
 .layout-content {
   flex: 1;
   margin: 0 1rem 1rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 

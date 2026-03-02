@@ -26,10 +26,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
         <!-- Logo / Home -->
         <a class="logo-item" matRipple routerLink="/">
-          <h2 class="logo-text">LOGO APP</h2>
-          <div class="logo-placeholder">
-            <mat-icon>school</mat-icon>
-          </div>
+          <img src="logo.jpg" alt="Logo" class="logo-img" />
         </a>
 
         <!-- Inicio -->
