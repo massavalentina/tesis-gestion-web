@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, Input, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval } from 'rxjs';
@@ -27,6 +27,9 @@ import { DialogoResultadoGeneracionQrComponent } from '../components/generation-
 @Component({
   selector: 'app-qr-credential-generation-page',
   standalone: true,
+  host: {
+    '[class.embedded-host]': 'embedded'
+  },
   imports: [
     CommonModule,
     FormsModule,
@@ -36,8 +39,8 @@ import { DialogoResultadoGeneracionQrComponent } from '../components/generation-
     MatSelectModule
   ],
   template: `
-    <div class="page-shell">
-      <section class="panel">
+    <div class="page-shell" [class.page-shell--embedded]="embedded">
+      <section class="panel" [class.panel--embedded]="embedded">
         <div class="panel-header">
           <div>
             <p class="eyebrow">Credenciales QR</p>
@@ -110,9 +113,12 @@ import { DialogoResultadoGeneracionQrComponent } from '../components/generation-
   styleUrl: './qr-credential-generation.page.css'
 })
 export class PaginaGeneracionCredencialesQr implements OnInit {
+  @Input() embedded = false;
+
   private readonly destroyRef = inject(DestroyRef);
   private pollingSubscription?: Subscription;
   private progressDialogRef?: MatDialogRef<DialogoProgresoGeneracionQrComponent>;
+  private closeProgressDialogTimeoutId?: number;
 
   cursos: OpcionCurso[] = [];
   cursoSeleccionadoId: string | null = null;
@@ -126,7 +132,13 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   constructor(
     private servicio: ServicioGeneracionCredencialesQr,
     private dialog: MatDialog
-  ) {}
+  ) {
+    this.destroyRef.onDestroy(() => {
+      this.detenerPolling();
+      this.cancelarCierreDialogoProgresoPendiente();
+      this.cerrarDialogoProgreso();
+    });
+  }
 
   ngOnInit(): void {
     this.servicio.obtenerCursos()
@@ -145,6 +157,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
   alCambiarCurso(): void {
     this.detenerPolling();
+    this.cancelarCierreDialogoProgresoPendiente();
+    this.cerrarDialogoProgreso();
     this.progreso = null;
     this.errorMensaje = '';
     this.cargarResumen();
@@ -194,6 +208,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
     this.errorMensaje = '';
     this.detenerPolling();
+    this.cancelarCierreDialogoProgresoPendiente();
     this.progreso = null;
     this.ejecutandoJob = true;
 
@@ -225,20 +240,20 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
       )
       .subscribe({
         next: progreso => {
-          this.progreso = progreso;
-          this.actualizarDialogoProgreso(progreso);
+          const progresoNormalizado = this.normalizarProgresoFinal(progreso);
+          this.progreso = progresoNormalizado;
+          this.actualizarDialogoProgreso(progresoNormalizado);
 
-          if (progreso.estado === 'COMPLETED' || progreso.estado === 'FAILED') {
+          if (progresoNormalizado.estado === 'COMPLETED' || progresoNormalizado.estado === 'FAILED') {
             this.detenerPolling();
             this.ejecutandoJob = false;
-            this.cerrarDialogoProgreso();
-            this.cargarResumen();
-            this.abrirDialogoResultado(progreso);
+            this.programarCierreDialogoProgreso(progresoNormalizado);
           }
         },
         error: error => {
           this.detenerPolling();
           this.ejecutandoJob = false;
+          this.cancelarCierreDialogoProgresoPendiente();
           this.cerrarDialogoProgreso();
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del job.');
         }
@@ -306,8 +321,38 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   private cerrarDialogoProgreso(): void {
+    this.cancelarCierreDialogoProgresoPendiente();
     this.progressDialogRef?.close();
     this.progressDialogRef = undefined;
+  }
+
+  private programarCierreDialogoProgreso(progreso: ProgresoGeneracionQr): void {
+    this.cancelarCierreDialogoProgresoPendiente();
+
+    this.closeProgressDialogTimeoutId = window.setTimeout(() => {
+      this.closeProgressDialogTimeoutId = undefined;
+      this.cerrarDialogoProgreso();
+      this.cargarResumen();
+      this.abrirDialogoResultado(progreso);
+    }, 700);
+  }
+
+  private cancelarCierreDialogoProgresoPendiente(): void {
+    if (this.closeProgressDialogTimeoutId !== undefined) {
+      window.clearTimeout(this.closeProgressDialogTimeoutId);
+      this.closeProgressDialogTimeoutId = undefined;
+    }
+  }
+
+  private normalizarProgresoFinal(progreso: ProgresoGeneracionQr): ProgresoGeneracionQr {
+    if (progreso.estado !== 'COMPLETED') {
+      return progreso;
+    }
+
+    return {
+      ...progreso,
+      procesados: progreso.total
+    };
   }
 
   private abrirDialogoResultado(progreso: ProgresoGeneracionQr): void {
