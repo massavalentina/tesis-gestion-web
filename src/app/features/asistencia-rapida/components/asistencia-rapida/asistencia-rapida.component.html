@@ -1,0 +1,107 @@
+<div class="contenedor">
+
+  <!-- Buscador local (search-box, chico de ancho) -->
+  <div class="search-container">
+    <div class="search-box">
+      <mat-icon class="search-ico">search</mat-icon>
+
+      <input
+        type="text"
+        [formControl]="searchCtrl"
+        placeholder="Buscar estudiante (DNI, nombre o apellido)" />
+
+      <button
+        type="button"
+        class="clear-btn"
+        aria-label="Limpiar"
+        *ngIf="searchCtrl.value && searchCtrl.value.trim().length > 0"
+        (click)="searchCtrl.setValue('')">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="hint"
+         *ngIf="searchCtrl.value.trim().length > 0 && searchCtrl.value.trim().length < 3">
+      Ingresá al menos 3 caracteres
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="spinner" *ngIf="cargando">
+    <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+  </div>
+
+  <!-- Error general -->
+  <p class="error-text" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <!-- Sin resultados -->
+  <p class="sin-resultados" *ngIf="sinResultados">
+    No se encontraron estudiantes
+  </p>
+
+  <!-- Lista resultados -->
+  <mat-list *ngIf="!alumnoSeleccionado">
+    <mat-list-item
+      *ngFor="let alumno of resultados$ | async"
+      (click)="seleccionarAlumno(alumno)"
+      class="item-alumno"
+      [class.registrado]="alumno.registradoHoy">
+
+      <div class="info">
+        <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
+        <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+      </div>
+
+      <span class="estado"
+            [class.error]="alumno.registradoHoy"
+            [class.ok]="!alumno.registradoHoy">
+        {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
+      </span>
+    </mat-list-item>
+  </mat-list>
+
+  <!-- Panel selección -->
+  <div class="confirmacion" *ngIf="alumnoSeleccionado">
+    <h3>Registrar llegada tarde</h3>
+
+    <p class="alumno">
+      {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
+    </p>
+
+    <!-- Bloque tipo + acciones (más lindo) -->
+    <div class="form-block">
+
+      <!-- Dropdown obligatorio -->
+      <mat-form-field appearance="outline" class="select-tipo">
+        <mat-label>Tipo de llegada tarde</mat-label>
+        <mat-select
+          [value]="tipoSeleccionadoId"
+          (selectionChange)="onTipoChange($event.value)"
+          [disabled]="registrando">
+
+          <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
+            {{ tipo.codigo }} - {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
+
+        <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
+      </mat-form-field>
+
+      <div class="acciones">
+        <button mat-raised-button class="btn-primary"
+                (click)="confirmarRegistro()"
+                [disabled]="registrando">
+          Confirmar
+        </button>
+
+        <button mat-stroked-button class="btn-ghost"
+                (click)="cancelarSeleccion()"
+                [disabled]="registrando">
+          Cancelar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
