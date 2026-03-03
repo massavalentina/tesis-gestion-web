@@ -32,5 +32,21 @@ app-navbar {
   overflow-y: auto;           /* ✅ scroll */
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
+@media (max-width: 767px) {
+  app-sidebar {
+    margin: 0;
+    width: 0;
+    flex: 0 0 0;
+  }
+
+  app-navbar {
+    margin: 1rem;
+  }
+
+  .layout-content {
+    margin: 0 1rem 1rem;
+  }
+}

@@ -1,9 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
 /* You can add global styles to this file, and also import other style files */
 html, body {
   height: 100%;
   margin: 0;
   overflow: hidden; /* ✅ mantenemos tu enfoque "mobile/app" */
   background: #f0f5fa;
+  font-family: 'Open Sans', sans-serif;
 }
 
 /* ================================
@@ -57,6 +60,114 @@ html, body {
   color: inherit;
 }
 
+.snack-rounded .mdc-snackbar__surface {
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14) !important;
+}
+
+.snack-rounded .mat-mdc-snack-bar-label {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: 14px !important;
+}
+
+.snack-rounded .mat-mdc-snack-bar-action {
+  font-family: 'Open Sans', sans-serif !important;
+  font-weight: 600 !important;
+  color: #0284c7 !important;
+}
+
+.cdk-overlay-container .mat-mdc-select-panel {
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Opciones del select */
+.cdk-overlay-container .mat-mdc-option {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: 14px !important;
+  background: #ffffff !important;
+}
+
+.cdk-overlay-container .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+.cdk-overlay-container .mat-mdc-option:focus:not(.mdc-list-item--disabled) {
+  background: #e0f2fe !important;
+}
+
+.cdk-overlay-container .mat-mdc-option.mdc-list-item--selected {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+/* Datepicker */
+.cdk-overlay-container .mat-datepicker-content {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+}
+
+.cdk-overlay-container .mat-calendar {
+  background: #ffffff !important;
+  font-family: 'Open Sans', sans-serif !important;
+}
+
+/* Día seleccionado en el calendario */
+.cdk-overlay-container .mat-calendar-body-selected {
+  background-color: #0284c7 !important;
+}
+
+.cdk-overlay-container .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+  border-color: #0284c7 !important;
+}
+
+/* ══════════════════════════════════════════════
+   OUTLINED FORM FIELD — FIX BORDE
+   Aplica a mat-input Y mat-select por igual.
+   Se apunta directamente a los elementos del
+   notched outline sin depender de la clase padre
+   que Angular Material no aplica en mat-select.
+══════════════════════════════════════════════ */
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+  border-color: #e2e8f0 !important;
+  transition: border-color 0.15s ease !important;
+}
+
+/* En focus el borde se pone azul */
+.mat-focused .mdc-notched-outline__leading,
+.mat-focused .mdc-notched-outline__notch,
+.mat-focused .mdc-notched-outline__trailing {
+  border-color: #0284c7 !important;
+}
+
+/* Quitar outline nativo del browser en el trigger del select */
+.mat-mdc-select-trigger { outline: none !important; }
+
+/* Alineación vertical del contenido en el trigger del select */
+.mat-mdc-select-value { display: flex; align-items: center; }
+.mat-mdc-select-value-text { display: inline-flex; align-items: center; gap: 5px; line-height: 1; }
+
+/* ══════════════════════════════════════════════
+   TOOLTIPS — fuente + estilo relleno oscuro
+══════════════════════════════════════════════ */
+.mat-mdc-tooltip {
+  --mdc-plain-tooltip-container-color:        #1e293b;
+  --mdc-plain-tooltip-supporting-text-color:  #f1f5f9;
+  --mdc-plain-tooltip-supporting-text-font:   'Open Sans', sans-serif;
+  --mdc-plain-tooltip-supporting-text-size:   12px;
+  --mdc-plain-tooltip-supporting-text-weight: 400;
+}
+
+.mat-mdc-tooltip .mdc-tooltip__surface {
+  font-family: 'Open Sans', sans-serif !important;
+  font-size: 12px !important;
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2) !important;
+}
 /* ================================
    MAT-SELECT — FIX NO TRANSPARENTE (DEFINITIVO)
    (el select vive en overlay, por eso va acá global)
@@ -96,4 +207,19 @@ html, body {
 /* Backdrop del overlay (cuando abre select/dialog) */
 .cdk-overlay-dark-backdrop {
   background: rgba(0, 0, 0, 0.25) !important;
+}
+
+.qr-generation-dialog .mat-mdc-dialog-surface {
+  border-radius: 28px !important;
+  padding: 22px 22px 20px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  border: 1px solid rgba(199, 217, 235, 0.95);
+  box-shadow: 0 26px 60px rgba(19, 55, 88, 0.16) !important;
+}
+
+@media (max-width: 600px) {
+  .qr-generation-dialog .mat-mdc-dialog-surface {
+    padding: 18px 18px 16px !important;
+    border-radius: 24px !important;
+  }
 }

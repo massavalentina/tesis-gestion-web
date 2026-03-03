@@ -15,6 +15,7 @@ import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angu
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { PaginaGeneracionCredencialesQr } from '../../../qr-credential-generation/pages/qr-credential-generation.page';
 
 import {
   QrEmailApiService,
@@ -44,7 +45,8 @@ import {
     MatDialogModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    PaginaGeneracionCredencialesQr
   ],
   templateUrl: './credenciales-qr.component.html',
   styleUrls: ['./credenciales-qr.component.css']

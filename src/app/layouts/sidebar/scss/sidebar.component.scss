@@ -39,34 +39,24 @@
 .logo-item {
   display: flex;
   justify-content: center;
-  padding: 0.5rem 0;
+  align-items: center;
+  padding: 0.75rem 0;
   margin-bottom: 0.5rem;
   border-radius: 16px;
   cursor: pointer;
 }
 
-.logo-placeholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  mat-icon {
-    font-size: 28px;
-    color: #0284c7;
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
+.logo-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
 }
 
 /* 📱 Botón hamburguesa */
 .mobile-menu-btn {
+  position: fixed;
   top: 1.1rem;
   left: 1.1rem;
   z-index: 1100;
