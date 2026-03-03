@@ -1,13 +1,30 @@
 <div class="contenedor">
 
-  <!-- Buscador local -->
-  <mat-form-field appearance="outline" class="buscador">
-    <mat-label>Buscar estudiante</mat-label>
-    <input matInput [formControl]="searchCtrl" placeholder="DNI, nombre o apellido" />
-    <mat-hint *ngIf="searchCtrl.value.trim().length < 3">
-      Ingrese al menos 3 caracteres
-    </mat-hint>
-  </mat-form-field>
+  <!-- Buscador local (search-box, chico de ancho) -->
+  <div class="search-container">
+    <div class="search-box">
+      <mat-icon class="search-ico">search</mat-icon>
+
+      <input
+        type="text"
+        [formControl]="searchCtrl"
+        placeholder="Buscar estudiante (DNI, nombre o apellido)" />
+
+      <button
+        type="button"
+        class="clear-btn"
+        aria-label="Limpiar"
+        *ngIf="searchCtrl.value && searchCtrl.value.trim().length > 0"
+        (click)="searchCtrl.setValue('')">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="hint"
+         *ngIf="searchCtrl.value.trim().length > 0 && searchCtrl.value.trim().length < 3">
+      Ingresá al menos 3 caracteres
+    </div>
+  </div>
 
   <!-- Loading -->
   <div class="spinner" *ngIf="cargando">
@@ -51,34 +68,39 @@
       {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
     </p>
 
-    <!-- Dropdown obligatorio -->
-    <mat-form-field appearance="outline" class="select-tipo">
-      <mat-label>Tipo de llegada tarde</mat-label>
-      <mat-select
-        [value]="tipoSeleccionadoId"
-        (selectionChange)="onTipoChange($event.value)"
-        [disabled]="registrando">
+    <!-- Bloque tipo + acciones (más lindo) -->
+    <div class="form-block">
 
-        <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
-          {{ tipo.codigo }} - {{ tipo.descripcion }}
-        </mat-option>
-      </mat-select>
+      <!-- Dropdown obligatorio -->
+      <mat-form-field appearance="outline" class="select-tipo">
+        <mat-label>Tipo de llegada tarde</mat-label>
+        <mat-select
+          [value]="tipoSeleccionadoId"
+          (selectionChange)="onTipoChange($event.value)"
+          [disabled]="registrando">
 
-      <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
-    </mat-form-field>
+          <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
+            {{ tipo.codigo }} - {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
 
-    <div class="acciones">
-      <button mat-raised-button color="primary"
-              (click)="confirmarRegistro()"
-              [disabled]="registrando">
-        Confirmar
-      </button>
+        <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
+      </mat-form-field>
 
-      <button mat-button color="warn"
-              (click)="cancelarSeleccion()"
-              [disabled]="registrando">
-        Cancelar
-      </button>
+      <div class="acciones">
+        <button mat-raised-button class="btn-primary"
+                (click)="confirmarRegistro()"
+                [disabled]="registrando">
+          Confirmar
+        </button>
+
+        <button mat-stroked-button class="btn-ghost"
+                (click)="cancelarSeleccion()"
+                [disabled]="registrando">
+          Cancelar
+        </button>
+      </div>
+
     </div>
   </div>
 

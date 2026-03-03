@@ -1,11 +1,17 @@
 import { Routes } from '@angular/router';
 import { WeatherComponent } from '../app/deploy-test/weather.component';
+import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
+import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generation/pages/qr-credential-generation.page';
 import { LayoutComponent } from './layouts/layout.component';
 
 export const routes: Routes = [
   {
     path: 'weather-test',
-    component: WeatherComponent,
+    component: WeatherComponent
+  },
+  {
+    path: 'qr-credentials/generation',
+    component: PaginaGeneracionCredencialesQr
   },
   {
     path: '',
@@ -30,16 +36,15 @@ export const routes: Routes = [
             .then(m => m.AsistenciaGeneralManualComponent),
       },
       {
-        path: 'asistencia-qr',
-        loadComponent: () =>
-          import('../app/features/proximamente/proximamente.component')
-            .then(m => m.ProximamenteComponent),
-      },
-      {
         path: 'parte-diario-digital',
         loadComponent: () =>
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
+      },
+      
+      {
+        path: 'attendance/scan',
+        component: PaginaEscanerAsistencia
       },
       {
         path: 'credenciales-qr',
@@ -53,6 +58,12 @@ export const routes: Routes = [
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
       },
+      {
+        path: 'credenciales-qr',
+        loadComponent: () =>
+          import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
+            .then(m => m.CredencialesQrComponent),
+      }
     ],
   }
 ];

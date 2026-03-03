@@ -60,8 +60,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           </a>
 
           <a class="subitem"
+             *ngIf="mostrarEscaneoQr"
              matRipple
-             routerLink="/asistencia-qr"
+             routerLink="/attendance/scan"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }">
             Toma de asistencia por escaneo QR
@@ -166,8 +167,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           </a>
 
           <a class="subitem"
+             *ngIf="mostrarEscaneoQr"
              matRipple
-             routerLink="/asistencia-qr"
+             routerLink="/attendance/scan"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }"
              (click)="closeMobile()">
@@ -230,6 +232,10 @@ export class SidebarComponent {
   isMobile = false;
   open = false;
   asistenciaOpen = false;
+
+  get mostrarEscaneoQr(): boolean {
+    return this.isMobile;
+  }
 
   constructor(private breakpointObserver: BreakpointObserver) {
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {

@@ -1,0 +1,167 @@
+<div class="page">
+
+<!--
+<div class="page__top">
+    <div>
+      <h1 class="title">Credenciales QR</h1>
+      <div class="subtitle">Generación masiva, envío masivo y estado de credenciales QR por curso</div>
+    </div>
+  </div>
+-->
+
+  <section class="integrated-section">
+    <app-qr-credential-generation-page [embedded]="true"></app-qr-credential-generation-page>
+  </section>
+
+  <!-- CARD ENVIAR -->
+  <mat-card class="card">
+    <div class="card__header">
+      <div class="card__title">
+        <h2>Enviar QRs de Asistencia</h2>
+        <p class="muted">Seleccioná un curso, generá el resumen y luego iniciá el envío.</p>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="w-260">
+        <mat-label>Curso</mat-label>
+        <mat-select [formControl]="enviarForm.controls.idCurso">
+          <mat-option value="">Seleccionar…</mat-option>
+          <mat-option *ngFor="let c of cursos" [value]="c.idCurso">{{ c.codigo }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-slide-toggle [formControl]="enviarForm.controls.incluirYaEnviados">
+        Incluir ya enviados
+      </mat-slide-toggle>
+
+      <div class="spacer"></div>
+    </div>
+
+    <div class="loading" *ngIf="cargandoResumen">
+      <mat-spinner diameter="22"></mat-spinner>
+      <span>Generando resumen…</span>
+    </div>
+
+    <div class="resumen" *ngIf="resumen as r">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__label">Total alumnos activos</div>
+          <div class="stat__value">{{ r.totalAlumnosActivos }}</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">QR pendientes</div>
+          <div class="stat__value">{{ r.conQrPendiente }}</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Ya enviados</div>
+          <div class="stat__value">{{ r.yaEnviados }}</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Sin QR generado</div>
+          <div class="stat__value">{{ r.sinQrGenerado }}</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat__label">Estimación</div>
+          <div class="stat__value">{{ r.estimacionSegundos }}s</div>
+        </div>
+      </div>
+
+      <div class="resumen__footer">
+        <div class="muted">{{ r.mensaje }}</div>
+
+        <button mat-raised-button class="btn-accent"
+                (click)="iniciarEnvio()"
+                [disabled]="!r.puedeIniciarEnvio || enviando">
+          Iniciar envío
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- CARD TABLA -->
+  <mat-card class="card">
+    <div class="card__header">
+      <div class="card__title">
+        <h2>Estado de credenciales</h2>
+        <p class="muted">Filtrá por curso y/o estado. Podés refrescar en cualquier momento.</p>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="w-260">
+        <mat-label>Curso</mat-label>
+        <mat-select [formControl]="filtroForm.controls.cursoId" (selectionChange)="refrescarTabla()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let c of cursos" [value]="c.idCurso">{{ c.codigo }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-260">
+        <mat-label>Estado</mat-label>
+        <mat-select [formControl]="filtroForm.controls.estado" (selectionChange)="refrescarTabla()">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="NO_GENERADO">No generado</mat-option>
+          <mat-option value="PENDIENTE_ENVIO">Pendiente de envío</mat-option>
+          <mat-option value="ENVIADO">Enviado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="loading-inline" *ngIf="cargandoTabla">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>Cargando…</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table mat-table [dataSource]="alumnos" class="mat-elevation-z0 nice-table">
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="cell-main">{{ row.nombreCompleto }}</div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="dni">
+          <th mat-header-cell *matHeaderCellDef>DNI</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="mono">{{ row.dni }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado credencial QR</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-chip [class]="chipClass(row.estado)">
+              {{ chipLabel(row.estado) }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="detalle">
+          <th mat-header-cell *matHeaderCellDef class="detalle">Detalle</th>
+          <td mat-cell *matCellDef="let row" class="detalle">
+            <button mat-icon-button class="icon-btn" aria-label="Ver detalle">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      </table>
+
+      <div class="empty" *ngIf="!cargandoTabla && alumnos.length === 0">
+        <div class="empty__title">No hay registros para mostrar</div>
+        <div class="empty__hint">Probá cambiar filtros o refrescar.</div>
+      </div>
+    </div>
+  </mat-card>
+
+</div>
