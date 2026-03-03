@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatListModule } from '@angular/material/list';
@@ -7,7 +7,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -36,7 +35,6 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatInputModule,
 
     MatListModule,
     MatButtonModule,
@@ -44,15 +42,20 @@ import {
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-
     MatDialogModule
   ],
   templateUrl: './asistencia-rapida.component.html',
-  styleUrls: ['./asistencia-rapida.component.css']
+  styleUrls: ['./asistencia-rapida.component.css'],
+
+  // ✅ overlay mat-select vive fuera del componente; con None, tus estilos lo alcanzan
+  encapsulation: ViewEncapsulation.None,
+
+  // ✅ Scope para que estilos no afecten otras pantallas
+  host: { class: 'asr-host' }
 })
 export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
-  // ===== Buscador local =====
+  // ===== Buscador =====
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   private searchSub?: Subscription;
 
@@ -68,7 +71,8 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   alumnoSeleccionado: EstudianteBusquedaRapida | null = null;
 
   // ===== Registro =====
-  turnoSeleccionado: 'MANANA' | 'TARDE' = 'MANANA';
+  readonly turnoSeleccionado: 'MANANA' = 'MANANA';
+
   tipoSeleccionadoId: string | null = null;
   tipoError = false;
   registrando = false;
@@ -78,9 +82,6 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     private dialog: MatDialog
   ) {}
 
-  // =============================
-  // Ciclo de vida
-  // =============================
   ngOnInit(): void {
     this.cargarTipos();
     this.escucharBuscadorLocal();
@@ -91,7 +92,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   }
 
   // =============================
-  // Tipos de asistencia
+  // Tipos
   // =============================
   cargarTipos(): void {
     this.cargando = true;
@@ -100,7 +101,9 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.asistenciaRapidaService.getTiposAsistencia().subscribe({
       next: (data) => {
         // Solo llegadas tarde
-        this.tipos = data.filter(t => ['LLT', 'LLTE', 'LLTC'].includes(t.codigo));
+        this.tipos = (data ?? []).filter(t =>
+          ['LLT', 'LLTE', 'LLTC'].includes((t.codigo ?? '').toUpperCase())
+        );
       },
       error: (err) => {
         console.error(err);
@@ -112,7 +115,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   }
 
   // =============================
-  // Búsqueda local
+  // Búsqueda (debounce 500ms)
   // =============================
   private escucharBuscadorLocal(): void {
     this.searchSub = this.searchCtrl.valueChanges
@@ -120,20 +123,22 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
         debounceTime(500),
         distinctUntilChanged(),
         tap(texto => {
-          if (texto.trim().length < 3) {
+          const t = (texto ?? '').trim();
+          if (t.length < 3) {
             this.resultados$ = of([]);
             this.sinResultados = false;
             this.cargando = false;
+            this.errorMsg = '';
           }
         }),
-        filter(texto => texto.trim().length >= 3),
+        filter(texto => (texto ?? '').trim().length >= 3),
         tap(() => this.prepararBusqueda()),
         switchMap(texto =>
-          this.asistenciaRapidaService.buscarEstudiantesRapido(texto.trim())
+          this.asistenciaRapidaService.buscarEstudiantesRapido((texto ?? '').trim())
         )
       )
       .subscribe({
-        next: alumnos => this.aplicarResultados(alumnos),
+        next: alumnos => this.aplicarResultados(alumnos ?? []),
         error: err => {
           console.error(err);
           this.errorMsg = 'Error buscando estudiantes';
@@ -161,16 +166,18 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   // Selección
   // =============================
   seleccionarAlumno(a: EstudianteBusquedaRapida): void {
-    if (a.registradoHoy) return;
+    // ✅ permitir seleccionar aunque registradoHoy = true (corrección / borrado)
     this.alumnoSeleccionado = a;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
+    this.errorMsg = '';
   }
 
   cancelarSeleccion(): void {
     this.alumnoSeleccionado = null;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
+    this.errorMsg = '';
   }
 
   onTipoChange(id: string | null): void {
@@ -179,7 +186,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   }
 
   // =============================
-  // Registro (CLAVE)
+  // Registro (corregir / registrar)
   // =============================
   confirmarRegistro(): void {
     if (!this.alumnoSeleccionado) return;
@@ -190,19 +197,17 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     }
 
     this.registrando = true;
+    this.errorMsg = '';
 
-    // 1) Hora del servidor
     this.asistenciaRapidaService.getServerTime().subscribe({
       next: st => {
-
         const tipo = this.tipos.find(t => t.id === this.tipoSeleccionadoId);
-        const tipoTexto = tipo
-          ? `${tipo.codigo} - ${tipo.descripcion}`
-          : 'Tipo seleccionado';
+        const tipoTexto = tipo ? `${tipo.codigo} - ${tipo.descripcion}` : 'Tipo seleccionado';
 
-        // 2) Confirm modal
         const data: AsistenciaConfirmDialogData = {
-          titulo: '¿Desea registrar la operación?',
+          titulo: this.alumnoSeleccionado!.registradoHoy
+            ? 'El estudiante ya fue registrado hoy. ¿Desea corregir el tipo de llegada tarde?'
+            : '¿Desea registrar la llegada tarde?',
           alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
           curso: this.alumnoSeleccionado!.curso ?? '-',
           fecha: st.fecha,
@@ -222,19 +227,16 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // 3) POST — ACA ESTÁ LA CLAVE
           const dto: RegistrarAsistenciaRapida = {
             estudianteId: this.alumnoSeleccionado!.id,
             fecha: st.fecha,
             turno: this.turnoSeleccionado,
             tipoAsistenciaId: this.tipoSeleccionadoId!,
-            hora: st.hora // 🔥 ESTO ES LO QUE FALTABA
+            hora: st.hora
           };
 
           this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
             next: (resp: AsistenciaRapidaResponse) => {
-
-              // 4) Success modal
               const msg = `${resp.mensaje} (${st.fecha} ${st.hora})`;
               const sdata: AsistenciaSuccessDialogData = { mensaje: msg };
 
@@ -244,11 +246,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
                 data: sdata
               });
 
-              sref.afterClosed().subscribe(() => {
-                this.registrando = false;
-                this.alumnoSeleccionado = null;
-                this.tipoSeleccionadoId = null;
-              });
+              sref.afterClosed().subscribe(() => this.resetPantalla());
             },
             error: err => {
               console.error(err);
@@ -264,5 +262,81 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
         this.registrando = false;
       }
     });
+  }
+
+  // =============================
+  // ✅ Borrar/Deshacer (nuevo)
+  // =============================
+  confirmarBorrado(): void {
+    if (!this.alumnoSeleccionado) return;
+
+    this.registrando = true;
+    this.errorMsg = '';
+
+    this.asistenciaRapidaService.getServerTime().subscribe({
+      next: st => {
+        const data: AsistenciaConfirmDialogData = {
+          titulo: '¿Desea borrar (deshacer) el registro de llegada tarde de hoy?',
+          alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
+          curso: this.alumnoSeleccionado!.curso ?? '-',
+          fecha: st.fecha,
+          hora: st.hora,
+          tipoTexto: 'Se restablecerá el turno a Presente (P)'
+        };
+
+        const ref = this.dialog.open(AsistenciaConfirmDialogComponent, {
+          width: '360px',
+          disableClose: true,
+          data
+        });
+
+        ref.afterClosed().subscribe(confirmado => {
+          if (!confirmado) {
+            this.registrando = false;
+            return;
+          }
+
+          // ✅ Llama a POST /api/asistencia-rapida/deshacer
+          this.asistenciaRapidaService.borrarAsistencia({
+            estudianteId: this.alumnoSeleccionado!.id,
+            fecha: st.fecha,
+            turno: this.turnoSeleccionado
+          }).subscribe({
+            next: (resp: AsistenciaRapidaResponse) => {
+              const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
+                width: '360px',
+                disableClose: true,
+                data: { mensaje: resp.mensaje } as AsistenciaSuccessDialogData
+              });
+
+              sref.afterClosed().subscribe(() => this.resetPantalla());
+            },
+            error: err => {
+              console.error(err);
+              this.errorMsg = 'Error al borrar asistencia';
+              this.registrando = false;
+            }
+          });
+        });
+      },
+      error: err => {
+        console.error(err);
+        this.errorMsg = 'No se pudo obtener hora del servidor';
+        this.registrando = false;
+      }
+    });
+  }
+
+  private resetPantalla(): void {
+    // ✅ Limpieza total para volver a buscar otro
+    this.registrando = false;
+    this.alumnoSeleccionado = null;
+    this.tipoSeleccionadoId = null;
+    this.tipoError = false;
+    this.errorMsg = '';
+
+    this.searchCtrl.setValue('', { emitEvent: true });
+    this.resultados$ = of([]);
+    this.sinResultados = false;
   }
 }

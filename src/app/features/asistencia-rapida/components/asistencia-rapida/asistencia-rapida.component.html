@@ -1,6 +1,6 @@
 <div class="contenedor">
 
-  <!-- Buscador local (search-box, chico de ancho) -->
+  <!-- Buscador local -->
   <div class="search-container">
     <div class="search-box">
       <mat-icon class="search-ico">search</mat-icon>
@@ -8,7 +8,8 @@
       <input
         type="text"
         [formControl]="searchCtrl"
-        placeholder="Buscar estudiante (DNI, nombre o apellido)" />
+        placeholder="Buscar estudiante (DNI, nombre o apellido)"
+        autocomplete="off" />
 
       <button
         type="button"
@@ -39,12 +40,13 @@
     No se encontraron estudiantes
   </p>
 
-  <!-- Lista resultados -->
-  <mat-list *ngIf="!alumnoSeleccionado">
-    <mat-list-item
+  <!-- Resultados -->
+  <div class="lista" *ngIf="!alumnoSeleccionado">
+    <button
+      type="button"
+      class="item-alumno"
       *ngFor="let alumno of resultados$ | async"
       (click)="seleccionarAlumno(alumno)"
-      class="item-alumno"
       [class.registrado]="alumno.registradoHoy">
 
       <div class="info">
@@ -57,8 +59,9 @@
             [class.ok]="!alumno.registradoHoy">
         {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
       </span>
-    </mat-list-item>
-  </mat-list>
+
+    </button>
+  </div>
 
   <!-- Panel selección -->
   <div class="confirmacion" *ngIf="alumnoSeleccionado">
@@ -68,13 +71,27 @@
       {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
     </p>
 
-    <!-- Bloque tipo + acciones (más lindo) -->
+    <!-- Aviso: ya registrado -->
+    <div class="aviso-correccion" *ngIf="alumnoSeleccionado.registradoHoy">
+      <div class="aviso-pill">
+        <mat-icon class="aviso-ico">info</mat-icon>
+      </div>
+      <div class="aviso-texto">
+        <div class="aviso-titulo">Ya registrado hoy</div>
+        <div class="aviso-sub">
+          Podés <b>corregir</b> el tipo o <b>borrar</b> el registro si fue el alumno equivocado.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque tipo + acciones -->
     <div class="form-block">
 
-      <!-- Dropdown obligatorio -->
       <mat-form-field appearance="outline" class="select-tipo">
         <mat-label>Tipo de llegada tarde</mat-label>
+
         <mat-select
+          panelClass="asr-select-panel"
           [value]="tipoSeleccionadoId"
           (selectionChange)="onTipoChange($event.value)"
           [disabled]="registrando">
@@ -91,10 +108,17 @@
         <button mat-raised-button class="btn-primary"
                 (click)="confirmarRegistro()"
                 [disabled]="registrando">
-          Confirmar
+          Confirmar registro
         </button>
 
-        <button mat-stroked-button class="btn-ghost"
+        <button mat-raised-button class="btn-danger"
+                *ngIf="alumnoSeleccionado.registradoHoy"
+                (click)="confirmarBorrado()"
+                [disabled]="registrando">
+          Borrar registro de hoy
+        </button>
+
+        <button mat-raised-button class="btn-cancelar"
                 (click)="cancelarSeleccion()"
                 [disabled]="registrando">
           Cancelar

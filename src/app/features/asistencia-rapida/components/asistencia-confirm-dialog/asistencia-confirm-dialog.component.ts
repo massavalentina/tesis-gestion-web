@@ -8,230 +8,193 @@ export interface AsistenciaConfirmDialogData {
   titulo: string;
   alumno: string;
   curso: string;
-  fecha: string; // yyyy-MM-dd
-  hora: string;  // HH:mm:ss
+  fecha: string;
+  hora: string;
   tipoTexto: string;
 }
 
 @Component({
   standalone: true,
   selector: 'app-asistencia-confirm-dialog',
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   template: `
-    <div class="dlg">
+    <div class="dlg" role="dialog" aria-modal="true">
+      <h2 class="title">{{ data.titulo }}</h2>
 
-      <div class="dlg__head">
-        <div class="dlg__icon">
-          <mat-icon>event</mat-icon>
+      <div class="alumno">{{ data.alumno }}</div>
+      <div class="curso">CURSO: "{{ data.curso }}"</div>
+
+      <div class="info">
+        <div class="row">
+          <div class="label">Tipo</div>
+          <div class="value">{{ data.tipoTexto }}</div>
         </div>
 
-        <div class="dlg__titles">
-          <div class="dlg__badge">Confirmación</div>
-          <h2>{{ data.titulo }}</h2>
-          <div class="dlg__sub">
-            Verificá los datos antes de continuar
-          </div>
+        <div class="row">
+          <div class="label">Registro</div>
+          <div class="value">{{ data.fecha }} {{ data.hora }}hs</div>
         </div>
       </div>
 
-      <div class="dlg__body">
-
-        <div class="dlg__panel">
-          <div class="row">
-            <span class="label">Alumno</span>
-            <span class="value strong">{{ data.alumno }}</span>
-          </div>
-
-          <div class="row">
-            <span class="label">Curso</span>
-            <span class="value">{{ data.curso }}</span>
-          </div>
-
-          <div class="row">
-            <span class="label">Tipo</span>
-            <span class="value">{{ data.tipoTexto }}</span>
-          </div>
-
-          <div class="row">
-            <span class="label">Fecha / Hora</span>
-            <span class="value mono">{{ data.fecha }} {{ data.hora }}</span>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="dlg__actions">
-        <button mat-stroked-button class="btn-ghost" (click)="cancelar()">
-          Cancelar
+      <div class="actions">
+        <button
+          type="button"
+          class="round-btn red"
+          (click)="cancelar()"
+          aria-label="Cancelar"
+        >
+          <mat-icon>close</mat-icon>
         </button>
 
-        <button mat-raised-button class="btn-primary" (click)="confirmar()">
-          Confirmar
+        <button
+          type="button"
+          class="round-btn green"
+          (click)="confirmar()"
+          aria-label="Confirmar"
+        >
+          <mat-icon>check</mat-icon>
         </button>
       </div>
 
+      <div class="hint">
+        Tocá ❌ para cancelar o ✅ para confirmar
+      </div>
     </div>
   `,
   styles: [`
-    /* Paleta:
-       #3c78b4 primary
-       #f0f5fa bg
-       #c7d9eb border
-    */
-
-    .dlg{
-      padding: 4px 4px;
+    :host {
+      display: block;
+      font-family: 'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: #0f2f4b;
-      max-width: 92vw;
-      overflow-x: hidden;
     }
 
-    .dlg__head{
-      display:flex;
-      gap:14px;
-      align-items:flex-start;
+    .dlg {
+      text-align: center;
+      padding: 22px 20px 20px;
+      border-radius: 34px;
+      background: #ffffff;
+      max-width: 360px;
+      margin: auto;
+    }
+
+    .title {
+      font-size: 20px;
+      line-height: 1.25;
+      font-weight: 900;
+      margin: 0 0 12px;
+    }
+
+    .alumno {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .curso {
+      font-size: 13px;
+      opacity: .75;
       margin-bottom: 14px;
-    }
-
-    .dlg__icon{
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display:grid;
-      place-items:center;
-      background:#f0f5fa;
-      border:1px solid #c7d9eb;
-      color:#3c78b4;
-      flex: 0 0 auto;
-    }
-
-    .dlg__icon mat-icon{
-      font-size: 22px;
-      width: 22px;
-      height: 22px;
-    }
-
-    .dlg__titles{
-      flex:1;
-      min-width:0;
-    }
-
-    .dlg__badge{
-      display:inline-flex;
-      align-items:center;
-      padding:4px 10px;
-      border-radius:999px;
-      background:#f0f5fa;
-      border:1px solid #c7d9eb;
-      font-size:12px;
-      font-weight: 900;
-      color:#3c78b4;
-      margin-bottom: 8px;
-    }
-
-    h2{
-      margin:0;
-      font-weight: 1000;
-      font-size: 18px;
-      letter-spacing:-0.3px;
-      color:#0f2f4b;
-    }
-
-    .dlg__sub{
-      margin-top:6px;
-      font-size:13px;
-      color:rgba(15,47,75,.75);
-      font-weight:600;
-    }
-
-    .dlg__panel{
-      margin-top: 10px;
-      padding: 14px;
-      border-radius: 16px;
-      background:#ffffff;
-      border:1px solid rgba(199,217,235,.95);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
-    }
-
-    .row{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 8px;
-      font-size:13px;
-    }
-
-    .row:last-child{
-      margin-bottom:0;
-    }
-
-    .label{
-      font-weight: 900;
-      color:#3c78b4;
-    }
-
-    .value{
-      text-align:right;
       font-weight: 700;
-      color:#0f2f4b;
-      overflow-wrap:anywhere;
     }
 
-    .strong{
-      font-weight: 1000;
+    .info {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.04);
+      text-align: left;
     }
 
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    .row {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .label {
       font-weight: 900;
+      opacity: .7;
     }
 
-    .dlg__actions{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-      margin-top: 16px;
+    .value {
+      font-weight: 800;
+      opacity: .95;
+      word-break: break-word;
+      text-align: right;
     }
 
-    .btn-primary{
-      background-color: #3c78b4 !important;
-      color: #fff !important;
-      border-radius: 12px !important;
-      font-weight: 900 !important;
-      padding: 10px 16px !important;
-      box-shadow: 0 10px 22px rgba(60,120,180,.22) !important;
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      padding-top: 6px;
     }
 
-    .btn-ghost{
-      border-color: #c7d9eb !important;
-      color: #3c78b4 !important;
-      border-radius: 12px !important;
-      font-weight: 900 !important;
-      padding: 10px 16px !important;
-      background:#ffffff !important;
+    .round-btn {
+      width: 62px;
+      height: 62px;
+      border-radius: 999px;
+      min-width: 62px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 12px 22px rgba(0,0,0,.18);
+      transition: transform .08s ease;
     }
 
-    .btn-ghost:hover{
-      background:#f0f5fa !important;
+    .round-btn:active {
+      transform: scale(.96);
     }
 
-    /* Mobile */
-    @media (max-width: 520px){
-      .row{
-        flex-direction:column;
-        align-items:flex-start;
+    .round-btn.red {
+      background: #E53935;
+    }
+
+    .round-btn.green {
+      background: #2E7D32;
+    }
+
+    .round-btn mat-icon {
+      color: #ffffff;
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
+    }
+
+    .hint {
+      font-size: 12px;
+      opacity: .55;
+      margin-top: 12px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 360px) {
+      .dlg {
+        padding: 18px 14px;
+        border-radius: 28px;
       }
 
-      .value{
-        text-align:left;
+      .round-btn {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
       }
 
-      .dlg__actions{
-        flex-direction:column;
-      }
-
-      .dlg__actions button{
-        width:100%;
+      .round-btn mat-icon {
+        font-size: 26px;
       }
     }
   `]
@@ -243,6 +206,11 @@ export class AsistenciaConfirmDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: AsistenciaConfirmDialogData
   ) {}
 
-  cancelar() { this.dialogRef.close(false); }
-  confirmar() { this.dialogRef.close(true); }
+  cancelar() {
+    this.dialogRef.close(false);
+  }
+
+  confirmar() {
+    this.dialogRef.close(true);
+  }
 }
