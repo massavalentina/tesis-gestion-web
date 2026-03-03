@@ -56,7 +56,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLink="/asistencia-rapida"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }">
-            Toma de asistencia por búsqueda rápida
+            Búsqueda Rápida
           </a>
 
           <a class="subitem"
@@ -65,7 +65,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLink="/attendance/scan"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }">
-            Toma de asistencia por escaneo QR
+            Escáner QR
           </a>
 
           <a class="subitem"
@@ -73,7 +73,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLink="/asistencia-manual-curso"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }">
-            Toma de asistencia manual por curso
+            Asistencia Manual
           </a>
 
           <a class="subitem"
@@ -81,7 +81,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLink="/parte-diario-digital"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }">
-            Parte diario digital
+            Parte Diario
           </a>
         </div>
 
@@ -163,7 +163,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }"
              (click)="closeMobile()">
-            Toma de asistencia por búsqueda rápida
+            Búsqueda Rápida
           </a>
 
           <a class="subitem"
@@ -173,7 +173,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }"
              (click)="closeMobile()">
-            Toma de asistencia por escaneo QR
+            Escáner QR
           </a>
 
           <a class="subitem"
@@ -182,7 +182,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }"
              (click)="closeMobile()">
-            Toma de asistencia manual por curso
+            Asistencia Manual
           </a>
 
           <a class="subitem"
@@ -191,7 +191,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: true }"
              (click)="closeMobile()">
-            Parte diario digital
+            Parte Diario
           </a>
         </div>
 

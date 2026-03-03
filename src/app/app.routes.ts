@@ -49,20 +49,14 @@ export const routes: Routes = [
       {
         path: 'credenciales-qr',
         loadComponent: () =>
-          import('../app/features/proximamente/proximamente.component')
-            .then(m => m.ProximamenteComponent),
+          import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
+            .then(m => m.CredencialesQrComponent),
       },
       {
         path: 'cuenta',
         loadComponent: () =>
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
-      },
-      {
-        path: 'credenciales-qr',
-        loadComponent: () =>
-          import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
-            .then(m => m.CredencialesQrComponent),
       }
     ],
   }

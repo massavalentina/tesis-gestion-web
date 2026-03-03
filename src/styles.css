@@ -6,6 +6,7 @@ html, body {
   margin: 0;
   overflow: hidden; /* ✅ mantenemos tu enfoque "mobile/app" */
   background: #f0f5fa;
+  font-family: 'Open Sans', sans-serif;
 }
 
 /* ================================
