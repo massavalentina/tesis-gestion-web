@@ -1,42 +1,101 @@
-/* ============================= */
-/* CONTENEDOR GENERAL */
-/* ============================= */
+/* =========================================================
+   PALETA
+   #3c78b4 primary
+   #f0f5fa bg
+   #c7d9eb border
+========================================================= */
+
+/* ✅ SCROLL FIX SOLO PARA ESTE COMPONENTE (sin tocar layout global) */
+:host{
+  display: block;
+  height: calc(100vh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:host, .contenedor, input, button, mat-select, mat-option {
+  font-family: 'Open Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
 
 .contenedor {
   padding: 18px;
   max-width: 760px;
   margin: 0 auto;
+  padding-bottom: 28px; /* ✅ para que los últimos botones no queden pegados abajo */
 }
 
-/* ============================= */
-/* BUSCADOR */
-/* ============================= */
+/* =========================================================
+   SEARCH
+========================================================= */
 
-.buscador {
+.search-container{
   width: 100%;
   margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Aire interno al form field */
-.buscador :is(.mat-mdc-text-field-wrapper) {
-  padding-left: 6px;
-  padding-right: 6px;
+.search-box{
+  width: min(520px, 100%);
+  height: 46px;
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: #f0f5fa;
+  border: 1px solid #c7d9eb;
+  border-radius: 18px;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
-/* Evita que la primera letra toque el borde */
-.buscador :is(input.mat-mdc-input-element) {
-  padding-left: 12px !important;
-  padding-right: 12px !important;
+.search-ico{
+  color: #3c78b4;
 }
 
-/* Hint debajo prolijo */
-.buscador .mat-mdc-form-field-subscript-wrapper {
-  margin-top: 6px;
+.search-box input{
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f2f4b;
 }
 
-/* ============================= */
-/* SPINNER / MENSAJES */
-/* ============================= */
+.search-box input::placeholder{
+  color: rgba(60,120,180,.60);
+}
+
+.clear-btn{
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.clear-btn:hover{
+  background: rgba(60,120,180,.10);
+}
+
+.hint{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(15,47,75,.65);
+}
+
+/* =========================================================
+   SPINNER / MENSAJES
+========================================================= */
 
 .spinner {
   display: flex;
@@ -49,194 +108,253 @@
   text-align: center;
   font-size: 13px;
   margin: 10px 0;
+  font-weight: 800;
 }
 
-.sin-resultados {
-  color: #64748b;
+.sin-resultados { color: rgba(15,47,75,.65); }
+.error-text { color: #d32f2f; }
+
+/* =========================================================
+   LISTA ALUMNOS
+========================================================= */
+
+.lista{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.error-text {
-  color: #d32f2f;
-}
-
-/* ============================= */
-/* LISTA DE ALUMNOS */
-/* ============================= */
-
-mat-list {
-  padding: 0 !important;
-}
-
-/* Card alumno */
-.item-alumno {
+.item-alumno{
+  width: 100%;
+  border: 0;
+  text-align: left;
   cursor: pointer;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
 
   padding: 16px 18px;
-  margin: 10px 0;
+  border-radius: 22px;
 
-  min-height: 72px;
-  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(199,217,235,.9);
 
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.05);
 
-  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: all .15s ease;
 }
 
-.item-alumno:hover {
-  background: #f8fafc;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+.item-alumno:hover{
   transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(60,120,180,.14);
 }
 
-/* Estado deshabilitado */
-.item-alumno.registrado {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.item-alumno.registrado:hover {
-  box-shadow: none;
-  transform: none;
-  background: #ffffff;
-}
-
-/* Info izquierda */
-.info {
+.info{
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
+  gap: 4px;
   min-width: 0;
-  padding-right: 12px;
 }
 
-/* Nombre */
-.info strong {
+.info strong{
   font-size: 15px;
-  color: #0f172a;
-
+  font-weight: 900;
+  color: #0f2f4b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Curso + DNI */
-.info span {
+.info span{
   font-size: 13px;
-  color: #64748b;
-
+  font-weight: 700;
+  color: rgba(15,47,75,.65);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ============================= */
-/* BADGE ESTADO */
-/* ============================= */
-
-.estado {
-  font-size: 12.5px;
-  font-weight: 800;
-
+.estado{
   padding: 8px 14px;
   border-radius: 999px;
-
-  margin-left: 12px;
-
-  white-space: nowrap;     /* evita salto de línea */
-  min-width: 140px;        /* evita que se corte el texto */
-  text-align: center;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(199,217,235,.9);
+  flex: 0 0 auto;
 }
 
-.estado.ok {
-  color: #15803d;
-  background: rgba(21, 128, 61, 0.14);
-}
+.estado.ok { background:#c9f7d5; color:#1a4d2e; }
+.estado.error { background:#ffcdd2; color:#5a1a1a; }
 
-.estado.error {
-  color: #b91c1c;
-  background: rgba(185, 28, 28, 0.14);
-}
+/* =========================================================
+   PANEL CONFIRMACIÓN
+========================================================= */
 
-/* ============================= */
-/* PANEL CONFIRMACIÓN */
-/* ============================= */
-
-.confirmacion {
-  margin-top: 18px;
+.confirmacion{
+  margin-top: 20px;
   padding: 18px;
-
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  border-radius: 16px;
-
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(199,217,235,.9);
+  box-shadow: 0 12px 30px rgba(0,0,0,.06);
 }
 
-.confirmacion h3 {
-  margin: 0 0 12px 0;
+.confirmacion h3{
+  margin: 0 0 10px 0;
   font-size: 16px;
-  color: #0f172a;
+  font-weight: 1000;
+  color: #0f2f4b;
 }
 
-.alumno {
-  font-weight: 800;
-  margin: 0 0 14px 0;
-  color: #0f172a;
-
+.alumno{
+  font-weight: 900;
+  margin-bottom: 14px;
+  color: #0f2f4b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Select */
-.select-tipo {
-  width: 100%;
+/* =========================================================
+   AVISO SIMPLE Y PROLIJO
+========================================================= */
+
+.aviso-correccion{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  padding: 12px;
+  border-radius: 16px;
+
+  background: #f3f8ff;
+  border: 1px solid rgba(60,120,180,.18);
+
   margin-bottom: 14px;
 }
 
-/* Botones */
-.acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 6px;
+.aviso-ico{
+  color: #3c78b4;
 }
 
-/* ============================= */
-/* RESPONSIVE */
-/* ============================= */
+/* =========================================================
+   FORM BLOCK
+========================================================= */
 
-@media (max-width: 520px) {
-  .contenedor {
-    padding: 14px;
+.form-block{
+  padding: 14px;
+  border-radius: 18px;
+  background: #f0f5fa;
+  border: 1px solid rgba(199,217,235,.9);
+}
+
+/* =========================================================
+   SELECT (FORMA CORRECTA EN MDC)
+========================================================= */
+
+.select-tipo{
+  width: 100%;
+  margin-bottom: 14px;
+
+  --mdc-outlined-text-field-container-shape: 18px;
+  --mdc-outlined-text-field-outline-width: 1px;
+}
+
+.asr-host .select-tipo .mat-mdc-select-trigger{
+  min-height: 52px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   BOTONES IGUALES Y PROLIJOS
+========================================================= */
+
+.acciones{
+  display: grid;
+  gap: 12px;
+}
+
+.acciones button{
+  width: 100%;
+  height: 48px;
+  border-radius: 16px !important;
+  font-weight: 900 !important;
+}
+
+.btn-primary{
+  background:#3c78b4 !important;
+  color:#fff !important;
+  box-shadow:0 8px 20px rgba(60,120,180,.25) !important;
+}
+
+.btn-danger{
+  background:#c62828 !important;
+  color:#fff !important;
+  box-shadow:0 8px 20px rgba(198,40,40,.25) !important;
+}
+
+.btn-cancelar{
+  background:#f0f5fa !important;
+  color:#0f2f4b !important;
+  border:1px solid rgba(199,217,235,.9) !important;
+}
+
+/* =========================================================
+   OVERLAY SELECT (ANTI TRANSPARENCIA + REDONDEADO)
+========================================================= */
+
+.cdk-overlay-pane .asr-select-panel.mat-mdc-select-panel,
+.cdk-overlay-pane .asr-select-panel .mdc-menu-surface{
+  background:#fff !important;
+  border-radius:18px !important;
+  border:1px solid rgba(199,217,235,.9) !important;
+  box-shadow:0 20px 50px rgba(0,0,0,.18) !important;
+  overflow:hidden;
+}
+
+.cdk-overlay-pane .asr-select-panel *{
+  opacity:1 !important;
+}
+
+.cdk-overlay-pane .asr-select-panel .mat-mdc-option{
+  font-weight:800;
+  min-height:44px;
+}
+
+.cdk-overlay-pane .asr-select-panel .mat-mdc-option:hover{
+  background:rgba(60,120,180,.10) !important;
+}
+
+.cdk-overlay-pane .asr-select-panel .mat-mdc-option.mdc-list-item--selected{
+  background:rgba(60,120,180,.15) !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width:520px){
+
+  :host{
+    height: calc(100vh - 12px);
   }
 
-  .item-alumno {
-    padding: 16px;
-    min-height: 74px;
+  .contenedor{ padding:14px; padding-bottom: 26px; }
+
+  .item-alumno{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
   }
 
-  .estado {
-    font-size: 12px;
-    padding: 8px 10px;
-    min-width: 130px;
+  .info strong,
+  .info span{
+    white-space: normal;
   }
 
-  .acciones {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .acciones button {
-    width: 100%;
+  .estado{
+    width:100%;
+    text-align:center;
   }
 }

@@ -1,13 +1,31 @@
 <div class="contenedor">
 
   <!-- Buscador local -->
-  <mat-form-field appearance="outline" class="buscador">
-    <mat-label>Buscar estudiante</mat-label>
-    <input matInput [formControl]="searchCtrl" placeholder="DNI, nombre o apellido" />
-    <mat-hint *ngIf="searchCtrl.value.trim().length < 3">
-      Ingrese al menos 3 caracteres
-    </mat-hint>
-  </mat-form-field>
+  <div class="search-container">
+    <div class="search-box">
+      <mat-icon class="search-ico">search</mat-icon>
+
+      <input
+        type="text"
+        [formControl]="searchCtrl"
+        placeholder="Buscar estudiante (DNI, nombre o apellido)"
+        autocomplete="off" />
+
+      <button
+        type="button"
+        class="clear-btn"
+        aria-label="Limpiar"
+        *ngIf="searchCtrl.value && searchCtrl.value.trim().length > 0"
+        (click)="searchCtrl.setValue('')">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="hint"
+         *ngIf="searchCtrl.value.trim().length > 0 && searchCtrl.value.trim().length < 3">
+      Ingresá al menos 3 caracteres
+    </div>
+  </div>
 
   <!-- Loading -->
   <div class="spinner" *ngIf="cargando">
@@ -22,12 +40,13 @@
     No se encontraron estudiantes
   </p>
 
-  <!-- Lista resultados -->
-  <mat-list *ngIf="!alumnoSeleccionado">
-    <mat-list-item
+  <!-- Resultados -->
+  <div class="lista" *ngIf="!alumnoSeleccionado">
+    <button
+      type="button"
+      class="item-alumno"
       *ngFor="let alumno of resultados$ | async"
       (click)="seleccionarAlumno(alumno)"
-      class="item-alumno"
       [class.registrado]="alumno.registradoHoy">
 
       <div class="info">
@@ -40,8 +59,9 @@
             [class.ok]="!alumno.registradoHoy">
         {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
       </span>
-    </mat-list-item>
-  </mat-list>
+
+    </button>
+  </div>
 
   <!-- Panel selección -->
   <div class="confirmacion" *ngIf="alumnoSeleccionado">
@@ -51,34 +71,60 @@
       {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
     </p>
 
-    <!-- Dropdown obligatorio -->
-    <mat-form-field appearance="outline" class="select-tipo">
-      <mat-label>Tipo de llegada tarde</mat-label>
-      <mat-select
-        [value]="tipoSeleccionadoId"
-        (selectionChange)="onTipoChange($event.value)"
-        [disabled]="registrando">
+    <!-- Aviso: ya registrado -->
+    <div class="aviso-correccion" *ngIf="alumnoSeleccionado.registradoHoy">
+      <div class="aviso-pill">
+        <mat-icon class="aviso-ico">info</mat-icon>
+      </div>
+      <div class="aviso-texto">
+        <div class="aviso-titulo">Ya registrado hoy</div>
+        <div class="aviso-sub">
+          Podés <b>corregir</b> el tipo o <b>borrar</b> el registro si fue el alumno equivocado.
+        </div>
+      </div>
+    </div>
 
-        <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
-          {{ tipo.codigo }} - {{ tipo.descripcion }}
-        </mat-option>
-      </mat-select>
+    <!-- Bloque tipo + acciones -->
+    <div class="form-block">
 
-      <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" class="select-tipo">
+        <mat-label>Tipo de llegada tarde</mat-label>
 
-    <div class="acciones">
-      <button mat-raised-button color="primary"
-              (click)="confirmarRegistro()"
-              [disabled]="registrando">
-        Confirmar
-      </button>
+        <mat-select
+          panelClass="asr-select-panel"
+          [value]="tipoSeleccionadoId"
+          (selectionChange)="onTipoChange($event.value)"
+          [disabled]="registrando">
 
-      <button mat-button color="warn"
-              (click)="cancelarSeleccion()"
-              [disabled]="registrando">
-        Cancelar
-      </button>
+          <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
+            {{ tipo.codigo }} - {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
+
+        <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
+      </mat-form-field>
+
+      <div class="acciones">
+        <button mat-raised-button class="btn-primary"
+                (click)="confirmarRegistro()"
+                [disabled]="registrando">
+          Confirmar registro
+        </button>
+
+        <button mat-raised-button class="btn-danger"
+                *ngIf="alumnoSeleccionado.registradoHoy"
+                (click)="confirmarBorrado()"
+                [disabled]="registrando">
+          Borrar registro de hoy
+        </button>
+
+        <button mat-raised-button class="btn-cancelar"
+                (click)="cancelarSeleccion()"
+                [disabled]="registrando">
+          Cancelar
+        </button>
+      </div>
+
     </div>
   </div>
 
