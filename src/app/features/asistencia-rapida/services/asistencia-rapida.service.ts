@@ -6,6 +6,12 @@ import { AsistenciaRapidaResponse } from '../models/asistencia-rapida-response.m
 import { RegistrarAsistenciaRapida } from '../models/registrar-asistencia-rapida.model';
 import { EstudianteBusquedaRapida } from '../models/estudiante-busqueda-rapida.model';
 
+export interface DeshacerAsistenciaRapidaDto {
+  estudianteId: string;
+  fecha: string;
+  turno: 'MANANA' | 'TARDE';
+}
+
 @Injectable({ providedIn: 'root' })
 export class AsistenciaRapidaService {
   private readonly apiUrl = 'https://localhost:7146/api/asistencia-rapida';
@@ -27,9 +33,11 @@ export class AsistenciaRapidaService {
     return this.http.post<AsistenciaRapidaResponse>(`${this.apiUrl}`, dto);
   }
 
-  // ✅ server time para el modal
   getServerTime(): Observable<{ fecha: string; hora: string }> {
     return this.http.get<{ fecha: string; hora: string }>(`${this.apiUrl}/servertime`);
   }
-}
 
+  borrarAsistencia(dto: DeshacerAsistenciaRapidaDto): Observable<AsistenciaRapidaResponse> {
+    return this.http.post<AsistenciaRapidaResponse>(`${this.apiUrl}/deshacer`, dto);
+  }
+}
