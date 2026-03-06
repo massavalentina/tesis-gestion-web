@@ -17,17 +17,6 @@
           <p class="page-subtitle">Registrá la asistencia diaria de los estudiantes por curso y turno</p>
         </div>
       </div>
-      <div class="has-info">
-        <div class="dev-toggle-wrap">
-          <span class="dev-label">Dev</span>
-          <mat-slide-toggle [(ngModel)]="modoDesarrollo" color="primary"></mat-slide-toggle>
-        </div>
-        <button mat-icon-button class="info-btn"
-                matTooltip="Modo desarrollo: permite ingresar hora explícita por asistencia"
-                matTooltipPosition="below">
-          <mat-icon>info_outline</mat-icon>
-        </button>
-      </div>
     </div>
 
     <!-- FILTROS -->
@@ -64,6 +53,16 @@
         </button>
       </div>
 
+      <mat-form-field class="field-hora-global">
+        <mat-label>Hora del registro</mat-label>
+        <input matInput type="time" [(ngModel)]="horaGlobal" />
+        <button *ngIf="horaGlobal" matIconSuffix mat-icon-button
+                aria-label="Quitar hora" (click)="horaGlobal = null"
+                matTooltip="Quitar hora">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
     </div>
 
     <!-- Empty state: sin curso seleccionado -->
@@ -81,17 +80,29 @@
 
     <!-- CHIPS DE RESUMEN — stats del turno activo -->
     <div class="resumen-row" *ngIf="cursoSeleccionado && !cargandoTabla && dataSource.data.length">
-      <div class="stat-chip chip-verde">
+      <div class="stat-chip chip-verde"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'presentes'"
+           (click)="toggleFiltroChip('presentes')">
         <mat-icon>check_circle_outline</mat-icon>
         <span>Presentes</span>
         <strong>{{ cantPresentes }}</strong>
       </div>
-      <div class="stat-chip chip-rojo">
+      <div class="stat-chip chip-rojo"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'ausentes'"
+           (click)="toggleFiltroChip('ausentes')">
         <mat-icon>cancel</mat-icon>
         <span>Ausentes</span>
         <strong>{{ cantAusentes }}</strong>
       </div>
-      <div class="stat-chip chip-gris">
+      <div class="stat-chip chip-gris"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'sinDefinir'"
+           (click)="toggleFiltroChip('sinDefinir')">
         <mat-icon>radio_button_unchecked</mat-icon>
         <span>Sin definir</span>
         <strong>{{ cantSinDefinir }}</strong>
@@ -171,7 +182,7 @@
                                 placeholder="Sin definir">
                       <mat-select-trigger>
                         <ng-container *ngIf="getTipo(fila.tipoManianaId) as t">
-                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span><span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
                         </ng-container>
                       </mat-select-trigger>
                       <mat-option [value]="null">— Sin definir —</mat-option>
@@ -180,16 +191,6 @@
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="horaManana">
-                <th mat-header-cell *matHeaderCellDef>Hora</th>
-                <td mat-cell *matCellDef="let fila">
-                  <mat-form-field *ngIf="requiereHora(fila.tipoManianaId)" class="field-hora">
-                    <input matInput type="time" [(ngModel)]="fila.horaManana" />
-                  </mat-form-field>
-                  <span *ngIf="!requiereHora(fila.tipoManianaId)" class="hora-na">—</span>
                 </td>
               </ng-container>
 
@@ -203,7 +204,7 @@
                                 placeholder="Sin definir">
                       <mat-select-trigger>
                         <ng-container *ngIf="getTipo(fila.tipoTardeId) as t">
-                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span><span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
                         </ng-container>
                       </mat-select-trigger>
                       <mat-option [value]="null">— Sin definir —</mat-option>
@@ -212,16 +213,6 @@
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="horaTarde">
-                <th mat-header-cell *matHeaderCellDef>Hora</th>
-                <td mat-cell *matCellDef="let fila">
-                  <mat-form-field *ngIf="requiereHora(fila.tipoTardeId)" class="field-hora">
-                    <input matInput type="time" [(ngModel)]="fila.horaTarde" />
-                  </mat-form-field>
-                  <span *ngIf="!requiereHora(fila.tipoTardeId)" class="hora-na">—</span>
                 </td>
               </ng-container>
 
@@ -240,6 +231,64 @@
                       <mat-spinner *ngIf="fila.guardandoFila" diameter="16" class="spinner-fila"></mat-spinner>
                       <mat-icon *ngIf="!fila.guardandoFila">save</mat-icon>
                     </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- ══ COLUMNA MOBILE: fila doble (nombre + selector/acciones) ══ -->
+              <ng-container matColumnDef="filaMovil">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-movil-th">Estudiante</th>
+                <td mat-cell *matCellDef="let fila" class="col-movil">
+                  <div class="movil-card">
+
+                    <!-- Subfila 1: nombre completo -->
+                    <div class="movil-nombre">
+                      <div class="avatar">{{ fila.estudiante.nombre.charAt(0) }}</div>
+                      <span class="movil-nombre-texto">{{ fila.estudiante.apellido }}, {{ fila.estudiante.nombre }}</span>
+                    </div>
+
+                    <!-- Subfila 2: selector + acciones -->
+                    <div class="movil-fila-acciones">
+                      <mat-form-field class="field-turno movil-select">
+                        <mat-select [ngModel]="getTipoActivo(fila)"
+                                    (ngModelChange)="setTipoActivo(fila, $event)"
+                                    disableOptionCentering
+                                    placeholder="Sin definir">
+                          <mat-select-trigger>
+                            <ng-container *ngIf="getTipo(getTipoActivo(fila)) as t">
+                              <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>
+                              <span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
+                            </ng-container>
+                          </mat-select-trigger>
+                          <mat-option [value]="null">— Sin definir —</mat-option>
+                          <mat-option *ngFor="let t of tipos" [value]="t.id">
+                            <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <!-- Estado: guardado / error -->
+                      <mat-icon *ngIf="fila.guardado && !fila.error && !estaModificado(fila)"
+                                class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
+                      <mat-icon *ngIf="fila.error" class="icon-error"
+                                [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
+
+                      <!-- Guardar individual -->
+                      <button mat-icon-button class="btn-icon-primary"
+                              (click)="guardarFila(fila)"
+                              [disabled]="guardandoLote || fila.guardandoFila"
+                              matTooltip="Guardar" matTooltipPosition="above">
+                        <mat-spinner *ngIf="fila.guardandoFila" diameter="16" class="spinner-fila"></mat-spinner>
+                        <mat-icon *ngIf="!fila.guardandoFila">save</mat-icon>
+                      </button>
+
+                      <!-- Ícono de redirección (funcionalidad pendiente) -->
+                      <button mat-icon-button class="btn-redir-movil"
+                              matTooltip="Ver detalle" matTooltipPosition="above">
+                        <mat-icon>arrow_forward</mat-icon>
+                      </button>
+                    </div>
+
                   </div>
                 </td>
               </ng-container>
@@ -274,9 +323,9 @@
                     (click)="confirmarMarcar = true"
                     [disabled]="guardandoLote">
               <mat-icon>done_all</mat-icon>
-              <span>Marcar presentes sin definir</span>
+              <span>Marcar Presentes</span>
               <mat-icon class="btn-info-icon"
-                        [matTooltip]="'Marca como Presente todos los sin definir del turno ' + (tabActivo === 0 ? 'Mañana' : 'Tarde')"
+                        matTooltip="Marca como Presente a todos los estudiantes sin estado definido"
                         matTooltipPosition="right"
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
