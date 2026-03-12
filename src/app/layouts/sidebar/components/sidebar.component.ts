@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
@@ -6,6 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -110,7 +112,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
     <!-- 📱 Mobile: botón hamburguesa -->
     <button
-      *ngIf="isMobile"
+      *ngIf="isMobile && !scannerActivo"
       mat-icon-button
       class="mobile-menu-btn"
       (click)="open = true">
@@ -120,12 +122,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     <!-- 📱 Mobile: overlay -->
     <div
       class="overlay"
-      *ngIf="isMobile && open"
+      *ngIf="isMobile && open && !scannerActivo"
       (click)="open = false">
     </div>
 
     <!-- 📱 Mobile: panel -->
-    <aside class="sidebar mobile" *ngIf="isMobile && open">
+    <aside class="sidebar mobile" *ngIf="isMobile && open && !scannerActivo">
 
       <div class="mobile-header">
         <button mat-icon-button class="close-btn" (click)="open = false">
@@ -229,19 +231,33 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   styleUrls: ['../scss/sidebar.component.scss'],
 })
 export class SidebarComponent {
+  private readonly destroyRef = inject(DestroyRef);
   isMobile = false;
   open = false;
   asistenciaOpen = false;
+  scannerActivo = false;
 
   get mostrarEscaneoQr(): boolean {
     return this.isMobile;
   }
 
-  constructor(private breakpointObserver: BreakpointObserver) {
-    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
-      this.isMobile = result.matches;
-      if (!this.isMobile) this.open = false;
-    });
+  constructor(
+    private breakpointObserver: BreakpointObserver,
+    private scannerUiStateService: ScannerUiStateService
+  ) {
+    this.breakpointObserver.observe([Breakpoints.Handset])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        this.isMobile = result.matches;
+        if (!this.isMobile) this.open = false;
+      });
+
+    this.scannerUiStateService.scannerActive$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(active => {
+        this.scannerActivo = active;
+        if (active) this.open = false;
+      });
   }
 
   toggleAsistencia() {

@@ -51,7 +51,7 @@ import { ServicioCurso } from '../services/curso.service';
       <div class="action-buttons">
         <button
           mat-raised-button
-          class="pill-btn"
+          class="pill-btn pill-btn--primary"
           [disabled]="!puedeEnviar"
           (click)="alConfirmarRegistro()">
           Cargar<br />registro

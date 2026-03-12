@@ -68,6 +68,7 @@
   border-radius: 999px;
   background-color: #d8d8d8 !important;
   color: #535353 !important;
+  border: 1px solid #c7c7c7 !important;
   font-size: 12px;
   font-style: italic;
   font-weight: 800;
@@ -75,12 +76,28 @@
   text-transform: uppercase;
   letter-spacing: 0;
   box-shadow: none !important;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease;
 }
 
-.pill-btn:disabled {
+.pill-btn--primary:not(:disabled) {
+  background: linear-gradient(180deg, #3f88c5 0%, #2f6ea3 100%) !important;
+  color: #fff !important;
+  border: 1px solid #2f6ea3 !important;
+  box-shadow: 0 10px 20px rgba(47, 110, 163, 0.3) !important;
+}
+
+.pill-btn--primary:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.pill-btn--primary:disabled {
   background-color: #d8d8d8 !important;
-  color: #666 !important;
+  color: #6b6b6b !important;
+  border: 1px dashed #acacac !important;
   opacity: 1;
+  cursor: not-allowed;
+  box-shadow: none !important;
 }
 
 .pill-btn--secondary {
