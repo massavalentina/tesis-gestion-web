@@ -17,6 +17,7 @@ import { DialogoErrorEscaneoComponent } from '../components/error-escaneo-dialog
 import { DialogoExitoComponent } from '../components/exito-dialog.component';
 import { DialogoConfirmarRegistroComponent } from '../components/confirmar-registro-dialog.component';
 import { DialogoCancelarRegistroComponent } from '../components/cancelar-registro-dialog.component';
+import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
 
 @Component({
   selector: 'app-escaner-asistencia-page',
@@ -47,7 +48,7 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
           (cancelarRegistro)="cancelarRegistro()">
         </app-configuracion-escaner>
 
-        <div class="scan-counter" *ngIf="alumnosEscaneados.length > 0">
+        <div class="scan-counter" *ngIf="alumnosEscaneados.length > 0 && !escanerActivo">
           {{ alumnosEscaneados.length }} alumno(s) escaneado(s)
         </div>
 
@@ -59,6 +60,9 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
 
     <div *ngIf="escanerActivo" class="scanner-container">
       <button class="close-scanner" (click)="cerrarEscaner()">✕</button>
+      <div class="scan-counter scan-counter--overlay" *ngIf="alumnosEscaneados.length > 0">
+        {{ alumnosEscaneados.length }} alumno(s) escaneado(s)
+      </div>
       <video #video autoplay muted playsinline></video>
     </div>
 
@@ -112,8 +116,11 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
     private servicioEscanerQr: ServicioEscanerQr,
     private servicioAsistencia: ServicioAsistencia,
     private dialogo: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private scannerUiStateService: ScannerUiStateService
   ) {
+    this.scannerUiStateService.setScannerActive(false);
+
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
       this.esMobile = result.matches;
 
@@ -134,6 +141,7 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
 
   ngOnDestroy(): void {
     this.servicioEscanerQr.detener();
+    this.scannerUiStateService.setScannerActive(false);
   }
 
   iniciarEscaneo(componenteConfiguracion: ComponenteConfiguracionEscaner): void {
@@ -153,6 +161,7 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
     this.etiquetaTipoAsistencia = configuracion.etiquetaTipoAsistencia;
     this.errorEscaner = '';
     this.escanerActivo = true;
+    this.scannerUiStateService.setScannerActive(true);
     this.inicioPendiente = true;
   }
 
@@ -277,6 +286,7 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
   cerrarEscaner() {
     this.servicioEscanerQr.detener();
     this.escanerActivo = false;
+    this.scannerUiStateService.setScannerActive(false);
     this.procesando = false;
     this.inicioPendiente = false;
   }
@@ -284,6 +294,7 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
   reiniciarSesion() {
     this.alumnosEscaneados = [];
     this.escanerActivo = false;
+    this.scannerUiStateService.setScannerActive(false);
     this.procesando = false;
   }
 
@@ -367,6 +378,7 @@ export class PaginaEscanerAsistencia implements AfterViewChecked, OnDestroy {
     } catch {
       this.servicioEscanerQr.detener();
       this.escanerActivo = false;
+      this.scannerUiStateService.setScannerActive(false);
       this.procesando = false;
       this.errorEscaner =
         'No se pudo abrir la cámara. Revisá los permisos del navegador e intentá nuevamente.';
