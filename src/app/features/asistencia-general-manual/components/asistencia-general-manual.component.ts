@@ -1,5 +1,6 @@
 import {
   Component,
+  Injectable,
   OnDestroy,
   OnInit,
   AfterViewInit,
@@ -24,7 +25,7 @@ import { MatTooltipModule }              from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule }                 from '@angular/material/tabs';
 import { MatDatepickerModule }           from '@angular/material/datepicker';
-import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
+import { MAT_DATE_LOCALE, MatNativeDateModule, NativeDateAdapter, DateAdapter, MAT_DATE_FORMATS, MatDateFormats } from '@angular/material/core';
 import { MatDividerModule }              from '@angular/material/divider';
 import { MatDialog, MatDialogModule }    from '@angular/material/dialog';
 
@@ -34,6 +35,29 @@ import { FilaAsistenciaManual }             from '../models/fila-asistencia-manu
 import { TipoAsistenciaManual }                    from '../models/tipo-asistencia-manual.model';
 import { RegistrarAsistenciaManual }        from '../models/registrar-asistencia-manual.model';
 import { DescarteDialogComponent }          from './descarte-dialog/descarte-dialog.component';
+import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog/detalle-estudiante-dialog.component';
+
+@Injectable()
+class DdMmYyyyDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: object): string {
+    if ((displayFormat as unknown as string) === 'input') {
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      return `${d}/${m}/${date.getFullYear()}`;
+    }
+    return super.format(date, displayFormat);
+  }
+}
+
+const DD_MM_YYYY: MatDateFormats = {
+  parse:   { dateInput: { day: 'numeric', month: 'numeric', year: 'numeric' } },
+  display: {
+    dateInput:          'input',
+    monthYearLabel:     { year: 'numeric', month: 'short'  },
+    dateA11yLabel:      { year: 'numeric', month: 'long',  day: 'numeric' },
+    monthYearA11yLabel: { year: 'numeric', month: 'long'   },
+  },
+};
 
 @Component({
   selector: 'app-asistencia-general-manual',
@@ -47,7 +71,9 @@ import { DescarteDialogComponent }          from './descarte-dialog/descarte-dia
     MatDialogModule,
   ],
   providers: [
-    { provide: MAT_DATE_LOCALE, useValue: 'es-AR' },
+    { provide: MAT_DATE_LOCALE,  useValue: 'es-AR'            },
+    { provide: DateAdapter,      useClass: DdMmYyyyDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY          },
   ],
   templateUrl: './asistencia-general-manual.component.html',
   styleUrls:   ['./asistencia-general-manual.component.css'],
@@ -69,14 +95,23 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   fechaHoy  = this.dateToString(new Date());
 
   // ── Tab: 0 = Mañana · 1 = Tarde ──────────────────────────────────────────
-  tabActivo = 0;
+  tabActivo        = 0;
+  tieneTurnoTarde  = true;
+
+  // ── Filtro de fecha: solo días hábiles (lun–vie) ──────────────────────────
+  readonly diasHabiles = (d: Date | null): boolean => {
+    const dia = (d ?? new Date()).getDay();
+    return dia !== 0 && dia !== 6;
+  };
 
   // ── Responsive ────────────────────────────────────────────────────────────
   esMobile = false;
+  mostrarTestCol = false;
 
   get columnasActivas(): string[] {
     if (this.esMobile) return ['filaMovil'];
     const base = ['nro', 'estudiante', 'documento'];
+    if (this.mostrarTestCol) base.push('valorTest');
     return this.tabActivo === 0
       ? [...base, 'manana', 'acciones']
       : [...base, 'tarde',  'acciones'];
@@ -111,6 +146,9 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   // ── Hora global de sesión ─────────────────────────────────────────────────
   horaGlobal: string | null = null;
+
+  // ── Fecha previa (para revertir si el usuario cancela el guard) ────────────
+  private fechaAnterior: Date = new Date();
 
   // ── Estados UI ────────────────────────────────────────────────────────────
   cargandoInicial  = false;
@@ -151,7 +189,15 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     });
     this.subs.push(bpSub);
 
-    const sub = this.fechaCtrl.valueChanges.pipe(filter(d => !!d)).subscribe(date => {
+    const sub = this.fechaCtrl.valueChanges.pipe(filter(d => !!d)).subscribe(async date => {
+      if (this.hayModificaciones) {
+        const puede = await this.confirmarDescarteNavegacion();
+        if (!puede) {
+          this.fechaCtrl.setValue(this.fechaAnterior, { emitEvent: false });
+          return;
+        }
+      }
+      this.fechaAnterior = date!;
       this.fechaHoy = this.dateToString(date!);
       if (this.cursoSeleccionado && this.filas.length) this.recargarAsistencias();
     });
@@ -233,8 +279,12 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   }
 
   // ── Cambio de curso ───────────────────────────────────────────────────────
-  onCursoChange(curso: CursoManual): void {
-    this.cursoSeleccionado = curso;
+  async onCursoChange(nuevoCurso: CursoManual): Promise<void> {
+    if (this.hayModificaciones) {
+      const puede = await this.confirmarDescarteNavegacion();
+      if (!puede) return;
+    }
+    this.cursoSeleccionado = nuevoCurso;
     this.textoBusqueda     = '';
     this.filtroChip        = null;
     this.dataSource.filter = '';
@@ -245,10 +295,13 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     this.confirmarGuardar  = false;
 
     const sub = forkJoin({
-      estudiantes: this.service.getEstudiantesByCurso(curso.idCurso),
+      estudiantes: this.service.getEstudiantesByCurso(nuevoCurso.id),
       asistencias: this.service.getAsistenciasDelDia(this.fechaHoy),
+      turnos:      this.service.getTurnosCurso(nuevoCurso.id, this.fechaHoy),
     }).subscribe({
-      next: ({ estudiantes, asistencias }) => {
+      next: ({ estudiantes, asistencias, turnos }) => {
+        this.tieneTurnoTarde = turnos.tieneTarde;
+        if (!this.tieneTurnoTarde) { this.tabActivo = 0; this.turnoMasivo = 'MANANA'; }
         const mapa = new Map(asistencias.map(a => [a.documento, a]));
         this.filas = estudiantes.map(est => {
           const ex = mapa.get(est.documento);
@@ -258,6 +311,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
             tipoTardeId:     ex ? (this.tipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
             guardado: !!ex, error: null,
             modificadoManana: false, modificadoTarde: false, guardandoFila: false,
+            valorTotalInasistencia: ex ? ex.valorTotal : null,
           };
         });
         this.dataSource.data = [...this.filas];
@@ -274,8 +328,13 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   // ── Recarga asistencias al cambiar fecha ──────────────────────────────────
   private recargarAsistencias(): void {
     this.cargandoTabla = true;
-    const sub = this.service.getAsistenciasDelDia(this.fechaHoy).subscribe({
-      next: (asistencias) => {
+    const sub = forkJoin({
+      asistencias: this.service.getAsistenciasDelDia(this.fechaHoy),
+      turnos:      this.service.getTurnosCurso(this.cursoSeleccionado!.id, this.fechaHoy),
+    }).subscribe({
+      next: ({ asistencias, turnos }) => {
+        this.tieneTurnoTarde = turnos.tieneTarde;
+        if (!this.tieneTurnoTarde) { this.tabActivo = 0; this.turnoMasivo = 'MANANA'; }
         const mapa = new Map(asistencias.map(a => [a.documento, a]));
         this.filas.forEach(f => {
           const ex = mapa.get(f.estudiante.documento);
@@ -283,6 +342,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           f.tipoTardeId   = ex ? (this.tipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
           f.guardado = !!ex; f.error = null;
           f.modificadoManana = false; f.modificadoTarde = false; f.guardandoFila = false;
+          f.valorTotalInasistencia = ex ? ex.valorTotal : null;
         });
         this.dataSource.data = [...this.filas];
         this.cargandoTabla   = false;
@@ -471,6 +531,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           else        { fila.guardado = true; }
         }
         this.dataSource.data = [...this.filas];
+        this.actualizarValorTest();
         this.notify(eraSA ? 'Asistencia borrada.' : 'Asistencia guardada.');
       },
       error: (err) => {
@@ -503,6 +564,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         });
         this.dataSource.data = [...this.filas];
         this.guardandoLote   = false;
+        this.actualizarValorTest();
         this.notify(res.mensaje ?? 'Asistencias guardadas.', '✓', 3500);
       },
       error: (err) => { console.error(err); this.guardandoLote = false; this.notify('Error al guardar el lote.', 'Cerrar', 4000); },
@@ -527,6 +589,46 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
       this.notify('Error al guardar. La navegación fue cancelada.', 'Cerrar', 4000);
       return false;
     }
+  }
+
+  // ── TEST: refresca valorTotalInasistencia desde backend ───────────────────
+  private actualizarValorTest(): void {
+    const sub = this.service.getAsistenciasDelDia(this.fechaHoy).subscribe({
+      next: (asistencias) => {
+        const mapa = new Map(asistencias.map(a => [a.documento, a]));
+        this.filas.forEach(f => {
+          const ex = mapa.get(f.estudiante.documento);
+          f.valorTotalInasistencia = ex ? ex.valorTotal : null;
+        });
+        this.dataSource.data = [...this.filas];
+      },
+    });
+    this.subs.push(sub);
+  }
+
+  // ── Detalle por Espacio Curricular ────────────────────────────────────────
+  abrirDetalle(fila: FilaAsistenciaManual): void {
+    this.dialog.open(DetalleEstudianteDialogComponent, {
+      width: '680px',
+      maxWidth: '96vw',
+      disableClose: true,
+      data: {
+        fila,
+        fecha:        this.fechaHoy,
+        fechaDisplay: this.formatFechaDisplay(),
+        tipos:        this.tipos,
+      },
+    });
+  }
+
+  private formatFechaDisplay(): string {
+    const d = this.fechaCtrl.value ?? new Date();
+    return d.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day:     'numeric',
+      month:   'long',
+      year:    'numeric',
+    });
   }
 
   // ── Utils ─────────────────────────────────────────────────────────────────

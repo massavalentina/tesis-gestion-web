@@ -11,4 +11,5 @@ export interface FilaAsistenciaManual {
   modificadoTarde:  boolean;
   /** Spinner de guardado individual */
   guardandoFila:    boolean;
+  valorTotalInasistencia: number | null;
 }

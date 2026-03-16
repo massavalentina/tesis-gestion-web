@@ -17,6 +17,13 @@
           <p class="page-subtitle">Registrá la asistencia diaria de los estudiantes por curso y turno</p>
         </div>
       </div>
+      <button mat-stroked-button *ngIf="!esMobile"
+              (click)="mostrarTestCol = !mostrarTestCol"
+              [color]="mostrarTestCol ? 'warn' : ''"
+              style="margin-left:auto; align-self:center"
+              matTooltip="Mostrar columna de test de inasistencia">
+        <mat-icon>science</mat-icon> TEST
+      </button>
     </div>
 
     <!-- FILTROS -->
@@ -24,18 +31,19 @@
 
       <mat-form-field class="field-fecha">
         <mat-label>Fecha</mat-label>
-        <input matInput [matDatepicker]="picker" [formControl]="fechaCtrl" readonly />
+        <input matInput [matDatepicker]="picker" [formControl]="fechaCtrl"
+               [matDatepickerFilter]="diasHabiles" readonly />
         <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field class="field-curso">
         <mat-label>Curso</mat-label>
-        <mat-select [(ngModel)]="cursoSeleccionado"
+        <mat-select [ngModel]="cursoSeleccionado"
                     (ngModelChange)="onCursoChange($event)"
                     disableOptionCentering
                     placeholder="Seleccioná un curso">
-          <mat-option *ngFor="let c of cursos" [value]="c">{{ c.codigo }}</mat-option>
+          <mat-option *ngFor="let c of cursos" [value]="c">{{ c.label }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -130,6 +138,7 @@
         <div class="card tabla-card">
           <mat-tab-group
             animationDuration="200ms"
+            [selectedIndex]="tabActivo"
             (selectedIndexChange)="onTabChange($event)"
             class="tabs-turnos">
 
@@ -140,7 +149,7 @@
               </ng-template>
             </mat-tab>
 
-            <mat-tab>
+            <mat-tab *ngIf="tieneTurnoTarde">
               <ng-template mat-tab-label>
                 Tarde
                 <span *ngIf="sinDefinirTarde > 0" class="tab-badge">{{ sinDefinirTarde }}</span>
@@ -216,6 +225,16 @@
                 </td>
               </ng-container>
 
+              <ng-container matColumnDef="valorTest">
+                <th mat-header-cell *matHeaderCellDef class="col-test">Inasist.</th>
+                <td mat-cell *matCellDef="let fila" class="col-test">
+                  <span *ngIf="fila.valorTotalInasistencia !== null; else guion">
+                    {{ fila.valorTotalInasistencia }}
+                  </span>
+                  <ng-template #guion>—</ng-template>
+                </td>
+              </ng-container>
+
               <ng-container matColumnDef="acciones">
                 <th mat-header-cell *matHeaderCellDef class="col-acciones-th"></th>
                 <td mat-cell *matCellDef="let fila" class="col-acciones-th">
@@ -223,6 +242,11 @@
                     <mat-icon *ngIf="fila.guardado && !fila.error && !(tabActivo === 0 ? fila.modificadoManana : fila.modificadoTarde)"
                               class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
                     <mat-icon *ngIf="fila.error" class="icon-error" [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
+                    <button mat-icon-button (click)="abrirDetalle(fila)"
+                            matTooltip="Ver detalle por espacio curricular"
+                            matTooltipPosition="left">
+                      <mat-icon>open_in_new</mat-icon>
+                    </button>
                     <button mat-icon-button class="btn-icon-primary"
                             (click)="guardarFila(fila)"
                             [disabled]="guardandoLote || fila.guardandoFila"
@@ -282,10 +306,11 @@
                         <mat-icon *ngIf="!fila.guardandoFila">save</mat-icon>
                       </button>
 
-                      <!-- Ícono de redirección (funcionalidad pendiente) -->
-                      <button mat-icon-button class="btn-redir-movil"
-                              matTooltip="Ver detalle" matTooltipPosition="above">
-                        <mat-icon>arrow_forward</mat-icon>
+                      <!-- Ver detalle por espacio curricular -->
+                      <button mat-icon-button class="btn-icon-primary"
+                              (click)="abrirDetalle(fila)"
+                              matTooltip="Ver detalle por espacio curricular" matTooltipPosition="above">
+                        <mat-icon>open_in_new</mat-icon>
                       </button>
                     </div>
 
@@ -333,8 +358,8 @@
           <div *ngIf="confirmarMarcar" class="confirm-limpiar">
             <span class="confirm-texto">¿Marcar presentes?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="marcarTodosPresentes()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarMarcar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="marcarTodosPresentes()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarMarcar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -382,8 +407,8 @@
           <div *ngIf="confirmarAplicar" class="confirm-limpiar">
             <span class="confirm-texto">¿Aplicar a todos?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="aplicarEstadoATodos()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarAplicar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="aplicarEstadoATodos()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarAplicar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -410,8 +435,8 @@
           <div *ngIf="confirmarGuardar && !guardandoLote" class="confirm-limpiar">
             <span class="confirm-texto">¿Guardar todo?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="guardarTodo()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarGuardar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="guardarTodo()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarGuardar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -432,8 +457,8 @@
           <div *ngIf="confirmarLimpiar" class="confirm-limpiar">
             <span class="confirm-texto">¿Limpiar todo?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="limpiarTabla()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarLimpiar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="limpiarTabla()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarLimpiar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
 export interface CursoManual {
-  idCurso: string;
-  codigo: string;   // "6A"
+  id:    string;
+  label: string;   // "{Anio.Numero}{Division.Nombre}" p.ej. "6A"
 }
