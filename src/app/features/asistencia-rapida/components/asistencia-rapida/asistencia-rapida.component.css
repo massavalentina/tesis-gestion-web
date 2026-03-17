@@ -1,11 +1,3 @@
-/* =========================================================
-   PALETA
-   #3c78b4 primary
-   #f0f5fa bg
-   #c7d9eb border
-========================================================= */
-
-/* ✅ SCROLL FIX SOLO PARA ESTE COMPONENTE (sin tocar layout global) */
 :host{
   display: block;
   height: calc(100vh - 24px);
@@ -23,12 +15,10 @@
   padding: 18px;
   max-width: 760px;
   margin: 0 auto;
-  padding-bottom: 28px; /* ✅ para que los últimos botones no queden pegados abajo */
+  padding-bottom: 28px;
 }
 
-/* =========================================================
-   SEARCH
-========================================================= */
+/* SEARCH */
 
 .search-container{
   width: 100%;
@@ -42,15 +32,12 @@
   width: min(520px, 100%);
   height: 46px;
   padding: 0 14px;
-
   display: flex;
   align-items: center;
   gap: 10px;
-
   background: #f0f5fa;
   border: 1px solid #c7d9eb;
   border-radius: 18px;
-
   box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
@@ -93,9 +80,7 @@
   color: rgba(15,47,75,.65);
 }
 
-/* =========================================================
-   SPINNER / MENSAJES
-========================================================= */
+/* SPINNER / MENSAJES */
 
 .spinner {
   display: flex;
@@ -114,9 +99,7 @@
 .sin-resultados { color: rgba(15,47,75,.65); }
 .error-text { color: #d32f2f; }
 
-/* =========================================================
-   LISTA ALUMNOS
-========================================================= */
+/* LISTA */
 
 .lista{
   display: flex;
@@ -129,19 +112,14 @@
   border: 0;
   text-align: left;
   cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 16px 18px;
   border-radius: 22px;
-
   background: #fff;
   border: 1px solid rgba(199,217,235,.9);
-
   box-shadow: 0 10px 24px rgba(0,0,0,0.05);
-
   transition: all .15s ease;
 }
 
@@ -187,9 +165,7 @@
 .estado.ok { background:#c9f7d5; color:#1a4d2e; }
 .estado.error { background:#ffcdd2; color:#5a1a1a; }
 
-/* =========================================================
-   PANEL CONFIRMACIÓN
-========================================================= */
+/* PANEL */
 
 .confirmacion{
   margin-top: 20px;
@@ -211,36 +187,63 @@
   font-weight: 900;
   margin-bottom: 14px;
   color: #0f2f4b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-/* =========================================================
-   AVISO SIMPLE Y PROLIJO
-========================================================= */
+.alumno-dni{
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(15,47,75,.65);
+}
+
+/* AVISO */
 
 .aviso-correccion{
   display: flex;
   gap: 10px;
   align-items: center;
-
   padding: 12px;
   border-radius: 16px;
-
   background: #f3f8ff;
   border: 1px solid rgba(60,120,180,.18);
-
   margin-bottom: 14px;
+}
+
+.aviso-pill{
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(60,120,180,.10);
 }
 
 .aviso-ico{
   color: #3c78b4;
 }
 
-/* =========================================================
-   FORM BLOCK
-========================================================= */
+.aviso-texto{
+  min-width: 0;
+}
+
+.aviso-titulo{
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f2f4b;
+  margin-bottom: 2px;
+}
+
+.aviso-sub{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(15,47,75,.72);
+  line-height: 1.35;
+}
+
+/* FORM */
 
 .form-block{
   padding: 14px;
@@ -249,14 +252,9 @@
   border: 1px solid rgba(199,217,235,.9);
 }
 
-/* =========================================================
-   SELECT (FORMA CORRECTA EN MDC)
-========================================================= */
-
 .select-tipo{
   width: 100%;
-  margin-bottom: 14px;
-
+  margin-bottom: 10px;
   --mdc-outlined-text-field-container-shape: 18px;
   --mdc-outlined-text-field-outline-width: 1px;
 }
@@ -266,9 +264,19 @@
   font-weight: 800;
 }
 
-/* =========================================================
-   BOTONES IGUALES Y PROLIJOS
-========================================================= */
+.select-help{
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(60,120,180,.08);
+  color: #0f2f4b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  border: 1px solid rgba(60,120,180,.14);
+}
+
+/* BOTONES */
 
 .acciones{
   display: grid;
@@ -288,21 +296,13 @@
   box-shadow:0 8px 20px rgba(60,120,180,.25) !important;
 }
 
-.btn-danger{
-  background:#c62828 !important;
-  color:#fff !important;
-  box-shadow:0 8px 20px rgba(198,40,40,.25) !important;
-}
-
 .btn-cancelar{
-  background:#f0f5fa !important;
-  color:#0f2f4b !important;
-  border:1px solid rgba(199,217,235,.9) !important;
+  background:#fff !important;
+  color:#d77171 !important;
+  border:1px solid #d77171 !important;
 }
 
-/* =========================================================
-   OVERLAY SELECT 
-========================================================= */
+/* OVERLAY SELECT */
 
 .cdk-overlay-pane .asr-select-panel.mat-mdc-select-panel,
 .cdk-overlay-pane .asr-select-panel .mdc-menu-surface{
@@ -330,9 +330,7 @@
   background:rgba(60,120,180,.15) !important;
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+/* RESPONSIVE */
 
 @media (max-width:520px){
 
@@ -340,7 +338,10 @@
     height: calc(100vh - 12px);
   }
 
-  .contenedor{ padding:14px; padding-bottom: 26px; }
+  .contenedor{
+    padding:14px;
+    padding-bottom:26px;
+  }
 
   .item-alumno{
     flex-direction:column;
@@ -356,5 +357,14 @@
   .estado{
     width:100%;
     text-align:center;
+  }
+
+  .confirmacion{
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .form-block{
+    padding: 12px;
   }
 }

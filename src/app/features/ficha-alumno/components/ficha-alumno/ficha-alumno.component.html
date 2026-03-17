@@ -1,0 +1,103 @@
+<div class="ficha-container">
+
+  <!-- Header con breadcrumb -->
+  <div class="ficha-header">
+    <span class="header-titulo">Ficha de estudiantes</span>
+    <ng-container *ngIf="cursoSeleccionado">
+      <mat-icon class="header-chevron">chevron_right</mat-icon>
+      <span class="header-curso">{{ cursoSeleccionado.codigo }}</span>
+    </ng-container>
+  </div>
+
+  <!-- Selector de curso -->
+  <mat-form-field appearance="outline" class="curso-select">
+    <mat-label>Seleccionar curso</mat-label>
+    <mat-select
+      [(ngModel)]="cursoSeleccionado"
+      (ngModelChange)="onCursoChange()"
+      [disabled]="cargandoCursos">
+      <mat-option *ngFor="let c of cursos" [value]="c">
+        {{ c.codigo }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Error cursos -->
+  <div class="estado-center error" *ngIf="errorCursos">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudieron cargar los cursos.</span>
+  </div>
+
+  <!-- Placeholder sin curso -->
+  <div class="estado-center muted" *ngIf="!cursoSeleccionado && !cargandoCursos && !errorCursos">
+    <mat-icon>school</mat-icon>
+    <span>Seleccioná un curso para ver los estudiantes.</span>
+  </div>
+
+  <!-- Cargando alumnos -->
+  <div class="estado-center" *ngIf="cargandoEstudiantes">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Error alumnos -->
+  <div class="estado-center error" *ngIf="errorEstudiantes">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudieron cargar los estudiantes.</span>
+  </div>
+
+  <!-- Sin alumnos -->
+  <div class="estado-center muted"
+       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length === 0">
+    <mat-icon>person_off</mat-icon>
+    <span>No hay alumnos en este curso.</span>
+  </div>
+
+  <!-- Lista de alumnos -->
+  <mat-accordion displayMode="flat" multi
+    *ngIf="!cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0">
+
+    <mat-expansion-panel
+      *ngFor="let est of estudiantes"
+      [id]="'alumno-' + est.idEstudiante"
+      class="alumno-panel"
+      [class.panel-tea]="est.teaGeneral"
+      [expanded]="isExpanded(est.idEstudiante)"
+      (opened)="onOpened(est.idEstudiante)"
+      (closed)="onClosed(est.idEstudiante)">
+
+      <mat-expansion-panel-header [collapsedHeight]="'56px'" [expandedHeight]="'56px'">
+        <mat-panel-title class="panel-title">
+          <span class="alumno-nombre">{{ est.apellido }}, {{ est.nombre }}</span>
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <!-- Contenido expandido -->
+      <div class="alumno-detalle">
+
+        <div class="detalle-row">
+          <mat-icon class="detalle-icon">badge</mat-icon>
+          <span class="detalle-label">DNI</span>
+          <span class="detalle-valor">{{ est.documento }}</span>
+        </div>
+
+        <div class="detalle-row">
+          <mat-icon class="detalle-icon">event_busy</mat-icon>
+          <span class="detalle-label">Faltas acumuladas</span>
+          <span class="detalle-valor faltas-valor" [class]="'estado-' + getEstado(est)">
+            {{ getLabelFaltas(est) }}
+          </span>
+        </div>
+
+        <div class="detalle-row" *ngIf="est.teaGeneral">
+          <mat-icon class="detalle-icon tea-icon">block</mat-icon>
+          <span class="detalle-label tea-text">Estado</span>
+          <span class="detalle-valor tea-text">TEA — Trayectoria Educativa Afectada</span>
+        </div>
+
+      </div>
+
+    </mat-expansion-panel>
+
+  </mat-accordion>
+
+</div>

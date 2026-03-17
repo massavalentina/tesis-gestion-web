@@ -1,0 +1,152 @@
+.ficha-container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+/* Header con breadcrumb */
+.ficha-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.header-titulo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.header-chevron {
+  color: #888;
+  font-size: 1.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.header-curso {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1976d2;
+}
+
+/* Selector de curso */
+.curso-select {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+/* Estados vacíos / error */
+.estado-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.estado-center.muted { color: #999; }
+.estado-center.error { color: #c62828; }
+
+/* ── Panels de alumnos ── */
+.alumno-panel {
+  margin-bottom: 10px;
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+}
+
+/* Header celeste por defecto */
+.alumno-panel ::ng-deep .mat-expansion-panel-header {
+  background-color: #5B9BD5 !important;
+}
+.alumno-panel ::ng-deep .mat-expansion-panel-header:hover {
+  background-color: #4a8bc4 !important;
+}
+
+/* Header gris para TEA */
+.alumno-panel.panel-tea ::ng-deep .mat-expansion-panel-header {
+  background-color: #757575 !important;
+}
+.alumno-panel.panel-tea ::ng-deep .mat-expansion-panel-header:hover {
+  background-color: #616161 !important;
+}
+
+/* Texto e ícono blanco en el header */
+.alumno-panel ::ng-deep .mat-expansion-panel-header .mat-expansion-panel-header-title,
+.alumno-panel ::ng-deep .mat-expansion-panel-header .mat-expansion-panel-header-description {
+  color: #fff !important;
+}
+
+.alumno-panel ::ng-deep .mat-expansion-indicator::after {
+  border-color: #fff !important;
+}
+
+/* Nombre en header */
+.panel-title { align-items: center; }
+
+.alumno-nombre {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+
+/* ── Detalle expandido ── */
+.alumno-detalle {
+  padding: 14px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detalle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detalle-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.detalle-label {
+  font-size: 0.85rem;
+  color: #777;
+  min-width: 140px;
+}
+
+.detalle-valor {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #212121;
+}
+
+/* Valor de faltas con color según estado */
+.faltas-valor {
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.estado-normal   { background-color: #e0e0e0; color: #424242; }
+.estado-amarillo { background-color: #F9A825; color: #fff; }
+.estado-naranja  { background-color: #EF6C00; color: #fff; }
+.estado-rojo     { background-color: #C62828; color: #fff; }
+.estado-tea      { background-color: #757575; color: #fff; }
+
+.tea-icon { color: #757575; }
+.tea-text { color: #757575; font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header-titulo,
+  .header-curso { font-size: 1.1rem; }
+}

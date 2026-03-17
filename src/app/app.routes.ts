@@ -57,6 +57,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
+      },
+      {
+        path: 'ficha-alumno',
+        loadComponent: () =>
+          import('../app/features/ficha-alumno/components/ficha-alumno/ficha-alumno.component')
+            .then(m => m.FichaAlumnoComponent),
       }
     ],
   }
