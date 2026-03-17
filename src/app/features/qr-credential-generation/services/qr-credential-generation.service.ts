@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import {
   OpcionCurso,
   ProgresoGeneracionQr,
@@ -12,13 +13,14 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class ServicioGeneracionCredencialesQr {
-  private readonly cursosUrl = 'http://localhost:5050/api/asistencia/scanner/cursos';
-  private readonly summaryUrl = 'http://localhost:5050/api/qr-credentials/summary';
-  private readonly startJobUrl = 'http://localhost:5050/api/qr-credentials/generation/start-job';
-  private readonly progressUrl = 'http://localhost:5050/api/qr-credentials/generation/progress';
-  private readonly pauseUrl = 'http://localhost:5050/api/qr-credentials/generation/pause';
-  private readonly resumeUrl = 'http://localhost:5050/api/qr-credentials/generation/resume';
-  private readonly cancelUrl = 'http://localhost:5050/api/qr-credentials/generation/cancel';
+  private readonly baseUrl = environment.apiUrl;
+  private readonly cursosUrl = `${this.baseUrl}/api/asistencia/scanner/cursosscanner`;
+  private readonly summaryUrl = `${this.baseUrl}/api/qr-credentials/summary`;
+  private readonly startJobUrl = `${this.baseUrl}/api/qr-credentials/generation/start-job`;
+  private readonly progressUrl = `${this.baseUrl}/api/qr-credentials/generation/progress`;
+  private readonly pauseUrl = `${this.baseUrl}/api/qr-credentials/generation/pause`;
+  private readonly resumeUrl = `${this.baseUrl}/api/qr-credentials/generation/resume`;
+  private readonly cancelUrl = `${this.baseUrl}/api/qr-credentials/generation/cancel`;
 
   constructor(private http: HttpClient) {}
 

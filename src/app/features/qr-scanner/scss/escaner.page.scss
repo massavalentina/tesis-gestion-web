@@ -190,6 +190,19 @@
   border: 1px solid rgba(39, 92, 138, 0.16);
 }
 
+.scan-counter--overlay {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0;
+  z-index: 320;
+  background: rgba(16, 22, 29, 0.72);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+}
+
 .close-scanner {
   position: absolute;
   top: 16px;
