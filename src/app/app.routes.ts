@@ -63,6 +63,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/ficha-alumno/components/ficha-alumno/ficha-alumno.component')
             .then(m => m.FichaAlumnoComponent),
+      },
+      {
+        path: 'reporte-asistencia',
+        loadComponent: () =>
+          import('../app/features/reporte-asistencia/components/reporte-asistencia/reporte-asistencia.component')
+            .then(m => m.ReporteAsistenciaComponent),
+      },
+      {
+        path: 'reporte-asistencia/detalle/:estudianteId',
+        loadComponent: () =>
+          import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
+            .then(m => m.DetalleAsistenciaEstudianteComponent),
+      },
+      {
+        path: 'ficha-alumno/detalle/:estudianteId',
+        loadComponent: () =>
+          import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
+            .then(m => m.DetalleAsistenciaEstudianteComponent),
       }
     ],
   }

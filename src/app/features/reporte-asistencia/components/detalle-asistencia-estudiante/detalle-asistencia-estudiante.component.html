@@ -1,0 +1,128 @@
+<div class="detalle-container">
+
+  <!-- Barra superior: volver + exportar PDF -->
+  <div class="detalle-topbar">
+    <button mat-button class="btn-volver" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      {{ origen === 'ficha' ? 'Volver a ficha de alumno' : 'Volver al reporte' }}
+    </button>
+    <button mat-stroked-button class="btn-export" (click)="exportarPdf()" matTooltip="Exportar a PDF">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Exportar PDF
+    </button>
+  </div>
+
+  <!-- Header estudiante -->
+  <div class="detalle-header" [class.header-tea]="teaGeneral">
+    <div class="estudiante-info">
+      <span class="estudiante-nombre">{{ apellido }}, {{ nombre }}</span>
+      <span class="estudiante-dni">DNI {{ documento }}</span>
+    </div>
+    <span class="tea-chip" *ngIf="teaGeneral">TEA</span>
+  </div>
+
+  <!-- Filtro activo -->
+  <div class="filtro-activo" *ngIf="desde || hasta">
+    <mat-icon>date_range</mat-icon>
+    <span>Período:
+      <ng-container *ngIf="desde">desde {{ formatFecha(desde) }}</ng-container>
+      <ng-container *ngIf="hasta"> hasta {{ formatFecha(hasta) }}</ng-container>
+    </span>
+  </div>
+
+  <!-- Tarjetas resumen (solo si vienen del reporte) -->
+  <div class="resumen-cards" *ngIf="presencias !== null">
+    <div class="card">
+      <span class="card-valor">{{ presencias }}</span>
+      <span class="card-label">Presencias</span>
+    </div>
+    <div class="card">
+      <span class="card-valor" [class]="getBadgeClase(inasistencias, teaGeneral)">{{ inasistencias }}</span>
+      <span class="card-label">Inasistencias</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ llegadasTarde }}</span>
+      <span class="card-label">Llegadas Tarde</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ ausentePorLLT }}</span>
+      <span class="card-label">Ausente LLT</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ retirosAnticipados }}</span>
+      <span class="card-label">Retiros</span>
+    </div>
+    <div class="card card-porcentaje">
+      <span class="card-valor">{{ porcentajeAsistencia }}%</span>
+      <span class="card-label">% Asistencia</span>
+    </div>
+  </div>
+
+  <!-- Cargando -->
+  <div class="estado-center" *ngIf="cargando">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Error -->
+  <div class="estado-center error" *ngIf="error">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudo cargar el detalle de asistencias.</span>
+  </div>
+
+  <!-- Sin registros -->
+  <div class="estado-center muted" *ngIf="!cargando && !error && registrosFiltrados.length === 0">
+    <mat-icon>event_busy</mat-icon>
+    <span>No hay registros de inasistencias o movimientos para este estudiante en el período indicado.</span>
+  </div>
+
+  <!-- Tabla de registros -->
+  <div class="table-wrapper" *ngIf="!cargando && !error && registrosFiltrados.length > 0">
+
+    <p class="total-registros">{{ registrosFiltrados.length }} registros encontrados</p>
+
+    <table mat-table [dataSource]="registrosFiltrados" class="detalle-table">
+
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let r">{{ formatFecha(r.fecha) }}</td>
+      </ng-container>
+
+      <!-- Mañana -->
+      <ng-container matColumnDef="manana">
+        <th mat-header-cell *matHeaderCellDef>Mañana</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="codigo-chip" [class]="getCodigoBadge(r.codigoManana)">
+            {{ r.codigoManana }}
+          </span>
+          <span class="hora-text" *ngIf="r.horaEntradaManana"> {{ r.horaEntradaManana }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Tarde -->
+      <ng-container matColumnDef="tarde">
+        <th mat-header-cell *matHeaderCellDef>Tarde</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="codigo-chip" [class]="getCodigoBadge(r.codigoTarde)">
+            {{ r.codigoTarde }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Valor -->
+      <ng-container matColumnDef="valor">
+        <th mat-header-cell *matHeaderCellDef>Valor Inasist.</th>
+        <td mat-cell *matCellDef="let r" class="col-valor">
+          <span *ngIf="r.valorTotal > 0" class="valor-negativo">{{ r.valorTotal }}</span>
+          <span *ngIf="r.valorTotal === 0" class="valor-ok">0</span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas;"
+          [class.fila-ausente]="row.valorTotal >= 1"></tr>
+
+    </table>
+  </div>
+
+</div>
