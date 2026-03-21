@@ -161,7 +161,7 @@
 
 .empty-state      { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 64px 24px; gap: 10px; }
 .empty-icon-wrap  { width: 64px; height: 64px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-.empty-icon-wrap mat-icon { font-size: 30px; color: var(--text-hint); }
+.empty-icon-wrap mat-icon { font-size: 30px; width: 30px; height: 30px; line-height: 30px; color: var(--text-hint); }
 .empty-state h3   { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-main); font-family: 'Open Sans', sans-serif; }
 .empty-state p    { margin: 0; font-size: 14px; color: var(--text-sub); max-width: 320px; }
 
@@ -510,10 +510,12 @@ td.mat-cell {
 
 @media (max-width: 640px) {
   .page-heading     { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .filtros-card     { flex-direction: column; align-items: stretch; }
-  .field-fecha, .field-curso, .field-hora-global { width: 100%; }
-  .search-box       { min-width: unset; max-width: unset; width: 100%; }
-  .stat-chip        { font-size: 12px; padding: 5px 10px; }
+  /* Filtros: columna envolvente, pero search+hora comparten fila */
+  .filtros-card     { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
+  .field-fecha, .field-curso { width: 100%; }
+  .search-box       { flex: 1; min-width: 0; max-width: unset; width: auto; }
+  .field-hora-global { width: 120px; flex-shrink: 0; }
+  .stat-chip        { font-size: 11px; padding: 5px 10px; }
   .nombre-texto     { max-width: 100px; }
   .resumen-turno-label { display: none; }
 }
@@ -583,10 +585,21 @@ th.col-movil-th { text-align: left !important; }
   /* ── Filtros ──────────────────────────────────── */
   .filtros-card { padding: 10px 14px; gap: 8px; }
 
-  /* ── Chips: wrap en 2 filas (Total y % visibles sin scroll) ── */
-  .resumen-row { gap: 6px; }
-  .stat-chip   { font-size: 10px; padding: 3px 9px; gap: 4px; }
+  /* ── Chips: grid 2 columnas simétricas ───────────── */
+  .resumen-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .stat-chip {
+    justify-content: center;
+    font-size: 10px;
+    padding: 5px 8px;
+    gap: 4px;
+  }
   .stat-chip mat-icon { font-size: 13px; height: 13px; width: 13px; }
+  /* Asistencia % ocupa el ancho completo (fila inferior centrada) */
+  .chip-porcentaje { grid-column: 1 / -1; }
 
   /* ── Tabla: table-layout:fixed evita expansión por contenido ─ */
   .tabla-asistencia { table-layout: fixed; }

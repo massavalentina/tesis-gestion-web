@@ -6,6 +6,7 @@ import {
   AfterViewInit,
   ViewChild,
 } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule }                  from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule }                   from '@angular/forms';
@@ -59,9 +60,21 @@ const DD_MM_YYYY: MatDateFormats = {
   },
 };
 
+const EXPAND_COLLAPSE = trigger('expandCollapse', [
+  transition(':enter', [
+    style({ height: '0', overflow: 'hidden', opacity: 0 }),
+    animate('220ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: '*', opacity: 1 })),
+  ]),
+  transition(':leave', [
+    style({ overflow: 'hidden' }),
+    animate('180ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: '0', opacity: 0 })),
+  ]),
+]);
+
 @Component({
   selector: 'app-asistencia-general-manual',
   standalone: true,
+  animations: [EXPAND_COLLAPSE],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     MatSelectModule, MatFormFieldModule, MatInputModule, MatButtonModule,
@@ -91,7 +104,14 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   filas: FilaAsistenciaManual[] = [];
 
   // ── Fecha ─────────────────────────────────────────────────────────────────
-  fechaCtrl = new FormControl<Date>(new Date());
+  fechaCtrl = new FormControl<Date>(AsistenciaGeneralManualComponent.ultimoDiaLaboral());
+
+  private static ultimoDiaLaboral(): Date {
+    const d = new Date();
+    if (d.getDay() === 0) d.setDate(d.getDate() - 2);
+    if (d.getDay() === 6) d.setDate(d.getDate() - 1);
+    return d;
+  }
   fechaHoy  = this.dateToString(new Date());
 
   // ── Tab: 0 = Mañana · 1 = Tarde ──────────────────────────────────────────

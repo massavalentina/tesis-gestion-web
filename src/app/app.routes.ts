@@ -40,8 +40,8 @@ export const routes: Routes = [
       {
         path: 'parte-diario-digital',
         loadComponent: () =>
-          import('../app/features/proximamente/proximamente.component')
-            .then(m => m.ProximamenteComponent),
+          import('../app/features/parte-diario-digital/components/parte-diario.component')
+            .then(m => m.ParteDiarioComponent),
       },
       
       {

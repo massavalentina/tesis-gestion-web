@@ -355,7 +355,7 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarMarcar" class="confirm-limpiar">
+          <div *ngIf="confirmarMarcar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Marcar presentes?</span>
             <div class="confirm-btns">
               <button mat-icon-button class="confirm-ok" (click)="marcarTodosPresentes()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
@@ -404,7 +404,7 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarAplicar" class="confirm-limpiar">
+          <div *ngIf="confirmarAplicar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Aplicar a todos?</span>
             <div class="confirm-btns">
               <button mat-icon-button class="confirm-ok" (click)="aplicarEstadoATodos()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
@@ -432,7 +432,7 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarGuardar && !guardandoLote" class="confirm-limpiar">
+          <div *ngIf="confirmarGuardar && !guardandoLote" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Guardar todo?</span>
             <div class="confirm-btns">
               <button mat-icon-button class="confirm-ok" (click)="guardarTodo()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
@@ -454,7 +454,7 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarLimpiar" class="confirm-limpiar">
+          <div *ngIf="confirmarLimpiar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Limpiar todo?</span>
             <div class="confirm-btns">
               <button mat-icon-button class="confirm-ok" (click)="limpiarTabla()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
