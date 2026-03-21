@@ -69,7 +69,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            matRipple
            routerLink="/"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }">
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia()">
           <mat-icon>home</mat-icon>
           <span>Inicio</span>
         </a>
@@ -125,9 +126,21 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            matRipple
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }">
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia()">
           <mat-icon>qr_code</mat-icon>
           <span>Credenciales QR</span>
+        </a>
+
+        <!-- Ficha de Alumno -->
+        <a class="item"
+           matRipple
+           routerLink="/ficha-alumno"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia()">
+          <mat-icon>assignment_ind</mat-icon>
+          <span>Ficha de Alumno</span>
         </a>
 
         <!-- Cuenta -->
@@ -135,7 +148,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            matRipple
            routerLink="/cuenta"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }">
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia()">
           <mat-icon>person</mat-icon>
           <span>Cuenta</span>
         </a>
@@ -238,9 +252,20 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeMobile()">
+           (click)="closeAsistencia(); closeMobile()">
           <mat-icon>qr_code</mat-icon>
           <span>Credenciales QR</span>
+        </a>
+
+        <!-- Ficha de Alumno -->
+        <a class="item"
+           matRipple
+           routerLink="/ficha-alumno"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia(); closeMobile()">
+          <mat-icon>assignment_ind</mat-icon>
+          <span>Ficha de Alumno</span>
         </a>
 
         <!-- Cuenta -->
@@ -249,7 +274,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/cuenta"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeMobile()">
+           (click)="closeAsistencia(); closeMobile()">
           <mat-icon>person</mat-icon>
           <span>Cuenta</span>
         </a>
@@ -297,6 +322,10 @@ export class SidebarComponent {
 
   toggleAsistencia() {
     this.asistenciaOpen = !this.asistenciaOpen;
+  }
+
+  closeAsistencia() {
+    this.asistenciaOpen = false;
   }
 
   closeMobile() {

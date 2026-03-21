@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
 import { TipoAsistenciaRapida } from '../models/tipo-asistencia-rapida.model';
 import { AsistenciaRapidaResponse } from '../models/asistencia-rapida-response.model';
 import { RegistrarAsistenciaRapida } from '../models/registrar-asistencia-rapida.model';
@@ -10,6 +11,11 @@ export interface DeshacerAsistenciaRapidaDto {
   estudianteId: string;
   fecha: string;
   turno: 'MANANA' | 'TARDE';
+}
+
+export interface ServerTimeResponse {
+  fecha: string;
+  hora: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -33,11 +39,17 @@ export class AsistenciaRapidaService {
     return this.http.post<AsistenciaRapidaResponse>(`${this.apiUrl}`, dto);
   }
 
-  getServerTime(): Observable<{ fecha: string; hora: string }> {
-    return this.http.get<{ fecha: string; hora: string }>(`${this.apiUrl}/servertime`);
+  getServerTime(): Observable<ServerTimeResponse> {
+    return this.http.get<ServerTimeResponse>(`${this.apiUrl}/servertime`);
   }
 
-  borrarAsistencia(dto: DeshacerAsistenciaRapidaDto): Observable<AsistenciaRapidaResponse> {
+  // Nombre nuevo, más correcto para la lógica actual
+  deshacerAsistencia(dto: DeshacerAsistenciaRapidaDto): Observable<AsistenciaRapidaResponse> {
     return this.http.post<AsistenciaRapidaResponse>(`${this.apiUrl}/deshacer`, dto);
+  }
+
+  // Alias para no romper código viejo
+  borrarAsistencia(dto: DeshacerAsistenciaRapidaDto): Observable<AsistenciaRapidaResponse> {
+    return this.deshacerAsistencia(dto);
   }
 }
