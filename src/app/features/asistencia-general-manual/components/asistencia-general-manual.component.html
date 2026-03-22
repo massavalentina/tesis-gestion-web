@@ -17,17 +17,13 @@
           <p class="page-subtitle">Registrá la asistencia diaria de los estudiantes por curso y turno</p>
         </div>
       </div>
-      <div class="has-info">
-        <div class="dev-toggle-wrap">
-          <span class="dev-label">Dev</span>
-          <mat-slide-toggle [(ngModel)]="modoDesarrollo" color="primary"></mat-slide-toggle>
-        </div>
-        <button mat-icon-button class="info-btn"
-                matTooltip="Modo desarrollo: permite ingresar hora explícita por asistencia"
-                matTooltipPosition="below">
-          <mat-icon>info_outline</mat-icon>
-        </button>
-      </div>
+      <button mat-stroked-button *ngIf="!esMobile"
+              (click)="mostrarTestCol = !mostrarTestCol"
+              [color]="mostrarTestCol ? 'warn' : ''"
+              style="margin-left:auto; align-self:center"
+              matTooltip="Mostrar columna de test de inasistencia">
+        <mat-icon>science</mat-icon> TEST
+      </button>
     </div>
 
     <!-- FILTROS -->
@@ -35,18 +31,19 @@
 
       <mat-form-field class="field-fecha">
         <mat-label>Fecha</mat-label>
-        <input matInput [matDatepicker]="picker" [formControl]="fechaCtrl" readonly />
+        <input matInput [matDatepicker]="picker" [formControl]="fechaCtrl"
+               [matDatepickerFilter]="diasHabiles" readonly />
         <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field class="field-curso">
         <mat-label>Curso</mat-label>
-        <mat-select [(ngModel)]="cursoSeleccionado"
+        <mat-select [ngModel]="cursoSeleccionado"
                     (ngModelChange)="onCursoChange($event)"
                     disableOptionCentering
                     placeholder="Seleccioná un curso">
-          <mat-option *ngFor="let c of cursos" [value]="c">{{ c.codigo }}</mat-option>
+          <mat-option *ngFor="let c of cursos" [value]="c">{{ c.label }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -63,6 +60,16 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
+
+      <mat-form-field class="field-hora-global">
+        <mat-label>Hora del registro</mat-label>
+        <input matInput type="time" [(ngModel)]="horaGlobal" />
+        <button *ngIf="horaGlobal" matIconSuffix mat-icon-button
+                aria-label="Quitar hora" (click)="horaGlobal = null"
+                matTooltip="Quitar hora">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
 
     </div>
 
@@ -81,17 +88,29 @@
 
     <!-- CHIPS DE RESUMEN — stats del turno activo -->
     <div class="resumen-row" *ngIf="cursoSeleccionado && !cargandoTabla && dataSource.data.length">
-      <div class="stat-chip chip-verde">
+      <div class="stat-chip chip-verde"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'presentes'"
+           (click)="toggleFiltroChip('presentes')">
         <mat-icon>check_circle_outline</mat-icon>
         <span>Presentes</span>
         <strong>{{ cantPresentes }}</strong>
       </div>
-      <div class="stat-chip chip-rojo">
+      <div class="stat-chip chip-rojo"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'ausentes'"
+           (click)="toggleFiltroChip('ausentes')">
         <mat-icon>cancel</mat-icon>
         <span>Ausentes</span>
         <strong>{{ cantAusentes }}</strong>
       </div>
-      <div class="stat-chip chip-gris">
+      <div class="stat-chip chip-gris"
+           role="button"
+           style="cursor:pointer"
+           [class.chip-activo]="filtroChip === 'sinDefinir'"
+           (click)="toggleFiltroChip('sinDefinir')">
         <mat-icon>radio_button_unchecked</mat-icon>
         <span>Sin definir</span>
         <strong>{{ cantSinDefinir }}</strong>
@@ -119,6 +138,7 @@
         <div class="card tabla-card">
           <mat-tab-group
             animationDuration="200ms"
+            [selectedIndex]="tabActivo"
             (selectedIndexChange)="onTabChange($event)"
             class="tabs-turnos">
 
@@ -129,7 +149,7 @@
               </ng-template>
             </mat-tab>
 
-            <mat-tab>
+            <mat-tab *ngIf="tieneTurnoTarde">
               <ng-template mat-tab-label>
                 Tarde
                 <span *ngIf="sinDefinirTarde > 0" class="tab-badge">{{ sinDefinirTarde }}</span>
@@ -171,7 +191,7 @@
                                 placeholder="Sin definir">
                       <mat-select-trigger>
                         <ng-container *ngIf="getTipo(fila.tipoManianaId) as t">
-                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span><span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
                         </ng-container>
                       </mat-select-trigger>
                       <mat-option [value]="null">— Sin definir —</mat-option>
@@ -180,16 +200,6 @@
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="horaManana">
-                <th mat-header-cell *matHeaderCellDef>Hora</th>
-                <td mat-cell *matCellDef="let fila">
-                  <mat-form-field *ngIf="requiereHora(fila.tipoManianaId)" class="field-hora">
-                    <input matInput type="time" [(ngModel)]="fila.horaManana" />
-                  </mat-form-field>
-                  <span *ngIf="!requiereHora(fila.tipoManianaId)" class="hora-na">—</span>
                 </td>
               </ng-container>
 
@@ -203,7 +213,7 @@
                                 placeholder="Sin definir">
                       <mat-select-trigger>
                         <ng-container *ngIf="getTipo(fila.tipoTardeId) as t">
-                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span><span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
                         </ng-container>
                       </mat-select-trigger>
                       <mat-option [value]="null">— Sin definir —</mat-option>
@@ -215,13 +225,13 @@
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="horaTarde">
-                <th mat-header-cell *matHeaderCellDef>Hora</th>
-                <td mat-cell *matCellDef="let fila">
-                  <mat-form-field *ngIf="requiereHora(fila.tipoTardeId)" class="field-hora">
-                    <input matInput type="time" [(ngModel)]="fila.horaTarde" />
-                  </mat-form-field>
-                  <span *ngIf="!requiereHora(fila.tipoTardeId)" class="hora-na">—</span>
+              <ng-container matColumnDef="valorTest">
+                <th mat-header-cell *matHeaderCellDef class="col-test">Inasist.</th>
+                <td mat-cell *matCellDef="let fila" class="col-test">
+                  <span *ngIf="fila.valorTotalInasistencia !== null; else guion">
+                    {{ fila.valorTotalInasistencia }}
+                  </span>
+                  <ng-template #guion>—</ng-template>
                 </td>
               </ng-container>
 
@@ -232,6 +242,11 @@
                     <mat-icon *ngIf="fila.guardado && !fila.error && !(tabActivo === 0 ? fila.modificadoManana : fila.modificadoTarde)"
                               class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
                     <mat-icon *ngIf="fila.error" class="icon-error" [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
+                    <button mat-icon-button (click)="abrirDetalle(fila)"
+                            matTooltip="Ver detalle por espacio curricular"
+                            matTooltipPosition="left">
+                      <mat-icon>open_in_new</mat-icon>
+                    </button>
                     <button mat-icon-button class="btn-icon-primary"
                             (click)="guardarFila(fila)"
                             [disabled]="guardandoLote || fila.guardandoFila"
@@ -240,6 +255,65 @@
                       <mat-spinner *ngIf="fila.guardandoFila" diameter="16" class="spinner-fila"></mat-spinner>
                       <mat-icon *ngIf="!fila.guardandoFila">save</mat-icon>
                     </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- ══ COLUMNA MOBILE: fila doble (nombre + selector/acciones) ══ -->
+              <ng-container matColumnDef="filaMovil">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-movil-th">Estudiante</th>
+                <td mat-cell *matCellDef="let fila" class="col-movil">
+                  <div class="movil-card">
+
+                    <!-- Subfila 1: nombre completo -->
+                    <div class="movil-nombre">
+                      <div class="avatar">{{ fila.estudiante.nombre.charAt(0) }}</div>
+                      <span class="movil-nombre-texto">{{ fila.estudiante.apellido }}, {{ fila.estudiante.nombre }}</span>
+                    </div>
+
+                    <!-- Subfila 2: selector + acciones -->
+                    <div class="movil-fila-acciones">
+                      <mat-form-field class="field-turno movil-select">
+                        <mat-select [ngModel]="getTipoActivo(fila)"
+                                    (ngModelChange)="setTipoActivo(fila, $event)"
+                                    disableOptionCentering
+                                    placeholder="Sin definir">
+                          <mat-select-trigger>
+                            <ng-container *ngIf="getTipo(getTipoActivo(fila)) as t">
+                              <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>
+                              <span class="trigger-desc">&nbsp;· {{ t.descripcion }}</span>
+                            </ng-container>
+                          </mat-select-trigger>
+                          <mat-option [value]="null">— Sin definir —</mat-option>
+                          <mat-option *ngFor="let t of tipos" [value]="t.id">
+                            <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <!-- Estado: guardado / error -->
+                      <mat-icon *ngIf="fila.guardado && !fila.error && !estaModificado(fila)"
+                                class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
+                      <mat-icon *ngIf="fila.error" class="icon-error"
+                                [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
+
+                      <!-- Guardar individual -->
+                      <button mat-icon-button class="btn-icon-primary"
+                              (click)="guardarFila(fila)"
+                              [disabled]="guardandoLote || fila.guardandoFila"
+                              matTooltip="Guardar" matTooltipPosition="above">
+                        <mat-spinner *ngIf="fila.guardandoFila" diameter="16" class="spinner-fila"></mat-spinner>
+                        <mat-icon *ngIf="!fila.guardandoFila">save</mat-icon>
+                      </button>
+
+                      <!-- Ver detalle por espacio curricular -->
+                      <button mat-icon-button class="btn-icon-primary"
+                              (click)="abrirDetalle(fila)"
+                              matTooltip="Ver detalle por espacio curricular" matTooltipPosition="above">
+                        <mat-icon>open_in_new</mat-icon>
+                      </button>
+                    </div>
+
                   </div>
                 </td>
               </ng-container>
@@ -274,18 +348,18 @@
                     (click)="confirmarMarcar = true"
                     [disabled]="guardandoLote">
               <mat-icon>done_all</mat-icon>
-              <span>Marcar presentes sin definir</span>
+              <span>Marcar Presentes</span>
               <mat-icon class="btn-info-icon"
-                        [matTooltip]="'Marca como Presente todos los sin definir del turno ' + (tabActivo === 0 ? 'Mañana' : 'Tarde')"
+                        matTooltip="Marca como Presente a todos los estudiantes sin estado definido"
                         matTooltipPosition="right"
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarMarcar" class="confirm-limpiar">
+          <div *ngIf="confirmarMarcar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Marcar presentes?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="marcarTodosPresentes()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarMarcar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="marcarTodosPresentes()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarMarcar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -330,11 +404,11 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarAplicar" class="confirm-limpiar">
+          <div *ngIf="confirmarAplicar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Aplicar a todos?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="aplicarEstadoATodos()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarAplicar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="aplicarEstadoATodos()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarAplicar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -358,11 +432,11 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarGuardar && !guardandoLote" class="confirm-limpiar">
+          <div *ngIf="confirmarGuardar && !guardandoLote" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Guardar todo?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="guardarTodo()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarGuardar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="guardarTodo()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarGuardar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 
@@ -380,11 +454,11 @@
                         (click)="$event.stopPropagation()">info_outline</mat-icon>
             </button>
           </ng-container>
-          <div *ngIf="confirmarLimpiar" class="confirm-limpiar">
+          <div *ngIf="confirmarLimpiar" @expandCollapse class="confirm-limpiar">
             <span class="confirm-texto">¿Limpiar todo?</span>
             <div class="confirm-btns">
-              <button mat-icon-button class="confirm-ok" (click)="limpiarTabla()" matTooltip="Confirmar"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button class="confirm-cancel" (click)="confirmarLimpiar = false" matTooltip="Cancelar"><mat-icon>close</mat-icon></button>
+              <button mat-icon-button class="confirm-ok" (click)="limpiarTabla()" matTooltip="Confirmar" matTooltipPosition="right"><mat-icon>check</mat-icon></button>
+              <button mat-icon-button class="confirm-cancel" (click)="confirmarLimpiar = false" matTooltip="Cancelar" matTooltipPosition="right"><mat-icon>close</mat-icon></button>
             </div>
           </div>
 

@@ -57,23 +57,36 @@
 /* 📱 Botón hamburguesa */
 .mobile-menu-btn {
   position: fixed;
-  top: 1.1rem;
-  left: 1.1rem;
+  top: 1rem;
+  left: 1rem;
   z-index: 1100;
 
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
 
   background: white;
-  border-radius: 50%;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  cursor: pointer;
 
   mat-icon {
     font-size: 28px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &:hover {
+    background: #f1f5f9;
   }
 }
 
@@ -99,6 +112,7 @@
 
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   z-index: 1101;
+
 }
 
 /* Nav */
@@ -201,3 +215,4 @@ nav {
 .chevron.open {
   transform: rotate(180deg);
 }
+
