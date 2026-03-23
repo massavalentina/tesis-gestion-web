@@ -19,6 +19,7 @@ import { ReporteAsistenciaService } from '../../services/reporte-asistencia.serv
 import { FichaAlumnoService } from '../../../ficha-alumno/services/ficha-alumno.service';
 import { ReporteAsistenciaItem } from '../../models/reporte-asistencia.model';
 import { CursoFicha } from '../../../ficha-alumno/models/curso-ficha.model';
+import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 
 @Component({
   selector: 'app-reporte-asistencia',
@@ -76,7 +77,8 @@ export class ReporteAsistenciaComponent implements OnInit {
     private reporteService: ReporteAsistenciaService,
     private fichaService: FichaAlumnoService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private pdfService: PdfReporteService
   ) {}
 
   ngOnInit(): void {
@@ -202,7 +204,14 @@ export class ReporteAsistenciaComponent implements OnInit {
   }
 
   exportarPdf(): void {
-    // TODO: implementar exportación PDF
+    if (!this.cursoSeleccionado) return;
+    this.pdfService.exportarReporteCurso({
+      cursoCodigo: this.cursoSeleccionado.codigo,
+      totalDiasDictados: this.totalDiasDictados,
+      fechaDesde: this.fechaDesde ? this.toIsoDate(this.fechaDesde) : null,
+      fechaHasta: this.fechaHasta ? this.toIsoDate(this.fechaHasta) : null,
+      estudiantes: this.dataSource.filteredData,
+    });
   }
 
   getBadgeClase(inasistencias: number, teaGeneral: boolean): string {

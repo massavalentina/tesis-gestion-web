@@ -12,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ReporteAsistenciaService } from '../../services/reporte-asistencia.service';
 import { DetalleAsistencia } from '../../models/detalle-asistencia.model';
+import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 
 @Component({
   selector: 'app-detalle-asistencia-estudiante',
@@ -60,7 +61,8 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private reporteService: ReporteAsistenciaService
+    private reporteService: ReporteAsistenciaService,
+    private pdfService: PdfReporteService
   ) {}
 
   ngOnInit(): void {
@@ -136,7 +138,21 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
   }
 
   exportarPdf(): void {
-    // TODO: implementar exportación PDF
+    this.pdfService.exportarDetalleEstudiante({
+      nombre: this.nombre,
+      apellido: this.apellido,
+      documento: this.documento,
+      teaGeneral: this.teaGeneral,
+      presencias: this.presencias ?? 0,
+      inasistencias: this.inasistencias ?? 0,
+      llegadasTarde: this.llegadasTarde ?? 0,
+      ausentePorLLT: this.ausentePorLLT ?? 0,
+      retirosAnticipados: this.retirosAnticipados ?? 0,
+      porcentajeAsistencia: this.porcentajeAsistencia ?? 0,
+      fechaDesde: this.desde,
+      fechaHasta: this.hasta,
+      registros: this.registros,
+    });
   }
 
   getBadgeClase(inasistencias: number | null, teaGeneral: boolean): string {
