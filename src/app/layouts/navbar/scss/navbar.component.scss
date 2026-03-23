@@ -9,6 +9,7 @@
   background: white;
   border-radius: 18px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;   /* evita que el search-box gris sobresalga de las esquinas redondeadas */
 }
 
 /* SEARCH */
@@ -225,15 +226,16 @@
 @media (max-width: 767px) {
   .navbar {
     width: auto;
-    margin-left: 4.75rem;
+    margin-left: 5.25rem;
     padding-right: 0.75rem;
-    padding-left: 1rem;
+    padding-left: 0.75rem;
     box-sizing: border-box;
   }
 
   .search-container {
-    width: 100%;
-    flex: 1 1 auto;
+    flex: 1;
+    min-width: 0;
     max-width: none;
+    width: auto;
   }
 }

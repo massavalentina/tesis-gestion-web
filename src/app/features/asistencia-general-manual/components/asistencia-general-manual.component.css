@@ -39,6 +39,7 @@
 
   font-family: 'Open Sans', sans-serif;
   display: block;
+  overflow-x: hidden; /* evitar que el componente cause scroll horizontal en layout-content */
 }
 
 /* ═══════════════════════════════════════════════════
@@ -104,29 +105,6 @@
   font-family: 'Open Sans', sans-serif;
 }
 
-/* ── Toggle Dev ── */
-.dev-toggle-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  cursor: default;
-}
-.dev-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-hint);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  font-family: 'Open Sans', sans-serif;
-}
-/* Color del slide-toggle cuando está activo */
-:host ::ng-deep .dev-toggle-wrap .mdc-switch--selected .mdc-switch__track { background-color: var(--primary) !important; }
-:host ::ng-deep .dev-toggle-wrap .mdc-switch--selected .mdc-switch__handle-track .mdc-switch__handle::after { background: var(--primary) !important; }
-
 /* ═══════════════════════════════════════════════════
    FILTROS
 ═══════════════════════════════════════════════════ */
@@ -144,8 +122,9 @@
 
 /* Bordes de outlined form fields: manejados globalmente en styles.css */
 
-.field-fecha { width: 195px; }
-.field-curso { width: 170px; }
+.field-fecha      { width: 195px; }
+.field-curso      { width: 170px; }
+.field-hora-global { width: 145px; }
 
 /* Buscador */
 .search-box {
@@ -182,7 +161,7 @@
 
 .empty-state      { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 64px 24px; gap: 10px; }
 .empty-icon-wrap  { width: 64px; height: 64px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-.empty-icon-wrap mat-icon { font-size: 30px; color: var(--text-hint); }
+.empty-icon-wrap mat-icon { font-size: 30px; width: 30px; height: 30px; line-height: 30px; color: var(--text-hint); }
 .empty-state h3   { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-main); font-family: 'Open Sans', sans-serif; }
 .empty-state p    { margin: 0; font-size: 14px; color: var(--text-sub); max-width: 320px; }
 
@@ -287,32 +266,32 @@
 ═══════════════════════════════════════════════════ */
 .tabla-asistencia { width: 100%; font-family: 'Open Sans', sans-serif; }
 
-/* tr necesita el mismo fondo para que no se vean las filas en el área del header */
-tr.mat-header-row {
-  background: #e0f2fe !important;
+/* Angular Material 19 (MDC) usa mat-mdc-header-row / mat-mdc-header-cell */
+:host ::ng-deep .tabla-asistencia .mat-mdc-header-row {
+  background: linear-gradient(0deg, #2f659b, #3c78b4) !important;
 }
 
 /* th lleva position:sticky — Angular CDK sticky lo aplica acá, no en el tr */
-th.mat-header-cell {
+:host ::ng-deep .tabla-asistencia .mat-mdc-header-cell {
   position: sticky !important;
   top: 0 !important;
   z-index: 10 !important;
-  background: #e0f2fe !important;
-  color: #0284c7 !important;
+  background: linear-gradient(0deg, #2f659b, #3c78b4) !important;
+  color: #ffffff !important;
   font-family: 'Open Sans', sans-serif;
   font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase;
   letter-spacing: .05em;
   padding: 0 12px !important;
-  border-bottom: 2px solid #bae6fd !important;
+  border-bottom: 1px solid rgba(255,255,255,.2) !important;
   white-space: nowrap;
   text-align: center !important;
 }
 
-th.mat-header-cell ::ng-deep .mat-sort-header-arrow        { color: #0284c7 !important; }
-th.mat-header-cell ::ng-deep .mat-sort-header-container    { justify-content: center; }
-:host ::ng-deep .mat-sort-header-content                   { color: #0284c7 !important; }
+:host ::ng-deep .tabla-asistencia .mat-mdc-header-cell .mat-sort-header-arrow     { color: #ffffff !important; }
+:host ::ng-deep .tabla-asistencia .mat-mdc-header-cell .mat-sort-header-container { justify-content: center; }
+:host ::ng-deep .mat-sort-header-content                                           { color: #ffffff !important; }
 
 tr.mat-row                { border-bottom: 1px solid var(--border-light) !important; transition: background .12s ease; }
 tr.mat-row:last-child     { border-bottom: none !important; }
@@ -354,8 +333,8 @@ td.mat-cell {
 .hora-na { color: var(--text-hint); padding-left: 8px; font-size: 14px; }
 
 .fila-acciones  { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
-.icon-ok        { color: var(--green); font-size: 18px; }
-.icon-error     { color: var(--red);   font-size: 18px; }
+.icon-ok        { color: var(--green); font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.icon-error     { color: var(--red);   font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .btn-icon-primary { color: var(--primary) !important; }
 
 /* Spinner dentro del botón de fila */
@@ -366,7 +345,7 @@ td.mat-cell {
 .no-data-cell mat-icon { vertical-align: middle; margin-right: 6px; font-size: 18px; color: var(--text-hint); }
 
 /* Pills de opciones de asistencia — redondeadas con fondo de color */
-.opt-p, .opt-a, .opt-llt, .opt-llte, .opt-lltc, .opt-ra, .opt-anc {
+.opt-p, .opt-a, .opt-llt, .opt-llte, .opt-lltc, .opt-ra, .opt-anc, .opt-sa {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -386,6 +365,7 @@ td.mat-cell {
 .opt-lltc { background: rgba(194,65,12,.15);    color: #c2410c; }  /* naranja — Llegada tarde comp*/
 .opt-ra   { background: rgba(245,158,11,.18);   color: #b45309; }  /* ámbar  — Retiro anticipado  */
 .opt-anc  { background: rgba(100,116,139,.12);  color: #64748b; }  /* gris   — Ausencia no comp.  */
+.opt-sa   { background: rgba(100,116,139,.10);  color: #94a3b8; }  /* gris claro — Sin asistencia */
 
 /* ═══════════════════════════════════════════════════
    PANEL DE ACCIONES
@@ -478,7 +458,7 @@ td.mat-cell {
 .confirm-cancel { color: var(--text-hint) !important; }
 
 /* ═══════════════════════════════════════════════════
-   ÍCONO INFO DENTRO DEL BOTÓN
+   BOTONES PANEL — layout: [icon] [texto] [espacio] [tooltip]
 ═══════════════════════════════════════════════════ */
 
 /* Permite que el texto de los botones del panel haga wrap en 2 líneas */
@@ -496,24 +476,33 @@ td.mat-cell {
   min-width: 0;
 }
 
-/* Ícono info_outline dentro del botón, visible solo al hacer hover */
+/* Fix: el label interno del MDC button debe ser flex para que
+   margin-left:auto del tooltip icon funcione correctamente */
+:host ::ng-deep .btn-full .mdc-button__label {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+/* Ícono info_outline dentro del botón — siempre pegado a la derecha */
 .btn-info-icon {
   margin-left: auto !important;
   font-size: 16px !important;
   width: 16px !important;
   height: 16px !important;
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  opacity: 0.55;
   color: inherit !important;
 }
-.btn-full:hover .btn-info-icon { opacity: 0.65; }
 
 /* ═══════════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════════ */
 @media (max-width: 1100px) {
-  .body-layout        { flex-direction: column; }
+  .body-layout        { flex-direction: column; width: 100%; }
+  /* En column-direction, flex:1 no da ancho — se necesita width:100% explícito */
+  .col-tabla          { width: 100%; }
   .col-acciones-panel { width: 100%; }
   .acciones-card      { position: static; }
   .tabla-scroll       { max-height: none; min-height: unset; overflow-y: visible; }
@@ -521,10 +510,139 @@ td.mat-cell {
 
 @media (max-width: 640px) {
   .page-heading     { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .filtros-card     { flex-direction: column; align-items: stretch; }
+  /* Filtros: columna envolvente, pero search+hora comparten fila */
+  .filtros-card     { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
   .field-fecha, .field-curso { width: 100%; }
-  .search-box       { min-width: unset; max-width: unset; width: 100%; }
-  .stat-chip        { font-size: 12px; padding: 5px 10px; }
+  .search-box       { flex: 1; min-width: 0; max-width: unset; width: auto; }
+  .field-hora-global { width: 120px; flex-shrink: 0; }
+  .stat-chip        { font-size: 11px; padding: 5px 10px; }
   .nombre-texto     { max-width: 100px; }
   .resumen-turno-label { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════
+   TARJETA MOBILE — columna filaMovil (fila doble)
+═══════════════════════════════════════════════════ */
+
+/* Celda que envuelve toda la tarjeta */
+td.col-movil { padding: 8px 12px !important; }
+th.col-movil-th { text-align: left !important; }
+
+/* Tarjeta con dos subfilas */
+.movil-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Subfila 1: avatar + nombre completo */
+.movil-nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.movil-nombre-texto {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Subfila 2: selector + iconos/botones */
+.movil-fila-acciones {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.movil-select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Ícono de redirección */
+.btn-redir-movil { color: var(--text-hint) !important; }
+.btn-redir-movil mat-icon { font-size: 18px; }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — iPhone XR y teléfonos (≤480px)
+   Ancho efectivo ≈ 414px - 32px (márgenes layout) = ~382px
+═══════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .page-wrapper { gap: 10px; padding-bottom: 20px; }
+
+  /* ── Encabezado ─────────────────────────────────
+     sin min-width:0 el título desborda el flex      */
+  .has-info              { display: none; }
+  .heading-left          { min-width: 0; }
+  .heading-left > div    { min-width: 0; }
+  .heading-icon          { width: 34px; height: 34px; flex-shrink: 0; }
+  .heading-icon mat-icon { font-size: 17px; }
+  .page-title            { font-size: 0.92rem; line-height: 1.3; }
+  .page-subtitle         { font-size: 11px; line-height: 1.4; }
+
+  /* ── Filtros ──────────────────────────────────── */
+  .filtros-card { padding: 10px 14px; gap: 8px; }
+
+  /* ── Chips: grid 2 columnas simétricas ───────────── */
+  .resumen-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .stat-chip {
+    justify-content: center;
+    font-size: 10px;
+    padding: 5px 8px;
+    gap: 4px;
+  }
+  .stat-chip mat-icon { font-size: 13px; height: 13px; width: 13px; }
+  /* Asistencia % ocupa el ancho completo (fila inferior centrada) */
+  .chip-porcentaje { grid-column: 1 / -1; }
+
+  /* ── Tabla: table-layout:fixed evita expansión por contenido ─ */
+  .tabla-asistencia { table-layout: fixed; }
+
+  /* ── Col filaMovil ocupa todo el ancho ─────────── */
+  th.col-movil-th, td.col-movil { width: 100%; }
+
+  /* ── Tabla scroll ─────────────────────────────── */
+  .tabla-scroll { max-height: calc(100vh - 240px); min-height: 260px; }
+
+  /* ── Panel de acciones ────────────────────────── */
+  .acciones-card { padding: 14px 12px; gap: 8px; }
+  .btn-full { min-height: 38px !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+}
+
+/* ═══════════════════════════════════════════════════
+   CHIP ACTIVO (filtro)
+═══════════════════════════════════════════════════ */
+.stat-chip.chip-activo { outline: 2px solid currentColor; font-weight: 700; }
+
+/* ═══════════════════════════════════════════════════
+   CAMPO FECHA Y CURSO — estilo credenciales-qr
+═══════════════════════════════════════════════════ */
+:host ::ng-deep .field-fecha mat-form-field,
+:host ::ng-deep .field-fecha .mat-mdc-form-field,
+:host ::ng-deep .field-curso mat-form-field,
+:host ::ng-deep .field-curso .mat-mdc-form-field,
+:host ::ng-deep .field-hora-global mat-form-field,
+:host ::ng-deep .field-hora-global .mat-mdc-form-field {
+  background: #f0f5fa;
+  border-radius: 14px;
+  border: 1px solid rgba(199,217,235,.85);
+}
+
+:host ::ng-deep .field-fecha .mdc-text-field--filled,
+:host ::ng-deep .field-curso .mdc-text-field--filled,
+:host ::ng-deep .field-hora-global .mdc-text-field--filled {
+  background: #f0f5fa !important;
+  border-radius: 14px !important;
+}
+
+:host ::ng-deep .field-fecha .mdc-line-ripple,
+:host ::ng-deep .field-curso .mdc-line-ripple,
+:host ::ng-deep .field-hora-global .mdc-line-ripple {
+  display: none !important;
 }

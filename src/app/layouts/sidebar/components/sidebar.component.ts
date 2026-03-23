@@ -8,6 +8,38 @@ import { LayoutModule } from '@angular/cdk/layout';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
+import { trigger, transition, style, animate } from '@angular/animations';
+
+const SLIDE = trigger('slide', [
+  transition(':enter', [
+    style({ transform: 'translateX(-100%)' }),
+    animate('280ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)' })),
+  ]),
+  transition(':leave', [
+    animate('280ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(-100%)' })),
+  ]),
+]);
+
+const FADE = trigger('fade', [
+  transition(':enter', [
+    style({ opacity: 0 }),
+    animate('200ms ease', style({ opacity: 1 })),
+  ]),
+  transition(':leave', [
+    animate('200ms ease', style({ opacity: 0 })),
+  ]),
+]);
+
+const EXPAND_COLLAPSE = trigger('expandCollapse', [
+  transition(':enter', [
+    style({ height: '0', overflow: 'hidden', opacity: 0 }),
+    animate('220ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: '*', opacity: 1 })),
+  ]),
+  transition(':leave', [
+    style({ overflow: 'hidden' }),
+    animate('180ms cubic-bezier(0.4, 0, 0.2, 1)', style({ height: '0', opacity: 0 })),
+  ]),
+]);
 
 @Component({
   selector: 'app-sidebar',
@@ -21,6 +53,7 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
     RouterLink,
     RouterLinkActive,
   ],
+  animations: [SLIDE, FADE, EXPAND_COLLAPSE],
   template: `
     <!-- 🖥 Desktop: sidebar fija -->
     <aside class="sidebar desktop" *ngIf="!isMobile">
@@ -53,7 +86,7 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
         </button>
 
         <!-- Submenú asistencia -->
-        <div class="submenu" *ngIf="asistenciaOpen">
+        <div class="submenu" *ngIf="asistenciaOpen" @expandCollapse>
           <a class="subitem"
              matRipple
              routerLink="/asistencia-rapida"
@@ -135,9 +168,10 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
     <!-- 📱 Mobile: botón hamburguesa -->
     <button
       *ngIf="isMobile && !scannerActivo"
-      mat-icon-button
       class="mobile-menu-btn"
-      (click)="open = true">
+      type="button"
+      (click)="open = true"
+      aria-label="Abrir menú">
       <mat-icon>menu</mat-icon>
     </button>
 
@@ -145,11 +179,12 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
     <div
       class="overlay"
       *ngIf="isMobile && open && !scannerActivo"
+      @fade
       (click)="open = false">
     </div>
 
     <!-- 📱 Mobile: panel -->
-    <aside class="sidebar mobile" *ngIf="isMobile && open && !scannerActivo">
+    <aside class="sidebar mobile" *ngIf="isMobile && open && !scannerActivo" @slide>
 
       <div class="mobile-header">
         <button mat-icon-button class="close-btn" (click)="open = false">
@@ -180,7 +215,7 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
           <mat-icon class="chevron" [class.open]="asistenciaOpen">expand_more</mat-icon>
         </button>
 
-        <div class="submenu" *ngIf="asistenciaOpen">
+        <div class="submenu" *ngIf="asistenciaOpen" @expandCollapse>
           <a class="subitem"
              matRipple
              routerLink="/asistencia-rapida"

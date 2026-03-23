@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import {
   RespuestaVistaPreviaAsistencia,
   SolicitudVistaPreviaAsistencia
@@ -9,7 +10,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ServicioAsistencia {
 
-  private readonly urlBase = 'http://localhost:5050/api/asistencia/scanner';
+  private readonly urlBase = `${environment.apiUrl}/api/asistencia/scanner`;
 
   constructor(private http: HttpClient) {}
 

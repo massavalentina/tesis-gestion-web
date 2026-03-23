@@ -32,6 +32,7 @@ import {
   DatosFeedbackGeneracionQr,
   DialogoFeedbackGeneracionQrComponent
 } from '../components/generation-feedback-dialog.component';
+import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-sync.service';
 
 @Component({
   selector: 'app-qr-credential-generation-page',
@@ -61,7 +62,7 @@ import {
         </div>
 
         <div class="controls">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Curso</mat-label>
             <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
               <mat-option [value]="null">Todos los cursos</mat-option>
@@ -71,7 +72,7 @@ import {
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Alcance</mat-label>
             <mat-select [(ngModel)]="alcanceSeleccionado">
               <mat-option value="ACTIVOS">Estudiantes activos</mat-option>
@@ -144,7 +145,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
   constructor(
     private servicio: ServicioGeneracionCredencialesQr,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private qrCredentialsSync: QrCredentialsSyncService
   ) {
     this.destroyRef.onDestroy(() => {
       this.detenerPolling();
@@ -454,6 +456,11 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
       this.closeProgressDialogTimeoutId = undefined;
       this.cerrarDialogoProgreso();
       this.cargarResumen();
+
+      if (this.cursoSeleccionadoId && (progreso.generados > 0 || progreso.desactivados > 0)) {
+        this.qrCredentialsSync.notifyGenerationUpdated(this.cursoSeleccionadoId);
+      }
+
       this.abrirDialogoResultado(progreso);
     }, 700);
   }

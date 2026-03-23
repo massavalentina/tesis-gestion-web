@@ -3,6 +3,7 @@ import { WeatherComponent } from '../app/deploy-test/weather.component';
 import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generation/pages/qr-credential-generation.page';
 import { LayoutComponent } from './layouts/layout.component';
+import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
 
 export const routes: Routes = [
   {
@@ -34,13 +35,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/asistencia-general-manual/components/asistencia-general-manual.component')
             .then(m => m.AsistenciaGeneralManualComponent),
+        canDeactivate: [cambiosSinGuardarGuard],
       },
-      {
-        path: 'parte-diario-digital',
-        loadComponent: () =>
-          import('../app/features/proximamente/proximamente.component')
-            .then(m => m.ProximamenteComponent),
-      },
+      // {
+      //   path: 'parte-diario-digital',
+      //   loadComponent: () =>
+      //     import('../app/features/parte-diario-digital/components/parte-diario.component')
+      //       .then(m => m.ParteDiarioComponent),
+      // },
       
       {
         path: 'attendance/scan',
