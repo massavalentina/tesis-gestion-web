@@ -1,6 +1,5 @@
 <div class="contenedor">
 
-  <!-- Buscador local -->
   <div class="search-container">
     <div class="search-box">
       <mat-icon class="search-ico">search</mat-icon>
@@ -27,20 +26,16 @@
     </div>
   </div>
 
-  <!-- Loading -->
   <div class="spinner" *ngIf="cargando">
     <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
   </div>
 
-  <!-- Error general -->
   <p class="error-text" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-  <!-- Sin resultados -->
   <p class="sin-resultados" *ngIf="sinResultados">
     No se encontraron estudiantes
   </p>
 
-  <!-- Resultados -->
   <div class="lista" *ngIf="!alumnoSeleccionado">
     <button
       type="button"
@@ -59,19 +54,19 @@
             [class.ok]="!alumno.registradoHoy">
         {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
       </span>
-
     </button>
   </div>
 
-  <!-- Panel selección -->
   <div class="confirmacion" *ngIf="alumnoSeleccionado">
-    <h3>Registrar llegada tarde</h3>
+    <h3>
+      {{ alumnoSeleccionado.registradoHoy ? 'Corregir llegada tarde' : 'Registrar llegada tarde' }}
+    </h3>
 
     <p class="alumno">
       {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
+      <span class="alumno-dni">DNI {{ alumnoSeleccionado.documento }}</span>
     </p>
 
-    <!-- Aviso: ya registrado -->
     <div class="aviso-correccion" *ngIf="alumnoSeleccionado.registradoHoy">
       <div class="aviso-pill">
         <mat-icon class="aviso-ico">info</mat-icon>
@@ -79,12 +74,11 @@
       <div class="aviso-texto">
         <div class="aviso-titulo">Ya registrado hoy</div>
         <div class="aviso-sub">
-          Podés <b>corregir</b> el tipo o <b>borrar</b> el registro si fue el alumno equivocado.
+          Podés corregir el tipo o dejar el turno en <b>Sin definir</b>.
         </div>
       </div>
     </div>
 
-    <!-- Bloque tipo + acciones -->
     <div class="form-block">
 
       <mat-form-field appearance="outline" class="select-tipo">
@@ -96,7 +90,10 @@
           (selectionChange)="onTipoChange($event.value)"
           [disabled]="registrando">
 
-          <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">
+          <mat-option
+            *ngFor="let tipo of tipos"
+            [value]="tipo.id"
+            [disabled]="tipo.id === SIN_DEFINIR_ID && !alumnoSeleccionado.registradoHoy">
             {{ tipo.codigo }} - {{ tipo.descripcion }}
           </mat-option>
         </mat-select>
@@ -104,24 +101,29 @@
         <mat-error *ngIf="tipoError">Seleccioná un tipo para continuar</mat-error>
       </mat-form-field>
 
+      <div class="select-help" *ngIf="tipoSeleccionadoId === SIN_DEFINIR_ID">
+        El turno quedará sin definir y el alumno volverá a mostrarse como no registrado hoy.
+      </div>
+
       <div class="acciones">
-        <button mat-raised-button class="btn-primary"
-                (click)="confirmarRegistro()"
-                [disabled]="registrando">
-          Confirmar registro
+        <button
+          mat-raised-button
+          class="btn-primary"
+          (click)="confirmarOperacion()"
+          [disabled]="registrando">
+          {{
+            tipoSeleccionadoId === SIN_DEFINIR_ID
+              ? 'Guardar cambio'
+              : (alumnoSeleccionado.registradoHoy ? 'Corregir registro' : 'Confirmar registro')
+          }}
         </button>
 
-        <button mat-raised-button class="btn-danger"
-                *ngIf="alumnoSeleccionado.registradoHoy"
-                (click)="confirmarBorrado()"
-                [disabled]="registrando">
-          Borrar registro de hoy
-        </button>
-
-        <button mat-raised-button class="btn-cancelar"
-                (click)="cancelarSeleccion()"
-                [disabled]="registrando">
-          Cancelar
+        <button
+          mat-raised-button
+          class="btn-cancelar"
+          (click)="cancelarSeleccion()"
+          [disabled]="registrando">
+          Cancelar registro
         </button>
       </div>
 

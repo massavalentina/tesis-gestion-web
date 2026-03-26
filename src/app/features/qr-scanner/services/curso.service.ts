@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { OpcionSeleccion } from '../models/escaner.models';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ServicioCurso {
 
-  private readonly urlBase = 'http://localhost:5050/api/asistencia/scanner/cursosscanner';
+  private readonly urlBase = `${environment.apiUrl}/api/asistencia/scanner/cursosscanner`;
 
   constructor(private http: HttpClient) {}
 

@@ -37,12 +37,12 @@ export const routes: Routes = [
             .then(m => m.AsistenciaGeneralManualComponent),
         canDeactivate: [cambiosSinGuardarGuard],
       },
-      {
-        path: 'parte-diario-digital',
-        loadComponent: () =>
-          import('../app/features/parte-diario-digital/components/parte-diario.component')
-            .then(m => m.ParteDiarioComponent),
-      },
+      // {
+      //   path: 'parte-diario-digital',
+      //   loadComponent: () =>
+      //     import('../app/features/parte-diario-digital/components/parte-diario.component')
+      //       .then(m => m.ParteDiarioComponent),
+      // },
       
       {
         path: 'attendance/scan',
@@ -59,6 +59,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
+      },
+      {
+        path: 'ficha-alumno',
+        loadComponent: () =>
+          import('../app/features/ficha-alumno/components/ficha-alumno/ficha-alumno.component')
+            .then(m => m.FichaAlumnoComponent),
       }
     ],
   }

@@ -14,7 +14,10 @@ import { Observable, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs/operators';
 
 import { TipoAsistenciaRapida } from '../../models/tipo-asistencia-rapida.model';
-import { AsistenciaRapidaService } from '../../services/asistencia-rapida.service';
+import {
+  AsistenciaRapidaService,
+  DeshacerAsistenciaRapidaDto
+} from '../../services/asistencia-rapida.service';
 import { RegistrarAsistenciaRapida } from '../../models/registrar-asistencia-rapida.model';
 import { AsistenciaRapidaResponse } from '../../models/asistencia-rapida-response.model';
 import { EstudianteBusquedaRapida } from '../../models/estudiante-busqueda-rapida.model';
@@ -35,7 +38,6 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-
     MatListModule,
     MatButtonModule,
     MatProgressSpinnerModule,
@@ -46,32 +48,24 @@ import {
   ],
   templateUrl: './asistencia-rapida.component.html',
   styleUrls: ['./asistencia-rapida.component.css'],
-
-  // ✅ overlay mat-select vive fuera del componente; con None, tus estilos lo alcanzan
   encapsulation: ViewEncapsulation.None,
-
-  // ✅ Scope para que estilos no afecten otras pantallas
   host: { class: 'asr-host' }
 })
 export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
-
-  // ===== Buscador =====
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   private searchSub?: Subscription;
 
-  // ===== Tipos =====
   tipos: TipoAsistenciaRapida[] = [];
   cargando = false;
   errorMsg = '';
 
-  // ===== Resultados =====
   resultados$: Observable<EstudianteBusquedaRapida[]> = of([]);
   sinResultados = false;
 
   alumnoSeleccionado: EstudianteBusquedaRapida | null = null;
 
-  // ===== Registro =====
   readonly turnoSeleccionado: 'MANANA' = 'MANANA';
+  readonly SIN_DEFINIR_ID = '__SIN_DEFINIR__';
 
   tipoSeleccionadoId: string | null = null;
   tipoError = false;
@@ -91,19 +85,25 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.searchSub?.unsubscribe();
   }
 
-  // =============================
-  // Tipos
-  // =============================
   cargarTipos(): void {
     this.cargando = true;
     this.errorMsg = '';
 
     this.asistenciaRapidaService.getTiposAsistencia().subscribe({
       next: (data) => {
-        // Solo llegadas tarde
-        this.tipos = (data ?? []).filter(t =>
-          ['LLT', 'LLTE', 'LLTC'].includes((t.codigo ?? '').toUpperCase())
-        );
+        const orden: Record<string, number> = { LLT: 1, LLTE: 2, LLTC: 3 };
+        const tiposReales = (data ?? [])
+          .filter(t => ['LLT', 'LLTE', 'LLTC'].includes((t.codigo ?? '').toUpperCase()))
+          .sort((a, b) => (orden[(a.codigo ?? '').toUpperCase()] ?? 99) - (orden[(b.codigo ?? '').toUpperCase()] ?? 99));
+
+        this.tipos = [
+          {
+            id: this.SIN_DEFINIR_ID,
+            codigo: 'SD',
+            descripcion: 'Sin definir'
+          } as TipoAsistenciaRapida,
+          ...tiposReales
+        ];
       },
       error: (err) => {
         console.error(err);
@@ -114,9 +114,6 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     });
   }
 
-  // =============================
-  // Búsqueda (debounce 500ms)
-  // =============================
   private escucharBuscadorLocal(): void {
     this.searchSub = this.searchCtrl.valueChanges
       .pipe(
@@ -162,11 +159,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.resultados$ = of(alumnos);
   }
 
-  // =============================
-  // Selección
-  // =============================
   seleccionarAlumno(a: EstudianteBusquedaRapida): void {
-    // ✅ permitir seleccionar aunque registradoHoy = true (corrección / borrado)
     this.alumnoSeleccionado = a;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
@@ -183,16 +176,21 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
   onTipoChange(id: string | null): void {
     this.tipoSeleccionadoId = id;
     this.tipoError = false;
+    this.errorMsg = '';
   }
 
-  // =============================
-  // Registro (corregir / registrar)
-  // =============================
-  confirmarRegistro(): void {
+  confirmarOperacion(): void {
     if (!this.alumnoSeleccionado) return;
 
     if (!this.tipoSeleccionadoId) {
       this.tipoError = true;
+      return;
+    }
+
+    const esSinDefinir = this.tipoSeleccionadoId === this.SIN_DEFINIR_ID;
+
+    if (esSinDefinir && !this.alumnoSeleccionado.registradoHoy) {
+      this.errorMsg = 'Sin definir solo se puede usar si el alumno ya fue registrado hoy.';
       return;
     }
 
@@ -205,18 +203,27 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
         const tipoTexto = tipo ? `${tipo.codigo} - ${tipo.descripcion}` : 'Tipo seleccionado';
 
         const data: AsistenciaConfirmDialogData = {
-          titulo: this.alumnoSeleccionado!.registradoHoy
-            ? 'El estudiante ya fue registrado hoy. ¿Desea corregir el tipo de llegada tarde?'
-            : '¿Desea registrar la llegada tarde?',
+          titulo: esSinDefinir
+            ? '¿Desea dejar el turno en Sin definir?'
+            : this.alumnoSeleccionado!.registradoHoy
+              ? 'El estudiante ya fue registrado hoy. ¿Desea corregir el tipo de llegada tarde?'
+              : '¿Desea registrar la llegada tarde?',
           alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
+          dni: this.alumnoSeleccionado!.documento,
           curso: this.alumnoSeleccionado!.curso ?? '-',
           fecha: st.fecha,
           hora: st.hora,
-          tipoTexto
+          tipoTexto,
+          detalle: esSinDefinir
+            ? 'El alumno volverá a figurar como no registrado hoy en la búsqueda rápida.'
+            : this.alumnoSeleccionado!.registradoHoy
+              ? 'Se actualizará el tipo del registro de hoy.'
+              : 'Se registrará la llegada tarde para el turno mañana.'
         };
 
         const ref = this.dialog.open(AsistenciaConfirmDialogComponent, {
           width: '360px',
+          maxWidth: '92vw',
           disableClose: true,
           data
         });
@@ -224,6 +231,39 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
         ref.afterClosed().subscribe(confirmado => {
           if (!confirmado) {
             this.registrando = false;
+            return;
+          }
+
+          if (esSinDefinir) {
+            const dto: DeshacerAsistenciaRapidaDto = {
+              estudianteId: this.alumnoSeleccionado!.id,
+              fecha: st.fecha,
+              turno: this.turnoSeleccionado
+            };
+
+            this.asistenciaRapidaService.deshacerAsistencia(dto).subscribe({
+              next: (resp: AsistenciaRapidaResponse) => {
+                const sdata: AsistenciaSuccessDialogData = {
+                  titulo: 'Turno restablecido',
+                  mensaje: `${resp.mensaje} (${st.fecha} ${st.hora}hs)`
+                };
+
+                const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
+                  width: '360px',
+                  maxWidth: '92vw',
+                  disableClose: true,
+                  data: sdata
+                });
+
+                sref.afterClosed().subscribe(() => this.recargarBusquedaActual());
+              },
+              error: err => {
+                console.error(err);
+                this.errorMsg = 'Error al restablecer el registro';
+                this.registrando = false;
+              }
+            });
+
             return;
           }
 
@@ -237,16 +277,21 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
           this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
             next: (resp: AsistenciaRapidaResponse) => {
-              const msg = `${resp.mensaje} (${st.fecha} ${st.hora})`;
-              const sdata: AsistenciaSuccessDialogData = { mensaje: msg };
+              const sdata: AsistenciaSuccessDialogData = {
+                titulo: this.alumnoSeleccionado!.registradoHoy
+                  ? 'Corrección realizada'
+                  : 'Registro realizado',
+                mensaje: `${resp.mensaje} (${st.fecha} ${st.hora}hs)`
+              };
 
               const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
                 width: '360px',
+                maxWidth: '92vw',
                 disableClose: true,
                 data: sdata
               });
 
-              sref.afterClosed().subscribe(() => this.resetPantalla());
+              sref.afterClosed().subscribe(() => this.recargarBusquedaActual());
             },
             error: err => {
               console.error(err);
@@ -264,79 +309,31 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     });
   }
 
-  // =============================
-  // ✅ Borrar/Deshacer (nuevo)
-  // =============================
-  confirmarBorrado(): void {
-    if (!this.alumnoSeleccionado) return;
+  private recargarBusquedaActual(): void {
+    const texto = (this.searchCtrl.value ?? '').trim();
 
-    this.registrando = true;
-    this.errorMsg = '';
-
-    this.asistenciaRapidaService.getServerTime().subscribe({
-      next: st => {
-        const data: AsistenciaConfirmDialogData = {
-          titulo: '¿Desea borrar (deshacer) el registro de llegada tarde de hoy?',
-          alumno: `${this.alumnoSeleccionado!.apellido}, ${this.alumnoSeleccionado!.nombre}`,
-          curso: this.alumnoSeleccionado!.curso ?? '-',
-          fecha: st.fecha,
-          hora: st.hora,
-          tipoTexto: 'Se restablecerá el turno a Presente (P)'
-        };
-
-        const ref = this.dialog.open(AsistenciaConfirmDialogComponent, {
-          width: '360px',
-          disableClose: true,
-          data
-        });
-
-        ref.afterClosed().subscribe(confirmado => {
-          if (!confirmado) {
-            this.registrando = false;
-            return;
-          }
-
-          // ✅ Llama a POST /api/asistencia-rapida/deshacer
-          this.asistenciaRapidaService.borrarAsistencia({
-            estudianteId: this.alumnoSeleccionado!.id,
-            fecha: st.fecha,
-            turno: this.turnoSeleccionado
-          }).subscribe({
-            next: (resp: AsistenciaRapidaResponse) => {
-              const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
-                width: '360px',
-                disableClose: true,
-                data: { mensaje: resp.mensaje } as AsistenciaSuccessDialogData
-              });
-
-              sref.afterClosed().subscribe(() => this.resetPantalla());
-            },
-            error: err => {
-              console.error(err);
-              this.errorMsg = 'Error al borrar asistencia';
-              this.registrando = false;
-            }
-          });
-        });
-      },
-      error: err => {
-        console.error(err);
-        this.errorMsg = 'No se pudo obtener hora del servidor';
-        this.registrando = false;
-      }
-    });
-  }
-
-  private resetPantalla(): void {
-    // ✅ Limpieza total para volver a buscar otro
     this.registrando = false;
     this.alumnoSeleccionado = null;
     this.tipoSeleccionadoId = null;
     this.tipoError = false;
     this.errorMsg = '';
 
-    this.searchCtrl.setValue('', { emitEvent: true });
-    this.resultados$ = of([]);
-    this.sinResultados = false;
+    if (texto.length < 3) {
+      this.resultados$ = of([]);
+      this.sinResultados = false;
+      this.cargando = false;
+      return;
+    }
+
+    this.cargando = true;
+
+    this.asistenciaRapidaService.buscarEstudiantesRapido(texto).subscribe({
+      next: alumnos => this.aplicarResultados(alumnos ?? []),
+      error: err => {
+        console.error(err);
+        this.errorMsg = 'Error actualizando resultados';
+        this.cargando = false;
+      }
+    });
   }
 }
