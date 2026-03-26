@@ -1,4 +1,5 @@
 export interface HorarioClase {
+  idHorario: string;
   idEC: string;
   idClaseDictada: string | null;
   materia: string;

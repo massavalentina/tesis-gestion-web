@@ -7,24 +7,24 @@ import { ComentarioParte }    from '../models/comentario-parte.model';
 import { CursoManual }        from '../../asistencia-general-manual/models/curso-manual.model';
 
 export interface ActualizarClaseDto {
-  idEC:     string;
-  fecha:    string;
-  dictada:  boolean;
-  tema?:    string;
-  motivo?:  string;
+  idHorario: string;
+  fecha:     string;
+  dictada:   boolean;
+  tema?:     string;
+  motivo?:   string;
 }
 
 export interface IntercambiarHorarioDto {
-  idEC1:    string;
-  idEC2:    string;
-  cursoId:  string;
-  fecha:    string;
+  idHorario1: string;
+  idHorario2: string;
+  cursoId:    string;
+  fecha:      string;
 }
 
 export interface ReorganizarHorarioDto {
-  cursoId:          string;
-  fecha:            string;
-  idECsOrdenados:   string[];
+  cursoId:             string;
+  fecha:               string;
+  idHorariosOrdenados: string[];
 }
 
 export interface AgregarComentarioDto {
@@ -71,9 +71,9 @@ export class ParteDiarioService {
     return this.http.post(`${this.parteUrl}/horario/intercambiar`, dto);
   }
 
-  resetearHorario(idEC: string, cursoId: string, fecha: string): Observable<unknown> {
+  resetearHorario(idHorario: string, cursoId: string, fecha: string): Observable<unknown> {
     return this.http.post(`${this.parteUrl}/horario/resetear`, null, {
-      params: { idEC, cursoId, fecha },
+      params: { idHorario, cursoId, fecha },
     });
   }
 

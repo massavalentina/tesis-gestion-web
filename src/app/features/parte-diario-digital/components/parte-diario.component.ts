@@ -13,7 +13,8 @@ import { MatButtonModule }          from '@angular/material/button';
 import { MatIconModule }            from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule }         from '@angular/material/tooltip';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Inject } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule }         from '@angular/material/divider';
 
@@ -30,6 +31,34 @@ import { ClaseDictadaDialogComponent, ClaseDictadaDialogData, ClaseDictadaDialog
 import { DetalleEstudianteDialogComponent, DetalleDialogData }
   from '../../asistencia-general-manual/components/detalle-estudiante-dialog/detalle-estudiante-dialog.component';
 import { FilaAsistenciaManual } from '../../asistencia-general-manual/models/fila-asistencia-manual.model';
+
+// ── Dialog: confirmar restablecimiento de horario ────────────────────────────
+interface ConfirmResetearData { materia: string; horaEntrada: string; horaSalida: string; }
+
+@Component({
+  selector: 'app-confirm-resetear-horario',
+  standalone: true,
+  imports: [MatButtonModule, MatDialogModule],
+  template: `
+    <h2 mat-dialog-title style="margin:0 0 12px;font-size:1.05rem;font-weight:700;">Restablecer horario</h2>
+    <mat-dialog-content>
+      <p style="color:#475569;margin:0 0 6px;">
+        El horario de <strong>{{ data.materia }}</strong> volverá a su horario original
+        ({{ data.horaEntrada }} – {{ data.horaSalida }}).
+      </p>
+      <p style="color:#475569;margin:0;">
+        Si se registraron asistencias por espacio curricular manualmente, estas no serán modificadas.
+      </p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button [mat-dialog-close]="false">Cancelar</button>
+      <button mat-flat-button color="warn" [mat-dialog-close]="true">Restablecer</button>
+    </mat-dialog-actions>
+  `,
+})
+export class ConfirmResetearHorarioDialogComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: ConfirmResetearData) {}
+}
 
 // ── Dialog: confirmar descarte de cambios de horario ─────────────────────────
 @Component({
@@ -153,6 +182,15 @@ export class ParteDiarioComponent implements OnInit {
     return `${hh}:${mm}`;
   }
 
+  logTitulo(contenido: string): string {
+    return contenido.split('\n')[0];
+  }
+
+  logBullets(contenido: string): string[] {
+    const lines = contenido.split('\n');
+    return lines.length > 1 ? lines.slice(1).filter(l => l.trim()) : [];
+  }
+
   // ── Load ─────────────────────────────────────────────────────────────────
 
   cargarResumen(): void {
@@ -212,11 +250,11 @@ export class ParteDiarioComponent implements OnInit {
       if (!result) return;
 
       this.service.actualizarClaseDictada({
-        idEC:    clase.idEC,
-        fecha:   this.fechaString,
-        dictada: result.dictada,
-        motivo:  result.motivo,
-        tema:    result.tema,
+        idHorario: clase.idHorario,
+        fecha:     this.fechaString,
+        dictada:   result.dictada,
+        motivo:    result.motivo,
+        tema:      result.tema,
       }).subscribe({
         next: () => {
           this.snack.open('Clase actualizada.', '', { duration: 2000 });
@@ -272,7 +310,7 @@ export class ParteDiarioComponent implements OnInit {
   }
 
   hayCambiosHorario(): boolean {
-    return this.horarioPendiente.some((c, i) => c.idEC !== this.horarioOriginalEdicion[i]?.idEC);
+    return this.horarioPendiente.some((c, i) => c.idHorario !== this.horarioOriginalEdicion[i]?.idHorario);
   }
 
   onMoverClasePendiente(index: number, direction: 'up' | 'down'): void {
@@ -294,8 +332,8 @@ export class ParteDiarioComponent implements OnInit {
     this.guardandoHorario = true;
     const dto: ReorganizarHorarioDto = {
       cursoId,
-      fecha:          this.fechaString,
-      idECsOrdenados: this.horarioPendiente.map(c => c.idEC),
+      fecha:               this.fechaString,
+      idHorariosOrdenados: this.horarioPendiente.map(c => c.idHorario),
     };
     this.service.reorganizarHorario(dto).subscribe({
       next: () => {
@@ -314,12 +352,26 @@ export class ParteDiarioComponent implements OnInit {
   onResetearHorario(clase: HorarioClase): void {
     const cursoId = this.cursoCtrl.value;
     if (!cursoId) return;
-    this.service.resetearHorario(clase.idEC, cursoId, this.fechaString).subscribe({
-      next: () => {
-        this.snack.open('Horario restablecido.', '', { duration: 2000 });
-        this._ejecutarCarga();
+
+    this.dialog.open<ConfirmResetearHorarioDialogComponent, ConfirmResetearData, boolean>(
+      ConfirmResetearHorarioDialogComponent,
+      {
+        width: '420px',
+        data: {
+          materia:     clase.materia,
+          horaEntrada: clase.horaEntradaOriginal!,
+          horaSalida:  clase.horaSalidaOriginal!,
+        },
       },
-      error: () => this.snack.open('Error al restablecer el horario.', '', { duration: 3000 }),
+    ).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.resetearHorario(clase.idHorario, cursoId, this.fechaString).subscribe({
+        next: () => {
+          this.snack.open('Horario restablecido.', '', { duration: 2000 });
+          this._ejecutarCarga();
+        },
+        error: () => this.snack.open('Error al restablecer el horario.', '', { duration: 3000 }),
+      });
     });
   }
 

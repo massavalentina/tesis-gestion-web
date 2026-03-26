@@ -385,11 +385,17 @@
 
 .log-content {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  min-width: 0;
+}
+.log-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 4px 8px;
   align-items: baseline;
-  font-size: 0.85rem;
-  color: #1e293b;
 }
 .log-hora {
   font-size: 0.75rem;
@@ -408,6 +414,18 @@
 .log-item:not(.log-item--evento) .log-tipo { background: #f0fdf4; color: #15803d; }
 .log-texto { flex: 1; min-width: 0; }
 .log-autor { font-size: 0.75rem; color: #94a3b8; }
+
+.log-bullets {
+  padding-left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.log-bullet-item {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.4;
+}
 
 .log-empty {
   color: #94a3b8;

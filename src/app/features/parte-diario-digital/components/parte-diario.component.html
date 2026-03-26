@@ -119,6 +119,23 @@
           </div>
         </ng-container>
 
+        <!-- Retiros Anticipados -->
+        <ng-container *ngIf="retirados.length > 0">
+          <div class="est-grupo">
+            <div class="est-grupo-label est-grupo-label--retirado">
+              <mat-icon>exit_to_app</mat-icon> Retiros anticipados ({{ retirados.length }})
+            </div>
+            <div class="est-chips">
+              <button *ngFor="let e of retirados"
+                      class="est-chip chip-retirado"
+                      (click)="onVerEstudiante(e)"
+                      [matTooltip]="e.apellido + ', ' + e.nombre">
+                {{ e.apellido }}, {{ e.nombre[0] }}.
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
         <!-- Ausentes -->
         <ng-container *ngIf="ausentes.length > 0">
           <div class="est-grupo">
@@ -179,10 +196,10 @@
              class="clase-item"
              [class.clase-item--movida]="clase.horaEntradaOriginal && !modoEdicionHorario">
           <div class="clase-hora">
-            {{ clase.horaEntrada }}
+            <span class="clase-hora-rango">{{ clase.horaEntrada }} – {{ clase.horaSalida }}</span>
             <span *ngIf="clase.horaEntradaOriginal" class="clase-hora-original"
                   [matTooltip]="'Horario original: ' + clase.horaEntradaOriginal + ' – ' + clase.horaSalidaOriginal">
-              {{ clase.horaEntradaOriginal }}
+              {{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }}
             </span>
           </div>
           <div class="clase-body">
@@ -246,6 +263,7 @@
           <tbody>
             <tr *ngFor="let e of turnoActual?.estudiantes"
                 [class.fila-presente]="e.estado === 'Presente'"
+                [class.fila-retirado]="e.estado === 'Retirado'"
                 [class.fila-ausente]="e.estado === 'Ausente'">
               <td class="col-nombre">{{ e.apellido }}, {{ e.nombre }}</td>
               <td class="col-doc">{{ e.documento }}</td>
@@ -278,10 +296,15 @@
         <div *ngFor="let com of comentarios" class="log-item" [class.log-item--evento]="com.tipo === 'Evento'">
           <div class="log-dot" [class.log-dot--evento]="com.tipo === 'Evento'" [class.log-dot--coment]="com.tipo === 'Comentario'"></div>
           <div class="log-content">
-            <span class="log-hora">{{ formatTimestamp(com.timestamp) }}</span>
-            <span class="log-tipo">{{ com.tipo === 'Evento' ? 'EVENTO' : 'NOTA' }}</span>
-            <span class="log-texto">{{ com.contenido }}</span>
-            <span class="log-autor">— {{ com.autor }}</span>
+            <div class="log-row">
+              <span class="log-hora">{{ formatTimestamp(com.timestamp) }}</span>
+              <span class="log-tipo">{{ com.tipo === 'Evento' ? 'EVENTO' : 'NOTA' }}</span>
+              <span class="log-texto">{{ logTitulo(com.contenido) }}</span>
+              <span class="log-autor">— {{ com.autor }}</span>
+            </div>
+            <div *ngIf="logBullets(com.contenido).length > 0" class="log-bullets">
+              <div *ngFor="let b of logBullets(com.contenido)" class="log-bullet-item">{{ b }}</div>
+            </div>
           </div>
         </div>
 
