@@ -2,7 +2,7 @@
 
   <!-- Header -->
   <div class="reporte-header">
-    <span class="header-titulo">Porcentaje de Asistencia por Alumno</span>
+    <span class="header-titulo">Reportes Asistencia Alumno</span>
     <button mat-stroked-button class="btn-export" (click)="exportarPdf()" matTooltip="Exportar a PDF">
       <mat-icon>picture_as_pdf</mat-icon>
       Exportar PDF
@@ -111,7 +111,7 @@
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Inasistencias</th>
         <td mat-cell *matCellDef="let est">
           <span class="badge" [class]="getBadgeClase(est.inasistencias, est.teaGeneral)">
-            {{ est.inasistencias }}
+            {{ est.teaGeneral ? 'TEA' : est.inasistencias }}
           </span>
         </td>
       </ng-container>

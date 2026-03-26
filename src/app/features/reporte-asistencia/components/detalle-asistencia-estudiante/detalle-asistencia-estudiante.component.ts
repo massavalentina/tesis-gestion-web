@@ -186,8 +186,11 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
   private computeResumenFromRegistros(): void {
     const r = this.registros;
     this.presencias = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'P').length;
-    this.llegadasTarde = r.filter(x => ['LLT', 'LLTE'].includes((x.codigoManana ?? '').toUpperCase())).length;
-    this.ausentePorLLT = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTC').length;
+    const nLLT  = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLT').length;
+    const nLLTE = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTE').length;
+    this.llegadasTarde = nLLT + nLLTE;
+    // LLT = 0.25 falta, LLTE = 0.50 falta → cada 1.0 acumulada = 1 inasistencia completa
+    this.ausentePorLLT = Math.floor(nLLT * 0.25 + nLLTE * 0.5);
     this.retirosAnticipados = r.filter(x =>
       ['RA', 'RAE'].includes((x.codigoManana ?? '').toUpperCase()) ||
       ['RA', 'RAE'].includes((x.codigoTarde ?? '').toUpperCase())

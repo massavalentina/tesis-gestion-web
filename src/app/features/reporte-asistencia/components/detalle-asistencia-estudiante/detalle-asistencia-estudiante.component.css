@@ -183,6 +183,42 @@
   margin-left: 4px;
 }
 
+.lltc-nota {
+  display: block;
+  font-size: 0.72rem;
+  color: #880e4f;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Banner de inasistencias acumuladas por llegadas tardes */
+.llt-acum-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff3e0;
+  border: 1px solid #ffe0b2;
+  color: #e65100;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.llt-acum-ico {
+  font-size: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.llt-acum-detalle {
+  display: block;
+  font-size: 0.78rem;
+  color: #bf360c;
+  margin-top: 2px;
+  font-style: italic;
+}
+
 /* ── Valor inasistencia ── */
 .col-valor { text-align: center; }
 .valor-negativo { color: #c62828; font-weight: 600; }

@@ -75,6 +75,16 @@
     <span>No hay registros de inasistencias o movimientos para este estudiante en el período indicado.</span>
   </div>
 
+  <!-- Nota de inasistencias acumuladas por llegadas tardes -->
+  <div class="llt-acum-banner" *ngIf="(ausentePorLLT ?? 0) > 0">
+    <mat-icon class="llt-acum-ico">schedule</mat-icon>
+    <span>
+      <strong>{{ ausentePorLLT }} inasistencia{{ (ausentePorLLT ?? 0) === 1 ? '' : 's' }}</strong>
+      sumada{{ (ausentePorLLT ?? 0) === 1 ? '' : 's' }} por llegadas tardes
+      <span class="llt-acum-detalle">(LLT = 0,25 falta · LLTE = 0,50 falta · cada 1,0 = 1 inasistencia)</span>
+    </span>
+  </div>
+
   <!-- Tabla de registros -->
   <div class="table-wrapper" *ngIf="!cargando && !error && registrosFiltrados.length > 0">
 
@@ -96,6 +106,9 @@
             {{ r.codigoManana }}
           </span>
           <span class="hora-text" *ngIf="r.horaEntradaManana"> {{ r.horaEntradaManana }}</span>
+          <span class="lltc-nota" *ngIf="(r.codigoManana ?? '').toUpperCase() === 'LLTC'">
+            Inasistencia por llegadas tardes
+          </span>
         </td>
       </ng-container>
 

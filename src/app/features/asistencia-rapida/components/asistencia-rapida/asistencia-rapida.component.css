@@ -164,6 +164,19 @@
 
 .estado.ok { background:#c9f7d5; color:#1a4d2e; }
 .estado.error { background:#ffcdd2; color:#5a1a1a; }
+.estado-tea { background:#e0e0e0; color:#424242; border-color:#bdbdbd; }
+
+.item-tea{
+  cursor: default;
+  opacity: 0.75;
+  background: #fafafa;
+  border-color: #e0e0e0;
+}
+
+.item-tea:hover{
+  transform: none;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+}
 
 /* PANEL */
 
