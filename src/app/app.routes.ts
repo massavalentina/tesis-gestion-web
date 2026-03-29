@@ -37,12 +37,12 @@ export const routes: Routes = [
             .then(m => m.AsistenciaGeneralManualComponent),
         canDeactivate: [cambiosSinGuardarGuard],
       },
-      // {
-      //   path: 'parte-diario-digital',
-      //   loadComponent: () =>
-      //     import('../app/features/parte-diario-digital/components/parte-diario.component')
-      //       .then(m => m.ParteDiarioComponent),
-      // },
+      {
+        path: 'parte-diario-digital',
+        loadComponent: () =>
+          import('../app/features/parte-diario-digital/components/parte-diario.component')
+            .then(m => m.ParteDiarioComponent),
+      },
       
       {
         path: 'attendance/scan',

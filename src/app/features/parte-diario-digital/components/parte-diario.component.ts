@@ -1,4 +1,4 @@
-import { Component, OnInit }               from '@angular/core';
+import { Component, OnInit, Injectable, Inject } from '@angular/core';
 import { CommonModule }                      from '@angular/common';
 import { ReactiveFormsModule, FormControl }  from '@angular/forms';
 import { FormsModule }                       from '@angular/forms';
@@ -6,7 +6,7 @@ import { forkJoin }                          from 'rxjs';
 
 import { MatSelectModule }          from '@angular/material/select';
 import { MatDatepickerModule }      from '@angular/material/datepicker';
-import { MatNativeDateModule }      from '@angular/material/core';
+import { MatNativeDateModule, NativeDateAdapter, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatDateFormats } from '@angular/material/core';
 import { MatFormFieldModule }       from '@angular/material/form-field';
 import { MatInputModule }           from '@angular/material/input';
 import { MatButtonModule }          from '@angular/material/button';
@@ -14,7 +14,6 @@ import { MatIconModule }            from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule }         from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { Inject } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule }         from '@angular/material/divider';
 
@@ -31,6 +30,29 @@ import { ClaseDictadaDialogComponent, ClaseDictadaDialogData, ClaseDictadaDialog
 import { DetalleEstudianteDialogComponent, DetalleDialogData }
   from '../../asistencia-general-manual/components/detalle-estudiante-dialog/detalle-estudiante-dialog.component';
 import { FilaAsistenciaManual } from '../../asistencia-general-manual/models/fila-asistencia-manual.model';
+
+// ── Date adapter DD/MM/YYYY (igual que asistencia-manual) ────────────────────
+@Injectable()
+class DdMmYyyyDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: object): string {
+    if ((displayFormat as unknown as string) === 'input') {
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      return `${d}/${m}/${date.getFullYear()}`;
+    }
+    return super.format(date, displayFormat);
+  }
+}
+
+const DD_MM_YYYY: MatDateFormats = {
+  parse:   { dateInput: { day: 'numeric', month: 'numeric', year: 'numeric' } },
+  display: {
+    dateInput:          'input',
+    monthYearLabel:     { year: 'numeric', month: 'short'  },
+    dateA11yLabel:      { year: 'numeric', month: 'long',  day: 'numeric' },
+    monthYearA11yLabel: { year: 'numeric', month: 'long'   },
+  },
+};
 
 // ── Dialog: confirmar restablecimiento de horario ────────────────────────────
 interface ConfirmResetearData { materia: string; horaEntrada: string; horaSalida: string; }
@@ -102,6 +124,11 @@ export class ConfirmDescartarHorarioDialogComponent {}
 
   templateUrl: './parte-diario.component.html',
   styleUrls: ['./parte-diario.component.css'],
+  providers: [
+    { provide: MAT_DATE_LOCALE,  useValue: 'es-AR'            },
+    { provide: DateAdapter,      useClass: DdMmYyyyDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY          },
+  ],
 })
 export class ParteDiarioComponent implements OnInit {
 
@@ -165,6 +192,16 @@ export class ParteDiarioComponent implements OnInit {
   get ausentes():  EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'Ausente')    ?? []; }
   get retirados(): EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'Retirado')   ?? []; }
   get sinReg():    EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'SinRegistro') ?? []; }
+
+  sortNombreAsc = true;
+
+  get listaOrdenada(): EstudianteParte[] {
+    const list = [...(this.turnoActual?.estudiantes ?? [])];
+    return list.sort((a, b) => {
+      const cmp = a.apellido.localeCompare(b.apellido, 'es-AR') || a.nombre.localeCompare(b.nombre, 'es-AR');
+      return this.sortNombreAsc ? cmp : -cmp;
+    });
+  }
 
   estadoColor(estado: string): string {
     switch (estado) {

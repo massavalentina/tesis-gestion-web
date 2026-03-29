@@ -252,7 +252,10 @@
         <table class="pd-tabla">
           <thead>
             <tr>
-              <th>Apellido y Nombre</th>
+              <th class="col-sortable" (click)="sortNombreAsc = !sortNombreAsc" style="cursor:pointer;user-select:none;">
+                Apellido y Nombre
+                <mat-icon style="font-size:15px;vertical-align:middle;line-height:1;">{{ sortNombreAsc ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              </th>
               <th>Documento</th>
               <th>Estado</th>
               <th>Entrada</th>
@@ -261,7 +264,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let e of turnoActual?.estudiantes"
+            <tr *ngFor="let e of listaOrdenada"
                 [class.fila-presente]="e.estado === 'Presente'"
                 [class.fila-retirado]="e.estado === 'Retirado'"
                 [class.fila-ausente]="e.estado === 'Ausente'">
