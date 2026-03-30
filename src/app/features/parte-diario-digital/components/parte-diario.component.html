@@ -175,7 +175,7 @@
             <div class="horario-edit-actions">
               <button mat-stroked-button (click)="cancelarEdicionHorario()" [disabled]="guardandoHorario">Cancelar</button>
               <button mat-flat-button color="primary" (click)="guardarReorganizacion()"
-                      [disabled]="guardandoHorario || !hayCambiosHorario()">
+                      [disabled]="guardandoHorario || !hayCambiosHorario() || timesInvalidos()">
                 <mat-spinner *ngIf="guardandoHorario" diameter="14" class="btn-spin"></mat-spinner>
                 Guardar
               </button>
@@ -188,19 +188,31 @@
         </div>
 
         <div *ngIf="modoEdicionHorario" class="horario-edit-banner">
-          <mat-icon>drag_indicator</mat-icon>
-          Modo edición — reordenar y luego guardar
+          <mat-icon>info_outline</mat-icon>
+          <span>Ajustá el horario de este curso para este día en particular, colocando la duración de cada clase.</span>
         </div>
 
         <div *ngFor="let clase of (modoEdicionHorario ? horarioPendiente : turnoActual?.horarioClases); let i = index; let last = last"
              class="clase-item"
              [class.clase-item--movida]="clase.horaEntradaOriginal && !modoEdicionHorario">
           <div class="clase-hora">
-            <span class="clase-hora-rango">{{ clase.horaEntrada }} – {{ clase.horaSalida }}</span>
-            <span *ngIf="clase.horaEntradaOriginal" class="clase-hora-original"
-                  [matTooltip]="'Horario original: ' + clase.horaEntradaOriginal + ' – ' + clase.horaSalidaOriginal">
-              {{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }}
-            </span>
+            <ng-container *ngIf="!modoEdicionHorario">
+              <span class="clase-hora-rango">{{ clase.horaEntrada }} – {{ clase.horaSalida }}</span>
+              <span *ngIf="clase.horaEntradaOriginal" class="clase-hora-original"
+                    [matTooltip]="'Horario original: ' + clase.horaEntradaOriginal + ' – ' + clase.horaSalidaOriginal">
+                {{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }}
+              </span>
+            </ng-container>
+            <ng-container *ngIf="modoEdicionHorario">
+              <div class="clase-hora-edit">
+                <input type="time" [(ngModel)]="clase.horaEntrada" class="input-hora"
+                       [class.input-hora--invalid]="errorHorario(clase)" />
+                <span class="hora-sep">–</span>
+                <input type="time" [(ngModel)]="clase.horaSalida" class="input-hora"
+                       [class.input-hora--invalid]="errorHorario(clase)" />
+              </div>
+              <span *ngIf="errorHorario(clase) as err" class="hora-error">{{ err }}</span>
+            </ng-container>
           </div>
           <div class="clase-body">
             <div class="clase-nombre">{{ clase.materia }}</div>
