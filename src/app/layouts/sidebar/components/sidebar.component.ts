@@ -127,6 +127,14 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              [routerLinkActiveOptions]="{ exact: false }">
             Reporte Asistencia General
           </a>
+
+          <a class="subitem"
+             matRipple
+             routerLink="/reporte-asistencia-docente"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: false }">
+            Inasistencias por Espacio
+          </a>
         </div>
 
         <!-- Credenciales QR -->
@@ -260,6 +268,15 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              [routerLinkActiveOptions]="{ exact: false }"
              (click)="closeMobile()">
             Reporte Asistencia General
+          </a>
+
+          <a class="subitem"
+             matRipple
+             routerLink="/reporte-asistencia-docente"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: false }"
+             (click)="closeMobile()">
+            Inasistencias por Espacio
           </a>
         </div>
 

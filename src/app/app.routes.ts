@@ -83,7 +83,19 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
-      }
+      },
+      {
+        path: 'reporte-asistencia-docente',
+        loadComponent: () =>
+          import('../app/features/reporte-asistencia-docente/components/reporte-asistencia-docente/reporte-asistencia-docente.component')
+            .then(m => m.ReporteAsistenciaDocenteComponent),
+      },
+      {
+        path: 'reporte-asistencia-docente/detalle/:estudianteId/:idEC',
+        loadComponent: () =>
+          import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
+            .then(m => m.DetalleAsistenciaDocenteComponent),
+      },
     ],
   }
 ];

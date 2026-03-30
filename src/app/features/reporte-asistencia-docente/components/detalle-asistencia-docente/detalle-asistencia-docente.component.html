@@ -1,0 +1,140 @@
+<div class="detalle-container">
+
+  <!-- Barra superior -->
+  <div class="detalle-topbar">
+    <button mat-button class="btn-volver" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver al reporte
+    </button>
+    <button mat-stroked-button class="btn-export" (click)="exportarPdf()" matTooltip="Exportar a PDF">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Exportar PDF
+    </button>
+  </div>
+
+  <!-- Header estudiante -->
+  <div class="detalle-header" [class.header-tea]="teaGeneral">
+    <div class="estudiante-info">
+      <span class="estudiante-nombre">{{ apellido }}, {{ nombre }}</span>
+      <span class="estudiante-dni">DNI {{ documento }}</span>
+    </div>
+    <div class="header-right">
+      <span class="espacio-chip" *ngIf="nombreEspacio">{{ nombreEspacio }}</span>
+      <span class="tea-chip" *ngIf="teaGeneral">TEA</span>
+    </div>
+  </div>
+
+  <!-- Filtro activo -->
+  <div class="filtro-activo" *ngIf="desde || hasta">
+    <mat-icon>date_range</mat-icon>
+    <span>Período:
+      <ng-container *ngIf="desde">desde {{ formatFecha(desde) }}</ng-container>
+      <ng-container *ngIf="hasta"> hasta {{ formatFecha(hasta) }}</ng-container>
+    </span>
+  </div>
+
+  <!-- Tarjetas resumen -->
+  <div class="resumen-cards" *ngIf="presencias !== null">
+    <div class="card">
+      <span class="card-valor">{{ presencias }}</span>
+      <span class="card-label">Presencias</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ inasistencias }}</span>
+      <span class="card-label">Inasistencias</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ llegadasTarde }}</span>
+      <span class="card-label">Llegadas Tarde</span>
+    </div>
+    <div class="card">
+      <span class="card-valor">{{ retirosAnticipados }}</span>
+      <span class="card-label">Retiros</span>
+    </div>
+    <div class="card card-porcentaje">
+      <span class="card-valor" [class]="getBadgeClase(porcentajeAsistencia, teaGeneral)">
+        {{ porcentajeAsistencia }}%
+      </span>
+      <span class="card-label">% Asistencia</span>
+    </div>
+  </div>
+
+  <!-- Cargando -->
+  <div class="estado-center" *ngIf="cargando">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Error -->
+  <div class="estado-center error" *ngIf="error">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudo cargar el detalle de asistencias.</span>
+  </div>
+
+  <!-- Sin clases dictadas -->
+  <div class="estado-center muted"
+       *ngIf="!cargando && !error && registrosFiltrados.length === 0">
+    <mat-icon>event_busy</mat-icon>
+    <span>No hay clases dictadas para este espacio en el período indicado.</span>
+  </div>
+
+  <!-- Tabla de clases -->
+  <div class="table-wrapper" *ngIf="!cargando && !error && registros.length > 0">
+
+    <p class="total-registros">{{ registros.length }} clase{{ registros.length !== 1 ? 's' : '' }} registrada{{ registros.length !== 1 ? 's' : '' }}</p>
+
+    <table mat-table [dataSource]="registros" class="detalle-table">
+
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let r">{{ formatFecha(r.fecha) }}</td>
+      </ng-container>
+
+      <!-- Dictada -->
+      <ng-container matColumnDef="dictada">
+        <th mat-header-cell *matHeaderCellDef>Clase</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="codigo-chip" [class]="r.dictada ? 'codigo-presente' : 'codigo-default'">
+            {{ r.dictada ? 'Dictada' : 'No dictada' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Presente -->
+      <ng-container matColumnDef="presente">
+        <th mat-header-cell *matHeaderCellDef>Asistencia</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="codigo-chip" [class]="getPresenteClase(r)">
+            {{ getPresenteTexto(r) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Código general -->
+      <ng-container matColumnDef="codigo">
+        <th mat-header-cell *matHeaderCellDef>Código</th>
+        <td mat-cell *matCellDef="let r">
+          <span *ngIf="r.codigo" class="codigo-chip" [class]="getCodigoBadge(r.codigo)">
+            {{ r.codigo }}
+          </span>
+          <span *ngIf="!r.codigo" class="text-muted">—</span>
+        </td>
+      </ng-container>
+
+      <!-- Hora -->
+      <ng-container matColumnDef="horaEntrada">
+        <th mat-header-cell *matHeaderCellDef>Hora entrada</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="hora-text" *ngIf="r.horaEntrada">{{ r.horaEntrada }}</span>
+          <span class="text-muted" *ngIf="!r.horaEntrada">—</span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas;"
+          [class.fila-ausente]="row.dictada && row.presente === false"></tr>
+
+    </table>
+  </div>
+
+</div>
