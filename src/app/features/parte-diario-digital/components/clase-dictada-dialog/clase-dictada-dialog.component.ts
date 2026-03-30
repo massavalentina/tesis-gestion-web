@@ -19,7 +19,6 @@ export interface ClaseDictadaDialogData {
 export interface ClaseDictadaDialogResult {
   dictada: boolean;
   motivo?: string;
-  tema?:   string;
 }
 
 @Component({
@@ -53,10 +52,6 @@ export interface ClaseDictadaDialogResult {
           <mat-error *ngIf="form.get('motivo')?.hasError('required')">El motivo es obligatorio.</mat-error>
         </mat-form-field>
 
-        <mat-form-field *ngIf="data.nuevoDictada" appearance="outline" class="cd-field">
-          <mat-label>Tema (opcional)</mat-label>
-          <input matInput formControlName="tema" placeholder="Ej: Funciones cuadráticas, capítulo 3..." />
-        </mat-form-field>
       </form>
 
       <div class="cd-actions">
@@ -122,7 +117,6 @@ export class ClaseDictadaDialogComponent {
   ) {
     this.form = new FormGroup({
       motivo: new FormControl('', data.nuevoDictada ? [] : [Validators.required]),
-      tema:   new FormControl(''),
     });
   }
 
@@ -131,7 +125,6 @@ export class ClaseDictadaDialogComponent {
     this.dialogRef.close({
       dictada: this.data.nuevoDictada,
       motivo:  this.form.value.motivo || undefined,
-      tema:    this.form.value.tema   || undefined,
     });
   }
 }

@@ -17,7 +17,7 @@ import { MatDialog, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/d
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule }         from '@angular/material/divider';
 
-import { ParteDiarioService, AgregarComentarioDto, ReorganizarHorarioDto } from '../services/parte-diario.service';
+import { ParteDiarioService, AgregarComentarioDto, ReorganizarHorarioDto, SlotReorganizadoDto } from '../services/parte-diario.service';
 import { ParteDiarioResumen }  from '../models/parte-diario-resumen.model';
 import { ComentarioParte }     from '../models/comentario-parte.model';
 import { TurnoParte }          from '../models/turno-parte.model';
@@ -278,6 +278,29 @@ export class ParteDiarioComponent implements OnInit {
 
     const nuevoDictada = clase.dictada === false ? true : false;
 
+    // Al reactivar una clase No Dictada → Dictada, verificar superposición con las ya dictadas
+    if (nuevoDictada === true && clase.dictada === false) {
+      const clases = this.turnoActual?.horarioClases ?? [];
+      const e1 = this.horaAMinutos(clase.horaEntrada);
+      const s1 = this.horaAMinutos(clase.horaSalida);
+      if (!isNaN(e1) && !isNaN(s1) && s1 > e1) {
+        const hayConflicto = clases.some(other => {
+          if (other.idHorario === clase.idHorario || other.dictada === false) return false;
+          const e2 = this.horaAMinutos(other.horaEntrada);
+          const s2 = this.horaAMinutos(other.horaSalida);
+          if (isNaN(e2) || isNaN(s2)) return false;
+          return e1 < s2 && e2 < s1;
+        });
+        if (hayConflicto) {
+          this.snack.open(
+            'El rango de esta clase se superpone con otra clase ya dictada. Ajustá el horario antes de activarla.',
+            'OK', { duration: 5000 },
+          );
+          return;
+        }
+      }
+    }
+
     const ref = this.dialog.open<ClaseDictadaDialogComponent, ClaseDictadaDialogData, ClaseDictadaDialogResult | null>(
       ClaseDictadaDialogComponent,
       { data: { clase, nuevoDictada }, width: '460px' },
@@ -291,7 +314,6 @@ export class ParteDiarioComponent implements OnInit {
         fecha:     this.fechaString,
         dictada:   result.dictada,
         motivo:    result.motivo,
-        tema:      result.tema,
       }).subscribe({
         next: () => {
           this.snack.open('Clase actualizada.', '', { duration: 2000 });
@@ -335,8 +357,9 @@ export class ParteDiarioComponent implements OnInit {
 
   entrarModoEdicion(): void {
     const clases = this.turnoActual?.horarioClases ?? [];
-    this.horarioOriginalEdicion = [...clases];
-    this.horarioPendiente       = [...clases];
+    // Copia profunda de cada objeto para que editar horarioPendiente no afecte la vista original
+    this.horarioOriginalEdicion = clases.map(c => ({ ...c }));
+    this.horarioPendiente       = clases.map(c => ({ ...c }));
     this.modoEdicionHorario     = true;
   }
 
@@ -347,7 +370,65 @@ export class ParteDiarioComponent implements OnInit {
   }
 
   hayCambiosHorario(): boolean {
-    return this.horarioPendiente.some((c, i) => c.idHorario !== this.horarioOriginalEdicion[i]?.idHorario);
+    return this.horarioPendiente.some((c, i) => {
+      const orig = this.horarioOriginalEdicion[i];
+      return !orig
+          || c.idHorario   !== orig.idHorario
+          || c.horaEntrada !== orig.horaEntrada
+          || c.horaSalida  !== orig.horaSalida;
+    });
+  }
+
+  /** Convierte "HH:mm" a minutos totales; devuelve NaN si el formato es inválido. */
+  private horaAMinutos(hora: string): number {
+    if (!hora || !/^\d{2}:\d{2}$/.test(hora)) return NaN;
+    const [h, m] = hora.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  /**
+   * true si el rango de esta clase se superpone con otra clase DICTADA en horarioPendiente.
+   * Las clases No Dictadas quedan excluidas del análisis.
+   */
+  tieneSuperposicion(c: HorarioClase): boolean {
+    if (c.dictada === false) return false;
+    const e1 = this.horaAMinutos(c.horaEntrada);
+    const s1 = this.horaAMinutos(c.horaSalida);
+    if (isNaN(e1) || isNaN(s1) || s1 <= e1) return false;
+    return this.horarioPendiente.some(other => {
+      if (other === c || other.dictada === false) return false;
+      const e2 = this.horaAMinutos(other.horaEntrada);
+      const s2 = this.horaAMinutos(other.horaSalida);
+      if (isNaN(e2) || isNaN(s2) || s2 <= e2) return false;
+      return e1 < s2 && e2 < s1;
+    });
+  }
+
+  /**
+   * Devuelve el mensaje de error de horario para una clase, o null si es válido.
+   * Las clases No Dictadas no se validan.
+   */
+  errorHorario(c: HorarioClase): string | null {
+    if (c.dictada === false) return null;
+    const e = this.horaAMinutos(c.horaEntrada);
+    const s = this.horaAMinutos(c.horaSalida);
+    if (isNaN(e) || isNaN(s)) return null;
+    const minutos = s - e;
+    if (minutos <= 0)  return 'La hora de salida debe ser posterior a la de entrada.';
+    if (minutos < 40)  return `Duración mínima 40 min — actual: ${minutos} min.`;
+    if (this.tieneSuperposicion(c)) return 'El rango se superpone con otra clase.';
+    return null;
+  }
+
+  /** true si algún slot dictado tiene hora inválida, duración < 40 min o superposición. */
+  timesInvalidos(): boolean {
+    const re = /^\d{2}:\d{2}$/;
+    return this.horarioPendiente.some(c => {
+      if (c.dictada === false) return false;
+      if (!re.test(c.horaEntrada) || !re.test(c.horaSalida)) return true;
+      const minutos = this.horaAMinutos(c.horaSalida) - this.horaAMinutos(c.horaEntrada);
+      return minutos < 40 || this.tieneSuperposicion(c);
+    });
   }
 
   onMoverClasePendiente(index: number, direction: 'up' | 'down'): void {
@@ -367,11 +448,12 @@ export class ParteDiarioComponent implements OnInit {
     const cursoId = this.cursoCtrl.value;
     if (!cursoId) return;
     this.guardandoHorario = true;
-    const dto: ReorganizarHorarioDto = {
-      cursoId,
-      fecha:               this.fechaString,
-      idHorariosOrdenados: this.horarioPendiente.map(c => c.idHorario),
-    };
+    const slots: SlotReorganizadoDto[] = this.horarioPendiente.map(c => ({
+      idHorario:   c.idHorario,
+      horaEntrada: c.horaEntrada,
+      horaSalida:  c.horaSalida,
+    }));
+    const dto: ReorganizarHorarioDto = { cursoId, fecha: this.fechaString, slots };
     this.service.reorganizarHorario(dto).subscribe({
       next: () => {
         this.guardandoHorario = false;

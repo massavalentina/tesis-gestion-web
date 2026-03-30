@@ -345,7 +345,7 @@ td.mat-cell {
 .no-data-cell mat-icon { vertical-align: middle; margin-right: 6px; font-size: 18px; color: var(--text-hint); }
 
 /* Pills de opciones de asistencia — redondeadas con fondo de color */
-.opt-p, .opt-a, .opt-llt, .opt-llte, .opt-lltc, .opt-ra, .opt-anc, .opt-sa {
+.opt-p, .opt-a, .opt-llt, .opt-llte, .opt-lltc, .opt-ra, .opt-rae, .opt-re, .opt-anc, .opt-sa {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -364,6 +364,8 @@ td.mat-cell {
 .opt-llte { background: rgba(194,65,12,.15);    color: #c2410c; }  /* naranja — Llegada tarde esp */
 .opt-lltc { background: rgba(194,65,12,.15);    color: #c2410c; }  /* naranja — Llegada tarde comp*/
 .opt-ra   { background: rgba(245,158,11,.18);   color: #b45309; }  /* ámbar  — Retiro anticipado  */
+.opt-rae  { background: rgba(245,158,11,.18);   color: #b45309; }  /* ámbar  — Retiro anticipado excesivo */
+.opt-re   { background: rgba(245,158,11,.18);   color: #b45309; }  /* ámbar  — Retiro express     */
 .opt-anc  { background: rgba(100,116,139,.12);  color: #64748b; }  /* gris   — Ausencia no comp.  */
 .opt-sa   { background: rgba(100,116,139,.10);  color: #94a3b8; }  /* gris claro — Sin asistencia */
 

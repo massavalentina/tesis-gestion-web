@@ -21,10 +21,16 @@ export interface IntercambiarHorarioDto {
   fecha:      string;
 }
 
+export interface SlotReorganizadoDto {
+  idHorario:   string;
+  horaEntrada: string;  // "HH:mm"
+  horaSalida:  string;  // "HH:mm"
+}
+
 export interface ReorganizarHorarioDto {
-  cursoId:             string;
-  fecha:               string;
-  idHorariosOrdenados: string[];
+  cursoId: string;
+  fecha:   string;
+  slots:   SlotReorganizadoDto[];
 }
 
 export interface AgregarComentarioDto {

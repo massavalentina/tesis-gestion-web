@@ -198,6 +198,9 @@
                       <mat-option *ngFor="let t of tipos" [value]="t.id">
                         <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
                       </mat-option>
+                      <mat-option *ngIf="getInternalTipo(fila.tipoManianaId) as t" [value]="t.id" disabled>
+                        <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
+                      </mat-option>
                     </mat-select>
                   </mat-form-field>
                 </td>
@@ -219,6 +222,9 @@
                       <mat-option [value]="null">— Sin definir —</mat-option>
                       <mat-option *ngFor="let t of tipos" [value]="t.id">
                         <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                      </mat-option>
+                      <mat-option *ngIf="getInternalTipo(fila.tipoTardeId) as t" [value]="t.id" disabled>
+                        <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
@@ -287,6 +293,9 @@
                           <mat-option [value]="null">— Sin definir —</mat-option>
                           <mat-option *ngFor="let t of tipos" [value]="t.id">
                             <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          </mat-option>
+                          <mat-option *ngIf="getInternalTipo(getTipoActivo(fila)) as t" [value]="t.id" disabled>
+                            <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
                           </mat-option>
                         </mat-select>
                       </mat-form-field>

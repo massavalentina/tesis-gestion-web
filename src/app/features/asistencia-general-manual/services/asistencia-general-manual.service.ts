@@ -41,11 +41,16 @@ export class AsistenciaGeneralManualService {
     return this.http.get<EstudianteManual[]>(`${this.cursosUrl}/${cursoId}/estudiantes`);
   }
 
-  // ── Tipos (reutiliza el endpoint de asistencia-rápida, filtra RE y RAE) ───
+  // ── Tipos seleccionables (filtra RE y RAE — solo para <mat-option>) ────────
   getTiposAsistencia(): Observable<TipoAsistenciaManual[]> {
     return this.http.get<TipoAsistenciaManual[]>(this.tiposUrl).pipe(
       map(tipos => tipos.filter(t => !CODIGOS_INTERNOS.has(t.codigo.toUpperCase())))
     );
+  }
+
+  // ── Todos los tipos (incluyendo internos RE/RAE) — solo para display ──────
+  getTodosTiposAsistencia(): Observable<TipoAsistenciaManual[]> {
+    return this.http.get<TipoAsistenciaManual[]>(this.tiposUrl);
   }
 
   // ── Asistencias ya registradas hoy (para pre-cargar la tabla) ────────────
