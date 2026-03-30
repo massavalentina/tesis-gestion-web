@@ -3,9 +3,11 @@ export interface AsistenciaEspacioItem {
   idEC:                string;
   idClaseDictada:      string | null;
   nombreMateria:       string;
-  horarioEntrada:      string;
-  horarioSalida:       string;
-  dictada:             boolean | null;
+  horarioEntrada:         string;
+  horarioSalida:          string;
+  horarioEntradaOriginal: string | null;
+  horarioSalidaOriginal:  string | null;
+  dictada:                boolean | null;
   presente:            boolean | null;
   presenteOriginal:    boolean | null;
   guardando:           boolean;

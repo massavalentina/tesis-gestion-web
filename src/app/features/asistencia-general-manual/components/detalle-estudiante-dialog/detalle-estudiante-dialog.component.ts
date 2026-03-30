@@ -94,7 +94,16 @@ export interface DetalleDialogData {
             <tr *ngFor="let item of items"
                 [class.fila-modificada]="item.presente !== item.presenteOriginal">
               <td class="col-materia">{{ item.nombreMateria }}</td>
-              <td class="col-horario">{{ item.horarioEntrada }} – {{ item.horarioSalida }}</td>
+              <td class="col-horario">
+                <span>{{ item.horarioEntrada }} – {{ item.horarioSalida }}</span>
+                <ng-container *ngIf="item.horarioEntradaOriginal">
+                  <span class="horario-original-hint"
+                        [matTooltip]="'Horario original: ' + item.horarioEntradaOriginal + ' – ' + item.horarioSalidaOriginal">
+                    <mat-icon class="horario-swap-icon">swap_horiz</mat-icon>
+                    <span class="horario-original-text">{{ item.horarioEntradaOriginal }} – {{ item.horarioSalidaOriginal }}</span>
+                  </span>
+                </ng-container>
+              </td>
               <td class="col-estado">
                 <span *ngIf="item.dictada === null"  class="chip-estado chip-sin">Sin reg.</span>
                 <span *ngIf="item.dictada === false" class="chip-estado chip-nodictada">No dictada</span>
@@ -235,7 +244,16 @@ export interface DetalleDialogData {
     }
     .det-tabla tr:last-child td { border-bottom: none; }
     .col-materia { font-weight: 500; color: #1e293b; min-width: 140px; }
-    .col-horario { color: #475569; white-space: nowrap; min-width: 110px; }
+    .col-horario { color: #475569; white-space: nowrap; min-width: 110px; vertical-align: middle; }
+    .horario-original-hint {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-top: 2px;
+      cursor: default;
+    }
+    .horario-swap-icon { font-size: 13px; height: 13px; width: 13px; color: #d97706; flex-shrink: 0; }
+    .horario-original-text { font-size: 0.72rem; color: #d97706; text-decoration: line-through; }
     .col-estado  { min-width: 100px; }
     .col-asist   { min-width: 130px; }
 
