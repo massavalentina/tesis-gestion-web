@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatListModule } from '@angular/material/list';
@@ -48,7 +48,6 @@ import {
   ],
   templateUrl: './asistencia-rapida.component.html',
   styleUrls: ['./asistencia-rapida.component.css'],
-  encapsulation: ViewEncapsulation.None,
   host: { class: 'asr-host' }
 })
 export class AsistenciaRapidaComponent implements OnInit, OnDestroy {

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(grep -E \"\\\\.cs$\")",
-      "Bash(npx ng:*)"
+      "Bash(npx ng:*)",
+      "Bash(grep -E \"\\\\.\\(ts|js|java|cs\\)$\")"
     ]
   }
 }
