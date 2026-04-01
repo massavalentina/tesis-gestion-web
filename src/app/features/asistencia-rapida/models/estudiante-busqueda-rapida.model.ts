@@ -5,4 +5,5 @@ export interface EstudianteBusquedaRapida {
   documento: string;
   curso: string;
   registradoHoy: boolean;
+  teaGeneral?: boolean;
 }

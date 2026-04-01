@@ -552,6 +552,47 @@ th.col-movil-th { text-align: left !important; }
   word-break: break-word;
 }
 
+/* TEA en tarjeta mobile */
+.movil-card-tea {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 4px 6px;
+  opacity: 0.82;
+}
+
+.avatar-tea {
+  background: #9e9e9e !important;
+}
+
+.movil-tea-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e0e0e0;
+  color: #424242;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.movil-tea-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #eeeeee;
+  color: #616161;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.movil-tea-ico {
+  font-size: 16px;
+  color: #9e9e9e;
+}
+
 /* Subfila 2: selector + iconos/botones */
 .movil-fila-acciones {
   display: flex;
