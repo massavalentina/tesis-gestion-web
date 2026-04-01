@@ -223,3 +223,64 @@ html, body {
     border-radius: 24px !important;
   }
 }
+
+/* ══════════════════════════════════════════════
+   PRINT — configuración de página
+   @page va fuera de @media print para que los
+   margin boxes sean reconocidos por Chrome 121+
+══════════════════════════════════════════════ */
+@page {
+  margin: 14mm;
+  size: A4 portrait;
+  /* Suprimir fecha, título y URL del navegador */
+  @top-left    { content: none; }
+  @top-center  { content: none; }
+  @top-right   { content: none; }
+  @bottom-left  { content: none; }
+  @bottom-right { content: none; }
+  /* Número de página centrado — formato 1, 2, 3 */
+  @bottom-center {
+    content: counter(page);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 9pt;
+    color: #1e293b;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   PRINT — ocultar layout shell globalmente
+   (los estilos del componente no pueden afectar
+    al LayoutComponent padre por ViewEncapsulation)
+══════════════════════════════════════════════ */
+@media print {
+  /* Resetear html/body */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Ocultar sidebar y navbar */
+  app-sidebar,
+  app-navbar { display: none !important; }
+
+  /* Resetear contenedores del layout */
+  .layout-root {
+    display: block !important;
+    height: auto !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+  .layout-main {
+    display: block !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .layout-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+}

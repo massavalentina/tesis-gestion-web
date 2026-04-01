@@ -213,19 +213,91 @@ export class ParteDiarioComponent implements OnInit {
   }
 
   formatTimestamp(ts: string): string {
-    const d = new Date(ts);
+    const d  = new Date(ts);
     const hh = String(d.getHours()).padStart(2, '0');
     const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    return `${hh}:${mm} ${dd}/${mo}/${d.getFullYear()}`;
   }
 
-  logTitulo(contenido: string): string {
-    return contenido.split('\n')[0];
+  /** Divide un bloque de detalle en líneas no vacías. */
+  getLineasDetalle(detalle: string): string[] {
+    return detalle.split('\n').filter(l => l.trim().length > 0);
   }
 
-  logBullets(contenido: string): string[] {
-    const lines = contenido.split('\n');
-    return lines.length > 1 ? lines.slice(1).filter(l => l.trim()) : [];
+  /**
+   * Parsea una línea del detalle de asistencia:
+   * "• Apellido, Nombre (M): P → A"
+   */
+  private parsearLineaAsistencia(linea: string): {
+    nombre: string; turno: string; codigoAntes: string; codigoDespues: string;
+  } | null {
+    const m = linea.match(/^[•\-]\s*(.+?)\s*\(([MT])\):\s*(\S+)\s*→\s*(\S+)\s*$/);
+    if (!m) return null;
+    return {
+      nombre:        m[1].trim(),
+      turno:         m[2] === 'M' ? 'Mañana' : 'Tarde',
+      codigoAntes:   m[3],
+      codigoDespues: m[4],
+    };
+  }
+
+  /** Procesa las líneas de detalle de un evento ASISTENCIA para el template. */
+  getLineasAsistencia(detalle: string): {
+    nombre?: string; turno?: string;
+    codigoAntes?: string; codigoDespues?: string;
+    rawText: string;
+  }[] {
+    return this.getLineasDetalle(detalle).map(linea => {
+      const p = this.parsearLineaAsistencia(linea);
+      return p
+        ? { nombre: p.nombre, turno: p.turno, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, rawText: linea }
+        : { rawText: linea };
+    });
+  }
+
+  /** Devuelve la clase CSS para una píldora de código de asistencia. */
+  getCodeClass(code: string): string {
+    if (!code || code === '—') return 'code-null';
+    return 'code-' + code.toLowerCase().replace(/[^a-z]/g, '');
+  }
+
+  printTimestamp = '';
+
+  get printCursoLabel(): string {
+    return this.cursos.find(c => c.id === this.cursoCtrl.value)?.label ?? '';
+  }
+
+  get printFechaLarga(): string {
+    const d   = this.fechaCtrl.value ?? new Date();
+    const str = d.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // "lunes, 30 de marzo de 2026" → "Lunes 30 de marzo de 2026"
+    return str.replace(/^(\w)/, c => c.toUpperCase()).replace(',', '');
+  }
+
+  /** Filtra estudiantes de un turno por estado para la sección de impresión. */
+  getEstPorEstado(turno: TurnoParte, estado: string): EstudianteParte[] {
+    return turno.estudiantes.filter(e => e.estado === estado);
+  }
+
+  /** Lista completa de un turno ordenada alfabéticamente para la sección de impresión. */
+  getListaOrdenada(turno: TurnoParte): EstudianteParte[] {
+    return [...turno.estudiantes].sort(
+      (a, b) => a.apellido.localeCompare(b.apellido, 'es-AR') || a.nombre.localeCompare(b.nombre, 'es-AR'),
+    );
+  }
+
+  imprimirPDF(): void {
+    if (window.innerWidth < 1024) {
+      this.snack.open('La exportación PDF solo está disponible en pantalla de escritorio.', 'OK', { duration: 3500 });
+      return;
+    }
+    const now = new Date();
+    const p = (n: number) => n.toString().padStart(2, '0');
+    this.printTimestamp = `${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()} ${p(now.getHours())}:${p(now.getMinutes())}`;
+    // setTimeout 0 permite que Angular actualice el DOM antes de abrir el diálogo de impresión
+    setTimeout(() => window.print(), 0);
   }
 
   // ── Load ─────────────────────────────────────────────────────────────────

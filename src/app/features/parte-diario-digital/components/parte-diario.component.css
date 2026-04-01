@@ -394,78 +394,99 @@
 /* ── Log de actividad ────────────────────────────────────────── */
 .pd-log { margin-bottom: 20px; }
 
-.log-timeline {
+.log-list {
   display: flex;
   flex-direction: column;
-  padding: 16px 18px;
-  gap: 12px;
-  max-height: 300px;
+  max-height: 420px;
   overflow-y: auto;
 }
-.log-item {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.log-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-.log-dot--evento  { background: #3b82f6; }
-.log-dot--coment  { background: #22c55e; }
 
-.log-content {
+.log-entry {
+  padding: 10px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.log-entry:last-child { border-bottom: none; }
+
+.log-entry-meta {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.log-badge {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.log-badge--nota       { background: #f0fdf4; color: #15803d; }
+.log-badge--asistencia { background: #fff7ed; color: #c2410c; }
+.log-badge--horario    { background: #eff6ff; color: #1d4ed8; }
+
+.log-ts      { font-size: 0.75rem; font-weight: 600; color: #475569; }
+.log-autor-tag { font-size: 0.75rem; color: #94a3b8; margin-left: auto; }
+
+.log-nota-text {
+  margin: 2px 0 0;
   font-size: 0.85rem;
   color: #1e293b;
-  min-width: 0;
+  line-height: 1.5;
 }
-.log-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  align-items: baseline;
-}
-.log-hora {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #475569;
-}
-.log-tipo {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 1px 6px;
-  border-radius: 8px;
-}
-.log-item--evento .log-tipo  { background: #eff6ff; color: #1d4ed8; }
-.log-item:not(.log-item--evento) .log-tipo { background: #f0fdf4; color: #15803d; }
-.log-texto { flex: 1; min-width: 0; }
-.log-autor { font-size: 0.75rem; color: #94a3b8; }
 
-.log-bullets {
-  padding-left: 6px;
+.log-event-titulo {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 5px;
+}
+
+.log-event-detalle {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  padding-left: 8px;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 2px;
 }
-.log-bullet-item {
+
+.log-detalle-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.82rem;
   color: #475569;
-  line-height: 1.4;
+  flex-wrap: wrap;
 }
+
+.log-asist-nombre { font-weight: 500; color: #1e293b; font-size: 0.82rem; }
+.log-asist-turno  { font-size: 0.75rem; color: #94a3b8; }
+.log-arrow        { color: #94a3b8; font-size: 0.8rem; }
+
+/* ── Píldoras de código de asistencia ──────────────────────── */
+.code-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: 'Open Sans', monospace, sans-serif;
+  line-height: 1.6;
+}
+.code-p, .code-llt, .code-llte                { background: rgba(21,128,61,.12);    color: #15803d; }
+.code-a, .code-lltc, .code-anc               { background: rgba(185,28,28,.12);    color: #b91c1c; }
+.code-ra, .code-rae, .code-re                { background: rgba(180,83,9,.12);     color: #b45309; }
+.code-sa, .code-null                         { background: rgba(100,116,139,.12);  color: #64748b; }
 
 .log-empty {
   color: #94a3b8;
   font-size: 0.85rem;
   text-align: center;
-  padding: 12px 0;
+  padding: 20px 18px;
 }
 
 .log-input-row {
@@ -475,6 +496,310 @@
   padding: 12px 18px;
 }
 .log-input-field { flex: 1; }
+
+/* ── Print / PDF ─────────────────────────────────────────────── */
+/*
+  Usamos position:absolute fuera del viewport en lugar de display:none
+  para que el navegador cargue las imágenes antes de imprimir.
+*/
+.print-only {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+@media print {
+
+  /* Ocultar toda la UI de pantalla */
+  .pd-toolbar, .pd-empty, .pd-stats, .pd-tabs,
+  .pd-grid, .pd-lista, .pd-log { display: none !important; }
+
+  /* Restablecer el bloque de impresión al flujo normal */
+  .print-only {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  :host { display: block !important; overflow: visible !important; }
+  .pd-page { padding: 0; max-width: none; }
+
+  /* Preservar colores */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* ── Encabezado de página 1 ── */
+  .pp-header {
+    text-align: center;
+    margin-bottom: 22pt;
+    padding-bottom: 10pt;
+    border-bottom: 1.5pt solid #0284c7;
+  }
+
+  /* ── Metadatos de impresión ── */
+  .pp-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2pt;
+    margin-bottom: 14pt;
+    padding: 5pt 8pt;
+    background: #f8fcff;
+    border-left: 2pt solid #bae6fd;
+    border-radius: 0 3pt 3pt 0;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 8pt;
+    color: #475569;
+  }
+  .pp-meta strong { color: #0c4a6e; font-weight: 600; }
+
+  /* ── Encabezado en páginas 2+ ── */
+  /*
+    Fondo #f0f9ff (sky-50) → en B&N queda gris ~97%: legible.
+    Borde izquierdo azul primary → en B&N queda gris medio: visible.
+    Sin fondo oscuro sobre texto → seguro en B&N.
+  */
+  .pp-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6pt;
+    padding: 5pt 10pt;
+    margin-bottom: 12pt;
+    background: #f0f9ff;
+    border: 0.5pt solid #bae6fd;
+    border-left: 3pt solid #0284c7;
+    border-radius: 0 4pt 4pt 0;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #0c4a6e;
+  }
+  .pp-ph-logo {
+    height: 14pt;
+    width: auto;
+    object-fit: contain;
+  }
+  .pp-logo {
+    display: block;
+    max-height: 52pt;
+    max-width: 110pt;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto 5pt;
+  }
+  .pp-titulo {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1e293b;
+  }
+
+  /* ── Separadores de turno ── */
+  .pp-turno-sep { margin: 0 0 6pt; }
+  .pp-turno-titulo {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 11pt;
+    font-weight: bold;
+    text-align: left;
+    margin: 0 0 3pt;
+    padding-bottom: 3pt;
+    border-bottom: 1pt solid #1e293b;
+    color: #1e293b;
+  }
+
+  /* ── 4 indicadores ── */
+  .pp-stats {
+    display: flex;
+    gap: 6pt;
+    margin: 8pt 0 10pt;
+  }
+  .pp-stat {
+    flex: 1;
+    border: 0.5pt solid #cbd5e1;
+    border-radius: 4pt;
+    padding: 4pt 6pt;
+    text-align: center;
+  }
+  .pp-stat-num {
+    display: block;
+    font-size: 14pt;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+  .pp-stat-lbl {
+    display: block;
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pp-stat--present { border-color: #15803d; color: #15803d; }
+  .pp-stat--absent  { border-color: #b91c1c; color: #b91c1c; }
+  .pp-stat--sin     { border-color: #94a3b8; color: #64748b; }
+  .pp-stat--pct     { border-color: #1e40af; color: #1e40af; }
+
+  /* ── Grid 2 columnas ── */
+  .pp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8pt;
+    margin-bottom: 10pt;
+  }
+  .pp-card {
+    border: 0.5pt solid #bae6fd;
+    border-radius: 4pt;
+    padding: 5pt 7pt;
+    break-inside: avoid;
+    overflow: hidden;
+  }
+  .pp-card-title {
+    font-size: 7.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #0c4a6e;
+    background: #f0f9ff;
+    /* cancela el padding del card para cubrir todo el ancho */
+    margin: -5pt -7pt 6pt;
+    padding: 4pt 7pt;
+    border-bottom: 0.5pt solid #bae6fd;
+    border-radius: 3pt 3pt 0 0;
+  }
+
+  /* Grupos de estudiantes */
+  .pp-grupo-lbl {
+    font-size: 7pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 4pt 0 2pt;
+  }
+  .pp-grupo--presente { color: #15803d; }
+  .pp-grupo--ausente  { color: #b91c1c; }
+  .pp-grupo--retirado { color: #b45309; }
+  .pp-grupo--sin      { color: #64748b; }
+
+  .pp-chips { display: flex; flex-wrap: wrap; gap: 2pt 4pt; margin-bottom: 2pt; }
+  .pp-chip {
+    font-size: 7.5pt;
+    padding: 1pt 5pt;
+    border-radius: 8pt;
+    border: 0.5pt solid transparent;
+  }
+  .pp-chip--presente { background: rgba(21,128,61,.08);   border-color: rgba(21,128,61,.25);   color: #15803d; }
+  .pp-chip--ausente  { background: rgba(185,28,28,.08);   border-color: rgba(185,28,28,.25);   color: #b91c1c; }
+  .pp-chip--retirado { background: rgba(180,83,9,.08);    border-color: rgba(180,83,9,.25);    color: #b45309; }
+  .pp-chip--sin      { background: rgba(100,116,139,.08); border-color: rgba(100,116,139,.25); color: #64748b; }
+
+  /* Filas de horario */
+  .pp-clase-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 5pt;
+    padding: 2.5pt 0;
+    border-bottom: 0.5pt solid #f1f5f9;
+    font-size: 8.5pt;
+  }
+  .pp-clase-row:last-child { border-bottom: none; }
+  .pp-clase-hora {
+    font-weight: bold;
+    white-space: nowrap;
+    min-width: 58pt;
+    color: #475569;
+    font-size: 8pt;
+  }
+  .pp-hora-orig {
+    display: block;
+    font-size: 6.5pt;
+    font-weight: 400;
+    text-decoration: line-through;
+    color: #94a3b8;
+  }
+  .pp-clase-body { flex: 1; }
+  .pp-clase-nombre  { font-weight: 600; font-size: 8.5pt; color: #1e293b; }
+  .pp-clase-docente { font-size: 7.5pt; color: #64748b; }
+  .pp-clase-estado {
+    font-size: 7pt;
+    font-weight: bold;
+    padding: 1pt 5pt;
+    border-radius: 8pt;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .pp-estado--dictada   { background: rgba(21,128,61,.08);  color: #15803d; }
+  .pp-estado--nodictada { background: rgba(185,28,28,.08);  color: #b91c1c; }
+
+  /* Lista completa */
+  .pp-lista { margin-top: 8pt; break-inside: avoid; }
+  .pp-lista-titulo {
+    font-size: 7.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+    margin-bottom: 3pt;
+  }
+  .pp-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+  }
+  .pp-tabla th {
+    text-align: left;
+    padding: 3pt 5pt;
+    font-size: 7pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #0c4a6e;
+    background: #f0f9ff;
+    border-bottom: 0.75pt solid #bae6fd;
+  }
+  .pp-tabla td {
+    padding: 2.5pt 5pt;
+    border-bottom: 0.4pt solid #f1f5f9;
+    vertical-align: middle;
+  }
+  .pp-tabla tr:last-child td { border-bottom: none; }
+  .pp-fila-presente td { background: rgba(21,128,61,.04); }
+  .pp-fila-retirado td { background: rgba(180,83,9,.04); }
+  .pp-fila-ausente  td { background: rgba(185,28,28,.04); }
+
+  /* Separador de sección — fuerza salto de página */
+  .pp-section-sep {
+    display: block;
+    border: none;
+    margin: 0;
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Log / Actividad */
+  .pp-log-tabla td { font-size: 8pt; }
+  .pp-log-hora  { white-space: nowrap; color: #475569; font-size: 7.5pt !important; }
+  .pp-log-badge {
+    font-size: 6.5pt;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    padding: 1pt 4pt;
+    border-radius: 6pt;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .pp-log-badge--nota       { background: #f0fdf4; color: #15803d; }
+  .pp-log-badge--asistencia { background: #fff7ed; color: #c2410c; }
+  .pp-log-badge--horario    { background: #eff6ff; color: #1d4ed8; }
+  .pp-log-detalle { font-size: 7.5pt; color: #475569; }
+
+  .pp-empty { color: #94a3b8; font-size: 8pt; font-style: italic; padding: 4pt 0; }
+}
+
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
