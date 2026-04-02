@@ -24,10 +24,10 @@ export interface AsistenciaExistenteHoy {
 @Injectable({ providedIn: 'root' })
 export class AsistenciaGeneralManualService {
 
-  private readonly cursosUrl     = 'https://localhost:7146/api/cursos';
-  private readonly asistenciaUrl = 'https://localhost:7146/api/asistencia';
-  private readonly tiposUrl      = 'https://localhost:7146/api/asistencia-rapida/tipos';
-  private readonly servertimeUrl = 'https://localhost:7146/api/asistencia-rapida/servertime';
+  private readonly cursosUrl     = 'http://localhost:7146/api/cursos';
+  private readonly asistenciaUrl = 'http://localhost:7146/api/asistencia';
+  private readonly tiposUrl      = 'http://localhost:7146/api/asistencia-rapida/tipos';
+  private readonly servertimeUrl = 'http://localhost:7146/api/asistencia-rapida/servertime';
 
   constructor(private http: HttpClient) {}
 

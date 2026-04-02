@@ -20,7 +20,7 @@ export interface ServerTimeResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AsistenciaRapidaService {
-  private readonly apiUrl = 'https://localhost:7146/api/asistencia-rapida';
+  private readonly apiUrl = 'http://localhost:7146/api/asistencia-rapida';
 
   constructor(private http: HttpClient) {}
 
