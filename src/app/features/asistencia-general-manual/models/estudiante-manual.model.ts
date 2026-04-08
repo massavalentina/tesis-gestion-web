@@ -3,4 +3,5 @@ export interface EstudianteManual {
   nombre: string;
   apellido: string;
   documento: string;
+  teaGeneral?: boolean;
 }

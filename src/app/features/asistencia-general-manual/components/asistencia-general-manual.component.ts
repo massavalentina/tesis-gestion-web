@@ -33,7 +33,7 @@ import { MatDialog, MatDialogModule }    from '@angular/material/dialog';
 import { AsistenciaGeneralManualService }   from '../services/asistencia-general-manual.service';
 import { CursoManual }                      from '../models/curso-manual.model';
 import { FilaAsistenciaManual }             from '../models/fila-asistencia-manual.model';
-import { TipoAsistenciaManual }                    from '../models/tipo-asistencia-manual.model';
+import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistencia-manual.model';
 import { RegistrarAsistenciaManual }        from '../models/registrar-asistencia-manual.model';
 import { DescarteDialogComponent }          from './descarte-dialog/descarte-dialog.component';
 import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog/detalle-estudiante-dialog.component';
@@ -99,6 +99,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   cursos:            CursoManual[]          = [];
   cursoSeleccionado: CursoManual | null     = null;
   tipos:             TipoAsistenciaManual[] = [];
+  /** Todos los tipos incluyendo RE/RAE — solo para lookup/display, nunca para mat-option */
+  todosTipos:        TipoAsistenciaManual[] = [];
 
   dataSource = new MatTableDataSource<FilaAsistenciaManual>([]);
   filas: FilaAsistenciaManual[] = [];
@@ -273,11 +275,11 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         case 'estudiante': return `${item.estudiante.apellido} ${item.estudiante.nombre}`.toLowerCase();
         case 'documento':  return item.estudiante.documento;
         case 'manana': {
-          const t = this.tipos.find(x => x.id === item.tipoManianaId);
+          const t = this.todosTipos.find(x => x.id === item.tipoManianaId);
           return t ? t.codigo.toLowerCase() : 'zzz';
         }
         case 'tarde': {
-          const t = this.tipos.find(x => x.id === item.tipoTardeId);
+          const t = this.todosTipos.find(x => x.id === item.tipoTardeId);
           return t ? t.codigo.toLowerCase() : 'zzz';
         }
         default: return '';
@@ -290,11 +292,19 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   // ── Carga inicial ─────────────────────────────────────────────────────────
   private cargarDatosIniciales(): void {
     this.cargandoInicial = true;
-    const sub = forkJoin({ cursos: this.service.getCursos(), tipos: this.service.getTiposAsistencia() })
-      .subscribe({
-        next: ({ cursos, tipos }) => { this.cursos = cursos; this.tipos = tipos; this.cargandoInicial = false; },
-        error: (err) => { console.error(err); this.cargandoInicial = false; this.notify('Error al cargar datos iniciales.', 'Cerrar', 4000); },
-      });
+    const sub = forkJoin({
+      cursos:     this.service.getCursos(),
+      tipos:      this.service.getTiposAsistencia(),
+      todosTipos: this.service.getTodosTiposAsistencia(),
+    }).subscribe({
+      next: ({ cursos, tipos, todosTipos }) => {
+        this.cursos     = cursos;
+        this.tipos      = tipos;
+        this.todosTipos = todosTipos;
+        this.cargandoInicial = false;
+      },
+      error: (err) => { console.error(err); this.cargandoInicial = false; this.notify('Error al cargar datos iniciales.', 'Cerrar', 4000); },
+    });
     this.subs.push(sub);
   }
 
@@ -327,8 +337,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           const ex = mapa.get(est.documento);
           return {
             estudiante:      est,
-            tipoManianaId:   ex ? (this.tipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null,
-            tipoTardeId:     ex ? (this.tipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
+            tipoManianaId:   ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null,
+            tipoTardeId:     ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
             guardado: !!ex, error: null,
             modificadoManana: false, modificadoTarde: false, guardandoFila: false,
             valorTotalInasistencia: ex ? ex.valorTotal : null,
@@ -358,8 +368,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         const mapa = new Map(asistencias.map(a => [a.documento, a]));
         this.filas.forEach(f => {
           const ex = mapa.get(f.estudiante.documento);
-          f.tipoManianaId = ex ? (this.tipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
-          f.tipoTardeId   = ex ? (this.tipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
+          f.tipoManianaId = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
+          f.tipoTardeId   = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
           f.guardado = !!ex; f.error = null;
           f.modificadoManana = false; f.modificadoTarde = false; f.guardandoFila = false;
           f.valorTotalInasistencia = ex ? ex.valorTotal : null;
@@ -452,7 +462,19 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   // ── Helper para el trigger del select ─────────────────────────────────────
   getTipo(tipoId: string | null): TipoAsistenciaManual | null {
-    return tipoId ? (this.tipos.find(t => t.id === tipoId) ?? null) : null;
+    return tipoId ? (this.todosTipos.find(t => t.id === tipoId) ?? null) : null;
+  }
+
+  /**
+   * Si tipoId corresponde a un tipo interno (RE/RAE), retorna ese tipo; si no, null.
+   * Se usa para agregar un <mat-option disabled> en el select solo cuando el valor actual
+   * es un tipo calculado, permitiendo que Angular Material reconozca el valor y muestre
+   * el mat-select-trigger en vez del placeholder.
+   */
+  getInternalTipo(tipoId: string | null): TipoAsistenciaManual | null {
+    if (!tipoId) return null;
+    const tipo = this.todosTipos.find(t => t.id === tipoId);
+    return tipo && CODIGOS_INTERNOS.has(tipo.codigo.toUpperCase()) ? tipo : null;
   }
 
   // Devuelve true si el tipoId es null o corresponde al tipo SA (Sin Asistencia).

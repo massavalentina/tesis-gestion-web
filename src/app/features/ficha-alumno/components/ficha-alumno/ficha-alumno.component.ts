@@ -5,8 +5,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -24,6 +25,7 @@ import { EstudianteFicha } from '../../models/estudiante-ficha.model';
     MatIconModule,
     MatFormFieldModule,
     MatSelectModule,
+    MatButtonModule,
     FormsModule,
   ],
   templateUrl: './ficha-alumno.component.html',
@@ -43,7 +45,8 @@ export class FichaAlumnoComponent implements OnInit {
 
   constructor(
     private fichaService: FichaAlumnoService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -113,12 +116,27 @@ export class FichaAlumnoComponent implements OnInit {
     this.expandedIds.delete(id);
   }
 
-  getEstado(est: EstudianteFicha): 'tea' | 'rojo' | 'naranja' | 'amarillo' | 'normal' {
+  getEstado(est: EstudianteFicha): 'tea' | 'rojo' | 'naranja' | 'amarillo' | 'verde' {
     if (est.teaGeneral) return 'tea';
     if (est.faltasAcumuladas >= 21) return 'rojo';
     if (est.faltasAcumuladas >= 15) return 'naranja';
     if (est.faltasAcumuladas >= 10) return 'amarillo';
-    return 'normal';
+    return 'verde';
+  }
+
+  verDetalleFaltas(est: EstudianteFicha): void {
+    this.router.navigate(['/ficha-alumno/detalle', est.idEstudiante], {
+      queryParams: {
+        nombre: est.nombre,
+        apellido: est.apellido,
+        documento: est.documento,
+        inasistencias: est.faltasAcumuladas,
+        teaGeneral: est.teaGeneral,
+        origen: 'ficha',
+        fichaState_cursoId: this.cursoSeleccionado?.idCurso ?? '',
+        fichaState_estudianteId: est.idEstudiante,
+      },
+    });
   }
 
   getLabelFaltas(est: EstudianteFicha): string {

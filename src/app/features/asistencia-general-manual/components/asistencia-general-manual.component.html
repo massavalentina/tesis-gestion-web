@@ -198,6 +198,9 @@
                       <mat-option *ngFor="let t of tipos" [value]="t.id">
                         <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
                       </mat-option>
+                      <mat-option *ngIf="getInternalTipo(fila.tipoManianaId) as t" [value]="t.id" disabled>
+                        <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
+                      </mat-option>
                     </mat-select>
                   </mat-form-field>
                 </td>
@@ -219,6 +222,9 @@
                       <mat-option [value]="null">— Sin definir —</mat-option>
                       <mat-option *ngFor="let t of tipos" [value]="t.id">
                         <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                      </mat-option>
+                      <mat-option *ngIf="getInternalTipo(fila.tipoTardeId) as t" [value]="t.id" disabled>
+                        <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
@@ -263,16 +269,23 @@
               <ng-container matColumnDef="filaMovil">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-movil-th">Estudiante</th>
                 <td mat-cell *matCellDef="let fila" class="col-movil">
-                  <div class="movil-card">
+                  <div class="movil-card" [class.movil-card-tea]="fila.estudiante.teaGeneral">
 
                     <!-- Subfila 1: nombre completo -->
                     <div class="movil-nombre">
-                      <div class="avatar">{{ fila.estudiante.nombre.charAt(0) }}</div>
+                      <div class="avatar" [class.avatar-tea]="fila.estudiante.teaGeneral">{{ fila.estudiante.nombre.charAt(0) }}</div>
                       <span class="movil-nombre-texto">{{ fila.estudiante.apellido }}, {{ fila.estudiante.nombre }}</span>
+                      <span class="movil-tea-chip" *ngIf="fila.estudiante.teaGeneral">TEA</span>
                     </div>
 
-                    <!-- Subfila 2: selector + acciones -->
-                    <div class="movil-fila-acciones">
+                    <!-- TEA: aviso sin selector -->
+                    <div class="movil-tea-aviso" *ngIf="fila.estudiante.teaGeneral">
+                      <mat-icon class="movil-tea-ico">block</mat-icon>
+                      <span>Trayectoria Escolar Asistida — no se registra asistencia</span>
+                    </div>
+
+                    <!-- Subfila 2: selector + acciones (solo si no es TEA) -->
+                    <div class="movil-fila-acciones" *ngIf="!fila.estudiante.teaGeneral">
                       <mat-form-field class="field-turno movil-select">
                         <mat-select [ngModel]="getTipoActivo(fila)"
                                     (ngModelChange)="setTipoActivo(fila, $event)"
@@ -287,6 +300,9 @@
                           <mat-option [value]="null">— Sin definir —</mat-option>
                           <mat-option *ngFor="let t of tipos" [value]="t.id">
                             <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }}
+                          </mat-option>
+                          <mat-option *ngIf="getInternalTipo(getTipoActivo(fila)) as t" [value]="t.id" disabled>
+                            <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>&nbsp;· {{ t.descripcion }} <em>(calculado)</em>
                           </mat-option>
                         </mat-select>
                       </mat-form-field>

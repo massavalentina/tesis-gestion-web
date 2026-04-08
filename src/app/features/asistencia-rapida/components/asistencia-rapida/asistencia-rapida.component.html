@@ -37,24 +37,38 @@
   </p>
 
   <div class="lista" *ngIf="!alumnoSeleccionado">
-    <button
-      type="button"
-      class="item-alumno"
-      *ngFor="let alumno of resultados$ | async"
-      (click)="seleccionarAlumno(alumno)"
-      [class.registrado]="alumno.registradoHoy">
+    <ng-container *ngFor="let alumno of resultados$ | async">
 
-      <div class="info">
-        <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
-        <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+      <!-- Alumno TEA: no se puede registrar -->
+      <div class="item-alumno item-tea" *ngIf="alumno.teaGeneral">
+        <div class="info">
+          <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
+          <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+        </div>
+        <span class="estado estado-tea">TEA</span>
       </div>
 
-      <span class="estado"
-            [class.error]="alumno.registradoHoy"
-            [class.ok]="!alumno.registradoHoy">
-        {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
-      </span>
-    </button>
+      <!-- Alumno normal -->
+      <button
+        type="button"
+        class="item-alumno"
+        *ngIf="!alumno.teaGeneral"
+        (click)="seleccionarAlumno(alumno)"
+        [class.registrado]="alumno.registradoHoy">
+
+        <div class="info">
+          <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
+          <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+        </div>
+
+        <span class="estado"
+              [class.error]="alumno.registradoHoy"
+              [class.ok]="!alumno.registradoHoy">
+          {{ alumno.registradoHoy ? 'Ya registrado hoy' : 'No registrado' }}
+        </span>
+      </button>
+
+    </ng-container>
   </div>
 
   <div class="confirmacion" *ngIf="alumnoSeleccionado">

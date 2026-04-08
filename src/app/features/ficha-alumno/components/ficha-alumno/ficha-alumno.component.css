@@ -136,7 +136,7 @@
   border-radius: 12px;
 }
 
-.estado-normal   { background-color: #e0e0e0; color: #424242; }
+.estado-verde    { background-color: #4CAF50; color: #fff; }
 .estado-amarillo { background-color: #F9A825; color: #fff; }
 .estado-naranja  { background-color: #EF6C00; color: #fff; }
 .estado-rojo     { background-color: #C62828; color: #fff; }
@@ -144,6 +144,16 @@
 
 .tea-icon { color: #757575; }
 .tea-text { color: #757575; font-weight: 600; }
+
+.detalle-acciones {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-detalle {
+  font-size: 0.82rem;
+}
 
 /* Responsive */
 @media (max-width: 600px) {

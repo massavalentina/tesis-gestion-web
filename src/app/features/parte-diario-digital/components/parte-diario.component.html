@@ -1,0 +1,574 @@
+<div class="pd-page">
+
+  <!-- ── Toolbar ───────────────────────────────────────────────── -->
+  <div class="pd-toolbar">
+    <h1 class="pd-title">Parte Diario Digital</h1>
+
+    <div class="pd-controls">
+      <mat-form-field class="pd-ctrl-field">
+        <mat-label>Curso</mat-label>
+        <mat-select [formControl]="cursoCtrl" disableOptionCentering>
+          <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="pd-ctrl-field pd-ctrl-fecha">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="picker" [formControl]="fechaCtrl" [matDatepickerFilter]="filtroLaborable" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" (click)="cargarResumen()" [disabled]="cargando">
+        <mat-spinner *ngIf="cargando" diameter="16" class="btn-spin"></mat-spinner>
+        <mat-icon *ngIf="!cargando">refresh</mat-icon>
+        {{ cargando ? 'Cargando...' : 'Actualizar' }}
+      </button>
+      <button mat-stroked-button (click)="imprimirPDF()" [disabled]="!resumen" class="no-print">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Empty state ───────────────────────────────────────────── -->
+  <div *ngIf="!resumen && !cargando" class="pd-empty">
+    <mat-icon>assignment</mat-icon>
+    <p>Seleccioná un curso y una fecha para ver el parte diario.</p>
+  </div>
+
+  <!-- ── Contenido ─────────────────────────────────────────────── -->
+  <ng-container *ngIf="resumen">
+
+
+    <!-- Stat cards -->
+    <div class="pd-stats">
+      <div class="stat-card stat-card--present">
+        <mat-icon>check_circle</mat-icon>
+        <span class="stat-num">{{ turnoActual?.presentes ?? 0 }}</span>
+        <span class="stat-label">Presentes</span>
+      </div>
+      <div class="stat-card stat-card--absent">
+        <mat-icon>cancel</mat-icon>
+        <span class="stat-num">{{ turnoActual?.ausentes ?? 0 }}</span>
+        <span class="stat-label">Ausentes</span>
+      </div>
+      <div class="stat-card stat-card--sin">
+        <mat-icon>help_outline</mat-icon>
+        <span class="stat-num">{{ turnoActual?.sinRegistro ?? 0 }}</span>
+        <span class="stat-label">Sin registro</span>
+      </div>
+      <div class="stat-card stat-card--pct">
+        <mat-icon>percent</mat-icon>
+        <span class="stat-num">{{ turnoActual?.porcentajeAsistencia ?? 0 }}%</span>
+        <span class="stat-label">Asistencia</span>
+      </div>
+    </div>
+
+    <!-- Turno tabs -->
+    <div class="pd-tabs">
+      <button class="tab-btn" [class.tab-btn--active]="turnoActivo === 'manana'"
+              [disabled]="!resumen.manana.disponible"
+              (click)="turnoActivo = 'manana'">
+        Mañana
+      </button>
+      <button class="tab-btn" [class.tab-btn--active]="turnoActivo === 'tarde'"
+              [disabled]="!resumen.tarde.disponible"
+              (click)="turnoActivo = 'tarde'">
+        Tarde
+      </button>
+    </div>
+
+    <!-- Main two-column grid -->
+    <div class="pd-grid">
+
+      <!-- ── Columna Estudiantes ──────────────────────────────── -->
+      <div class="pd-card pd-estudiantes">
+        <div class="pd-card-header">
+          <mat-icon>people</mat-icon>
+          <span>Estudiantes</span>
+          <span class="pd-card-badge">{{ turnoActual?.totalEstudiantes ?? 0 }}</span>
+        </div>
+
+        <!-- Sin registro -->
+        <ng-container *ngIf="sinReg.length > 0">
+          <div class="est-grupo">
+            <div class="est-grupo-label est-grupo-label--sin">
+              <mat-icon>help_outline</mat-icon> Sin registro ({{ sinReg.length }})
+            </div>
+            <div class="est-chips">
+              <button *ngFor="let e of sinReg"
+                      class="est-chip chip-sin"
+                      (click)="onVerEstudiante(e)"
+                      [matTooltip]="e.apellido + ', ' + e.nombre">
+                {{ e.apellido }}, {{ e.nombre[0] }}.
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Presentes -->
+        <ng-container *ngIf="presentes.length > 0">
+          <div class="est-grupo">
+            <div class="est-grupo-label est-grupo-label--presente">
+              <mat-icon>check_circle</mat-icon> Presentes ({{ presentes.length }})
+            </div>
+            <div class="est-chips">
+              <button *ngFor="let e of presentes"
+                      class="est-chip chip-presente"
+                      (click)="onVerEstudiante(e)"
+                      [matTooltip]="(e.horaEntrada ? 'Entrada: ' + e.horaEntrada : '')">
+                {{ e.apellido }}, {{ e.nombre[0] }}.
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Retiros Anticipados -->
+        <ng-container *ngIf="retirados.length > 0">
+          <div class="est-grupo">
+            <div class="est-grupo-label est-grupo-label--retirado">
+              <mat-icon>exit_to_app</mat-icon> Retiros anticipados ({{ retirados.length }})
+            </div>
+            <div class="est-chips">
+              <button *ngFor="let e of retirados"
+                      class="est-chip chip-retirado"
+                      (click)="onVerEstudiante(e)"
+                      [matTooltip]="e.apellido + ', ' + e.nombre">
+                {{ e.apellido }}, {{ e.nombre[0] }}.
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Ausentes -->
+        <ng-container *ngIf="ausentes.length > 0">
+          <div class="est-grupo">
+            <div class="est-grupo-label est-grupo-label--ausente">
+              <mat-icon>cancel</mat-icon> Ausentes ({{ ausentes.length }})
+            </div>
+            <div class="est-chips">
+              <button *ngFor="let e of ausentes"
+                      class="est-chip chip-ausente"
+                      (click)="onVerEstudiante(e)"
+                      [matTooltip]="e.apellido + ', ' + e.nombre">
+                {{ e.apellido }}, {{ e.nombre[0] }}.
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <div *ngIf="(turnoActual?.totalEstudiantes ?? 0) === 0" class="est-empty">
+          Sin estudiantes registrados en este turno.
+        </div>
+      </div>
+
+      <!-- ── Columna Horario del día ───────────────────────────── -->
+      <div class="pd-card pd-horario">
+        <div class="pd-card-header">
+          <mat-icon>schedule</mat-icon>
+          <span>Horario del día</span>
+          <ng-container *ngIf="!modoEdicionHorario">
+            <button class="clase-mover-btn" style="margin-left:auto"
+                    (click)="entrarModoEdicion()"
+                    matTooltip="Reorganizar horario del día"
+                    [disabled]="!(turnoActual?.horarioClases?.length)">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </ng-container>
+          <ng-container *ngIf="modoEdicionHorario">
+            <div class="horario-edit-actions">
+              <button mat-stroked-button (click)="cancelarEdicionHorario()" [disabled]="guardandoHorario">Cancelar</button>
+              <button mat-flat-button color="primary" (click)="guardarReorganizacion()"
+                      [disabled]="guardandoHorario || !hayCambiosHorario() || timesInvalidos()">
+                <mat-spinner *ngIf="guardandoHorario" diameter="14" class="btn-spin"></mat-spinner>
+                Guardar
+              </button>
+            </div>
+          </ng-container>
+        </div>
+
+        <div *ngIf="(turnoActual?.horarioClases?.length ?? 0) === 0" class="est-empty">
+          Sin clases programadas para este turno.
+        </div>
+
+        <div *ngIf="modoEdicionHorario" class="horario-edit-banner">
+          <mat-icon>info_outline</mat-icon>
+          <span>Ajustá el horario de este curso para este día en particular, colocando la duración de cada clase.</span>
+        </div>
+
+        <div *ngFor="let clase of (modoEdicionHorario ? horarioPendiente : turnoActual?.horarioClases); let i = index; let last = last"
+             class="clase-item"
+             [class.clase-item--movida]="clase.horaEntradaOriginal && !modoEdicionHorario">
+          <div class="clase-hora">
+            <ng-container *ngIf="!modoEdicionHorario">
+              <span class="clase-hora-rango">{{ clase.horaEntrada }} – {{ clase.horaSalida }}</span>
+              <span *ngIf="clase.horaEntradaOriginal" class="clase-hora-original"
+                    [matTooltip]="'Horario original: ' + clase.horaEntradaOriginal + ' – ' + clase.horaSalidaOriginal">
+                {{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }}
+              </span>
+            </ng-container>
+            <ng-container *ngIf="modoEdicionHorario">
+              <div class="clase-hora-edit">
+                <input type="time" [(ngModel)]="clase.horaEntrada" class="input-hora"
+                       [class.input-hora--invalid]="errorHorario(clase)" />
+                <span class="hora-sep">–</span>
+                <input type="time" [(ngModel)]="clase.horaSalida" class="input-hora"
+                       [class.input-hora--invalid]="errorHorario(clase)" />
+              </div>
+              <span *ngIf="errorHorario(clase) as err" class="hora-error">{{ err }}</span>
+            </ng-container>
+          </div>
+          <div class="clase-body">
+            <div class="clase-nombre">{{ clase.materia }}</div>
+            <div class="clase-docente">{{ clase.docente }}</div>
+            <div *ngIf="clase.dictada === false && clase.motivo" class="clase-motivo">
+              <mat-icon>info_outline</mat-icon> {{ clase.motivo }}
+            </div>
+          </div>
+          <button class="clase-toggle"
+                  [class.clase-toggle--dictada]="clase.dictada !== false"
+                  [class.clase-toggle--nodictada]="clase.dictada === false"
+                  (click)="onToggleClase(clase)"
+                  [matTooltip]="clase.dictada === null ? 'Sin registro — clic para cambiar' : (clase.dictada ? 'Dictada — clic para cambiar' : 'No Dictada — clic para cambiar')">
+            <mat-icon>{{ clase.dictada === false ? 'close' : 'check' }}</mat-icon>
+            {{ clase.dictada === false ? 'No Dictada' : (clase.dictada === true ? 'Dictada' : 'Sin reg.') }}
+          </button>
+          <div class="clase-mover" *ngIf="modoEdicionHorario">
+            <button class="clase-mover-btn"
+                    [disabled]="guardandoHorario || i === 0"
+                    (click)="onMoverClasePendiente(i, 'up')"
+                    matTooltip="Mover antes">
+              <mat-icon>keyboard_arrow_up</mat-icon>
+            </button>
+            <button class="clase-mover-btn"
+                    [disabled]="guardandoHorario || last"
+                    (click)="onMoverClasePendiente(i, 'down')"
+                    matTooltip="Mover después">
+              <mat-icon>keyboard_arrow_down</mat-icon>
+            </button>
+          </div>
+          <button *ngIf="!modoEdicionHorario && clase.horaEntradaOriginal"
+                  class="clase-mover-btn clase-mover-btn--reset"
+                  (click)="onResetearHorario(clase)"
+                  matTooltip="Restablecer horario original ({{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }})">
+            <mat-icon>restore</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Lista completa ──────────────────────────────────────── -->
+    <div class="pd-card pd-lista">
+      <div class="pd-card-header">
+        <mat-icon>table_rows</mat-icon>
+        <span>Lista completa</span>
+      </div>
+
+      <div class="tabla-wrap">
+        <table class="pd-tabla">
+          <thead>
+            <tr>
+              <th class="col-sortable" (click)="sortNombreAsc = !sortNombreAsc" style="cursor:pointer;user-select:none;">
+                Apellido y Nombre
+                <mat-icon style="font-size:15px;vertical-align:middle;line-height:1;">{{ sortNombreAsc ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              </th>
+              <th>Documento</th>
+              <th>Estado</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of listaOrdenada"
+                [class.fila-presente]="e.estado === 'Presente'"
+                [class.fila-retirado]="e.estado === 'Retirado'"
+                [class.fila-ausente]="e.estado === 'Ausente'">
+              <td class="col-nombre">{{ e.apellido }}, {{ e.nombre }}</td>
+              <td class="col-doc">{{ e.documento }}</td>
+              <td class="col-estado">
+                <span class="est-chip" [class]="'est-chip chip-' + e.estado.toLowerCase()">
+                  {{ e.estado === 'SinRegistro' ? 'Sin reg.' : e.estado }}
+                </span>
+              </td>
+              <td class="col-hora">{{ e.horaEntrada ?? '—' }}</td>
+              <td class="col-hora">{{ e.horaSalida  ?? '—' }}</td>
+              <td>
+                <button mat-icon-button (click)="onVerEstudiante(e)" matTooltip="Ver detalle por materia">
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Log de actividad ───────────────────────────────────── -->
+    <div class="pd-card pd-log">
+      <div class="pd-card-header">
+        <mat-icon>history</mat-icon>
+        <span>Actividad del día</span>
+      </div>
+
+      <div class="log-list">
+        <div *ngFor="let com of comentarios" class="log-entry">
+
+          <!-- Metadatos: badge tipo, hora, autor -->
+          <div class="log-entry-meta">
+            <span [class]="'log-badge log-badge--' + com.subTipo.toLowerCase()">{{ com.subTipo }}</span>
+            <span class="log-ts">{{ formatTimestamp(com.timestamp) }}</span>
+            <span class="log-autor-tag">{{ com.autor }}</span>
+          </div>
+
+          <!-- NOTA: solo el contenido -->
+          <ng-container *ngIf="com.subTipo === 'NOTA'">
+            <p class="log-nota-text">{{ com.contenido }}</p>
+          </ng-container>
+
+          <!-- ASISTENCIA / HORARIO: título + detalle -->
+          <ng-container *ngIf="com.subTipo !== 'NOTA'">
+            <div class="log-event-titulo">{{ com.titulo }}</div>
+            <div *ngIf="com.detalle" class="log-event-detalle">
+
+              <!-- Asistencia: líneas con píldoras de color -->
+              <ng-container *ngIf="com.subTipo === 'ASISTENCIA'">
+                <div *ngFor="let r of getLineasAsistencia(com.detalle)" class="log-detalle-row">
+                  <ng-container *ngIf="r.nombre">
+                    <span class="log-asist-nombre">{{ r.nombre }}</span>
+                    <span class="log-asist-turno">({{ r.turno }})</span>
+                    <span [class]="'code-pill ' + getCodeClass(r.codigoAntes!)">{{ r.codigoAntes }}</span>
+                    <span class="log-arrow">→</span>
+                    <span [class]="'code-pill ' + getCodeClass(r.codigoDespues!)">{{ r.codigoDespues }}</span>
+                  </ng-container>
+                  <span *ngIf="!r.nombre">{{ r.rawText }}</span>
+                </div>
+              </ng-container>
+
+              <!-- Horario: líneas de texto plano -->
+              <ng-container *ngIf="com.subTipo !== 'ASISTENCIA'">
+                <div *ngFor="let linea of getLineasDetalle(com.detalle)" class="log-detalle-row">{{ linea }}</div>
+              </ng-container>
+
+            </div>
+          </ng-container>
+        </div>
+
+        <div *ngIf="comentarios.length === 0" class="log-empty">
+          Sin actividad registrada para este día.
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="log-input-row no-print">
+        <mat-form-field appearance="outline" class="log-input-field">
+          <mat-label>Escribir comentario...</mat-label>
+          <input matInput [(ngModel)]="nuevoCom" (keydown.enter)="onAgregarComentario()"
+                 [disabled]="guardandoComent" />
+        </mat-form-field>
+        <button mat-flat-button color="primary"
+                [disabled]="!nuevoCom.trim() || guardandoComent || !cursoCtrl.value"
+                (click)="onAgregarComentario()">
+          <mat-spinner *ngIf="guardandoComent" diameter="16" class="btn-spin"></mat-spinner>
+          Agregar
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Sección SOLO para impresión — oculta en pantalla           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="print-only">
+
+      <!-- Encabezado con logo + título -->
+      <div class="pp-header">
+        <img src="logo.jpg" class="pp-logo" alt="Logo Colegio" />
+        <div class="pp-titulo">Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</div>
+      </div>
+
+      <!-- Metadatos de impresión -->
+      <div class="pp-meta">
+        <span><strong>Fecha de impresión:</strong> {{ printTimestamp }}</span>
+        <span><strong>Usuario responsable:</strong> A determinar</span>
+      </div>
+
+      <!-- Plantilla reutilizable para un turno -->
+      <ng-template #bloqueturno let-turno let-label="label" let-showHdr="showHdr">
+
+        <!-- Encabezado repetido en páginas 2+ -->
+        <div *ngIf="showHdr" class="pp-page-header">
+          <img src="logo.jpg" class="pp-ph-logo" alt="Logo" />
+          <span>Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</span>
+        </div>
+
+        <div class="pp-turno-sep">
+          <h2 class="pp-turno-titulo">{{ label }}</h2>
+        </div>
+
+        <!-- 4 indicadores -->
+        <div class="pp-stats">
+          <div class="pp-stat pp-stat--present">
+            <span class="pp-stat-num">{{ turno.presentes }}</span>
+            <span class="pp-stat-lbl">Presentes</span>
+          </div>
+          <div class="pp-stat pp-stat--absent">
+            <span class="pp-stat-num">{{ turno.ausentes }}</span>
+            <span class="pp-stat-lbl">Ausentes</span>
+          </div>
+          <div class="pp-stat pp-stat--sin">
+            <span class="pp-stat-num">{{ turno.sinRegistro }}</span>
+            <span class="pp-stat-lbl">Sin registro</span>
+          </div>
+          <div class="pp-stat pp-stat--pct">
+            <span class="pp-stat-num">{{ turno.porcentajeAsistencia }}%</span>
+            <span class="pp-stat-lbl">Asistencia</span>
+          </div>
+        </div>
+
+        <!-- 2 columnas: Estudiantes + Horario -->
+        <div class="pp-grid">
+
+          <!-- Estudiantes -->
+          <div class="pp-card">
+            <div class="pp-card-title">Estudiantes</div>
+
+            <ng-container *ngIf="getEstPorEstado(turno, 'SinRegistro').length > 0">
+              <div class="pp-grupo-lbl pp-grupo--sin">Sin registro ({{ getEstPorEstado(turno, 'SinRegistro').length }})</div>
+              <div class="pp-chips">
+                <span *ngFor="let e of getEstPorEstado(turno, 'SinRegistro')" class="pp-chip pp-chip--sin">{{ e.apellido }}, {{ e.nombre[0] }}.</span>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="getEstPorEstado(turno, 'Presente').length > 0">
+              <div class="pp-grupo-lbl pp-grupo--presente">Presentes ({{ getEstPorEstado(turno, 'Presente').length }})</div>
+              <div class="pp-chips">
+                <span *ngFor="let e of getEstPorEstado(turno, 'Presente')" class="pp-chip pp-chip--presente">{{ e.apellido }}, {{ e.nombre[0] }}.</span>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="getEstPorEstado(turno, 'Retirado').length > 0">
+              <div class="pp-grupo-lbl pp-grupo--retirado">Retiros anticipados ({{ getEstPorEstado(turno, 'Retirado').length }})</div>
+              <div class="pp-chips">
+                <span *ngFor="let e of getEstPorEstado(turno, 'Retirado')" class="pp-chip pp-chip--retirado">{{ e.apellido }}, {{ e.nombre[0] }}.</span>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="getEstPorEstado(turno, 'Ausente').length > 0">
+              <div class="pp-grupo-lbl pp-grupo--ausente">Ausentes ({{ getEstPorEstado(turno, 'Ausente').length }})</div>
+              <div class="pp-chips">
+                <span *ngFor="let e of getEstPorEstado(turno, 'Ausente')" class="pp-chip pp-chip--ausente">{{ e.apellido }}, {{ e.nombre[0] }}.</span>
+              </div>
+            </ng-container>
+
+            <div *ngIf="turno.totalEstudiantes === 0" class="pp-empty">Sin estudiantes registrados.</div>
+          </div>
+
+          <!-- Horario -->
+          <div class="pp-card">
+            <div class="pp-card-title">Horario del día</div>
+            <div *ngFor="let clase of turno.horarioClases" class="pp-clase-row">
+              <div class="pp-clase-hora">
+                {{ clase.horaEntrada }} – {{ clase.horaSalida }}
+                <span *ngIf="clase.horaEntradaOriginal" class="pp-hora-orig">
+                  (era {{ clase.horaEntradaOriginal }}–{{ clase.horaSalidaOriginal }})
+                </span>
+              </div>
+              <div class="pp-clase-body">
+                <div class="pp-clase-nombre">{{ clase.materia }}</div>
+                <div class="pp-clase-docente">{{ clase.docente }}</div>
+              </div>
+              <span class="pp-clase-estado"
+                    [class.pp-estado--dictada]="clase.dictada !== false"
+                    [class.pp-estado--nodictada]="clase.dictada === false">
+                {{ clase.dictada === false ? 'No Dictada' : (clase.dictada === true ? 'Dictada' : 'Sin reg.') }}
+              </span>
+            </div>
+            <div *ngIf="turno.horarioClases.length === 0" class="pp-empty">Sin clases programadas.</div>
+          </div>
+
+        </div>
+
+        <!-- Lista completa del turno -->
+        <div class="pp-lista">
+          <div class="pp-lista-titulo">Lista completa — {{ label }}</div>
+          <table class="pp-tabla">
+            <thead>
+              <tr>
+                <th>Apellido y Nombre</th>
+                <th>Documento</th>
+                <th>Estado</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of getListaOrdenada(turno)"
+                  [class.pp-fila-presente]="e.estado === 'Presente'"
+                  [class.pp-fila-retirado]="e.estado === 'Retirado'"
+                  [class.pp-fila-ausente]="e.estado === 'Ausente'">
+                <td>{{ e.apellido }}, {{ e.nombre }}</td>
+                <td>{{ e.documento }}</td>
+                <td>{{ e.estado === 'SinRegistro' ? 'Sin reg.' : e.estado }}</td>
+                <td>{{ e.horaEntrada ?? '—' }}</td>
+                <td>{{ e.horaSalida ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </ng-template><!-- /bloqueturno -->
+
+      <!-- Turno Mañana -->
+      <ng-container *ngIf="resumen!.manana.disponible">
+        <ng-container *ngTemplateOutlet="bloqueturno; context: { $implicit: resumen!.manana, label: 'Turno Mañana' }"></ng-container>
+      </ng-container>
+
+      <!-- Separador + Turno Tarde -->
+      <ng-container *ngIf="resumen!.tarde.disponible">
+        <div class="pp-section-sep"></div>
+        <ng-container *ngTemplateOutlet="bloqueturno; context: { $implicit: resumen!.tarde, label: 'Turno Tarde', showHdr: true }"></ng-container>
+      </ng-container>
+
+      <!-- Separador + Actividad del día -->
+      <div class="pp-section-sep"></div>
+      <div class="pp-page-header">
+        <img src="logo.jpg" class="pp-ph-logo" alt="Logo" />
+        <span>Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</span>
+      </div>
+      <div class="pp-turno-sep">
+        <h2 class="pp-turno-titulo">Actividad del día</h2>
+      </div>
+
+      <div *ngIf="comentarios.length === 0" class="pp-empty">Sin actividad registrada para este día.</div>
+
+      <table *ngIf="comentarios.length > 0" class="pp-tabla pp-log-tabla">
+        <thead>
+          <tr>
+            <th style="width:90pt">Hora</th>
+            <th style="width:54pt">Tipo</th>
+            <th>Evento / Nota</th>
+            <th>Detalle</th>
+            <th style="width:54pt">Autor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let com of comentarios">
+            <td class="pp-log-hora">{{ formatTimestamp(com.timestamp) }}</td>
+            <td><span [class]="'pp-log-badge pp-log-badge--' + com.subTipo.toLowerCase()">{{ com.subTipo }}</span></td>
+            <td>
+              <ng-container *ngIf="com.subTipo === 'NOTA'">{{ com.contenido }}</ng-container>
+              <ng-container *ngIf="com.subTipo !== 'NOTA'">{{ com.titulo }}</ng-container>
+            </td>
+            <td class="pp-log-detalle">{{ com.subTipo === 'NOTA' ? '—' : (com.detalle ?? '—') }}</td>
+            <td>{{ com.autor }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div><!-- /print-only -->
+
+  </ng-container>
+</div>
