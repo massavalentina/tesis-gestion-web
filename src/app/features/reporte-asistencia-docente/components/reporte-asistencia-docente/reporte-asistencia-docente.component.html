@@ -154,18 +154,6 @@
         <td mat-cell *matCellDef="let est">{{ est.inasistencias }}</td>
       </ng-container>
 
-      <!-- Llegadas Tarde -->
-      <ng-container matColumnDef="llegadasTarde">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Tarde</th>
-        <td mat-cell *matCellDef="let est">{{ est.llegadasTarde }}</td>
-      </ng-container>
-
-      <!-- Retiros -->
-      <ng-container matColumnDef="retirosAnticipados">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Retiros</th>
-        <td mat-cell *matCellDef="let est">{{ est.retirosAnticipados }}</td>
-      </ng-container>
-
       <!-- Porcentaje -->
       <ng-container matColumnDef="porcentajeAsistencia">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>% Asistencia</th>

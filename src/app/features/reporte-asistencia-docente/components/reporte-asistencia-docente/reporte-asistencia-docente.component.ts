@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Injectable, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,6 +13,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import {
+  MAT_DATE_LOCALE,
+  MatNativeDateModule,
+  NativeDateAdapter,
+  DateAdapter,
+  MAT_DATE_FORMATS,
+  MatDateFormats,
+} from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ReporteAsistenciaDocenteService } from '../../services/reporte-asistencia-docente.service';
@@ -21,6 +29,29 @@ import { ReporteDocenteItem } from '../../models/reporte-asistencia-docente.mode
 import { EspacioCurricular } from '../../models/espacio-curricular.model';
 import { CursoFicha } from '../../../ficha-alumno/models/curso-ficha.model';
 import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
+
+// ── Adaptador de fecha DD/MM/YYYY en español (mismo que AsistenciaGeneralManual) ──
+@Injectable()
+class DdMmYyyyDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: object): string {
+    if ((displayFormat as unknown as string) === 'input') {
+      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      return `${d}/${m}/${date.getFullYear()}`;
+    }
+    return super.format(date, displayFormat);
+  }
+}
+
+const DD_MM_YYYY: MatDateFormats = {
+  parse:   { dateInput: { day: 'numeric', month: 'numeric', year: 'numeric' } },
+  display: {
+    dateInput:          'input',
+    monthYearLabel:     { year: 'numeric', month: 'short'  },
+    dateA11yLabel:      { year: 'numeric', month: 'long',  day: 'numeric' },
+    monthYearA11yLabel: { year: 'numeric', month: 'long'   },
+  },
+};
 
 @Component({
   selector: 'app-reporte-asistencia-docente',
@@ -37,7 +68,13 @@ import { PdfReporteService } from '../../../../core/services/pdf-reporte.service
     MatIconModule,
     MatProgressSpinnerModule,
     MatDatepickerModule,
+    MatNativeDateModule,
     MatTooltipModule,
+  ],
+  providers: [
+    { provide: MAT_DATE_LOCALE,  useValue: 'es-AR'            },
+    { provide: DateAdapter,      useClass: DdMmYyyyDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY          },
   ],
   templateUrl: './reporte-asistencia-docente.component.html',
   styleUrl: './reporte-asistencia-docente.component.css',
@@ -71,8 +108,6 @@ export class ReporteAsistenciaDocenteComponent implements OnInit {
     'dni',
     'presencias',
     'inasistencias',
-    'llegadasTarde',
-    'retirosAnticipados',
     'porcentajeAsistencia',
     'condicion',
   ];
@@ -92,8 +127,6 @@ export class ReporteAsistenciaDocenteComponent implements OnInit {
         case 'dni': return item.documento;
         case 'presencias': return item.presencias;
         case 'inasistencias': return item.inasistencias;
-        case 'llegadasTarde': return item.llegadasTarde;
-        case 'retirosAnticipados': return item.retirosAnticipados;
         case 'porcentajeAsistencia': return item.porcentajeAsistencia;
         case 'condicion': return item.porcentajeAsistencia;
         default: return '';

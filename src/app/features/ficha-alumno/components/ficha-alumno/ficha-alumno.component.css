@@ -1,10 +1,10 @@
 .ficha-container {
-  max-width: 760px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 28px 20px;
 }
 
-/* Header con breadcrumb */
+/* ── Header con breadcrumb ── */
 .ficha-header {
   display: flex;
   align-items: center;
@@ -31,13 +31,91 @@
   color: #1976d2;
 }
 
-/* Selector de curso */
-.curso-select {
-  width: 100%;
-  margin-bottom: 16px;
+/* ── Selector de curso (card moderno) ── */
+.curso-picker-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1.5px solid #e0e8f0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* Estados vacíos / error */
+.curso-picker-card:focus-within {
+  border-color: #5B9BD5;
+  box-shadow: 0 2px 12px rgba(91, 155, 213, 0.2);
+}
+
+.curso-picker-icon {
+  color: #5B9BD5;
+  font-size: 1.7rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  flex-shrink: 0;
+}
+
+.curso-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.curso-picker-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #9aa5b4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* mat-select sin mat-form-field wrapper */
+.curso-picker-matselect {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  font-family: inherit;
+}
+
+.curso-picker-matselect ::ng-deep .mat-mdc-select-trigger {
+  height: auto;
+}
+
+.curso-picker-matselect ::ng-deep .mat-mdc-select-value {
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.curso-picker-matselect ::ng-deep .mat-mdc-select-placeholder {
+  color: #aaa;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.curso-picker-matselect ::ng-deep .mat-mdc-select-arrow {
+  color: #9aa5b4;
+}
+
+.curso-picker-card:focus-within .curso-picker-matselect ::ng-deep .mat-mdc-select-arrow {
+  color: #5B9BD5;
+}
+
+.curso-picker-loading {
+  opacity: 0.7;
+}
+
+.curso-picker-spinner {
+  flex-shrink: 0;
+}
+
+/* ── Estados vacíos / error ── */
 .estado-center {
   display: flex;
   align-items: center;
@@ -50,7 +128,10 @@
 .estado-center.muted { color: #999; }
 .estado-center.error { color: #c62828; }
 
-/* ── Panels de alumnos ── */
+/* ══════════════════════════════
+   PANELS DE ALUMNOS
+   ══════════════════════════════ */
+
 .alumno-panel {
   margin-bottom: 10px;
   border-radius: 10px !important;
@@ -58,7 +139,6 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
 }
 
-/* Header celeste por defecto */
 .alumno-panel ::ng-deep .mat-expansion-panel-header {
   background-color: #5B9BD5 !important;
 }
@@ -66,7 +146,6 @@
   background-color: #4a8bc4 !important;
 }
 
-/* Header gris para TEA */
 .alumno-panel.panel-tea ::ng-deep .mat-expansion-panel-header {
   background-color: #757575 !important;
 }
@@ -74,7 +153,6 @@
   background-color: #616161 !important;
 }
 
-/* Texto e ícono blanco en el header */
 .alumno-panel ::ng-deep .mat-expansion-panel-header .mat-expansion-panel-header-title,
 .alumno-panel ::ng-deep .mat-expansion-panel-header .mat-expansion-panel-header-description {
   color: #fff !important;
@@ -84,7 +162,6 @@
   border-color: #fff !important;
 }
 
-/* Nombre en header */
 .panel-title { align-items: center; }
 
 .alumno-nombre {
@@ -95,68 +172,963 @@
   color: #fff;
 }
 
-/* ── Detalle expandido ── */
-.alumno-detalle {
-  padding: 14px 4px 6px;
+/* ── Cargando / Error ficha ── */
+.ficha-loading {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  padding: 24px;
 }
 
-.detalle-row {
+.ficha-error {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 16px;
+  color: #c62828;
+  font-size: 0.9rem;
 }
 
-.detalle-icon {
-  font-size: 1.1rem;
-  width: 1.1rem;
-  height: 1.1rem;
-  color: #888;
+/* ══════════════════════════════
+   VISTA RESUMEN — Layout
+   ══════════════════════════════ */
+
+.alumno-detalle {
+  padding: 16px 14px 14px;
+}
+
+/* Grid dos columnas: izq | 1px | der */
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0 24px;
+  align-items: start;
+}
+
+.ficha-divisor {
+  background-color: #e0e0e0;
+  width: 1px;
+  align-self: stretch;
+}
+
+.ficha-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+/* ── Encabezado de columna ── */
+.col-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #666;
+  text-align: center;
+  letter-spacing: 0.08em;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid #e8e8e8;
+  margin-bottom: 2px;
+}
+
+/* ── Filas de dato: grid label | valor ── */
+.ficha-campo {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  align-items: baseline;
+  gap: 0 6px;
+  min-height: 24px;
+}
+
+.campo-label {
+  font-size: 0.7rem;
+  color: #999;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.campo-valor {
+  font-size: 0.87rem;
+  color: #1a1a1a;
+  font-weight: 500;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.campo-valor.muted {
+  color: #bbb;
+  font-weight: 400;
+}
+
+/* ── Badge "Principal" moderno ── */
+.badge-principal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1565c0;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 20px;
+  padding: 2px 8px 2px 5px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #1976d2;
   flex-shrink: 0;
 }
 
-.detalle-label {
-  font-size: 0.85rem;
+/* ── Separador interno de columna ── */
+.col-sep {
+  border-top: 1px solid #f0f0f0;
+  margin: 4px 0;
+}
+
+/* ── Fila de botón principal (EDITAR / DETALLE TUTORES) ── */
+.col-btn-row {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0;
+}
+
+/* Botón acción pill */
+.btn-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px 6px 10px;
+  border: 1.5px solid #1976d2;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #1976d2;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-accion:hover {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-color: #1565c0;
+}
+
+.btn-accion-icon {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  opacity: 0.6;
+}
+
+.btn-accion-arrow {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 2px;
+}
+
+/* ── Filas de info (QR, faltas) ── */
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.info-icon {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #bbb;
+  flex-shrink: 0;
+}
+
+.info-label {
+  font-size: 0.8rem;
   color: #777;
-  min-width: 140px;
 }
 
-.detalle-valor {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #212121;
-}
-
-/* Valor de faltas con color según estado */
-.faltas-valor {
+/* Badge credencial QR */
+.credencial-badge {
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 2px 10px;
   border-radius: 12px;
 }
 
-.estado-verde    { background-color: #4CAF50; color: #fff; }
-.estado-amarillo { background-color: #F9A825; color: #fff; }
-.estado-naranja  { background-color: #EF6C00; color: #fff; }
-.estado-rojo     { background-color: #C62828; color: #fff; }
+.credencial-activa   { background-color: #43a047; color: #fff; }
+.credencial-inactiva { background-color: #e53935; color: #fff; }
+.credencial-sin      { background-color: #9e9e9e; color: #fff; }
+
+/* Badge faltas */
+.faltas-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.estado-verde    { background-color: #43a047; color: #fff; }
+.estado-amarillo { background-color: #f9a825; color: #fff; }
+.estado-naranja  { background-color: #ef6c00; color: #fff; }
+.estado-rojo     { background-color: #c62828; color: #fff; }
 .estado-tea      { background-color: #757575; color: #fff; }
 
-.tea-icon { color: #757575; }
-.tea-text { color: #757575; font-weight: 600; }
+/* Botón secundario (ver detalle) */
+.btn-detalle {
+  font-size: 0.78rem;
+}
 
-.detalle-acciones {
-  margin-top: 4px;
-  padding-top: 4px;
+/* Historial placeholder */
+.historial-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px dashed #ddd;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.historial-titulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e5a000;
+  letter-spacing: 0.04em;
+}
+
+.historial-sub {
+  font-size: 0.72rem;
+  color: #bbb;
+}
+
+/* ══════════════════════════════
+   VISTA TUTORES (tabla)
+   ══════════════════════════════ */
+
+.tutores-view {
+  padding: 8px 14px 16px;
+}
+
+.tutores-view-header {
+  margin-bottom: 10px;
+}
+
+.btn-volver {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: #1976d2;
+  padding: 4px 0;
+}
+
+.btn-volver:hover { text-decoration: underline; }
+
+.btn-volver mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.tutores-titulo {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.tutores-tabla-wrapper {
+  width: 100%;
+}
+
+.tutores-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  table-layout: fixed;
+}
+
+/* Anchos de columna controlados */
+.tutores-tabla th:nth-child(1) { width: 32%; }   /* Nombre + badge */
+.tutores-tabla th:nth-child(2) { width: 12%; }   /* DNI (8 dígitos) */
+.tutores-tabla th:nth-child(3) { width: 11%; }   /* Relación */
+.tutores-tabla th:nth-child(4) { width: 12%; }   /* Disponibilidad */
+.tutores-tabla th:nth-child(5) { width: 23%; }   /* Contacto */
+.tutores-tabla th:nth-child(6) { width: 10%; }   /* Acciones */
+
+.tutores-tabla thead tr {
+  background-color: #f5f5f5;
+}
+
+.tutores-tabla th {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #777;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #e8e8e8;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.tutores-tabla td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hover animation en TODAS las filas */
+.tutores-tabla tbody tr {
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tutores-tabla tbody tr:hover {
+  background-color: #f0f7ff;
+  box-shadow: inset 3px 0 0 #5B9BD5;
+}
+
+.fila-principal:hover {
+  background-color: #f0f7ff;
+  box-shadow: inset 3px 0 0 #5B9BD5;
+}
+
+/* ── Nombre + badge en una sola línea ── */
+.td-nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.tutor-nombre-texto {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  letter-spacing: 0.01em;
+}
+
+.td-dato {
+  font-size: 0.82rem;
+  color: #444;
+}
+
+/* Badge principal para la tabla */
+.badge-principal-tabla {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #1565c0;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 20px;
+  padding: 2px 8px 2px 5px;
+  white-space: nowrap;
+}
+
+.contacto-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contacto-email {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.contacto-tel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: 0.01em;
+}
+
+/* ── Botones de acción en tabla ── */
+.acciones-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-tabla-icono {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-tabla-icono mat-icon {
+  font-size: 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.btn-tabla-editar {
+  color: #1976d2;
+}
+.btn-tabla-editar:hover {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.btn-tabla-eliminar {
+  color: #bbb;
+}
+.btn-tabla-eliminar:hover {
+  color: #e53935;
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.sin-tutores {
+  text-align: center;
+  color: #bbb;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* ══════════════════════════════
+   VISTA TUTORES — header actualizado
+   ══════════════════════════════ */
+
+.tutores-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.btn-agregar-tutor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px 6px 10px;
+  border: 1.5px solid #1976d2;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #1976d2;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-agregar-tutor:hover {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.btn-agregar-tutor mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.acciones-cell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+
+/* ══════════════════════════════
+   MODALES OVERLAY
+   ══════════════════════════════ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeInOverlay 0.18s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  animation: slideUpModal 0.22s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.modal-card-lg {
+  max-width: 640px;
+}
+
+.modal-card-sm {
+  max-width: 400px;
+}
+
+@keyframes slideUpModal {
+  from { transform: translateY(16px); opacity: 0.4; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Header del modal ── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.modal-titulo {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #1a1a2e;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close:hover { background: #f0f0f0; color: #333; }
+.modal-close:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Formulario del modal ── */
+.modal-form {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.modal-form-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.modal-form-row mat-form-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-form-row.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Botones del modal ── */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid #f0f0f0;
 }
 
-.btn-detalle {
+.btn-modal-cancel {
+  padding: 9px 20px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #666;
   font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-/* Responsive */
+.btn-modal-cancel:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #bbb;
+}
+
+.btn-modal-cancel:disabled { opacity: 0.5; cursor: default; }
+
+.btn-modal-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #1976d2;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 100px;
+  transition: background 0.15s;
+}
+
+.btn-modal-save:hover:not(:disabled) { background: #1565c0; }
+.btn-modal-save:disabled { opacity: 0.6; cursor: default; }
+
+.btn-modal-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #e53935;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 100px;
+  transition: background 0.15s;
+}
+
+.btn-modal-danger:hover:not(:disabled) { background: #c62828; }
+.btn-modal-danger:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Pantalla de confirmación ── */
+.modal-confirm {
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+  margin-bottom: 4px;
+}
+
+.confirm-icon mat-icon {
+  font-size: 1.8rem;
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.confirm-icon-warning {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.confirm-icon-danger {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.confirm-titulo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.confirm-sub {
+  font-size: 0.88rem;
+  color: #666;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Banner de error general del formulario ── */
+.form-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  margin-top: 8px;
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #e65100;
+  font-weight: 600;
+}
+
+/* ── Asterisco requerido en labels ── */
+.campo-req {
+  color: #e53935;
+  font-size: 0.85em;
+  margin-left: 2px;
+}
+
+/* ══════════════════════════════
+   ALERTA: TUTOR DESACTUALIZADO
+   ══════════════════════════════ */
+
+/* Banda de aviso que aparece en la columna del tutor cuando sus datos
+   llevan más de 6 meses sin ser actualizados. */
+.tutor-alerta-desactualizado {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 12px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #6d4c00;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tutor-alerta-desactualizado .alerta-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: #f57f17;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ══════════════════════════════
+   VISTA TUTORES — header con acciones
+   ══════════════════════════════ */
+
+/* Contenedor derecho del header de tutores (botón notificar + agregar) */
+.tutores-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botón "Enviar notificación" — activo cuando el tutor está desactualizado */
+.btn-notificar-tutor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px 6px 10px;
+  border: 1.5px solid #e65100;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #e65100;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.btn-notificar-tutor:hover:not(:disabled):not(.btn-notificar-disabled) {
+  background: #fff3e0;
+  color: #bf360c;
+  border-color: #bf360c;
+}
+
+.btn-notificar-tutor mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Estado deshabilitado: gris cuando el tutor fue actualizado recientemente */
+.btn-notificar-tutor.btn-notificar-disabled,
+.btn-notificar-tutor:disabled {
+  border-color: #ccc;
+  color: #aaa;
+  cursor: not-allowed;
+  background: #fafafa;
+}
+
+/* Spinner inline dentro del botón mientras se envía */
+.notif-spinner {
+  display: inline-flex;
+}
+
+/* ══════════════════════════════
+   BOTÓN MASIVO DE CURSO
+   ══════════════════════════════ */
+
+/* Contenedor alineado a la derecha, debajo del selector de curso */
+.curso-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* Botón de notificación masiva del curso */
+.btn-notificar-curso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px 7px 12px;
+  border: 1.5px solid #e65100;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #e65100;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.btn-notificar-curso:hover:not(:disabled) {
+  background: #fff3e0;
+  color: #bf360c;
+  border-color: #bf360c;
+}
+
+.btn-notificar-curso:disabled {
+  border-color: #ccc;
+  color: #aaa;
+  cursor: not-allowed;
+  background: #fafafa;
+}
+
+.btn-notificar-curso mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.notif-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #e65100;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.btn-notificar-disabled .notif-count-badge,
+.btn-notificar-curso:disabled .notif-count-badge {
+  background: #bbb;
+}
+
+/* ══════════════════════════════
+   CARTEL "NOTIFICACIÓN YA ENVIADA"
+   ══════════════════════════════ */
+
+/* Banner verde que aparece tras enviar la notificación al tutor principal */
+.notif-enviada-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #1b5e20;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.notif-enviada-banner mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: #2e7d32;
+  flex-shrink: 0;
+}
+
+/* Variante en la vista de tutores: con margen inferior */
+.notif-enviada-banner-curso {
+  margin-bottom: 10px;
+}
+
+/* ── Responsive ── */
 @media (max-width: 600px) {
   .header-titulo,
   .header-curso { font-size: 1.1rem; }
+
+  .ficha-grid {
+    grid-template-columns: 1fr;
+    gap: 16px 0;
+  }
+
+  .ficha-divisor {
+    height: 1px;
+    width: 100%;
+  }
+
+  .ficha-campo {
+    grid-template-columns: 120px 1fr;
+  }
+
+  .modal-form-row.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-card, .modal-card-lg, .modal-card-sm {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .confirm-actions button {
+    width: 100%;
+    justify-content: center;
+  }
 }
