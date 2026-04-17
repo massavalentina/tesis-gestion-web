@@ -45,6 +45,19 @@ export interface RespuestaInicioEnvioQr {
   jobId: string;
 }
 
+export interface SolicitudEnvioIndividualQr {
+  idCurso: string;
+  asunto?: string;
+  mensajePersonalizado?: string;
+}
+
+export interface RespuestaEnvioIndividualQr {
+  idEstudiante: string;
+  estado: 'ENVIADO';
+  destino?: string | null;
+  mensaje: string;
+}
+
 export interface ProgresoEnvioQr {
   jobId: string;
   estado: 'RUNNING' | 'COMPLETED' | 'FAILED';

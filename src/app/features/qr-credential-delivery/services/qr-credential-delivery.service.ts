@@ -8,8 +8,10 @@ import {
   OpcionCursoEnvioQr,
   PaginaEstadoEnvioQr,
   ProgresoEnvioQr,
+  RespuestaEnvioIndividualQr,
   RespuestaInicioEnvioQr,
   ResumenEnvioQr,
+  SolicitudEnvioIndividualQr,
   SolicitudInicioEnvioQr
 } from '../models/qr-credential-delivery.models';
 
@@ -77,5 +79,9 @@ export class ServicioEnvioCredencialesQr {
     return this.http.get(`${this.studentQrImageUrl}/${estudianteId}/qr-image`, {
       responseType: 'blob'
     });
+  }
+
+  enviarAlumno(estudianteId: string, payload: SolicitudEnvioIndividualQr): Observable<RespuestaEnvioIndividualQr> {
+    return this.http.post<RespuestaEnvioIndividualQr>(`${this.studentQrImageUrl}/${estudianteId}/send`, payload);
   }
 }

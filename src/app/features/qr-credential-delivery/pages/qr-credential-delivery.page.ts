@@ -25,12 +25,20 @@ import {
   DatosConfirmacionEnvioQr,
   DialogoConfirmacionEnvioQrComponent
 } from '../components/confirm-delivery-dialog.component';
+import {
+  DatosConfirmacionEnvioIndividualQr,
+  DialogoConfirmacionEnvioIndividualQrComponent
+} from '../components/confirm-single-delivery-dialog.component';
 import { DialogoProgresoEnvioQrComponent } from '../components/delivery-progress-dialog.component';
 import { DialogoResultadoEnvioQrComponent } from '../components/delivery-result-dialog.component';
 import {
   DatosPreviewQrAlumno,
   DialogoPreviewQrAlumnoComponent
 } from '../components/delivery-qr-preview-dialog.component';
+import {
+  DatosResultadoEnvioIndividualQr,
+  DialogoResultadoEnvioIndividualQrComponent
+} from '../components/single-delivery-result-dialog.component';
 import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-sync.service';
 
 @Component({
@@ -187,6 +195,14 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
                   <td class="actions-col">
                     <button
                       mat-icon-button
+                      [disabled]="!puedeEnviarQr(row) || ejecutandoJob || enviandoAlumnoIds.has(row.idEstudiante)"
+                      (click)="enviarQr(row)"
+                      [title]="row.estado === 'ENVIADO' ? 'Reenviar QR por email' : 'Enviar QR por email'"
+                      [attr.aria-label]="row.estado === 'ENVIADO' ? 'Reenviar QR' : 'Enviar QR'">
+                      <mat-icon>{{ enviandoAlumnoIds.has(row.idEstudiante) ? 'hourglass_top' : 'send' }}</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
                       [disabled]="!puedeGestionarQr(row)"
                       (click)="previsualizarQr(row)"
                       title="Previsualizar QR"
@@ -258,6 +274,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
 
   progreso: ProgresoEnvioQr | null = null;
   currentJobId: string | null = null;
+  enviandoAlumnoIds = new Set<string>();
 
   constructor(
     private servicio: ServicioEnvioCredencialesQr,
@@ -269,6 +286,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       this.cancelarCierreDialogoProgresoPendiente();
       this.cerrarDialogoProgreso();
       this.liberarTodosObjectUrls();
+      this.enviandoAlumnoIds.clear();
     });
   }
 
@@ -428,6 +446,10 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     return row.estado !== 'SIN_QR';
   }
 
+  puedeEnviarQr(row: FilaEstadoEnvioQr): boolean {
+    return row.estado === 'PENDIENTE_ENVIO' || row.estado === 'ENVIADO';
+  }
+
   formatearFecha(fecha?: string | null): string {
     if (!fecha) {
       return '-';
@@ -495,6 +517,84 @@ export class PaginaEnvioCredencialesQr implements OnInit {
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo descargar el QR del alumno.');
         }
       });
+  }
+
+  enviarQr(row: FilaEstadoEnvioQr): void {
+    if (!this.cursoSeleccionadoId || !this.puedeEnviarQr(row) || this.enviandoAlumnoIds.has(row.idEstudiante)) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(DialogoConfirmacionEnvioIndividualQrComponent, {
+      width: '460px',
+      panelClass: 'qr-generation-dialog',
+      data: this.construirDatosConfirmacionIndividual(row)
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: confirmado => {
+          if (confirmado) {
+            this.ejecutarEnvioIndividual(row);
+          }
+        }
+      });
+  }
+
+  private construirDatosConfirmacionIndividual(row: FilaEstadoEnvioQr): DatosConfirmacionEnvioIndividualQr {
+    return {
+      curso: this.resumen?.cursoCodigo ?? this.obtenerLabelCursoSeleccionado(),
+      alumno: row.nombreCompleto,
+      dni: row.dni,
+      tutorEmail: row.tutorPrincipalEmail ?? '-',
+      esReenvio: row.estado === 'ENVIADO'
+    };
+  }
+
+  private ejecutarEnvioIndividual(row: FilaEstadoEnvioQr): void {
+    if (!this.cursoSeleccionadoId || this.enviandoAlumnoIds.has(row.idEstudiante)) {
+      return;
+    }
+
+    this.errorMensaje = '';
+    this.enviandoAlumnoIds.add(row.idEstudiante);
+
+    this.servicio.enviarAlumno(row.idEstudiante, {
+      idCurso: this.cursoSeleccionadoId
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => {
+          this.enviandoAlumnoIds.delete(row.idEstudiante);
+          this.cargarResumen();
+          this.cargarAlumnos();
+          this.abrirDialogoResultadoEnvioIndividual({
+            titulo: row.estado === 'ENVIADO' ? 'Reenvío realizado' : 'Envío realizado',
+            mensaje: response.mensaje || 'La credencial QR se envió correctamente.',
+            destino: response.destino ?? row.tutorPrincipalEmail ?? null,
+            modo: 'success'
+          });
+        },
+        error: error => {
+          this.enviandoAlumnoIds.delete(row.idEstudiante);
+          const mensajeError = this.obtenerMensajeError(error, 'No se pudo enviar la credencial del alumno.');
+          this.errorMensaje = mensajeError;
+          this.abrirDialogoResultadoEnvioIndividual({
+            titulo: 'No se pudo completar la operación',
+            mensaje: mensajeError,
+            destino: row.tutorPrincipalEmail ?? null,
+            modo: 'error'
+          });
+        }
+      });
+  }
+
+  private abrirDialogoResultadoEnvioIndividual(data: DatosResultadoEnvioIndividualQr): void {
+    this.dialog.open(DialogoResultadoEnvioIndividualQrComponent, {
+      width: '430px',
+      panelClass: 'qr-generation-dialog',
+      data
+    });
   }
 
   private cargarCursos(): void {
