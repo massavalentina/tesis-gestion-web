@@ -20,6 +20,7 @@ export class ServicioEnvioCredencialesQr {
   private readonly summaryUrl = `${this.baseUrl}/api/qr-credentials/delivery/summary`;
   private readonly startJobUrl = `${this.baseUrl}/api/qr-credentials/delivery/start-job`;
   private readonly progressUrl = `${this.baseUrl}/api/qr-credentials/delivery/progress`;
+  private readonly cancelUrl = `${this.baseUrl}/api/qr-credentials/delivery/cancel`;
   private readonly studentsUrl = `${this.baseUrl}/api/qr-credentials/delivery/students`;
   private readonly studentQrImageUrl = `${this.baseUrl}/api/qr-credentials/delivery/student`;
 
@@ -43,6 +44,10 @@ export class ServicioEnvioCredencialesQr {
 
   obtenerProgreso(jobId: string): Observable<ProgresoEnvioQr> {
     return this.http.get<ProgresoEnvioQr>(`${this.progressUrl}/${jobId}`);
+  }
+
+  cancelarJob(jobId: string): Observable<ProgresoEnvioQr> {
+    return this.http.post<ProgresoEnvioQr>(`${this.cancelUrl}/${jobId}`, {});
   }
 
   obtenerAlumnos(params: {

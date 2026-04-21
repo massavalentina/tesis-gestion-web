@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
@@ -7,7 +8,7 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
 @Component({
   selector: 'app-delivery-progress-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatProgressBarModule],
+  imports: [CommonModule, MatDialogModule, MatProgressBarModule, MatButtonModule],
   template: `
     <div class="dlg">
       <div class="dlg__badge">Enviando</div>
@@ -41,6 +42,12 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
           {{ progress?.ultimoEstudiante ? progress?.ultimoEstudiante + ': ' : '' }}{{ progress?.ultimoMensaje }}
         </p>
       </mat-dialog-content>
+
+      <mat-dialog-actions class="dlg__actions" *ngIf="progress?.estado === 'RUNNING'">
+        <button mat-stroked-button class="btn-cancel" (click)="solicitarCancelacion.emit()">
+          Cancelar envío
+        </button>
+      </mat-dialog-actions>
     </div>
   `,
   styles: [`
@@ -72,6 +79,19 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
       margin: 0; padding: 12px 14px; border-radius: 14px; border: 1px solid #dce8f3;
       background: #fff; text-align: left; color: #2f4f6d; font-size: 13px;
     }
+    .dlg__actions {
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      margin-top: 16px;
+    }
+    .btn-cancel {
+      border-color: #d8a8a1 !important;
+      color: #b05447 !important;
+      border-radius: 12px !important;
+      font-weight: 900 !important;
+      padding: 10px 18px !important;
+    }
     @media (max-width: 540px) {
       .content { min-width: 0; }
       h2 { font-size: 20px; }
@@ -79,6 +99,7 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
   `]
 })
 export class DialogoProgresoEnvioQrComponent {
+  @Output() solicitarCancelacion = new EventEmitter<void>();
   progress: ProgresoEnvioQr | null = null;
 
   percentage(): number {

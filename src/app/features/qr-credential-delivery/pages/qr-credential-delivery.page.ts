@@ -5,17 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, interval } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import {
   AlcanceEnvioQr,
-  EstadoFilaEnvioQr,
-  EstadoFiltroEnvioQr,
-  FilaEstadoEnvioQr,
   OpcionCursoEnvioQr,
   ProgresoEnvioQr,
   ResumenEnvioQr
@@ -28,9 +23,9 @@ import {
 import { DialogoProgresoEnvioQrComponent } from '../components/delivery-progress-dialog.component';
 import { DialogoResultadoEnvioQrComponent } from '../components/delivery-result-dialog.component';
 import {
-  DatosPreviewQrAlumno,
-  DialogoPreviewQrAlumnoComponent
-} from '../components/delivery-qr-preview-dialog.component';
+  DatosCancelacionEnvioQr,
+  DialogoCancelacionEnvioQrComponent
+} from '../components/cancel-delivery-dialog.component';
 import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-sync.service';
 
 @Component({
@@ -45,8 +40,6 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
     MatSelectModule
   ],
   template: `
@@ -55,9 +48,9 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
         <div class="panel-header">
           <div>
             <p class="eyebrow">Credenciales QR</p>
-            <h1>Envio masivo</h1>
+            <h1>Envío masivo</h1>
             <p class="subtitle">
-              Selecciona curso, revisa el estado actual y ejecuta el envio de credenciales.
+              Seleccioná curso, revisá el estado actual y ejecutá el envío de credenciales.
             </p>
           </div>
         </div>
@@ -66,7 +59,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
           <mat-form-field appearance="outline">
             <mat-label>Curso</mat-label>
             <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
-              <mat-option [value]="null">Selecciona un curso</mat-option>
+              <mat-option [value]="null">Seleccioná un curso</mat-option>
               <mat-option *ngFor="let curso of cursos" [value]="curso.id">
                 {{ curso.label }}
               </mat-option>
@@ -83,7 +76,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
         </div>
 
         <p class="hint" *ngIf="!cursoSeleccionadoId">
-          Para consultar resumen y estado, selecciona un curso.
+          Para consultar resumen y ejecutar el envío, seleccioná un curso.
         </p>
 
         <p class="error" *ngIf="errorMensaje">{{ errorMensaje }}</p>
@@ -113,8 +106,8 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
 
         <div class="footer" *ngIf="resumen">
           <div class="meta">
-            Candidatos segun alcance: <strong>{{ resumen.totalCandidatosSegunAlcance }}</strong>
-            | Estimacion: <strong>{{ resumen.estimacionSegundos }}s</strong>
+            Candidatos según alcance: <strong>{{ resumen.totalCandidatosSegunAlcance }}</strong>
+            | Estimación: <strong>{{ resumen.estimacionSegundos }}s</strong>
           </div>
 
           <button
@@ -122,104 +115,8 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
             color="primary"
             [disabled]="!puedeIniciarEnvio()"
             (click)="iniciarEnvio()">
-            Iniciar envio
+            Iniciar envío
           </button>
-        </div>
-
-        <div class="table-section" *ngIf="cursoSeleccionadoId">
-          <div class="table-header">
-            <h3>Estado de credenciales por estudiante</h3>
-          </div>
-
-          <div class="table-filters">
-            <mat-form-field appearance="outline">
-              <mat-label>Estado</mat-label>
-              <mat-select [(ngModel)]="estadoSeleccionado" (selectionChange)="aplicarFiltros()">
-                <mat-option value="TODOS">Todos</mat-option>
-                <mat-option value="PENDIENTE_ENVIO">Pendiente envio</mat-option>
-                <mat-option value="ENVIADO">Enviado</mat-option>
-                <mat-option value="SIN_QR">Sin QR</mat-option>
-                <mat-option value="SIN_TUTOR_PRINCIPAL">Sin tutor principal</mat-option>
-                <mat-option value="EMAIL_INVALIDO">Email invalido</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>Buscar</mat-label>
-              <input
-                matInput
-                [(ngModel)]="busqueda"
-                (keyup.enter)="aplicarFiltros()"
-                placeholder="Nombre, DNI o email" />
-            </mat-form-field>
-
-            <button mat-stroked-button (click)="aplicarFiltros()">Buscar</button>
-            <button mat-stroked-button (click)="limpiarBusqueda()">Limpiar</button>
-          </div>
-
-          <p class="hint" *ngIf="tablaCargando">Cargando estudiantes...</p>
-
-          <div class="table-wrap" *ngIf="!tablaCargando">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>DNI</th>
-                  <th>Tutor</th>
-                  <th>Email tutor</th>
-                  <th>Estado</th>
-                  <th>Fecha QR</th>
-                  <th class="actions-col">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let row of alumnos">
-                  <td>{{ row.nombreCompleto }}</td>
-                  <td>{{ row.dni }}</td>
-                  <td>{{ row.tutorPrincipalNombre || '-' }}</td>
-                  <td>{{ row.tutorPrincipalEmail || '-' }}</td>
-                  <td>
-                    <span class="chip" [ngClass]="estadoClass(row.estado)">
-                      {{ estadoLabel(row.estado) }}
-                    </span>
-                  </td>
-                  <td>{{ formatearFecha(row.fechaGeneracionQr) }}</td>
-                  <td class="actions-col">
-                    <button
-                      mat-icon-button
-                      [disabled]="!puedeGestionarQr(row)"
-                      (click)="previsualizarQr(row)"
-                      title="Previsualizar QR"
-                      aria-label="Previsualizar QR">
-                      <mat-icon>visibility</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      [disabled]="!puedeGestionarQr(row)"
-                      (click)="descargarQr(row)"
-                      title="Descargar QR"
-                      aria-label="Descargar QR">
-                      <mat-icon>download</mat-icon>
-                    </button>
-                  </td>
-                </tr>
-
-                <tr *ngIf="alumnos.length === 0">
-                  <td colspan="7" class="empty">No hay resultados para los filtros seleccionados.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="pagination" *ngIf="!tablaCargando && totalPaginas > 0">
-            <button mat-stroked-button (click)="irPaginaAnterior()" [disabled]="!puedePaginaAnterior()">
-              Anterior
-            </button>
-            <span>Pagina {{ paginaActual }} de {{ totalPaginas }}</span>
-            <button mat-stroked-button (click)="irPaginaSiguiente()" [disabled]="!puedePaginaSiguiente()">
-              Siguiente
-            </button>
-          </div>
         </div>
       </section>
     </div>
@@ -233,31 +130,19 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   private pollingSubscription?: Subscription;
   private progressDialogRef?: MatDialogRef<DialogoProgresoEnvioQrComponent>;
   private closeProgressDialogTimeoutId?: number;
-  private objectUrls = new Set<string>();
 
   cursos: OpcionCursoEnvioQr[] = [];
   cursoSeleccionadoId: string | null = null;
   alcanceSeleccionado: AlcanceEnvioQr = 'PENDIENTES';
-  estadoSeleccionado: EstadoFiltroEnvioQr = 'TODOS';
 
   resumen: ResumenEnvioQr | null = null;
-  alumnos: FilaEstadoEnvioQr[] = [];
-
-  paginaActual = 1;
-  readonly pageSize = 20;
-  totalPaginas = 0;
-  totalItems = 0;
-
-  busqueda = '';
-  readonly rutaTemplateEjemplo = 'tesis-gestion-api/TesisGestorApi/Templates/qr-credential-email-template.example.html';
-
   resumenCargando = false;
-  tablaCargando = false;
   ejecutandoJob = false;
   errorMensaje = '';
 
   progreso: ProgresoEnvioQr | null = null;
   currentJobId: string | null = null;
+  cancelacionSolicitada = false;
 
   constructor(
     private servicio: ServicioEnvioCredencialesQr,
@@ -268,7 +153,6 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       this.detenerPolling();
       this.cancelarCierreDialogoProgresoPendiente();
       this.cerrarDialogoProgreso();
-      this.liberarTodosObjectUrls();
     });
   }
 
@@ -281,18 +165,14 @@ export class PaginaEnvioCredencialesQr implements OnInit {
         }
 
         this.cargarResumen();
-        this.cargarAlumnos();
       });
 
     this.cargarCursos();
   }
 
   alCambiarCurso(): void {
-    this.paginaActual = 1;
-    this.estadoSeleccionado = 'TODOS';
-    this.busqueda = '';
     this.errorMensaje = '';
-    this.cargarDatosCurso();
+    this.cargarResumen();
   }
 
   cargarResumen(): void {
@@ -313,19 +193,9 @@ export class PaginaEnvioCredencialesQr implements OnInit {
         error: error => {
           this.resumen = null;
           this.resumenCargando = false;
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo cargar el resumen de envio.');
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo cargar el resumen de envío.');
         }
       });
-  }
-
-  aplicarFiltros(): void {
-    this.paginaActual = 1;
-    this.cargarAlumnos();
-  }
-
-  limpiarBusqueda(): void {
-    this.busqueda = '';
-    this.aplicarFiltros();
   }
 
   puedeIniciarEnvio(): boolean {
@@ -352,149 +222,20 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       });
   }
 
-  irPaginaAnterior(): void {
-    if (!this.puedePaginaAnterior()) {
-      return;
-    }
-
-    this.paginaActual -= 1;
-    this.cargarAlumnos();
-  }
-
-  irPaginaSiguiente(): void {
-    if (!this.puedePaginaSiguiente()) {
-      return;
-    }
-
-    this.paginaActual += 1;
-    this.cargarAlumnos();
-  }
-
-  puedePaginaAnterior(): boolean {
-    return this.paginaActual > 1;
-  }
-
-  puedePaginaSiguiente(): boolean {
-    return this.totalPaginas > 0 && this.paginaActual < this.totalPaginas;
-  }
-
-  estadoLabel(estado: EstadoFilaEnvioQr): string {
-    switch (estado) {
-      case 'ENVIADO':
-        return 'Enviado';
-      case 'PENDIENTE_ENVIO':
-        return 'Pendiente envio';
-      case 'SIN_QR':
-        return 'Sin QR';
-      case 'SIN_TUTOR_PRINCIPAL':
-        return 'Sin tutor principal';
-      case 'EMAIL_INVALIDO':
-        return 'Email invalido';
-    }
-  }
-
-  estadoClass(estado: EstadoFilaEnvioQr): string {
-    switch (estado) {
-      case 'ENVIADO':
-        return 'chip-ok';
-      case 'PENDIENTE_ENVIO':
-        return 'chip-pending';
-      case 'SIN_QR':
-        return 'chip-error';
-      case 'SIN_TUTOR_PRINCIPAL':
-        return 'chip-warning';
-      case 'EMAIL_INVALIDO':
-        return 'chip-warning';
-    }
-  }
-
   construirSugerenciaResumen(resumen: ResumenEnvioQr): string {
     if (resumen.totalQrPendientesEnvio === 0 && resumen.totalQrEnviados === 0) {
       return 'No hay credenciales listas para enviar en el curso seleccionado.';
     }
 
     if (resumen.totalQrPendientesEnvio === 0 && resumen.totalQrEnviados > 0) {
-      return 'No hay pendientes en este momento. Solo se reenviaran credenciales si elegis alcance "Pendientes y ya enviados".';
+      return 'No hay pendientes en este momento. Solo se reenviarán credenciales si elegís alcance "Pendientes y ya enviados".';
     }
 
     if (resumen.totalSinQrGenerado > 0) {
-      return 'Hay estudiantes sin QR generado. Si necesitás un envio completo, primero generá los QR faltantes.';
+      return 'Hay estudiantes sin QR generado. Si necesitás un envío completo, primero generá los QR faltantes.';
     }
 
-    return 'Hay credenciales pendientes de envio. Con alcance "Solo pendientes" evitas reenviar las ya enviadas.';
-  }
-
-  puedeGestionarQr(row: FilaEstadoEnvioQr): boolean {
-    return row.estado !== 'SIN_QR';
-  }
-
-  formatearFecha(fecha?: string | null): string {
-    if (!fecha) {
-      return '-';
-    }
-
-    const parsed = new Date(fecha);
-
-    if (Number.isNaN(parsed.getTime())) {
-      return '-';
-    }
-
-    return parsed.toLocaleDateString('es-AR');
-  }
-
-  previsualizarQr(row: FilaEstadoEnvioQr): void {
-    if (!this.puedeGestionarQr(row)) {
-      return;
-    }
-
-    this.servicio.obtenerImagenQrAlumno(row.idEstudiante)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: blob => {
-          const imageUrl = this.crearObjectUrl(blob);
-          const dialogRef = this.dialog.open(DialogoPreviewQrAlumnoComponent, {
-            width: '460px',
-            panelClass: 'qr-generation-dialog',
-            data: {
-              nombreCompleto: row.nombreCompleto,
-              imageUrl
-            } satisfies DatosPreviewQrAlumno
-          });
-
-          dialogRef.afterClosed()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-              this.liberarObjectUrl(imageUrl);
-            });
-        },
-        error: error => {
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo previsualizar el QR del alumno.');
-        }
-      });
-  }
-
-  descargarQr(row: FilaEstadoEnvioQr): void {
-    if (!this.puedeGestionarQr(row)) {
-      return;
-    }
-
-    this.servicio.obtenerImagenQrAlumno(row.idEstudiante)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: blob => {
-          const imageUrl = this.crearObjectUrl(blob);
-          const link = document.createElement('a');
-          link.href = imageUrl;
-          link.download = this.construirNombreArchivoQr(row);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.setTimeout(() => this.liberarObjectUrl(imageUrl), 0);
-        },
-        error: error => {
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo descargar el QR del alumno.');
-        }
-      });
+    return 'Hay credenciales pendientes de envío. Con alcance "Solo pendientes" evitás reenviar las ya enviadas.';
   }
 
   private cargarCursos(): void {
@@ -513,60 +254,10 @@ export class PaginaEnvioCredencialesQr implements OnInit {
             this.cursoSeleccionadoId = this.cursos[0].id;
           }
 
-          this.cargarDatosCurso();
+          this.cargarResumen();
         },
         error: error => {
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudieron cargar los cursos.');
-        }
-      });
-  }
-
-  private cargarDatosCurso(): void {
-    this.cargarResumen();
-    this.cargarAlumnos();
-  }
-
-  private cargarAlumnos(): void {
-    if (!this.cursoSeleccionadoId) {
-      this.alumnos = [];
-      this.totalItems = 0;
-      this.totalPaginas = 0;
-      return;
-    }
-
-    this.tablaCargando = true;
-
-    const paginaSolicitada = this.paginaActual;
-
-    this.servicio.obtenerAlumnos({
-      cursoId: this.cursoSeleccionadoId,
-      estado: this.estadoSeleccionado,
-      busqueda: this.busqueda,
-      page: paginaSolicitada,
-      pageSize: this.pageSize
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: page => {
-          this.totalItems = page.totalItems;
-          this.totalPaginas = page.totalPages;
-
-          if (this.totalPaginas > 0 && paginaSolicitada > this.totalPaginas) {
-            this.paginaActual = this.totalPaginas;
-            this.cargarAlumnos();
-            return;
-          }
-
-          this.alumnos = page.items;
-          this.paginaActual = this.totalPaginas === 0 ? 1 : paginaSolicitada;
-          this.tablaCargando = false;
-        },
-        error: error => {
-          this.alumnos = [];
-          this.totalItems = 0;
-          this.totalPaginas = 0;
-          this.tablaCargando = false;
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo cargar la tabla de estados.');
         }
       });
   }
@@ -579,6 +270,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.errorMensaje = '';
     this.ejecutandoJob = true;
     this.progreso = null;
+    this.cancelacionSolicitada = false;
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
 
@@ -595,7 +287,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
         },
         error: error => {
           this.ejecutandoJob = false;
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo iniciar el envio.');
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo iniciar el envío.');
         }
       });
   }
@@ -611,24 +303,24 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       )
       .subscribe({
         next: progreso => {
-          const progresoNormalizado = this.normalizarProgresoFinal(progreso);
-          this.progreso = progresoNormalizado;
-          this.actualizarDialogoProgreso(progresoNormalizado);
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
 
-          if (progresoNormalizado.estado === 'COMPLETED' || progresoNormalizado.estado === 'FAILED') {
+          if (progreso.estado === 'COMPLETED' || progreso.estado === 'FAILED') {
             this.detenerPolling();
             this.ejecutandoJob = false;
             this.currentJobId = null;
-            this.programarCierreDialogoProgreso(progresoNormalizado);
+            this.programarCierreDialogoProgreso(progreso);
           }
         },
         error: error => {
           this.detenerPolling();
           this.ejecutandoJob = false;
           this.currentJobId = null;
+          this.cancelacionSolicitada = false;
           this.cancelarCierreDialogoProgresoPendiente();
           this.cerrarDialogoProgreso();
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del envio.');
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del envío.');
         }
       });
   }
@@ -643,6 +335,9 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     });
 
     this.progressDialogRef.componentInstance.progress = this.progreso;
+    this.progressDialogRef.componentInstance.solicitarCancelacion
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.confirmarCancelacionEnvio());
   }
 
   private actualizarDialogoProgreso(progreso: ProgresoEnvioQr): void {
@@ -656,6 +351,53 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.progressDialogRef = undefined;
   }
 
+  private confirmarCancelacionEnvio(): void {
+    if (!this.currentJobId || !this.progreso || this.progreso.estado !== 'RUNNING' || this.cancelacionSolicitada) {
+      return;
+    }
+
+    const pendientesCancelar = Math.max(this.progreso.total - this.progreso.procesados, 0);
+    const dialogRef = this.dialog.open(DialogoCancelacionEnvioQrComponent, {
+      width: '500px',
+      panelClass: 'qr-generation-dialog',
+      data: {
+        procesados: this.progreso.procesados,
+        total: this.progreso.total,
+        enviados: this.progreso.enviados,
+        pendientesCancelar
+      } satisfies DatosCancelacionEnvioQr
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(confirmado => {
+        if (confirmado) {
+          this.ejecutarCancelacionEnvio();
+        }
+      });
+  }
+
+  private ejecutarCancelacionEnvio(): void {
+    if (!this.currentJobId || this.cancelacionSolicitada) {
+      return;
+    }
+
+    this.cancelacionSolicitada = true;
+
+    this.servicio.cancelarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+        },
+        error: error => {
+          this.cancelacionSolicitada = false;
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo solicitar la cancelación del envío.');
+        }
+      });
+  }
+
   private programarCierreDialogoProgreso(progreso: ProgresoEnvioQr): void {
     this.cancelarCierreDialogoProgresoPendiente();
 
@@ -663,8 +405,13 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       this.closeProgressDialogTimeoutId = undefined;
       this.cerrarDialogoProgreso();
       this.cargarResumen();
-      this.cargarAlumnos();
+
+      if (this.cursoSeleccionadoId) {
+        this.qrCredentialsSync.notifyDeliveryUpdated(this.cursoSeleccionadoId);
+      }
+
       this.abrirDialogoResultado(progreso);
+      this.cancelacionSolicitada = false;
     }, 700);
   }
 
@@ -676,26 +423,35 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   }
 
   private abrirDialogoResultado(progreso: ProgresoEnvioQr): void {
+    const fueCancelado = (progreso.ultimoMensaje ?? '').toUpperCase().includes('CANCEL');
+
     const datos = progreso.estado === 'FAILED'
       ? {
-          titulo: 'El envio fallo',
+          titulo: 'El envío falló',
           mensaje: progreso.ultimoMensaje ?? 'El proceso no pudo completarse.',
           icono: 'error',
           color: 'warn' as const
         }
-      : progreso.errores > 0
+      : fueCancelado
         ? {
-            titulo: 'Envio finalizado con observaciones',
-            mensaje: progreso.ultimoMensaje ?? 'El proceso termino con errores parciales.',
-            icono: 'warning',
+            titulo: 'Envío cancelado',
+            mensaje: progreso.ultimoMensaje ?? 'El proceso se detuvo por solicitud del usuario.',
+            icono: 'info',
             color: 'accent' as const
           }
-        : {
-            titulo: 'Envio finalizado',
-            mensaje: progreso.ultimoMensaje ?? 'Las credenciales se enviaron correctamente.',
-            icono: 'check_circle',
-            color: 'primary' as const
-          };
+        : progreso.errores > 0
+          ? {
+              titulo: 'Envío finalizado con observaciones',
+              mensaje: progreso.ultimoMensaje ?? 'El proceso terminó con errores parciales.',
+              icono: 'warning',
+              color: 'accent' as const
+            }
+          : {
+              titulo: 'Envío finalizado',
+              mensaje: progreso.ultimoMensaje ?? 'Las credenciales se enviaron correctamente.',
+              icono: 'check_circle',
+              color: 'primary' as const
+            };
 
     this.dialog.open(DialogoResultadoEnvioQrComponent, {
       width: '460px',
@@ -741,50 +497,11 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     }
   }
 
-  private normalizarProgresoFinal(progreso: ProgresoEnvioQr): ProgresoEnvioQr {
-    if (progreso.estado !== 'COMPLETED') {
-      return progreso;
-    }
-
-    return {
-      ...progreso,
-      procesados: progreso.total
-    };
-  }
-
   private obtenerMensajeError(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
       return typeof error.error === 'string' ? error.error : error.error?.message ?? fallback;
     }
 
     return fallback;
-  }
-
-  private crearObjectUrl(blob: Blob): string {
-    const url = URL.createObjectURL(blob);
-    this.objectUrls.add(url);
-    return url;
-  }
-
-  private liberarObjectUrl(url: string): void {
-    if (!this.objectUrls.has(url)) {
-      return;
-    }
-
-    URL.revokeObjectURL(url);
-    this.objectUrls.delete(url);
-  }
-
-  private liberarTodosObjectUrls(): void {
-    for (const url of this.objectUrls) {
-      URL.revokeObjectURL(url);
-    }
-
-    this.objectUrls.clear();
-  }
-
-  private construirNombreArchivoQr(row: FilaEstadoEnvioQr): string {
-    const base = (row.dni || row.idEstudiante).replace(/[^a-zA-Z0-9_-]/g, '');
-    return `credencial-${base || row.idEstudiante}.png`;
   }
 }

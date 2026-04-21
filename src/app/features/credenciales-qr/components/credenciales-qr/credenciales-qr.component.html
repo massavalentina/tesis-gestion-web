@@ -1,7 +1,7 @@
 <div class="page">
   <header class="page__header">
     <h1>Credenciales QR</h1>
-    <p>Gestiona la generacion y el envio masivo de credenciales desde una sola vista.</p>
+    <p>Gestiona la generación, el envío masivo y el estado unificado de credenciales desde una sola vista.</p>
   </header>
 
   <section class="section">
@@ -10,5 +10,9 @@
 
   <section class="section">
     <app-qr-credential-delivery-page [embedded]="true"></app-qr-credential-delivery-page>
+  </section>
+
+  <section class="section">
+    <app-qr-credential-status-table [embedded]="true"></app-qr-credential-status-table>
   </section>
 </div>
