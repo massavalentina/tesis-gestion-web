@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -15,11 +15,19 @@ import { EMPTY, Observable, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { FichaAlumnoService } from '../../services/ficha-alumno.service';
+import {
+  FichaAlumnoService,
+  QrCredentialStatusDto
+} from '../../services/ficha-alumno.service';
 import { CursoFicha } from '../../models/curso-ficha.model';
 import { EstudianteFicha } from '../../models/estudiante-ficha.model';
 import { FichaDetalle } from '../../models/ficha-detalle.model';
 import { TutorFicha } from '../../models/tutor-ficha.model';
+import {
+  QrCredentialPreviewCardComponent,
+  QrCredentialPreviewMetaItem
+} from '../../../credenciales-qr/components/qr-credential-preview-card.component';
+import { ObjectUrlRegistry } from '../../../../utils/object-url-registry';
 
 interface ModalEstudianteState {
   idEstudiante: string;
@@ -46,6 +54,17 @@ interface ModalEliminarState {
   eliminando: boolean;
 }
 
+interface ModalCredencialQrState {
+  idEstudiante: string;
+  nombreCompleto: string;
+  cargando: boolean;
+  regenerando: boolean;
+  confirmandoRegeneracion: boolean;
+  error: string | null;
+  imageUrl: string | null;
+  status: QrCredentialStatusDto | null;
+}
+
 @Component({
   selector: 'app-ficha-alumno',
   standalone: true,
@@ -62,11 +81,12 @@ interface ModalEliminarState {
     MatInputModule,
     FormsModule,
     ReactiveFormsModule,
+    QrCredentialPreviewCardComponent
   ],
   templateUrl: './ficha-alumno.component.html',
   styleUrl: './ficha-alumno.component.css'
 })
-export class FichaAlumnoComponent implements OnInit {
+export class FichaAlumnoComponent implements OnInit, OnDestroy {
   cursos: CursoFicha[] = [];
   cursoSeleccionado: CursoFicha | null = null;
 
@@ -86,7 +106,10 @@ export class FichaAlumnoComponent implements OnInit {
   modalEstudiante: ModalEstudianteState | null = null;
   modalTutor: ModalTutorState | null = null;
   modalEliminar: ModalEliminarState | null = null;
+  modalCredencialQr: ModalCredencialQrState | null = null;
   alertBloqueo: string | null = null;
+
+  private readonly qrObjectUrls = new ObjectUrlRegistry();
 
   /** IDs de estudiantes cuya notificación está siendo enviada en este momento. */
   enviandoNotificacionIds = new Set<string>();
@@ -124,6 +147,10 @@ export class FichaAlumnoComponent implements OnInit {
         }
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.qrObjectUrls.clear();
   }
 
   onCursoChange(): void {
@@ -259,6 +286,135 @@ export class FichaAlumnoComponent implements OnInit {
 
   getFicha(idEstudiante: string): FichaDetalle | null {
     return this.fichaMap.get(idEstudiante) ?? null;
+  }
+
+  abrirModalCredencialQr(est: EstudianteFicha): void {
+    this.cerrarModalCredencialQr();
+
+    this.modalCredencialQr = {
+      idEstudiante: est.idEstudiante,
+      nombreCompleto: `${est.apellido}, ${est.nombre}`,
+      cargando: true,
+      regenerando: false,
+      confirmandoRegeneracion: false,
+      error: null,
+      imageUrl: null,
+      status: null
+    };
+
+    this.cargarDatosCredencialQrModal(est.idEstudiante);
+  }
+
+  cerrarModalCredencialQr(): void {
+    if (this.modalCredencialQr?.regenerando) return;
+    this.limpiarImagenModalCredencial();
+    this.modalCredencialQr = null;
+  }
+
+  solicitarRegeneracionCredencialQr(): void {
+    if (!this.modalCredencialQr || this.modalCredencialQr.cargando || this.modalCredencialQr.regenerando) {
+      return;
+    }
+
+    this.modalCredencialQr.confirmandoRegeneracion = true;
+  }
+
+  cancelarConfirmacionRegeneracionCredencialQr(): void {
+    if (!this.modalCredencialQr || this.modalCredencialQr.regenerando) {
+      return;
+    }
+
+    this.modalCredencialQr.confirmandoRegeneracion = false;
+  }
+
+  confirmarRegeneracionCredencialQr(): void {
+    const modal = this.modalCredencialQr;
+    if (!modal || modal.regenerando) {
+      return;
+    }
+
+    modal.regenerando = true;
+    modal.error = null;
+
+    this.fichaService.regenerarCredencialQr(modal.idEstudiante).pipe(
+      catchError((error: HttpErrorResponse) => {
+        const msg = this.obtenerMensajeHttp(error, 'No se pudo regenerar la credencial QR.');
+        if (this.modalCredencialQr?.idEstudiante === modal.idEstudiante) {
+          this.modalCredencialQr.regenerando = false;
+          this.modalCredencialQr.confirmandoRegeneracion = false;
+          this.modalCredencialQr.error = msg;
+        }
+        this.snackBar.open(msg, 'Cerrar', { duration: 4500 });
+        return EMPTY;
+      })
+    ).subscribe(response => {
+      if (this.modalCredencialQr?.idEstudiante !== modal.idEstudiante) {
+        return;
+      }
+
+      this.modalCredencialQr.regenerando = false;
+      this.modalCredencialQr.confirmandoRegeneracion = false;
+      this.modalCredencialQr.error = null;
+
+      const ficha = this.fichaMap.get(modal.idEstudiante);
+      if (ficha) {
+        ficha.credencialQrActiva = true;
+      }
+
+      this.snackBar.open(response.mensaje, 'Cerrar', { duration: 3500 });
+      this.cargarDatosCredencialQrModal(modal.idEstudiante);
+    });
+  }
+
+  getAccionCredencialQrLabel(): string {
+    const estado = this.modalCredencialQr?.status?.estado;
+    return estado === 'NO_GENERADO' ? 'Generar credencial' : 'Regenerar credencial';
+  }
+
+  esGeneracionInicialCredencialQr(): boolean {
+    return this.modalCredencialQr?.status?.estado === 'NO_GENERADO';
+  }
+
+  getEstadoCredencialQrModalLabel(): string {
+    const estado = this.modalCredencialQr?.status?.estado;
+    if (estado === 'ACTIVO') return 'Activa';
+    if (estado === 'INACTIVO') return 'Inactiva';
+    if (estado === 'NO_GENERADO') return 'Sin credencial';
+    return '-';
+  }
+
+  getMensajeSinImagenCredencialQr(): string {
+    return this.modalCredencialQr?.status?.estado === 'NO_GENERADO'
+      ? 'Todavía no se generó una credencial QR para este estudiante.'
+      : 'No hay una credencial QR activa para previsualizar.';
+  }
+
+  formatearFechaGeneracionCredencial(fecha?: string | null): string {
+    if (!fecha) return '-';
+    const parsed = new Date(fecha);
+    if (Number.isNaN(parsed.getTime())) return '-';
+    return parsed.toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  getVersionCredencialQrModal(): number {
+    return this.modalCredencialQr?.status?.versionQr ?? 0;
+  }
+
+  getMetaCredencialQrModal(): QrCredentialPreviewMetaItem[] {
+    return [
+      { label: 'Estado', value: this.getEstadoCredencialQrModalLabel() },
+      { label: 'Versión', value: `Version: ${this.getVersionCredencialQrModal()}` },
+      {
+        label: 'Fecha generación',
+        value: this.formatearFechaGeneracionCredencial(this.modalCredencialQr?.status?.fechaGeneracion)
+      }
+    ];
   }
 
   // ─────────────────────────────────────────────
@@ -719,5 +875,92 @@ export class FichaAlumnoComponent implements OnInit {
         { duration: 4000 }
       );
     });
+  }
+
+  private cargarDatosCredencialQrModal(idEstudiante: string): void {
+    if (!this.modalCredencialQr || this.modalCredencialQr.idEstudiante !== idEstudiante) {
+      return;
+    }
+
+    this.modalCredencialQr.cargando = true;
+    this.modalCredencialQr.error = null;
+
+    this.fichaService.obtenerEstadoCredencialQr(idEstudiante).pipe(
+      catchError((error: HttpErrorResponse) => {
+        const msg = this.obtenerMensajeHttp(error, 'No se pudo cargar el estado de la credencial QR.');
+        if (this.modalCredencialQr?.idEstudiante === idEstudiante) {
+          this.modalCredencialQr.cargando = false;
+          this.modalCredencialQr.error = msg;
+          this.modalCredencialQr.status = null;
+          this.limpiarImagenModalCredencial();
+        }
+        return EMPTY;
+      })
+    ).subscribe(status => {
+      if (!this.modalCredencialQr || this.modalCredencialQr.idEstudiante !== idEstudiante) {
+        return;
+      }
+
+      this.modalCredencialQr.status = status;
+
+      if (status.estado !== 'ACTIVO') {
+        this.modalCredencialQr.cargando = false;
+        this.limpiarImagenModalCredencial();
+        return;
+      }
+
+      this.fichaService.obtenerImagenCredencialQr(idEstudiante).pipe(
+        catchError((error: HttpErrorResponse) => {
+          const msg = this.obtenerMensajeHttp(error, 'No se pudo cargar la imagen de la credencial QR.');
+          if (this.modalCredencialQr?.idEstudiante === idEstudiante) {
+            this.modalCredencialQr.error = msg;
+            this.modalCredencialQr.cargando = false;
+            this.limpiarImagenModalCredencial();
+          }
+          return EMPTY;
+        })
+      ).subscribe(blob => {
+        if (!this.modalCredencialQr || this.modalCredencialQr.idEstudiante !== idEstudiante) {
+          return;
+        }
+        this.setearImagenModalCredencial(blob);
+        this.modalCredencialQr.cargando = false;
+      });
+    });
+  }
+
+  private setearImagenModalCredencial(blob: Blob): void {
+    if (!this.modalCredencialQr) return;
+
+    this.limpiarImagenModalCredencial();
+    const imageUrl = this.qrObjectUrls.create(blob);
+    this.modalCredencialQr.imageUrl = imageUrl;
+  }
+
+  private limpiarImagenModalCredencial(): void {
+    const imageUrl = this.modalCredencialQr?.imageUrl;
+    if (!imageUrl) return;
+
+    this.qrObjectUrls.revoke(imageUrl);
+
+    if (this.modalCredencialQr) {
+      this.modalCredencialQr.imageUrl = null;
+    }
+  }
+
+  private obtenerMensajeHttp(error: HttpErrorResponse, fallback: string): string {
+    if (typeof error.error === 'string' && error.error.trim().length > 0) {
+      return error.error;
+    }
+
+    if (error.error?.message && typeof error.error.message === 'string') {
+      return error.error.message;
+    }
+
+    if (error.error?.error && typeof error.error.error === 'string') {
+      return error.error.error;
+    }
+
+    return fallback;
   }
 }

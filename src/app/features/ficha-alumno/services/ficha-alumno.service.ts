@@ -32,6 +32,23 @@ export interface CreateTutorDto extends UpdateTutorDto {
   esPrincipal: boolean;
 }
 
+export type QrCredentialEstado = 'NO_GENERADO' | 'ACTIVO' | 'INACTIVO';
+
+export interface QrCredentialStatusDto {
+  idEstudiante: string;
+  estado: QrCredentialEstado;
+  versionQr: number;
+  fechaGeneracion?: string | null;
+}
+
+export interface QrCredentialRegenerationResponseDto {
+  idEstudiante: string;
+  idQr: string;
+  codigoQr: string;
+  credencialesDesactivadas: number;
+  mensaje: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FichaAlumnoService {
   private readonly apiUrl = environment.apiUrl;
@@ -122,6 +139,26 @@ export class FichaAlumnoService {
   ): Observable<{ enviados: number; omitidos: number; mensaje: string }> {
     return this.http.post<{ enviados: number; omitidos: number; mensaje: string }>(
       `${this.apiUrl}/api/ficha/curso/${idCurso}/notificar-tutores-desactualizados`,
+      {}
+    );
+  }
+
+  obtenerEstadoCredencialQr(idEstudiante: string): Observable<QrCredentialStatusDto> {
+    return this.http.get<QrCredentialStatusDto>(
+      `${this.apiUrl}/api/qr-credentials/student/${idEstudiante}/status`
+    );
+  }
+
+  obtenerImagenCredencialQr(idEstudiante: string): Observable<Blob> {
+    return this.http.get(
+      `${this.apiUrl}/api/qr-credentials/delivery/student/${idEstudiante}/qr-image`,
+      { responseType: 'blob' }
+    );
+  }
+
+  regenerarCredencialQr(idEstudiante: string): Observable<QrCredentialRegenerationResponseDto> {
+    return this.http.post<QrCredentialRegenerationResponseDto>(
+      `${this.apiUrl}/api/qr-credentials/student/${idEstudiante}/regenerate`,
       {}
     );
   }

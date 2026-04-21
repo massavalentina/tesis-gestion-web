@@ -157,6 +157,11 @@
                 <span class="credencial-badge" [class]="getCredencialClass(est.idEstudiante)">
                   {{ getCredencialLabel(est.idEstudiante) }}
                 </span>
+                <button class="btn-qr-credencial"
+                        matTooltip="Visualizar credencial QR"
+                        (click)="abrirModalCredencialQr(est)">
+                  <mat-icon>qr_code_2</mat-icon>
+                </button>
               </div>
               <div class="info-row">
                 <mat-icon class="info-icon">event_busy</mat-icon>
@@ -366,6 +371,85 @@
     </mat-expansion-panel>
 
   </mat-accordion>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: CREDENCIAL QR INDIVIDUAL
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalCredencialQr as modal">
+    <div class="modal-overlay" (click)="cerrarModalCredencialQr()">
+      <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
+
+        <ng-container *ngIf="!modal.confirmandoRegeneracion; else confirmRegeneracionQr">
+          <div class="modal-header">
+            <span class="modal-titulo">CREDENCIAL QR PERSONAL</span>
+            <button class="modal-close"
+                    (click)="cerrarModalCredencialQr()"
+                    [disabled]="modal.regenerando">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="modal-qr-body">
+            <app-qr-credential-preview-card
+              [nombreCompleto]="modal.nombreCompleto"
+              [loading]="modal.cargando"
+              [error]="modal.error"
+              [imageUrl]="modal.imageUrl"
+              [emptyMessage]="getMensajeSinImagenCredencialQr()"
+              [metaItems]="getMetaCredencialQrModal()">
+            </app-qr-credential-preview-card>
+
+            <div class="modal-actions modal-actions-qr">
+              <button type="button"
+                      class="btn-modal-cancel"
+                      (click)="cerrarModalCredencialQr()"
+                      [disabled]="modal.regenerando">
+                Cerrar
+              </button>
+              <button type="button"
+                      class="btn-modal-save"
+                      (click)="solicitarRegeneracionCredencialQr()"
+                      [disabled]="modal.cargando || modal.regenerando">
+                <mat-spinner *ngIf="modal.regenerando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.regenerando">{{ getAccionCredencialQrLabel() }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #confirmRegeneracionQr>
+          <div class="modal-confirm">
+            <div class="confirm-icon confirm-icon-warning">
+              <mat-icon>autorenew</mat-icon>
+            </div>
+            <div class="confirm-titulo">
+              {{ esGeneracionInicialCredencialQr() ? '¿Confirmar generación?' : '¿Confirmar regeneración?' }}
+            </div>
+            <div class="confirm-sub">
+              {{
+                esGeneracionInicialCredencialQr()
+                  ? 'Se generará una credencial QR nueva para este estudiante.'
+                  : 'Se emitirá una nueva credencial QR para este estudiante y la credencial previa quedará inactiva.'
+              }}
+            </div>
+            <div class="confirm-actions">
+              <button class="btn-modal-cancel"
+                      (click)="cancelarConfirmacionRegeneracionCredencialQr()"
+                      [disabled]="modal.regenerando">
+                Volver
+              </button>
+              <button class="btn-modal-save"
+                      (click)="confirmarRegeneracionCredencialQr()"
+                      [disabled]="modal.regenerando">
+                <mat-spinner *ngIf="modal.regenerando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.regenerando">{{ getAccionCredencialQrLabel() }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- ══════════════════════════════════════════════════════════
        MODAL: EDITAR DATOS ESTUDIANTE

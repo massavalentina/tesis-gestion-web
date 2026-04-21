@@ -40,6 +40,7 @@ import {
   DialogoResultadoEnvioIndividualQrComponent
 } from '../components/single-delivery-result-dialog.component';
 import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-sync.service';
+import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
 
 @Component({
   selector: 'app-qr-credential-delivery-page',
@@ -249,7 +250,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   private pollingSubscription?: Subscription;
   private progressDialogRef?: MatDialogRef<DialogoProgresoEnvioQrComponent>;
   private closeProgressDialogTimeoutId?: number;
-  private objectUrls = new Set<string>();
+  private readonly objectUrls = new ObjectUrlRegistry();
 
   cursos: OpcionCursoEnvioQr[] = [];
   cursoSeleccionadoId: string | null = null;
@@ -861,25 +862,14 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   }
 
   private crearObjectUrl(blob: Blob): string {
-    const url = URL.createObjectURL(blob);
-    this.objectUrls.add(url);
-    return url;
+    return this.objectUrls.create(blob);
   }
 
   private liberarObjectUrl(url: string): void {
-    if (!this.objectUrls.has(url)) {
-      return;
-    }
-
-    URL.revokeObjectURL(url);
-    this.objectUrls.delete(url);
+    this.objectUrls.revoke(url);
   }
 
   private liberarTodosObjectUrls(): void {
-    for (const url of this.objectUrls) {
-      URL.revokeObjectURL(url);
-    }
-
     this.objectUrls.clear();
   }
 
