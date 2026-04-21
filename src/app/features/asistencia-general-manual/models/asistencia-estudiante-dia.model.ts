@@ -10,5 +10,6 @@ export interface AsistenciaEspacioItem {
   dictada:                boolean | null;
   presente:            boolean | null;
   presenteOriginal:    boolean | null;
+  motivo:              string | null;
   guardando:           boolean;
 }

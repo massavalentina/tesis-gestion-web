@@ -47,7 +47,7 @@ export interface ClaseDictadaDialogResult {
 
       <form [formGroup]="form" class="cd-form">
         <mat-form-field *ngIf="!data.nuevoDictada" appearance="outline" class="cd-field">
-          <mat-label>Motivo <span class="cd-required">*</span></mat-label>
+          <mat-label>Motivo</mat-label>
           <input matInput formControlName="motivo" placeholder="Ej: Docente enfermo, feriado, jornada..." />
           <mat-error *ngIf="form.get('motivo')?.hasError('required')">El motivo es obligatorio.</mat-error>
         </mat-form-field>
@@ -98,7 +98,7 @@ export interface ClaseDictadaDialogResult {
     }
     .cd-form { display: flex; flex-direction: column; }
     .cd-field { width: 100%; }
-    .cd-required { color: #b91c1c; }
+    /* .cd-required no usado */
     .cd-actions {
       display: flex;
       justify-content: flex-end;

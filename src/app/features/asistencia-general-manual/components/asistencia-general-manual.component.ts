@@ -37,6 +37,11 @@ import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistenci
 import { RegistrarAsistenciaManual }        from '../models/registrar-asistencia-manual.model';
 import { DescarteDialogComponent }          from './descarte-dialog/descarte-dialog.component';
 import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog/detalle-estudiante-dialog.component';
+import { RetiroDialogComponent, RetiroDialogData } from '../../retiro-anticipado/components/retiro-dialog/retiro-dialog.component';
+import { RetiroInfoDialogComponent, RetiroInfoDialogData } from '../../retiro-anticipado/components/retiro-info-dialog/retiro-info-dialog.component';
+import { RetiroService } from '../../retiro-anticipado/services/retiro.service';
+import { RetiroActivo }                     from '../../retiro-anticipado/models/retiro-activo.model';
+import { MatChipsModule }                   from '@angular/material/chips';
 
 @Injectable()
 class DdMmYyyyDateAdapter extends NativeDateAdapter {
@@ -81,7 +86,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
     MatIconModule, MatProgressSpinnerModule, MatTableModule, MatSortModule,
     MatTooltipModule, MatSnackBarModule, MatTabsModule,
     MatDatepickerModule, MatNativeDateModule, MatDividerModule,
-    MatDialogModule,
+    MatDialogModule, MatChipsModule,
   ],
   providers: [
     { provide: MAT_DATE_LOCALE,  useValue: 'es-AR'            },
@@ -128,12 +133,10 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   // ── Responsive ────────────────────────────────────────────────────────────
   esMobile = false;
-  mostrarTestCol = false;
 
   get columnasActivas(): string[] {
     if (this.esMobile) return ['filaMovil'];
-    const base = ['nro', 'estudiante', 'documento'];
-    if (this.mostrarTestCol) base.push('valorTest');
+    const base = ['nro', 'estudiante', 'documento', 'valorTest'];
     return this.tabActivo === 0
       ? [...base, 'manana', 'acciones']
       : [...base, 'tarde',  'acciones'];
@@ -192,6 +195,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     private snack:                MatSnackBar,
     private dialog:               MatDialog,
     private breakpointObserver:   BreakpointObserver,
+    private retiroService:        RetiroService,
   ) {}
 
   private notify(msg: string, action = '✓', duration = 2500): void {
@@ -240,15 +244,21 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
       if (chipPart === 'presentes') {
         const ids = this.idsConCodigos(['P', 'LLT', 'LLTE', 'LLTC']);
-        return this.tabActivo === 0
-          ? ids.includes(data.tipoManianaId ?? '')
-          : ids.includes(data.tipoTardeId ?? '');
+        const tipoId = this.tabActivo === 0 ? data.tipoManianaId : data.tipoTardeId;
+        if (tipoId !== null && ids.includes(tipoId!)) return true;
+        const r = this.tabActivo === 0 ? data.retiroActivoManana : data.retiroActivoTarde;
+        return r?.etiquetaEstado === 'Reingresado';
       }
       if (chipPart === 'ausentes') {
-        const ids = this.idsConCodigos(['A', 'ANC', 'RA']);
-        return this.tabActivo === 0
-          ? ids.includes(data.tipoManianaId ?? '')
-          : ids.includes(data.tipoTardeId ?? '');
+        const idsRA  = this.todosTipos.filter(t => ['RA', 'RAE', 'RE'].includes(t.codigo.toUpperCase())).map(t => t.id);
+        const idsAus = this.idsConCodigos(['A', 'ANC']);
+        const tipoId = this.tabActivo === 0 ? data.tipoManianaId : data.tipoTardeId;
+        if (tipoId !== null && idsAus.includes(tipoId!)) return true;
+        if (tipoId !== null && idsRA.includes(tipoId!)) {
+          const r = this.tabActivo === 0 ? data.retiroActivoManana : data.retiroActivoTarde;
+          return r?.etiquetaEstado !== 'Reingresado';
+        }
+        return false;
       }
       if (chipPart === 'sinDefinir') {
         return this.tabActivo === 0
@@ -342,13 +352,13 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
             guardado: !!ex, error: null,
             modificadoManana: false, modificadoTarde: false, guardandoFila: false,
             valorTotalInasistencia: ex ? ex.valorTotal : null,
+            retiroActivo: null,
           };
         });
         this.dataSource.data = [...this.filas];
         this.cargandoTabla   = false;
-        // El sort debe asignarse después de que Angular renderice la tabla
-        // (que estaba oculta por *ngIf). setTimeout defer esto al siguiente tick.
         setTimeout(() => this.asignarSort());
+        this.cargarRetirosActivos();
       },
       error: (err) => { console.error(err); this.cargandoTabla = false; this.notify('Error al cargar estudiantes.', 'Cerrar', 4000); },
     });
@@ -370,16 +380,67 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           const ex = mapa.get(f.estudiante.documento);
           f.tipoManianaId = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
           f.tipoTardeId   = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
+          f.tipoLlegadaManianaId = ex?.codigoLlegadaManana
+            ? (this.todosTipos.find(t => t.codigo === ex.codigoLlegadaManana)?.id ?? null)
+            : null;
           f.guardado = !!ex; f.error = null;
           f.modificadoManana = false; f.modificadoTarde = false; f.guardandoFila = false;
           f.valorTotalInasistencia = ex ? ex.valorTotal : null;
+          f.retiroActivoManana = null;
+          f.retiroActivoTarde  = null;
         });
         this.dataSource.data = [...this.filas];
         this.cargandoTabla   = false;
+        this.cargarRetirosActivos();
       },
       error: (err) => { console.error(err); this.cargandoTabla = false; this.notify('Error al recargar asistencias.', 'Cerrar', 4000); },
     });
     this.subs.push(sub);
+  }
+
+  /** Carga en paralelo los retiros activos de todos los estudiantes del curso. */
+  private cargarRetirosActivos(): void {
+    if (!this.filas.length) return;
+    const sub = forkJoin(
+      this.filas.map(f => this.retiroService.getRetirosActivos(f.estudiante.idEstudiante, this.fechaHoy))
+    ).subscribe({
+      next: (listas) => {
+        this.filas.forEach((f, i) => {
+          f.retiroActivoManana = listas[i].find(r => r.turno === 'MANANA') ?? null;
+          f.retiroActivoTarde  = listas[i].find(r => r.turno === 'TARDE')  ?? null;
+        });
+        this.recalcularEtiquetasRetiro();
+        this.dataSource.data = [...this.filas];
+      },
+    });
+    this.subs.push(sub);
+  }
+
+  /**
+   * Recalcula localmente el etiquetaEstado de cada retiro con reingreso,
+   * comparando la hora límite con la hora actual del dispositivo.
+   * Complementa lo que devuelve el backend al abrir el curso.
+   */
+  private recalcularEtiquetasRetiro(): void {
+    const ahora    = new Date();
+    const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
+    const actualizar = (r: RetiroActivo | null | undefined) => {
+      if (!r || !r.conReingreso || !r.horarioLimiteReingreso || r.horarioReingreso) return;
+      const [lh, lm] = r.horarioLimiteReingreso.split(':').map(Number);
+      const limiteMin = lh * 60 + lm;
+      r.etiquetaEstado = ahoraMin > limiteMin ? 'ReingresoVencido' : 'ConReingreso';
+    };
+    this.filas.forEach(f => { actualizar(f.retiroActivoManana); actualizar(f.retiroActivoTarde); });
+  }
+
+  /** Retiro activo del turno actualmente visible (null si no tiene). */
+  retiroTurnoActivo(fila: FilaAsistenciaManual): RetiroActivo | null {
+    return (this.tabActivo === 0 ? fila.retiroActivoManana : fila.retiroActivoTarde) ?? null;
+  }
+
+  /** @deprecated use retiroTurnoActivo — kept for template compatibility */
+  retiroEsTurnoActivo(fila: FilaAsistenciaManual): boolean {
+    return this.retiroTurnoActivo(fila) !== null;
   }
 
   // ── Tab ───────────────────────────────────────────────────────────────────
@@ -407,6 +468,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   }
 
   // ── Tipo helpers ──────────────────────────────────────────────────────────
+
   onTipoManianaChange(f: FilaAsistenciaManual): void {
     f.guardado = false; f.error = null; f.modificadoManana = true;
     this.dataSource.data = [...this.filas];
@@ -417,9 +479,163 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     this.dataSource.data = [...this.filas];
   }
 
+  // ── Retiro anticipado ─────────────────────────────────────────────────────
+
+  /**
+   * Botón único de retiro: si la fila no tiene retiro → abre el formulario de registro.
+   * Si ya tiene retiro → abre el dialog de info/edición/reingreso/cancelación.
+   */
+  abrirRetiroGeneral(fila: FilaAsistenciaManual): void {
+    if (this.retiroTurnoActivo(fila)) {
+      this.abrirInfoRetiro(fila);
+    } else {
+      const turno: 'MANANA' | 'TARDE' = this.tabActivo === 0 ? 'MANANA' : 'TARDE';
+      this.abrirNuevoRetiro(fila, turno);
+    }
+  }
+
+  private abrirNuevoRetiro(fila: FilaAsistenciaManual, turno: 'MANANA' | 'TARDE'): void {
+    const ref = this.dialog.open(RetiroDialogComponent, {
+      width:        '680px',
+      maxWidth:     '96vw',
+      maxHeight:    '90vh',
+      disableClose: true,
+      data: {
+        estudiante: fila.estudiante,
+        cursoLabel: this.cursoSeleccionado?.label ?? '',
+        fecha:      this.fechaHoy,
+        turno,
+      } satisfies RetiroDialogData,
+    });
+
+    const sub = ref.afterClosed().subscribe((retiro: RetiroActivo | null) => {
+      if (!retiro) return;
+
+      const tipoCalculado = retiro.tipoRetiro
+        ? (this.todosTipos.find(t => t.codigo === retiro.tipoRetiro) ?? null)
+        : null;
+
+      if (turno === 'MANANA') {
+        fila.tipoManianaId    = tipoCalculado?.id ?? fila.tipoManianaId;
+        fila.modificadoManana = false;
+      } else {
+        fila.tipoTardeId    = tipoCalculado?.id ?? fila.tipoTardeId;
+        fila.modificadoTarde = false;
+      }
+      if (turno === 'MANANA') fila.retiroActivoManana = retiro;
+      else                    fila.retiroActivoTarde  = retiro;
+      fila.guardado = true;
+      fila.error    = null;
+
+      this.dataSource.data = [...this.filas];
+      this.actualizarValorTest();
+      this.notify('Retiro registrado correctamente.');
+    });
+    this.subs.push(sub);
+  }
+
+  private abrirInfoRetiro(fila: FilaAsistenciaManual): void {
+    const retiroActivo = this.retiroTurnoActivo(fila);
+    if (!retiroActivo) return;
+
+    const turno = retiroActivo.turno as 'MANANA' | 'TARDE';
+
+    const ref = this.dialog.open(RetiroInfoDialogComponent, {
+      width:        '580px',
+      maxWidth:     '96vw',
+      disableClose: false,
+      data: {
+        estudiante:   fila.estudiante,
+        cursoLabel:   this.cursoSeleccionado?.label ?? '',
+        retiroActivo: { ...retiroActivo },
+        fecha:        this.fechaHoy,
+        readonly:     false,
+      } satisfies RetiroInfoDialogData,
+    });
+
+    const sub = ref.afterClosed().subscribe((result: RetiroActivo | 'cancelado' | null) => {
+      if (result === 'cancelado') {
+        // Retiro cancelado — restaurar el tipo original del turno
+        if (turno === 'MANANA') {
+          fila.retiroActivoManana = null;
+          // Restaurar el tipo de llegada mañana (P/LLT/LLTE/LLTC)
+          fila.tipoManianaId = fila.tipoLlegadaManianaId ?? null;
+        } else {
+          fila.retiroActivoTarde = null;
+          // Sin TipoLlegadaTardeId todavía — se limpia
+          fila.tipoTardeId = null;
+        }
+        fila.guardado = false;
+        this.dataSource.data = [...this.filas];
+        this.actualizarValorTest();
+        this.notify('Retiro cancelado correctamente.');
+        return;
+      }
+      if (!result) return;
+
+      const tipoCalculado = result.tipoRetiro
+        ? (this.todosTipos.find(t => t.codigo === result.tipoRetiro) ?? null)
+        : null;
+
+      if (tipoCalculado) {
+        if (turno === 'MANANA') fila.tipoManianaId = tipoCalculado.id;
+        else                    fila.tipoTardeId   = tipoCalculado.id;
+      }
+
+      if (turno === 'MANANA') fila.retiroActivoManana = result;
+      else                    fila.retiroActivoTarde  = result;
+
+      this.dataSource.data = [...this.filas];
+      this.actualizarValorTest();
+      const esReingreso = !!result.horarioReingreso;
+      this.notify(esReingreso ? 'Reingreso registrado correctamente.' : 'Retiro actualizado correctamente.');
+    });
+    this.subs.push(sub);
+  }
+
+  /** true si el turno activo no tiene retiro y tiene Presente o LLT (puede registrar retiro). */
+  puedeNuevoRetiro(fila: FilaAsistenciaManual): boolean {
+    if (this.retiroTurnoActivo(fila)) return false;
+    const ids    = this.idsConCodigos(['P', 'LLT', 'LLTE', 'LLTC']);
+    const tipoId = this.tabActivo === 0 ? fila.tipoManianaId : fila.tipoTardeId;
+    return tipoId !== null && ids.includes(tipoId);
+  }
+
+  /** Texto legible para el chip del retiro activo. */
+  retiroEtiquetaLabel(fila: FilaAsistenciaManual): string {
+    const r = this.retiroTurnoActivo(fila);
+    if (!r) return 'Retiro';
+    switch (r.etiquetaEstado) {
+      case 'ConReingreso':     return 'Con Reingreso';
+      case 'ReingresoVencido': return 'Reingreso Vencido';
+      case 'Reingresado':      return 'Reingresado';
+      default: return r.tipoRetiro ?? 'Retiro';
+    }
+  }
+
+  /** Clase CSS suffix del chip de retiro activo (naranja / rojo / verde / gris). */
+  retiroChipClass(fila: FilaAsistenciaManual): string {
+    const r = this.retiroTurnoActivo(fila);
+    switch (r?.etiquetaEstado) {
+      case 'ConReingreso':     return 'naranja';
+      case 'ReingresoVencido': return 'rojo';
+      case 'Reingresado':      return 'verde';
+      default:                 return r ? 'naranja' : 'gris';
+    }
+  }
+
+  /** Tooltip para el botón de retiro. */
+  retiroTooltip(fila: FilaAsistenciaManual): string {
+    const r = this.retiroTurnoActivo(fila);
+    if (!r) return 'Registrar retiro anticipado';
+    const e = r.etiquetaEstado;
+    if (e === 'ConReingreso' || e === 'ReingresoVencido') return 'Ver retiro / Registrar reingreso';
+    return 'Ver información del retiro';
+  }
+
   // ── Stats del turno activo ────────────────────────────────────────────────
-  // Presentes: P + LLT + LLTE + LLTC (llegadas tarde = estuvo presente)
-  // Ausentes:  A + ANC + RA (ausencia computable, no computable y retiro anticipado)
+  // Presentes: P + LLT + LLTE + LLTC + retiros con reingreso efectuado
+  // Ausentes:  A + ANC + retiros sin reingreso (RA, RAE donde etiquetaEstado !== 'Reingresado')
 
   private idsConCodigos(codigos: string[]): string[] {
     return this.tipos.filter(t => codigos.includes(t.codigo)).map(t => t.id);
@@ -428,17 +644,28 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   get cantPresentes(): number {
     const ids = this.idsConCodigos(['P', 'LLT', 'LLTE', 'LLTC']);
     if (!ids.length) return 0;
-    return this.tabActivo === 0
-      ? this.filas.filter(f => f.tipoManianaId !== null && ids.includes(f.tipoManianaId!)).length
-      : this.filas.filter(f => f.tipoTardeId   !== null && ids.includes(f.tipoTardeId!)).length;
+    return this.filas.filter(f => {
+      const tipoId = this.tabActivo === 0 ? f.tipoManianaId : f.tipoTardeId;
+      if (tipoId !== null && ids.includes(tipoId!)) return true;
+      // Retiro con reingreso efectuado = presente
+      const r = this.tabActivo === 0 ? f.retiroActivoManana : f.retiroActivoTarde;
+      return r?.etiquetaEstado === 'Reingresado';
+    }).length;
   }
 
   get cantAusentes(): number {
-    const ids = this.idsConCodigos(['A', 'ANC', 'RA']);
-    if (!ids.length) return 0;
-    return this.tabActivo === 0
-      ? this.filas.filter(f => f.tipoManianaId !== null && ids.includes(f.tipoManianaId!)).length
-      : this.filas.filter(f => f.tipoTardeId   !== null && ids.includes(f.tipoTardeId!)).length;
+    const idsRA  = this.todosTipos.filter(t => ['RA', 'RAE', 'RE'].includes(t.codigo.toUpperCase())).map(t => t.id);
+    const idsAus = this.idsConCodigos(['A', 'ANC']);
+    return this.filas.filter(f => {
+      const tipoId = this.tabActivo === 0 ? f.tipoManianaId : f.tipoTardeId;
+      if (tipoId !== null && idsAus.includes(tipoId!)) return true;
+      // RA/RAE/RE sin reingreso efectuado = ausente
+      if (tipoId !== null && idsRA.includes(tipoId!)) {
+        const r = this.tabActivo === 0 ? f.retiroActivoManana : f.retiroActivoTarde;
+        return r?.etiquetaEstado !== 'Reingresado';
+      }
+      return false;
+    }).length;
   }
 
   get cantSinDefinir(): number {
@@ -495,9 +722,13 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     const turnoLabel = this.tabActivo === 0 ? 'Mañana' : 'Tarde';
     this.filas.forEach(f => {
       if (this.tabActivo === 0) {
-        if (this.esSinDefinir(f.tipoManianaId)) { f.tipoManianaId = id; f.modificadoManana = true; f.guardado = false; }
+        if (this.esSinDefinir(f.tipoManianaId) && !f.retiroActivoManana) {
+          f.tipoManianaId = id; f.modificadoManana = true; f.guardado = false;
+        }
       } else {
-        if (this.esSinDefinir(f.tipoTardeId)) { f.tipoTardeId = id; f.modificadoTarde = true; f.guardado = false; }
+        if (this.esSinDefinir(f.tipoTardeId) && !f.retiroActivoTarde) {
+          f.tipoTardeId = id; f.modificadoTarde = true; f.guardado = false;
+        }
       }
     });
     this.dataSource.data = [...this.filas];
@@ -658,7 +889,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         fila,
         fecha:        this.fechaHoy,
         fechaDisplay: this.formatFechaDisplay(),
-        tipos:        this.tipos,
+        tipos:        this.todosTipos,
       },
     });
   }

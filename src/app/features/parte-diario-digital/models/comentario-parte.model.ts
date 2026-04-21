@@ -3,7 +3,7 @@ export interface ComentarioParte {
   timestamp:    string;
   contenido:    string;
   tipo:         'Comentario' | 'Evento';
-  subTipo:      'NOTA' | 'ASISTENCIA' | 'HORARIO';
+  subTipo:      'NOTA' | 'ASISTENCIA' | 'HORARIO' | 'RETIRO';
   titulo:       string | null;
   detalle:      string | null;
   autor:        string;

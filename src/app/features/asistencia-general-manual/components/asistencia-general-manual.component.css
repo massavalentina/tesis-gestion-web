@@ -173,6 +173,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 3px;
 }
 
 .resumen-turno-label {
@@ -312,6 +313,7 @@ td.mat-cell {
 .col-dni        { width: 110px; max-width: 110px; }
 .col-asistencia { min-width: 240px; }
 .col-acciones-th { width: 68px; text-align: right; }
+.col-test       { width: 70px;  text-align: center; }
 .col-doc        { color: var(--text-sub); font-size: 13px; white-space: nowrap; }
 
 .nombre-cell { display: flex; align-items: center; gap: 8px; }
@@ -336,6 +338,25 @@ td.mat-cell {
 .icon-ok        { color: var(--green); font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .icon-error     { color: var(--red);   font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .btn-icon-primary { color: var(--primary) !important; }
+
+/* Retiro chip-button */
+.retiro-chip-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  border-radius: 10px; padding: 2px 8px; font-size: 0.72rem; font-weight: 600;
+  white-space: nowrap; cursor: pointer; border: 1px solid transparent;
+  background: none; font-family: inherit; line-height: 1.4;
+}
+.retiro-chip-btn:hover { filter: brightness(0.93); }
+.retiro-chip { border-radius: 10px; padding: 2px 8px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.retiro-chip-naranja { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.retiro-chip-rojo    { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.retiro-chip-verde   { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.retiro-chip-gris    { background: rgba(100,116,139,.10); color: #64748b; border-color: #cbd5e1; }
+.retiro-chip-icon    { font-size: 13px; height: 13px; width: 13px; }
+
+/* Ícono directions_run cuando no hay retiro registrado */
+.btn-retiro-nuevo     { color: var(--text-hint) !important; }
+.btn-retiro-nuevo:hover { color: var(--primary) !important; }
 
 /* Spinner dentro del botón de fila */
 .spinner-fila { display: inline-flex !important; }
@@ -576,6 +597,18 @@ th.col-movil-th { text-align: left !important; }
   flex-shrink: 0;
 }
 
+.movil-inasist-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #5b21b6;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .movil-tea-aviso {
   display: flex;
   align-items: center;
@@ -633,6 +666,7 @@ th.col-movil-th { text-align: left !important; }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
+    padding: 3px;
   }
   .stat-chip {
     justify-content: center;
@@ -661,7 +695,8 @@ th.col-movil-th { text-align: left !important; }
 /* ═══════════════════════════════════════════════════
    CHIP ACTIVO (filtro)
 ═══════════════════════════════════════════════════ */
-.stat-chip.chip-activo { outline: 2px solid currentColor; font-weight: 700; }
+/* box-shadow instead of outline to prevent clipping by parent overflow */
+.stat-chip.chip-activo { box-shadow: 0 0 0 2px currentColor; font-weight: 700; }
 
 /* ═══════════════════════════════════════════════════
    CAMPO FECHA Y CURSO — estilo credenciales-qr

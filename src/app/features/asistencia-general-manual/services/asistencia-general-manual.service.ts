@@ -7,6 +7,7 @@ import { EstudianteManual }          from '../models/estudiante-manual.model';
 import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistencia-manual.model';
 import { RegistrarAsistenciaManual } from '../models/registrar-asistencia-manual.model';
 import { AsistenciaEspacioItem }     from '../models/asistencia-estudiante-dia.model';
+import { RetiroActivo }              from '../../retiro-anticipado/models/retiro-activo.model';
 
 export interface AsistenciaManualResponse {
   id:         string;
@@ -15,10 +16,11 @@ export interface AsistenciaManualResponse {
 }
 
 export interface AsistenciaExistenteHoy {
-  documento:    string;
-  codigoManana: string;
-  codigoTarde:  string;
-  valorTotal:   number;
+  documento:           string;
+  codigoManana:        string;
+  codigoLlegadaManana: string | null;
+  codigoTarde:         string;
+  valorTotal:          number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -88,6 +90,14 @@ export class AsistenciaGeneralManualService {
 
   actualizarAsistenciaEspacio(dto: { estudianteId: string; idClaseDictada: string; presente: boolean }): Observable<void> {
     return this.http.put<void>(`${this.asistenciaUrl}/espacio`, dto);
+  }
+
+  // ── Retiro activo del estudiante para el día ──────────────────────────────
+  getRetiroActivo(estudianteId: string, fecha: string): Observable<RetiroActivo | null> {
+    return this.http.get<RetiroActivo | null>(
+      `https://localhost:7146/api/retiro/activo`,
+      { params: { estudianteId, fecha } }
+    );
   }
 }
 
