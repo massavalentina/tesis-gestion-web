@@ -53,7 +53,8 @@ export class DetalleAsistenciaDocenteComponent implements OnInit {
   cargando = true;
   error = false;
 
-  columnas = ['fecha', 'dictada', 'presente', 'codigo', 'horaEntrada'];
+  // Columna 'horaEntrada' eliminada por requerimiento
+  columnas = ['fecha', 'dictada', 'presente', 'codigo'];
 
   constructor(
     private route: ActivatedRoute,

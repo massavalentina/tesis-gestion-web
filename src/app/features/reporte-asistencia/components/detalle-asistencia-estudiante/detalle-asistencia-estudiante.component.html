@@ -32,30 +32,45 @@
 
   <!-- Tarjetas resumen (solo si vienen del reporte) -->
   <div class="resumen-cards" *ngIf="presencias !== null">
-    <div class="card">
-      <span class="card-valor">{{ presencias }}</span>
-      <span class="card-label">Presencias</span>
+
+    <!-- Fila superior: 2 cards grandes con los datos principales -->
+    <div class="cards-fila">
+      <div class="card card-grande">
+        <span class="card-valor card-valor-lg">{{ presencias }}</span>
+        <span class="card-label">Presencias</span>
+      </div>
+      <div class="card card-grande">
+        <span class="card-valor card-valor-lg" [class]="getBadgeClase(inasistencias, teaGeneral)">
+          {{ inasistencias }}
+        </span>
+        <span class="card-label">Inasistencias</span>
+      </div>
     </div>
-    <div class="card">
-      <span class="card-valor" [class]="getBadgeClase(inasistencias, teaGeneral)">{{ inasistencias }}</span>
-      <span class="card-label">Inasistencias</span>
+
+    <!-- Fila inferior: 5 cards más chicas con el detalle de movimientos -->
+    <div class="cards-fila">
+      <div class="card card-chica">
+        <span class="card-valor">{{ llegadasTarde }}</span>
+        <span class="card-label">Llegadas Tarde</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ ausentePorLLT }}</span>
+        <span class="card-label">Ausente LLT</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ retirosExpress ?? 0 }}</span>
+        <span class="card-label">Ret. Exp.</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ retirosAnticipados }}</span>
+        <span class="card-label">Ret. Ant.</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ retirosAnticipadosExtendidos ?? 0 }}</span>
+        <span class="card-label">Ret. Ant. Ext.</span>
+      </div>
     </div>
-    <div class="card">
-      <span class="card-valor">{{ llegadasTarde }}</span>
-      <span class="card-label">Llegadas Tarde</span>
-    </div>
-    <div class="card">
-      <span class="card-valor">{{ ausentePorLLT }}</span>
-      <span class="card-label">Ausente LLT</span>
-    </div>
-    <div class="card">
-      <span class="card-valor">{{ retirosAnticipados }}</span>
-      <span class="card-label">Retiros</span>
-    </div>
-    <div class="card card-porcentaje">
-      <span class="card-valor">{{ porcentajeAsistencia }}%</span>
-      <span class="card-label">% Asistencia</span>
-    </div>
+
   </div>
 
   <!-- Cargando -->

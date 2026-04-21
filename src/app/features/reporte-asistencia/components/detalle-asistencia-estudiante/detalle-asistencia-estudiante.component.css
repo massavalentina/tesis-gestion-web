@@ -78,27 +78,44 @@
 /* ── Tarjetas resumen ── */
 .resumen-cards {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
+/* Cada fila es un flex row */
+.cards-fila {
+  display: flex;
+  gap: 12px;
+}
+
+/* Base compartida entre card grande y chica */
 .card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 100px;
-  flex: 1;
   background: #fff;
   border-radius: 8px;
-  padding: 14px 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   gap: 4px;
+  flex: 1;
 }
 
-.card-porcentaje .card-valor {
-  color: #1976d2;
+/* Fila superior: 2 cards grandes con número prominente */
+.card-grande {
+  padding: 22px 16px;
+}
+
+/* Número grande para las cards principales */
+.card-valor-lg {
+  font-size: 2.2rem;
+}
+
+/* Fila inferior: 5 cards más compactas */
+.card-chica {
+  padding: 10px 8px;
+  min-width: 72px;
 }
 
 .card-valor {
@@ -226,7 +243,12 @@
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
-  .resumen-cards { gap: 8px; }
-  .card { min-width: 80px; padding: 10px 8px; }
+  .cards-fila { gap: 8px; }
+  /* Las 2 grandes se achican un poco */
+  .card-grande { padding: 16px 10px; }
+  .card-valor-lg { font-size: 1.7rem; }
+  /* Las 5 chicas se comprimen pero siguen en fila */
+  .card-chica { min-width: 52px; padding: 8px 4px; }
   .card-valor { font-size: 1.2rem; }
+  .card-label { font-size: 0.68rem; }
 }

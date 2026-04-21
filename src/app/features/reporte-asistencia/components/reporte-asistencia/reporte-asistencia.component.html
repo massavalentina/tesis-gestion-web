@@ -2,7 +2,7 @@
 
   <!-- Header -->
   <div class="reporte-header">
-    <span class="header-titulo">Reportes Asistencia Alumno</span>
+    <span class="header-titulo">Asistencia General por Curso</span>
     <button mat-stroked-button class="btn-export" (click)="exportarPdf()" matTooltip="Exportar a PDF">
       <mat-icon>picture_as_pdf</mat-icon>
       Exportar PDF
@@ -102,13 +102,13 @@
 
       <!-- Columna Presencias -->
       <ng-container matColumnDef="presencias">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Presencias</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Pres.</th>
         <td mat-cell *matCellDef="let est">{{ est.presencias }}</td>
       </ng-container>
 
       <!-- Columna Inasistencias -->
       <ng-container matColumnDef="inasistencias">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Inasistencias</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Inasist.</th>
         <td mat-cell *matCellDef="let est">
           <span class="badge" [class]="getBadgeClase(est.inasistencias, est.teaGeneral)">
             {{ est.teaGeneral ? 'TEA' : est.inasistencias }}
@@ -118,28 +118,32 @@
 
       <!-- Columna Llegadas Tarde -->
       <ng-container matColumnDef="llegadasTarde">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Llegadas Tarde</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ll. Tarde</th>
         <td mat-cell *matCellDef="let est">{{ est.llegadasTarde }}</td>
       </ng-container>
 
       <!-- Columna Ausente LLT -->
       <ng-container matColumnDef="ausentePorLLT">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ausente LLT</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Aus. LLT</th>
         <td mat-cell *matCellDef="let est">{{ est.ausentePorLLT }}</td>
       </ng-container>
 
-      <!-- Columna Retiros -->
+      <!-- Columna Retiros Anticipados (RA) -->
       <ng-container matColumnDef="retirosAnticipados">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Retiros Anticipados</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Ant.</th>
         <td mat-cell *matCellDef="let est">{{ est.retirosAnticipados }}</td>
       </ng-container>
 
-      <!-- Columna Porcentaje -->
-      <ng-container matColumnDef="porcentajeAsistencia">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>% Asistencia</th>
-        <td mat-cell *matCellDef="let est" class="col-porcentaje">
-          {{ est.porcentajeAsistencia }}%
-        </td>
+      <!-- Columna Retiro Express (RE) -->
+      <ng-container matColumnDef="retirosExpress">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Exp.</th>
+        <td mat-cell *matCellDef="let est">{{ est.retirosExpress ?? 0 }}</td>
+      </ng-container>
+
+      <!-- Columna Retiro Anticipado Extendido (RAE) -->
+      <ng-container matColumnDef="retirosAnticipadosExtendidos">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Ant. Ext.</th>
+        <td mat-cell *matCellDef="let est">{{ est.retirosAnticipadosExtendidos ?? 0 }}</td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>

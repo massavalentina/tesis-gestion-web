@@ -8,6 +8,10 @@ export interface ReporteAsistenciaItem {
   llegadasTarde: number;
   ausentePorLLT: number;
   retirosAnticipados: number;
+  /** Cantidad de Retiros Express (código RE) */
+  retirosExpress: number;
+  /** Cantidad de Retiros Anticipados Extendidos (código RAE) */
+  retirosAnticipadosExtendidos: number;
   porcentajeAsistencia: number;
   teaGeneral: boolean;
 }
