@@ -39,6 +39,10 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
   llegadasTarde: number | null = null;
   ausentePorLLT: number | null = null;
   retirosAnticipados: number | null = null;
+  /** Retiros Express (código RE) */
+  retirosExpress: number | null = null;
+  /** Retiros Anticipados Extendidos (código RAE) */
+  retirosAnticipadosExtendidos: number | null = null;
   porcentajeAsistencia: number | null = null;
   teaGeneral = false;
   desde: string | null = null;
@@ -77,6 +81,8 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
     this.llegadasTarde = q.has('llegadasTarde') ? Number(q.get('llegadasTarde')) : null;
     this.ausentePorLLT = q.has('ausentePorLLT') ? Number(q.get('ausentePorLLT')) : null;
     this.retirosAnticipados = q.has('retirosAnticipados') ? Number(q.get('retirosAnticipados')) : null;
+    this.retirosExpress = q.has('retirosExpress') ? Number(q.get('retirosExpress')) : null;
+    this.retirosAnticipadosExtendidos = q.has('retirosAnticipadosExtendidos') ? Number(q.get('retirosAnticipadosExtendidos')) : null;
     this.porcentajeAsistencia = q.has('porcentajeAsistencia') ? Number(q.get('porcentajeAsistencia')) : null;
     this.teaGeneral = q.get('teaGeneral') === 'true';
     this.desde = q.get('desde');
@@ -148,6 +154,8 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
       llegadasTarde: this.llegadasTarde ?? 0,
       ausentePorLLT: this.ausentePorLLT ?? 0,
       retirosAnticipados: this.retirosAnticipados ?? 0,
+      retirosExpress: this.retirosExpress ?? 0,
+      retirosAnticipadosExtendidos: this.retirosAnticipadosExtendidos ?? 0,
       porcentajeAsistencia: this.porcentajeAsistencia ?? 0,
       fechaDesde: this.desde,
       fechaHasta: this.hasta,
@@ -192,8 +200,17 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
     // LLT = 0.25 falta, LLTE = 0.50 falta → cada 1.0 acumulada = 1 inasistencia completa
     this.ausentePorLLT = Math.floor(nLLT * 0.25 + nLLTE * 0.5);
     this.retirosAnticipados = r.filter(x =>
-      ['RA', 'RAE'].includes((x.codigoManana ?? '').toUpperCase()) ||
-      ['RA', 'RAE'].includes((x.codigoTarde ?? '').toUpperCase())
+      (x.codigoManana ?? '').toUpperCase() === 'RA' ||
+      (x.codigoTarde ?? '').toUpperCase() === 'RA'
+    ).length;
+    // Retiro Express (RE) y Retiro Anticipado Extendido (RAE)
+    this.retirosExpress = r.filter(x =>
+      (x.codigoManana ?? '').toUpperCase() === 'RE' ||
+      (x.codigoTarde ?? '').toUpperCase() === 'RE'
+    ).length;
+    this.retirosAnticipadosExtendidos = r.filter(x =>
+      (x.codigoManana ?? '').toUpperCase() === 'RAE' ||
+      (x.codigoTarde ?? '').toUpperCase() === 'RAE'
     ).length;
     this.inasistencias = Math.round(r.reduce((acc, x) => acc + x.valorTotal, 0));
     this.porcentajeAsistencia = r.length > 0

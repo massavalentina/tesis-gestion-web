@@ -133,9 +133,14 @@
             <div class="est-chips">
               <button *ngFor="let e of retirados"
                       class="est-chip chip-retirado"
-                      (click)="onVerEstudiante(e)"
-                      [matTooltip]="e.apellido + ', ' + e.nombre">
+                      (click)="e.retiroActivo ? onVerRetiro(e) : onVerEstudiante(e)"
+                      [matTooltip]="e.apellido + ', ' + e.nombre + (e.retiroActivo?.horarioRetiro ? ' · Retiro: ' + e.retiroActivo!.horarioRetiro : '')">
                 {{ e.apellido }}, {{ e.nombre[0] }}.
+                <span *ngIf="e.retiroActivo?.etiquetaEstado"
+                      [class]="'pd-retiro-chip pd-retiro-chip-' + retiroChipClass(e.retiroActivo!.etiquetaEstado!)">
+                  <mat-icon class="pd-retiro-icon">{{ retiroChipIcon(e.retiroActivo!.etiquetaEstado!) }}</mat-icon>
+                  {{ retiroEtiquetaLabel(e.retiroActivo!.etiquetaEstado!) }}
+                </span>
               </button>
             </div>
           </div>
@@ -291,12 +296,39 @@
                 <span class="est-chip" [class]="'est-chip chip-' + e.estado.toLowerCase()">
                   {{ e.estado === 'SinRegistro' ? 'Sin reg.' : e.estado }}
                 </span>
+                <!-- LLT: solo para Presente -->
+                <ng-container *ngIf="e.estado === 'Presente' && isLLT(e.codigoAsistencia)">
+                  <br>
+                  <span class="pd-asist-chip" matTooltip="Llegada tarde">{{ e.codigoAsistencia }}</span>
+                </ng-container>
+                <!-- Tipo de retiro y etiqueta: solo para Retirado -->
+                <ng-container *ngIf="e.estado === 'Retirado'">
+                  <ng-container *ngIf="isLLT(e.codigoLlegadaManiana)">
+                    <br>
+                    <span class="pd-asist-chip" matTooltip="Llegada tarde">{{ e.codigoLlegadaManiana }}</span>
+                  </ng-container>
+                  <ng-container *ngIf="e.retiroActivo?.tipoRetiro as tipo">
+                    <br>
+                    <span class="pd-asist-chip" [matTooltip]="'Retiro: ' + e.retiroActivo!.horarioRetiro">{{ tipo }}</span>
+                  </ng-container>
+                  <ng-container *ngIf="e.retiroActivo?.etiquetaEstado as etiqueta">
+                    <br>
+                    <span [class]="'pd-retiro-chip pd-retiro-chip-' + retiroChipClass(etiqueta)">
+                      <mat-icon class="pd-retiro-icon">{{ retiroChipIcon(etiqueta) }}</mat-icon>
+                      {{ retiroEtiquetaLabel(etiqueta) }}
+                    </span>
+                  </ng-container>
+                </ng-container>
               </td>
               <td class="col-hora">{{ e.horaEntrada ?? '—' }}</td>
               <td class="col-hora">{{ e.horaSalida  ?? '—' }}</td>
               <td>
                 <button mat-icon-button (click)="onVerEstudiante(e)" matTooltip="Ver detalle por materia">
                   <mat-icon>open_in_new</mat-icon>
+                </button>
+                <button *ngIf="e.retiroActivo" mat-icon-button (click)="onVerRetiro(e)"
+                        matTooltip="Ver info del retiro" style="color: #b45309;">
+                  <mat-icon>directions_run</mat-icon>
                 </button>
               </td>
             </tr>
@@ -317,7 +349,8 @@
 
           <!-- Metadatos: badge tipo, hora, autor -->
           <div class="log-entry-meta">
-            <span [class]="'log-badge log-badge--' + com.subTipo.toLowerCase()">{{ com.subTipo }}</span>
+            <span [class]="'log-badge log-badge--' + (com.subTipo === 'RETIRO' ? 'asistencia' : com.subTipo.toLowerCase())">{{ com.subTipo === 'RETIRO' ? 'ASISTENCIA' : com.subTipo }}</span>
+            <span *ngIf="com.subTipo === 'RETIRO'" class="log-badge log-badge--retiro">RETIRO</span>
             <span class="log-ts">{{ formatTimestamp(com.timestamp) }}</span>
             <span class="log-autor-tag">{{ com.autor }}</span>
           </div>
@@ -557,7 +590,10 @@
         <tbody>
           <tr *ngFor="let com of comentarios">
             <td class="pp-log-hora">{{ formatTimestamp(com.timestamp) }}</td>
-            <td><span [class]="'pp-log-badge pp-log-badge--' + com.subTipo.toLowerCase()">{{ com.subTipo }}</span></td>
+            <td>
+              <span [class]="'pp-log-badge pp-log-badge--' + (com.subTipo === 'RETIRO' ? 'asistencia' : com.subTipo.toLowerCase())">{{ com.subTipo === 'RETIRO' ? 'ASISTENCIA' : com.subTipo }}</span>
+              <span *ngIf="com.subTipo === 'RETIRO'" class="pp-log-badge pp-log-badge--retiro">RETIRO</span>
+            </td>
             <td>
               <ng-container *ngIf="com.subTipo === 'NOTA'">{{ com.contenido }}</ng-container>
               <ng-container *ngIf="com.subTipo !== 'NOTA'">{{ com.titulo }}</ng-container>

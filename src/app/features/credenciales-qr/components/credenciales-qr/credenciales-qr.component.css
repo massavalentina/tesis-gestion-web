@@ -27,6 +27,16 @@
   font-size: 14px;
 }
 
+.page__hint {
+  margin-top: 10px !important;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #c7d9eb;
+  background: #f4f9ff;
+  color: #365977 !important;
+  font-size: 13px !important;
+}
+
 .section {
   display: block;
 }

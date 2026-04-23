@@ -10,17 +10,39 @@
   </div>
 
   <!-- Selector de curso -->
-  <mat-form-field appearance="outline" class="curso-select">
-    <mat-label>Seleccionar curso</mat-label>
-    <mat-select
-      [(ngModel)]="cursoSeleccionado"
-      (ngModelChange)="onCursoChange()"
-      [disabled]="cargandoCursos">
-      <mat-option *ngFor="let c of cursos" [value]="c">
-        {{ c.codigo }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <div class="curso-picker-card" [class.curso-picker-loading]="cargandoCursos">
+    <mat-icon class="curso-picker-icon">class</mat-icon>
+    <div class="curso-picker-body">
+      <span class="curso-picker-label">Seleccionar curso</span>
+      <mat-select class="curso-picker-matselect"
+                  [(ngModel)]="cursoSeleccionado"
+                  (ngModelChange)="onCursoChange()"
+                  [disabled]="cargandoCursos"
+                  placeholder="Elegí un curso...">
+        <mat-option *ngFor="let c of cursos" [value]="c">{{ c.codigo }}</mat-option>
+      </mat-select>
+    </div>
+    <mat-spinner *ngIf="cargandoCursos" diameter="18" class="curso-picker-spinner"></mat-spinner>
+  </div>
+
+  <!-- Botón masivo: notificar a todos los tutores desactualizados del curso.
+       Visible solo cuando hay un curso seleccionado y ya cargaron los estudiantes. -->
+  <div class="curso-acciones"
+       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0">
+    <button class="btn-notificar-curso"
+            [class.btn-notificar-disabled]="!hayAlgunoParaNotificar()"
+            [disabled]="enviandoNotificacionCurso || !hayAlgunoParaNotificar()"
+            [matTooltip]="hayAlgunoParaNotificar()
+              ? 'Enviar notificación de actualización a todos los tutores principales del curso con datos desactualizados'
+              : 'Todos los tutores del curso fueron actualizados o ya fueron notificados recientemente'"
+            (click)="enviarNotificacionCurso()">
+      <mat-spinner *ngIf="enviandoNotificacionCurso" diameter="14" class="notif-spinner"></mat-spinner>
+      <mat-icon *ngIf="!enviandoNotificacionCurso">notifications_active</mat-icon>
+      Notificar tutores desactualizados del curso
+      <span class="notif-count-badge"
+            *ngIf="contarParaNotificar() as count">{{ count }}</span>
+    </button>
+  </div>
 
   <!-- Error cursos -->
   <div class="estado-center error" *ngIf="errorCursos">
@@ -62,7 +84,7 @@
       class="alumno-panel"
       [class.panel-tea]="est.teaGeneral"
       [expanded]="isExpanded(est.idEstudiante)"
-      (opened)="onOpened(est.idEstudiante)"
+      (opened)="onOpened(est)"
       (closed)="onClosed(est.idEstudiante)">
 
       <mat-expansion-panel-header [collapsedHeight]="'56px'" [expandedHeight]="'56px'">
@@ -71,40 +93,688 @@
         </mat-panel-title>
       </mat-expansion-panel-header>
 
-      <!-- Contenido expandido -->
-      <div class="alumno-detalle">
-
-        <div class="detalle-row">
-          <mat-icon class="detalle-icon">badge</mat-icon>
-          <span class="detalle-label">DNI</span>
-          <span class="detalle-valor">{{ est.documento }}</span>
-        </div>
-
-        <div class="detalle-row">
-          <mat-icon class="detalle-icon">event_busy</mat-icon>
-          <span class="detalle-label">Faltas acumuladas</span>
-          <span class="detalle-valor faltas-valor" [class]="'estado-' + getEstado(est)">
-            {{ getLabelFaltas(est) }}
-          </span>
-        </div>
-
-        <div class="detalle-row" *ngIf="est.teaGeneral">
-          <mat-icon class="detalle-icon tea-icon">block</mat-icon>
-          <span class="detalle-label tea-text">Estado</span>
-          <span class="detalle-valor tea-text">TEA — Trayectoria Escolar Asistida</span>
-        </div>
-
-        <div class="detalle-row detalle-acciones">
-          <button mat-stroked-button color="primary" class="btn-detalle" (click)="verDetalleFaltas(est)">
-            <mat-icon>bar_chart</mat-icon>
-            Ver detalle de faltas
-          </button>
-        </div>
-
+      <!-- Cargando ficha -->
+      <div class="ficha-loading" *ngIf="cargandoFichaIds.has(est.idEstudiante)">
+        <mat-spinner diameter="28"></mat-spinner>
       </div>
+
+      <!-- Error ficha -->
+      <div class="ficha-error" *ngIf="errorFichaIds.has(est.idEstudiante)">
+        <mat-icon>error_outline</mat-icon>
+        <span>No se pudo cargar la información del estudiante.</span>
+      </div>
+
+      <ng-container *ngIf="getFicha(est.idEstudiante) as ficha">
+
+        <!-- ══════════════════════════════════════
+             VISTA: RESUMEN
+             ══════════════════════════════════════ -->
+        <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante)">
+
+          <div class="ficha-grid">
+
+            <!-- ── COLUMNA IZQUIERDA: Estudiante ── -->
+            <div class="ficha-col">
+
+              <div class="col-header">DATOS ESTUDIANTE</div>
+
+              <div class="ficha-campo">
+                <span class="campo-label">NOMBRE COMPLETO</span>
+                <span class="campo-valor">{{ est.apellido }}, {{ est.nombre }}</span>
+              </div>
+              <div class="ficha-campo">
+                <span class="campo-label">DNI</span>
+                <span class="campo-valor">{{ est.documento }}</span>
+              </div>
+              <div class="ficha-campo">
+                <span class="campo-label">FECHA NACIMIENTO</span>
+                <span class="campo-valor">{{ ficha.fechaNacimiento | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="ficha-campo">
+                <span class="campo-label">DOMICILIO</span>
+                <span class="campo-valor" [class.muted]="!ficha.domicilio">{{ ficha.domicilio || '-' }}</span>
+              </div>
+              <div class="ficha-campo">
+                <span class="campo-label">CURSO</span>
+                <span class="campo-valor">{{ ficha.codigoCurso || cursoSeleccionado?.codigo || '-' }}</span>
+              </div>
+
+              <!-- Botón principal izquierdo -->
+              <div class="col-btn-row">
+                <button class="btn-accion" (click)="editarDatos(est)">
+                  <mat-icon class="btn-accion-icon">edit</mat-icon>
+                  EDITAR DATOS
+                  <mat-icon class="btn-accion-arrow">chevron_right</mat-icon>
+                </button>
+              </div>
+
+              <!-- Separador interno -->
+              <div class="col-sep"></div>
+
+              <!-- Badges -->
+              <div class="info-row">
+                <span class="info-label">Credencial QR personal</span>
+                <span class="credencial-badge" [class]="getCredencialClass(est.idEstudiante)">
+                  {{ getCredencialLabel(est.idEstudiante) }}
+                </span>
+                <button class="btn-qr-credencial"
+                        matTooltip="Visualizar credencial QR"
+                        (click)="abrirModalCredencialQr(est)">
+                  <mat-icon>qr_code_2</mat-icon>
+                </button>
+              </div>
+              <div class="info-row">
+                <mat-icon class="info-icon">event_busy</mat-icon>
+                <span class="info-label">Faltas acumuladas</span>
+                <span class="faltas-badge" [class]="'estado-' + getEstado(est)">
+                  {{ getLabelFaltas(est) }}
+                </span>
+              </div>
+
+              <!-- Botón secundario izquierdo -->
+              <div class="col-btn-row">
+                <button mat-stroked-button class="btn-detalle" (click)="verDetalleFaltas(est)">
+                  <mat-icon>bar_chart</mat-icon>
+                  Ver detalle de faltas
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Divisor vertical -->
+            <div class="ficha-divisor"></div>
+
+            <!-- ── COLUMNA DERECHA: Tutor ── -->
+            <div class="ficha-col">
+
+              <div class="col-header">DATOS TUTOR</div>
+
+              <ng-container *ngIf="getTutorPrincipal(est.idEstudiante) as tutor; else sinTutores">
+
+                <div class="ficha-campo">
+                  <span class="campo-label">NOMBRE COMPLETO</span>
+                  <span class="campo-valor">
+                    {{ tutor.nombre }} {{ tutor.apellido }}
+                    <span class="badge-principal" *ngIf="tutor.esPrincipal"
+                          matTooltip="Tutor marcado como contacto principal">
+                      <span class="badge-dot"></span>Principal
+                    </span>
+                  </span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">DNI</span>
+                  <span class="campo-valor">{{ tutor.documento || '-' }}</span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">RELACIÓN ESTUDIANTE</span>
+                  <span class="campo-valor">{{ tutor.relacionEstudiante || '-' }}</span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">TELÉFONO CONTACTO</span>
+                  <span class="campo-valor">{{ tutor.telefono || '-' }}</span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">DISPONIBILIDAD HORARIA</span>
+                  <span class="campo-valor">{{ tutor.disponibilidad || '-' }}</span>
+                </div>
+
+              </ng-container>
+
+              <ng-template #sinTutores>
+                <div class="ficha-campo"><span class="campo-label">NOMBRE COMPLETO</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">DNI</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">RELACIÓN ESTUDIANTE</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">TELÉFONO CONTACTO</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">DISPONIBILIDAD HORARIA</span><span class="campo-valor muted">-</span></div>
+              </ng-template>
+
+              <!-- Botón principal derecho -->
+              <div class="col-btn-row">
+                <button class="btn-accion" (click)="verTutores(est.idEstudiante)">
+                  <mat-icon class="btn-accion-icon">group</mat-icon>
+                  DETALLE TUTORES
+                  <mat-icon class="btn-accion-arrow">chevron_right</mat-icon>
+                </button>
+              </div>
+
+              <!-- Separador interno -->
+              <div class="col-sep"></div>
+
+              <!-- Historial -->
+              <div class="historial-placeholder">
+                <span class="historial-titulo">[ HISTORIAL ACADÉMICO ]</span>
+                <span class="historial-sub">Próximamente...</span>
+              </div>
+
+              <!-- Botón secundario derecho -->
+              <div class="col-btn-row">
+                <button mat-stroked-button class="btn-detalle" disabled>
+                  Ver detalle evaluación de habilidades
+                </button>
+              </div>
+
+            </div>
+
+          </div><!-- /ficha-grid -->
+
+        </div><!-- /alumno-detalle (resumen) -->
+
+        <!-- ══════════════════════════════════════
+             VISTA: TUTORES
+             ══════════════════════════════════════ -->
+        <div class="tutores-view" *ngIf="vistaTutoresIds.has(est.idEstudiante)">
+
+          <div class="tutores-view-header">
+            <button class="btn-volver" (click)="volverResumen(est.idEstudiante)">
+              <mat-icon>chevron_left</mat-icon> Volver
+            </button>
+
+            <div class="tutores-header-actions">
+              <!-- Botón de notificación: habilitado solo si los datos llevan > 6 meses sin
+                   actualizar Y no se envió una notificación en los últimos 6 meses. -->
+              <button class="btn-notificar-tutor"
+                      [class.btn-notificar-disabled]="!puedeEnviarNotificacion(est.idEstudiante)"
+                      [disabled]="!puedeEnviarNotificacion(est.idEstudiante) || enviandoNotificacionIds.has(est.idEstudiante)"
+                      [matTooltip]="puedeEnviarNotificacion(est.idEstudiante)
+                        ? 'Enviar notificación al tutor principal por datos desactualizados'
+                        : (notificacionReciente(est.idEstudiante)
+                            ? 'Ya se envió una notificación en los últimos 6 meses'
+                            : 'El tutor principal fue actualizado recientemente')"
+                      (click)="enviarNotificacion(est.idEstudiante)">
+                <mat-spinner *ngIf="enviandoNotificacionIds.has(est.idEstudiante)"
+                             diameter="14" class="notif-spinner"></mat-spinner>
+                <mat-icon *ngIf="!enviandoNotificacionIds.has(est.idEstudiante)">notifications</mat-icon>
+                Enviar notificación
+              </button>
+
+              <button class="btn-agregar-tutor" (click)="agregarTutor(est.idEstudiante)">
+                <mat-icon>person_add</mat-icon>
+                Agregar tutor
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta: tutor principal con datos desactualizados (> 6 meses sin cambios) -->
+          <div class="tutor-alerta-desactualizado"
+               *ngIf="tutorPrincipalDesactualizado(est.idEstudiante)">
+            <mat-icon class="alerta-icon">warning_amber</mat-icon>
+            <span>Los datos del tutor principal no han sido actualizados en más de 6 meses.</span>
+          </div>
+
+          <!-- Cartel: notificación enviada recientemente (vista tutores) -->
+          <div class="notif-enviada-banner notif-enviada-banner-curso"
+               *ngIf="notificacionReciente(est.idEstudiante) && tutorPrincipalDesactualizado(est.idEstudiante)">
+            <mat-icon>check_circle</mat-icon>
+            <span>La notificación de actualización de datos ya fue enviada.</span>
+          </div>
+
+          <div class="tutores-titulo">TUTORES REGISTRADOS</div>
+
+          <div class="tutores-tabla-wrapper">
+            <table class="tutores-tabla">
+              <thead>
+                <tr>
+                  <th>NOMBRE</th>
+                  <th>DNI</th>
+                  <th>RELACIÓN</th>
+                  <th>DISPONIBILIDAD</th>
+                  <th>CONTACTO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let tutor of ficha.tutores"
+                    [class.fila-principal]="tutor.esPrincipal">
+                  <td>
+                    <div class="td-nombre">
+                      <span class="tutor-nombre-texto">{{ tutor.apellido }}, {{ tutor.nombre }}</span>
+                      <span class="badge-principal-tabla" *ngIf="tutor.esPrincipal">
+                        <span class="badge-dot"></span>Principal
+                      </span>
+                    </div>
+                  </td>
+                  <td class="td-dato">{{ tutor.documento || '-' }}</td>
+                  <td class="td-dato">{{ tutor.relacionEstudiante || '-' }}</td>
+                  <td class="td-dato">{{ tutor.disponibilidad || '-' }}</td>
+                  <td>
+                    <div class="contacto-cell">
+                      <span class="contacto-email">{{ tutor.correo || '-' }}</span>
+                      <span class="contacto-tel">{{ tutor.telefono || '-' }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="acciones-cell">
+                      <button class="btn-tabla-icono btn-tabla-editar"
+                              matTooltip="Editar tutor"
+                              (click)="editarTutor(tutor, est.idEstudiante)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button class="btn-tabla-icono btn-tabla-eliminar"
+                              [matTooltip]="tutor.esPrincipal ? 'Primero asigná otro tutor como principal' : 'Eliminar tutor'"
+                              (click)="intentarEliminarTutor(tutor, est.idEstudiante)">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="ficha.tutores.length === 0">
+                  <td colspan="6" class="sin-tutores">Sin tutores registrados</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div><!-- /tutores-view -->
+
+      </ng-container>
 
     </mat-expansion-panel>
 
   </mat-accordion>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: CREDENCIAL QR INDIVIDUAL
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalCredencialQr as modal">
+    <div class="modal-overlay" (click)="cerrarModalCredencialQr()">
+      <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
+
+        <ng-container *ngIf="!modal.confirmandoRegeneracion; else confirmRegeneracionQr">
+          <div class="modal-header">
+            <span class="modal-titulo">CREDENCIAL QR PERSONAL</span>
+            <button class="modal-close"
+                    (click)="cerrarModalCredencialQr()"
+                    [disabled]="modal.regenerando">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="modal-qr-body">
+            <app-qr-credential-preview-card
+              [nombreCompleto]="modal.nombreCompleto"
+              [loading]="modal.cargando"
+              [error]="modal.error"
+              [imageUrl]="modal.imageUrl"
+              [emptyMessage]="getMensajeSinImagenCredencialQr()"
+              [metaItems]="getMetaCredencialQrModal()">
+            </app-qr-credential-preview-card>
+
+            <div class="modal-actions modal-actions-qr">
+              <button type="button"
+                      class="btn-modal-cancel"
+                      (click)="cerrarModalCredencialQr()"
+                      [disabled]="modal.regenerando">
+                Cerrar
+              </button>
+              <button type="button"
+                      class="btn-modal-save"
+                      (click)="solicitarRegeneracionCredencialQr()"
+                      [disabled]="modal.cargando || modal.regenerando">
+                <mat-spinner *ngIf="modal.regenerando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.regenerando">{{ getAccionCredencialQrLabel() }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #confirmRegeneracionQr>
+          <div class="modal-confirm">
+            <div class="confirm-icon confirm-icon-warning">
+              <mat-icon>autorenew</mat-icon>
+            </div>
+            <div class="confirm-titulo">
+              {{ esGeneracionInicialCredencialQr() ? '¿Confirmar generación?' : '¿Confirmar regeneración?' }}
+            </div>
+            <div class="confirm-sub">
+              {{
+                esGeneracionInicialCredencialQr()
+                  ? 'Se generará una credencial QR nueva para este estudiante.'
+                  : 'Se emitirá una nueva credencial QR para este estudiante y la credencial previa quedará inactiva.'
+              }}
+            </div>
+            <div class="confirm-actions">
+              <button class="btn-modal-cancel"
+                      (click)="cancelarConfirmacionRegeneracionCredencialQr()"
+                      [disabled]="modal.regenerando">
+                Volver
+              </button>
+              <button class="btn-modal-save"
+                      (click)="confirmarRegeneracionCredencialQr()"
+                      [disabled]="modal.regenerando">
+                <mat-spinner *ngIf="modal.regenerando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.regenerando">{{ getAccionCredencialQrLabel() }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: EDITAR DATOS ESTUDIANTE
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalEstudiante as modal">
+    <div class="modal-overlay" (click)="cerrarModalEstudiante()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+
+        <!-- Formulario -->
+        <ng-container *ngIf="!modal.confirmando; else confirmEstudiante">
+
+          <div class="modal-header">
+            <span class="modal-titulo">EDITAR DATOS ESTUDIANTE</span>
+            <button class="modal-close" (click)="cerrarModalEstudiante()" [disabled]="modal.guardando">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <form [formGroup]="modal.form" (ngSubmit)="intentarGuardarEstudiante()" class="modal-form">
+
+            <div class="modal-form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <input matInput formControlName="nombre" placeholder="Ej: Juan">
+                <mat-error>{{ ctrlError(modal.form, 'nombre') }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Apellido</mat-label>
+                <input matInput formControlName="apellido" placeholder="Ej: García">
+                <mat-error>{{ ctrlError(modal.form, 'apellido') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>DNI</mat-label>
+                <input matInput formControlName="documento" placeholder="12345678">
+                <mat-error>{{ ctrlError(modal.form, 'documento') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de nacimiento</mat-label>
+                <input matInput type="date" formControlName="fechaNacimiento">
+                <mat-error>{{ ctrlError(modal.form, 'fechaNacimiento') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Domicilio</mat-label>
+                <input matInput formControlName="domicilio" placeholder="Calle y número">
+              </mat-form-field>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-modal-cancel" (click)="cerrarModalEstudiante()"
+                      [disabled]="modal.guardando">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-modal-save" [disabled]="modal.guardando">
+                <mat-spinner *ngIf="modal.guardando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.guardando">Guardar</span>
+              </button>
+            </div>
+
+          </form>
+
+        </ng-container>
+
+        <!-- Confirmación guardar estudiante -->
+        <ng-template #confirmEstudiante>
+          <div class="modal-confirm">
+            <div class="confirm-icon">
+              <mat-icon>save</mat-icon>
+            </div>
+            <div class="confirm-titulo">¿Confirmar cambios?</div>
+            <div class="confirm-sub">Se actualizarán los datos personales del estudiante.</div>
+            <div class="confirm-actions">
+              <button class="btn-modal-cancel" (click)="cancelarConfirmacionEstudiante()">
+                Volver
+              </button>
+              <button class="btn-modal-save" (click)="confirmarGuardarEstudiante()" [disabled]="modal.guardando">
+                <mat-spinner *ngIf="modal.guardando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.guardando">Confirmar</span>
+              </button>
+            </div>
+          </div>
+        </ng-template>
+
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: EDITAR / AGREGAR TUTOR
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalTutor as modal">
+    <div class="modal-overlay" (click)="cerrarModalTutor()">
+      <div class="modal-card modal-card-lg" (click)="$event.stopPropagation()">
+
+        <!-- FASE 1: Formulario -->
+        <ng-container *ngIf="!modal.confirmando && !modal.confirmandoPrincipal; else tutorConfirm">
+
+          <div class="modal-header">
+            <span class="modal-titulo">{{ modal.idTutor ? 'EDITAR DATOS TUTOR' : 'AGREGAR TUTOR' }}</span>
+            <button class="modal-close" (click)="cerrarModalTutor()" [disabled]="modal.guardando">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <form [formGroup]="modal.form" (ngSubmit)="intentarGuardarTutor()" class="modal-form">
+
+            <!-- Banner de error de validación -->
+            <div class="form-error-banner" *ngIf="modal.form.invalid && modal.formTocado">
+              <mat-icon>error_outline</mat-icon>
+              Completá todos los campos requeridos antes de guardar.
+            </div>
+
+            <div class="modal-form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <input matInput formControlName="nombre">
+                <mat-error>{{ ctrlError(modal.form, 'nombre') }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Apellido</mat-label>
+                <input matInput formControlName="apellido">
+                <mat-error>{{ ctrlError(modal.form, 'apellido') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- DNI + Fecha nacimiento (fecha solo para nuevo tutor) -->
+            <div class="modal-form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>DNI</mat-label>
+                <input matInput formControlName="documento" placeholder="12345678">
+                <mat-error>{{ ctrlError(modal.form, 'documento') }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" *ngIf="!modal.idTutor; else dniFiller">
+                <mat-label>Fecha de nacimiento <span class="campo-req">*</span></mat-label>
+                <input matInput type="date" formControlName="fechaNacimiento">
+                <mat-error>{{ ctrlError(modal.form, 'fechaNacimiento') }}</mat-error>
+              </mat-form-field>
+              <ng-template #dniFiller>
+                <mat-form-field appearance="outline">
+                  <mat-label>Número de contacto</mat-label>
+                  <input matInput formControlName="telefono" placeholder="1123456789">
+                  <mat-error>{{ ctrlError(modal.form, 'telefono') }}</mat-error>
+                </mat-form-field>
+              </ng-template>
+            </div>
+
+            <!-- Teléfono (solo en nuevo tutor ocupa la segunda fila) -->
+            <div class="modal-form-row two-col" *ngIf="!modal.idTutor">
+              <mat-form-field appearance="outline">
+                <mat-label>Número de contacto</mat-label>
+                <input matInput formControlName="telefono" placeholder="1123456789">
+                <mat-error>{{ ctrlError(modal.form, 'telefono') }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Correo de contacto</mat-label>
+                <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com">
+                <mat-error>{{ ctrlError(modal.form, 'correo') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Correo (en edición ocupa fila completa) -->
+            <div class="modal-form-row" *ngIf="modal.idTutor">
+              <mat-form-field appearance="outline">
+                <mat-label>Correo de contacto</mat-label>
+                <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com">
+                <mat-error>{{ ctrlError(modal.form, 'correo') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Domicilio</mat-label>
+                <input matInput formControlName="domicilio" placeholder="Calle y número">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Relación estudiante</mat-label>
+                <input matInput formControlName="relacionEstudiante" placeholder="Ej: Madre, Padre">
+                <mat-error>{{ ctrlError(modal.form, 'relacionEstudiante') }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-form-row two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Disponibilidad horaria</mat-label>
+                <input matInput formControlName="disponibilidad" placeholder="Ej: Mañanas">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tutor principal</mat-label>
+                <mat-select formControlName="esPrincipal">
+                  <mat-option [value]="true">Sí</mat-option>
+                  <mat-option [value]="false">No</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn-modal-cancel" (click)="cerrarModalTutor()"
+                      [disabled]="modal.guardando">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-modal-save" [disabled]="modal.guardando">
+                <mat-spinner *ngIf="modal.guardando" diameter="16"></mat-spinner>
+                <span *ngIf="!modal.guardando">Guardar</span>
+              </button>
+            </div>
+
+          </form>
+
+        </ng-container>
+
+        <!-- FASE 2 y 3: Confirmaciones -->
+        <ng-template #tutorConfirm>
+
+          <!-- FASE 2: Confirmación cambio de principal -->
+          <ng-container *ngIf="modal.confirmandoPrincipal; else tutorSave">
+            <div class="modal-confirm">
+              <div class="confirm-icon confirm-icon-warning">
+                <mat-icon>swap_horiz</mat-icon>
+              </div>
+              <div class="confirm-titulo">¿Cambiar tutor principal?</div>
+              <div class="confirm-sub">
+                Este tutor pasará a ser el <strong>contacto principal</strong> del estudiante.
+                El tutor anterior dejará de tener ese rol.
+              </div>
+              <div class="confirm-actions">
+                <button class="btn-modal-cancel" (click)="cancelarConfirmacionTutor()">
+                  Cancelar
+                </button>
+                <button class="btn-modal-save" (click)="confirmarCambioPrincipal()">
+                  Sí, cambiar principal
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- FASE 3: Confirmación guardar cambios -->
+          <ng-template #tutorSave>
+            <div class="modal-confirm">
+              <div class="confirm-icon">
+                <mat-icon>save</mat-icon>
+              </div>
+              <div class="confirm-titulo">¿Confirmar cambios?</div>
+              <div class="confirm-sub">
+                {{ modal.idTutor ? 'Se actualizarán los datos del tutor.' : 'Se registrará un nuevo tutor.' }}
+              </div>
+              <div class="confirm-actions">
+                <button class="btn-modal-cancel" (click)="cancelarConfirmacionTutor()">
+                  Volver
+                </button>
+                <button class="btn-modal-save" (click)="confirmarGuardarTutor()" [disabled]="modal.guardando">
+                  <mat-spinner *ngIf="modal.guardando" diameter="16"></mat-spinner>
+                  <span *ngIf="!modal.guardando">Confirmar</span>
+                </button>
+              </div>
+            </div>
+          </ng-template>
+
+        </ng-template>
+
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: CONFIRMAR ELIMINACIÓN DE TUTOR
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalEliminar as modal">
+    <div class="modal-overlay" (click)="cerrarModalEliminar()">
+      <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
+        <div class="modal-confirm">
+          <div class="confirm-icon confirm-icon-danger">
+            <mat-icon>person_remove</mat-icon>
+          </div>
+          <div class="confirm-titulo">¿Eliminar tutor?</div>
+          <div class="confirm-sub">
+            Se eliminará a <strong>{{ modal.nombreTutor }}</strong> como tutor del estudiante.
+            Esta acción no se puede deshacer.
+          </div>
+          <div class="confirm-actions">
+            <button class="btn-modal-cancel" (click)="cerrarModalEliminar()"
+                    [disabled]="modal.eliminando">
+              Cancelar
+            </button>
+            <button class="btn-modal-danger" (click)="confirmarEliminarTutor()"
+                    [disabled]="modal.eliminando">
+              <mat-spinner *ngIf="modal.eliminando" diameter="16"></mat-spinner>
+              <span *ngIf="!modal.eliminando">Eliminar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ALERTA: NO SE PUEDE ELIMINAR TUTOR PRINCIPAL
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="alertBloqueo">
+    <div class="modal-overlay" (click)="cerrarAlertBloqueo()">
+      <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
+        <div class="modal-confirm">
+          <div class="confirm-icon confirm-icon-warning">
+            <mat-icon>warning_amber</mat-icon>
+          </div>
+          <div class="confirm-titulo">Acción no permitida</div>
+          <div class="confirm-sub">
+            <strong>{{ alertBloqueo }}</strong> es el tutor principal del estudiante.
+            Para eliminarlo, primero debés asignar a otro tutor como principal.
+          </div>
+          <div class="confirm-actions">
+            <button class="btn-modal-save" (click)="cerrarAlertBloqueo()">
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 
 </div>
