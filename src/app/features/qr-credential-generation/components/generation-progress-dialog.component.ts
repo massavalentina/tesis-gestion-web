@@ -42,7 +42,7 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
         </p>
       </mat-dialog-content>
 
-      <mat-dialog-actions class="dlg__actions" *ngIf="progress?.estado === 'RUNNING'">
+      <mat-dialog-actions class="dlg__actions" *ngIf="puedeSolicitarCancelacion()">
         <button mat-stroked-button class="btn-cancel" (click)="solicitarCancelacion.emit()">
           Cancelar proceso
         </button>
@@ -216,5 +216,11 @@ export class DialogoProgresoGeneracionQrComponent {
     }
 
     return `${this.progress.procesados} de ${this.progress.total} credenciales procesadas`;
+  }
+
+  puedeSolicitarCancelacion(): boolean {
+    return this.progress?.estado === 'RUNNING'
+      || this.progress?.estado === 'PAUSING'
+      || this.progress?.estado === 'PAUSED';
   }
 }

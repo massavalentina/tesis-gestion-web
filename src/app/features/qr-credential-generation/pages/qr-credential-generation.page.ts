@@ -131,6 +131,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   private cancelDialogRef?: MatDialogRef<DialogoCancelacionGeneracionQrComponent>;
   private feedbackDialogRef?: MatDialogRef<DialogoFeedbackGeneracionQrComponent>;
   private closeProgressDialogTimeoutId?: number;
+  private pauseDecisionIntervalId?: number;
   private currentJobId: string | null = null;
 
   cursos: OpcionCurso[] = [];
@@ -151,6 +152,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.destroyRef.onDestroy(() => {
       this.detenerPolling();
       this.cancelarCierreDialogoProgresoPendiente();
+      this.detenerIntentosPausaDecisionCancelacion();
       this.cerrarDialogoCancelacion();
       this.cerrarDialogoFeedback();
       this.cerrarDialogoProgreso();
@@ -175,6 +177,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   alCambiarCurso(): void {
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
+    this.detenerIntentosPausaDecisionCancelacion();
     this.cerrarDialogoCancelacion();
     this.cerrarDialogoProgreso();
     this.pausaSolicitadaParaCancelacion = false;
@@ -229,6 +232,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.errorMensaje = '';
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
+    this.detenerIntentosPausaDecisionCancelacion();
     this.progreso = null;
     this.ejecutandoJob = true;
     this.pausaSolicitadaParaCancelacion = false;
@@ -266,6 +270,10 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
           this.progreso = progresoNormalizado;
           this.actualizarDialogoProgreso(progresoNormalizado);
 
+          if (this.cancelDialogRef && progresoNormalizado.estado === 'RUNNING') {
+            this.solicitarPausaParaDecisionCancelacion();
+          }
+
           if (
             progresoNormalizado.estado === 'COMPLETED' ||
             progresoNormalizado.estado === 'FAILED' ||
@@ -275,6 +283,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
             this.ejecutandoJob = false;
             this.pausaSolicitadaParaCancelacion = false;
             this.currentJobId = null;
+            this.detenerIntentosPausaDecisionCancelacion();
             this.cerrarDialogoCancelacion();
             this.cerrarDialogoFeedback();
             this.programarCierreDialogoProgreso(progresoNormalizado);
@@ -286,6 +295,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
           this.pausaSolicitadaParaCancelacion = false;
           this.currentJobId = null;
           this.cancelarCierreDialogoProgresoPendiente();
+          this.detenerIntentosPausaDecisionCancelacion();
           this.cerrarDialogoCancelacion();
           this.cerrarDialogoFeedback();
           this.cerrarDialogoProgreso();
@@ -385,14 +395,18 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
     this.cancelDialogRef = this.dialog.open(DialogoCancelacionGeneracionQrComponent, {
       width: '480px',
+      disableClose: true,
       data: this.construirDatosCancelacion(),
       panelClass: 'qr-generation-dialog'
     });
+
+    this.iniciarIntentosPausaDecisionCancelacion();
 
     this.cancelDialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado?: ResultadoCancelacionGeneracionQr) => {
         this.cancelDialogRef = undefined;
+        this.detenerIntentosPausaDecisionCancelacion();
 
         if (!resultado || !this.currentJobId) {
           return;
@@ -408,27 +422,6 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
         }
 
         this.ejecutarCancelacion(resultado.mantenerGenerados);
-      });
-  }
-
-  private solicitarPausaParaDecisionCancelacion(): void {
-    if (!this.currentJobId || this.pausaSolicitadaParaCancelacion || this.progreso?.estado !== 'RUNNING') {
-      return;
-    }
-
-    this.pausaSolicitadaParaCancelacion = true;
-
-    this.servicio.pausarJob(this.currentJobId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: progreso => {
-          this.pausaSolicitadaParaCancelacion = false;
-          this.progreso = progreso;
-          this.actualizarDialogoProgreso(progreso);
-        },
-        error: () => {
-          this.pausaSolicitadaParaCancelacion = false;
-        }
       });
   }
 
@@ -457,6 +450,27 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
             } satisfies DatosFeedbackGeneracionQr,
             panelClass: 'qr-generation-dialog'
           });
+        }
+      });
+  }
+
+  private solicitarPausaParaDecisionCancelacion(): void {
+    if (!this.currentJobId || this.pausaSolicitadaParaCancelacion || this.progreso?.estado !== 'RUNNING') {
+      return;
+    }
+
+    this.pausaSolicitadaParaCancelacion = true;
+
+    this.servicio.pausarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.pausaSolicitadaParaCancelacion = false;
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+        },
+        error: () => {
+          this.pausaSolicitadaParaCancelacion = false;
         }
       });
   }
@@ -603,12 +617,35 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   private cerrarDialogoCancelacion(): void {
+    this.detenerIntentosPausaDecisionCancelacion();
     this.cancelDialogRef?.close();
     this.cancelDialogRef = undefined;
   }
 
+  private iniciarIntentosPausaDecisionCancelacion(): void {
+    this.detenerIntentosPausaDecisionCancelacion();
+
+    this.pauseDecisionIntervalId = window.setInterval(() => {
+      if (!this.cancelDialogRef || !this.currentJobId) {
+        this.detenerIntentosPausaDecisionCancelacion();
+        return;
+      }
+
+      if (this.progreso?.estado === 'RUNNING') {
+        this.solicitarPausaParaDecisionCancelacion();
+      }
+    }, 250);
+  }
+
+  private detenerIntentosPausaDecisionCancelacion(): void {
+    if (this.pauseDecisionIntervalId !== undefined) {
+      window.clearInterval(this.pauseDecisionIntervalId);
+      this.pauseDecisionIntervalId = undefined;
+    }
+  }
+
   private esEstadoActivoParaDecision(estado?: ProgresoGeneracionQr['estado']): boolean {
-    return estado === 'RUNNING' || estado === 'PAUSING' || estado === 'PAUSED' || estado === 'CANCELLING';
+    return estado === 'RUNNING' || estado === 'PAUSING' || estado === 'PAUSED';
   }
 
   private obtenerLabelCursoSeleccionado(): string {
