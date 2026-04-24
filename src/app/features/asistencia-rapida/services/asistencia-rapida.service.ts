@@ -6,6 +6,7 @@ import { TipoAsistenciaRapida } from '../models/tipo-asistencia-rapida.model';
 import { AsistenciaRapidaResponse } from '../models/asistencia-rapida-response.model';
 import { RegistrarAsistenciaRapida } from '../models/registrar-asistencia-rapida.model';
 import { EstudianteBusquedaRapida } from '../models/estudiante-busqueda-rapida.model';
+import { environment } from '../../../../environments/environment';
 
 export interface DeshacerAsistenciaRapidaDto {
   estudianteId: string;
@@ -20,7 +21,7 @@ export interface ServerTimeResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AsistenciaRapidaService {
-  private readonly apiUrl = 'http://localhost:7146/api/asistencia-rapida';
+  private readonly apiUrl = `${environment.apiUrl}/api/asistencia-rapida`;
 
   constructor(private http: HttpClient) {}
 
