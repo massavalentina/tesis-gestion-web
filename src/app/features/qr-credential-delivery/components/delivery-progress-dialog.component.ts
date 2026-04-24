@@ -43,9 +43,9 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
         </p>
       </mat-dialog-content>
 
-      <mat-dialog-actions class="dlg__actions" *ngIf="progress?.estado === 'RUNNING'">
+      <mat-dialog-actions class="dlg__actions" *ngIf="mostrarAccionDecision()">
         <button mat-stroked-button class="btn-cancel" (click)="solicitarCancelacion.emit()">
-          Cancelar envío
+          {{ textoAccionDecision() }}
         </button>
       </mat-dialog-actions>
     </div>
@@ -115,6 +115,22 @@ export class DialogoProgresoEnvioQrComponent {
       return 'Preparando envio.';
     }
 
+    if (this.progress.estado === 'PAUSING') {
+      return 'Pausa solicitada. Se completara el envio en curso antes de mostrar las opciones.';
+    }
+
+    if (this.progress.estado === 'PAUSED') {
+      return 'Proceso en pausa. Elegi si queres continuarlo o cancelar pendientes.';
+    }
+
+    if (this.progress.estado === 'CANCELLING') {
+      return 'Cancelacion solicitada. Se detendra al terminar el envio en curso.';
+    }
+
+    if (this.progress.estado === 'CANCELLED') {
+      return 'Proceso cancelado.';
+    }
+
     if (this.progress.estado === 'FAILED') {
       return 'El proceso finalizo con error.';
     }
@@ -124,5 +140,15 @@ export class DialogoProgresoEnvioQrComponent {
     }
 
     return `${this.progress.procesados} de ${this.progress.total} credenciales procesadas`;
+  }
+
+  mostrarAccionDecision(): boolean {
+    return this.progress?.estado === 'RUNNING' || this.progress?.estado === 'PAUSED';
+  }
+
+  textoAccionDecision(): string {
+    return this.progress?.estado === 'PAUSED'
+      ? 'Elegir accion'
+      : 'Cancelar envio';
   }
 }

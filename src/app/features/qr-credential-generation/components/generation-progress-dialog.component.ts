@@ -37,6 +37,25 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
           </div>
         </div>
 
+        <div class="summary-grid" *ngIf="progress">
+          <div class="summary-item">
+            <span>Procesados</span>
+            <strong>{{ progress.procesados }} / {{ progress.total }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Generados</span>
+            <strong>{{ progress.generados }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Desactivados</span>
+            <strong>{{ progress.desactivados }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Errores</span>
+            <strong>{{ progress.errores }}</strong>
+          </div>
+        </div>
+
         <p class="last-message" *ngIf="progress?.ultimoMensaje">
           {{ progress?.ultimoEstudiante ? progress?.ultimoEstudiante + ': ' : '' }}{{ progress?.ultimoMensaje }}
         </p>
@@ -44,9 +63,13 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
 
       <mat-dialog-actions class="dlg__actions" *ngIf="puedeSolicitarCancelacion()">
         <button mat-stroked-button class="btn-cancel" (click)="solicitarCancelacion.emit()">
-          Cancelar proceso
+          Detener generacion
         </button>
       </mat-dialog-actions>
+
+      <p class="cancel-hint" *ngIf="puedeSolicitarCancelacion()">
+        Si detenes el proceso, se completa primero el estudiante en curso y luego se aplicara tu decision.
+      </p>
     </div>
   `,
   styles: [`
@@ -160,6 +183,34 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
       font-size: 13px;
     }
 
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #dde7f0;
+      background: #fff;
+      display: grid;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .summary-item span {
+      color: #6f89a2;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .summary-item strong {
+      color: #345571;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
     .dlg__actions {
       display: flex;
       justify-content: center;
@@ -175,6 +226,14 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
       padding: 10px 18px !important;
     }
 
+    .cancel-hint {
+      margin: 10px 0 0;
+      color: #6d8298;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     @media (max-width: 540px) {
       .progress-content {
         min-width: 0;
@@ -182,6 +241,10 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
 
       h2 {
         font-size: 20px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
       }
     }
   `]

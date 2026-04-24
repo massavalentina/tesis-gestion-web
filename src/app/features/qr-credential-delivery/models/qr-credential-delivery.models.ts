@@ -13,6 +13,8 @@ export type EstadoFilaEnvioQr =
   | 'EMAIL_INVALIDO';
 
 export type EstadoFiltroEnvioQr = 'TODOS' | EstadoFilaEnvioQr;
+export type CampoOrdenTablaQr = 'NOMBRE' | 'FECHA_QR';
+export type DireccionOrdenTablaQr = 'ASC' | 'DESC';
 
 export interface ResumenEnvioQr {
   idCurso: string;
@@ -47,7 +49,7 @@ export interface RespuestaInicioEnvioQr {
 
 export interface ProgresoEnvioQr {
   jobId: string;
-  estado: 'RUNNING' | 'COMPLETED' | 'FAILED';
+  estado: 'RUNNING' | 'PAUSING' | 'PAUSED' | 'CANCELLING' | 'CANCELLED' | 'COMPLETED' | 'FAILED';
 
   total: number;
   procesados: number;

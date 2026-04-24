@@ -16,10 +16,10 @@ export interface DatosCancelacionEnvioQr {
   imports: [CommonModule, MatDialogModule, MatButtonModule],
   template: `
     <div class="dlg">
-      <div class="dlg__badge">Cancelar envío</div>
-      <h2>¿Querés detener el envío?</h2>
+      <div class="dlg__badge">Proceso pausado</div>
+      <h2>¿Qué querés hacer con el envío?</h2>
       <p class="dlg__sub">
-        El sistema termina el envío en curso y luego detiene los pendientes.
+        El proceso ya está en pausa. Podés continuarlo o cancelar los envíos pendientes.
       </p>
 
       <mat-dialog-content class="dlg__content">
@@ -38,7 +38,7 @@ export interface DatosCancelacionEnvioQr {
         <div class="dlg__card">
           <div class="row">
             <span>Detalle</span>
-            <strong>El envío en curso se completa antes de detener</strong>
+            <strong>Si cancelás, no se enviarán los pendientes.</strong>
           </div>
         </div>
 
@@ -49,10 +49,10 @@ export interface DatosCancelacionEnvioQr {
 
       <mat-dialog-actions class="dlg__actions">
         <button mat-stroked-button class="btn-ghost" (click)="cancelar()">
-          Seguir enviando
+          Continuar enviando
         </button>
         <button mat-raised-button class="btn-primary" (click)="confirmar()">
-          Confirmar cancelación
+          Cancelar y detener pendientes
         </button>
       </mat-dialog-actions>
     </div>

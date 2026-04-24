@@ -20,7 +20,7 @@ export interface ResultadoCancelacionGeneracionQr {
   imports: [CommonModule, MatDialogModule, MatButtonModule],
   template: `
     <div class="dlg">
-      <div class="dlg__badge">Cancelar proceso</div>
+      <div class="dlg__badge">Detener proceso</div>
       <h2>¿Querés detener la generación?</h2>
       <p class="dlg__sub">
         Ya se procesaron {{ data.procesados }} de {{ data.total }} estudiantes.
@@ -28,22 +28,28 @@ export interface ResultadoCancelacionGeneracionQr {
 
       <mat-dialog-content class="dlg__content">
         <div class="dlg__card">
+          <p class="card-title">Ultima actualizacion visible</p>
           <p>
-            Hasta ahora se generaron {{ data.generados }} QR(s).
-            Si cancelás, el sistema termina el alumno actual y después detiene el proceso.
+            QR generados confirmados en pantalla: <strong>{{ data.generados }}</strong>.
+          </p>
+          <p class="card-note" *ngIf="data.generados === 0 && data.procesados > 0">
+            El conteo puede seguir actualizandose mientras se termina el estudiante en curso.
+          </p>
+          <p class="card-note">
+            Al detener, el sistema completa el estudiante actual y luego aplica la opcion elegida.
           </p>
         </div>
       </mat-dialog-content>
 
       <mat-dialog-actions class="dlg__actions">
         <button mat-stroked-button class="btn-ghost" (click)="cerrar()">
-          Seguir generando
+          Continuar generando
         </button>
-        <button mat-stroked-button class="btn-warn" (click)="confirmar(true)">
-          Cancelar y conservar generados
+        <button mat-raised-button class="btn-primary" (click)="confirmar(true)">
+          Detener y conservar generados
         </button>
-        <button mat-raised-button class="btn-primary" (click)="confirmar(false)">
-          Cancelar y revertir
+        <button mat-stroked-button class="btn-warn" (click)="confirmar(false)">
+          Detener y revertir generados
         </button>
       </mat-dialog-actions>
     </div>
@@ -102,6 +108,22 @@ export interface ResultadoCancelacionGeneracionQr {
       margin: 0;
     }
 
+    .card-title {
+      color: #3f5f7a;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 900;
+      margin-bottom: 8px !important;
+    }
+
+    .card-note {
+      margin-top: 8px !important;
+      color: #5f7790;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .dlg__actions {
       display: flex;
       flex-direction: column;
@@ -118,13 +140,13 @@ export interface ResultadoCancelacionGeneracionQr {
     }
 
     .btn-primary {
-      background: #c65a3a !important;
+      background: #86b8ea !important;
       color: #fff !important;
     }
 
     .btn-warn {
-      border-color: #d8c4a4 !important;
-      color: #9a6700 !important;
+      border-color: #d8a8a1 !important;
+      color: #b05447 !important;
       background: #fff !important;
     }
 

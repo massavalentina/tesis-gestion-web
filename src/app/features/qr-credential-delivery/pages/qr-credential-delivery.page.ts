@@ -56,7 +56,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
         </div>
 
         <div class="controls">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Curso</mat-label>
             <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
               <mat-option [value]="null">Seleccioná un curso</mat-option>
@@ -66,13 +66,21 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Alcance</mat-label>
             <mat-select [(ngModel)]="alcanceSeleccionado" (selectionChange)="cargarResumen()">
               <mat-option value="PENDIENTES">Solo pendientes</mat-option>
               <mat-option value="TODOS">Pendientes y ya enviados</mat-option>
             </mat-select>
           </mat-form-field>
+
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!puedeIniciarEnvio()"
+            (click)="iniciarEnvio()">
+            Iniciar envío
+          </button>
         </div>
 
         <p class="hint" *ngIf="!cursoSeleccionadoId">
@@ -83,20 +91,20 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
 
         <p class="hint" *ngIf="resumenCargando">Cargando resumen...</p>
 
-        <div class="summary-grid" *ngIf="resumen">
+        <div class="summary-grid">
           <article class="summary-card">
             <span>Total tutores activos</span>
-            <strong>{{ resumen.totalTutoresPrincipales }}</strong>
+            <strong>{{ resumen?.totalTutoresPrincipales ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
             <span>QRs pendientes de enviar</span>
-            <strong>{{ resumen.totalQrPendientesEnvio }}</strong>
+            <strong>{{ resumen?.totalQrPendientesEnvio ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
             <span>Total QRs enviados</span>
-            <strong>{{ resumen.totalQrEnviados }}</strong>
+            <strong>{{ resumen?.totalQrEnviados ?? 0 }}</strong>
           </article>
         </div>
 
@@ -104,19 +112,9 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
           <strong>Lectura sugerida:</strong> {{ construirSugerenciaResumen(resumen) }}
         </div>
 
-        <div class="footer" *ngIf="resumen">
-          <div class="meta">
-            Candidatos según alcance: <strong>{{ resumen.totalCandidatosSegunAlcance }}</strong>
-            | Estimación: <strong>{{ resumen.estimacionSegundos }}s</strong>
-          </div>
-
-          <button
-            mat-raised-button
-            color="primary"
-            [disabled]="!puedeIniciarEnvio()"
-            (click)="iniciarEnvio()">
-            Iniciar envío
-          </button>
+        <div class="meta" *ngIf="resumen">
+          Candidatos según alcance: <strong>{{ resumen.totalCandidatosSegunAlcance }}</strong>
+          | Estimación: <strong>{{ resumen.estimacionSegundos }}s</strong>
         </div>
       </section>
     </div>
@@ -129,6 +127,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private pollingSubscription?: Subscription;
   private progressDialogRef?: MatDialogRef<DialogoProgresoEnvioQrComponent>;
+  private cancelDialogRef?: MatDialogRef<DialogoCancelacionEnvioQrComponent>;
   private closeProgressDialogTimeoutId?: number;
 
   cursos: OpcionCursoEnvioQr[] = [];
@@ -143,6 +142,8 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   progreso: ProgresoEnvioQr | null = null;
   currentJobId: string | null = null;
   cancelacionSolicitada = false;
+  pausaSolicitadaParaDecision = false;
+  decisionCancelacionPendiente = false;
 
   constructor(
     private servicio: ServicioEnvioCredencialesQr,
@@ -152,6 +153,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.destroyRef.onDestroy(() => {
       this.detenerPolling();
       this.cancelarCierreDialogoProgresoPendiente();
+      this.cerrarDialogoCancelacion();
       this.cerrarDialogoProgreso();
     });
   }
@@ -271,8 +273,11 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.ejecutandoJob = true;
     this.progreso = null;
     this.cancelacionSolicitada = false;
+    this.pausaSolicitadaParaDecision = false;
+    this.decisionCancelacionPendiente = false;
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
+    this.cerrarDialogoCancelacion();
 
     this.servicio.iniciarJob({
       idCurso: this.cursoSeleccionadoId,
@@ -306,10 +311,17 @@ export class PaginaEnvioCredencialesQr implements OnInit {
           this.progreso = progreso;
           this.actualizarDialogoProgreso(progreso);
 
-          if (progreso.estado === 'COMPLETED' || progreso.estado === 'FAILED') {
+          if (this.decisionCancelacionPendiente && progreso.estado === 'PAUSED') {
+            this.abrirDialogoDecisionCancelacion();
+          }
+
+          if (progreso.estado === 'COMPLETED' || progreso.estado === 'FAILED' || progreso.estado === 'CANCELLED') {
             this.detenerPolling();
             this.ejecutandoJob = false;
             this.currentJobId = null;
+            this.pausaSolicitadaParaDecision = false;
+            this.decisionCancelacionPendiente = false;
+            this.cerrarDialogoCancelacion();
             this.programarCierreDialogoProgreso(progreso);
           }
         },
@@ -318,7 +330,10 @@ export class PaginaEnvioCredencialesQr implements OnInit {
           this.ejecutandoJob = false;
           this.currentJobId = null;
           this.cancelacionSolicitada = false;
+          this.pausaSolicitadaParaDecision = false;
+          this.decisionCancelacionPendiente = false;
           this.cancelarCierreDialogoProgresoPendiente();
+          this.cerrarDialogoCancelacion();
           this.cerrarDialogoProgreso();
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del envío.');
         }
@@ -351,14 +366,72 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.progressDialogRef = undefined;
   }
 
+  private cerrarDialogoCancelacion(): void {
+    this.cancelDialogRef?.close();
+    this.cancelDialogRef = undefined;
+  }
+
   private confirmarCancelacionEnvio(): void {
-    if (!this.currentJobId || !this.progreso || this.progreso.estado !== 'RUNNING' || this.cancelacionSolicitada) {
+    if (!this.currentJobId || !this.progreso || this.cancelacionSolicitada) {
+      return;
+    }
+
+    if (!this.esEstadoActivoParaDecision(this.progreso.estado)) {
+      return;
+    }
+
+    this.decisionCancelacionPendiente = true;
+
+    if (this.progreso.estado === 'RUNNING') {
+      this.solicitarPausaParaDecisionCancelacion();
+      return;
+    }
+
+    if (this.progreso.estado === 'PAUSED') {
+      this.abrirDialogoDecisionCancelacion();
+    }
+  }
+
+  private solicitarPausaParaDecisionCancelacion(): void {
+    if (!this.currentJobId || this.pausaSolicitadaParaDecision || this.progreso?.estado !== 'RUNNING') {
+      return;
+    }
+
+    this.pausaSolicitadaParaDecision = true;
+
+    this.servicio.pausarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.pausaSolicitadaParaDecision = false;
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+
+          if (this.decisionCancelacionPendiente && progreso.estado === 'PAUSED') {
+            this.abrirDialogoDecisionCancelacion();
+          }
+        },
+        error: error => {
+          this.pausaSolicitadaParaDecision = false;
+          this.decisionCancelacionPendiente = false;
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo pausar el envío para decidir la cancelación.');
+        }
+      });
+  }
+
+  private abrirDialogoDecisionCancelacion(): void {
+    if (!this.currentJobId || !this.progreso || this.progreso.estado !== 'PAUSED') {
+      return;
+    }
+
+    if (this.cancelDialogRef) {
       return;
     }
 
     const pendientesCancelar = Math.max(this.progreso.total - this.progreso.procesados, 0);
-    const dialogRef = this.dialog.open(DialogoCancelacionEnvioQrComponent, {
+    this.cancelDialogRef = this.dialog.open(DialogoCancelacionEnvioQrComponent, {
       width: '500px',
+      disableClose: true,
       panelClass: 'qr-generation-dialog',
       data: {
         procesados: this.progreso.procesados,
@@ -368,11 +441,39 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       } satisfies DatosCancelacionEnvioQr
     });
 
-    dialogRef.afterClosed()
+    this.cancelDialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(confirmado => {
+        this.cancelDialogRef = undefined;
+        this.decisionCancelacionPendiente = false;
+
+        if (!this.currentJobId || !this.progreso || !this.esEstadoActivoParaDecision(this.progreso.estado)) {
+          return;
+        }
+
         if (confirmado) {
           this.ejecutarCancelacionEnvio();
+          return;
+        }
+
+        this.reanudarEnvio();
+      });
+  }
+
+  private reanudarEnvio(): void {
+    if (!this.currentJobId || this.progreso?.estado === 'RUNNING') {
+      return;
+    }
+
+    this.servicio.reanudarJob(this.currentJobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progreso => {
+          this.progreso = progreso;
+          this.actualizarDialogoProgreso(progreso);
+        },
+        error: error => {
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo reanudar el envío.');
         }
       });
   }
@@ -383,6 +484,8 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     }
 
     this.cancelacionSolicitada = true;
+    this.pausaSolicitadaParaDecision = false;
+    this.decisionCancelacionPendiente = false;
 
     this.servicio.cancelarJob(this.currentJobId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -412,6 +515,8 @@ export class PaginaEnvioCredencialesQr implements OnInit {
 
       this.abrirDialogoResultado(progreso);
       this.cancelacionSolicitada = false;
+      this.pausaSolicitadaParaDecision = false;
+      this.decisionCancelacionPendiente = false;
     }, 700);
   }
 
@@ -423,7 +528,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   }
 
   private abrirDialogoResultado(progreso: ProgresoEnvioQr): void {
-    const fueCancelado = (progreso.ultimoMensaje ?? '').toUpperCase().includes('CANCEL');
+    const fueCancelado = progreso.estado === 'CANCELLED';
 
     const datos = progreso.estado === 'FAILED'
       ? {
@@ -469,6 +574,10 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   private detenerPolling(): void {
     this.pollingSubscription?.unsubscribe();
     this.pollingSubscription = undefined;
+  }
+
+  private esEstadoActivoParaDecision(estado?: ProgresoEnvioQr['estado']): boolean {
+    return estado === 'RUNNING' || estado === 'PAUSING' || estado === 'PAUSED';
   }
 
   private construirDatosConfirmacion(): DatosConfirmacionEnvioQr {

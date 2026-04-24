@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   AlcanceEnvioQr,
+  CampoOrdenTablaQr,
+  DireccionOrdenTablaQr,
   EstadoFilaEnvioQr,
   OpcionCursoEnvioQr,
   PaginaEstadoEnvioQr,
@@ -20,6 +22,8 @@ export class ServicioEnvioCredencialesQr {
   private readonly summaryUrl = `${this.baseUrl}/api/qr-credentials/delivery/summary`;
   private readonly startJobUrl = `${this.baseUrl}/api/qr-credentials/delivery/start-job`;
   private readonly progressUrl = `${this.baseUrl}/api/qr-credentials/delivery/progress`;
+  private readonly pauseUrl = `${this.baseUrl}/api/qr-credentials/delivery/pause`;
+  private readonly resumeUrl = `${this.baseUrl}/api/qr-credentials/delivery/resume`;
   private readonly cancelUrl = `${this.baseUrl}/api/qr-credentials/delivery/cancel`;
   private readonly studentsUrl = `${this.baseUrl}/api/qr-credentials/delivery/students`;
   private readonly studentQrImageUrl = `${this.baseUrl}/api/qr-credentials/delivery/student`;
@@ -46,6 +50,14 @@ export class ServicioEnvioCredencialesQr {
     return this.http.get<ProgresoEnvioQr>(`${this.progressUrl}/${jobId}`);
   }
 
+  pausarJob(jobId: string): Observable<ProgresoEnvioQr> {
+    return this.http.post<ProgresoEnvioQr>(`${this.pauseUrl}/${jobId}`, {});
+  }
+
+  reanudarJob(jobId: string): Observable<ProgresoEnvioQr> {
+    return this.http.post<ProgresoEnvioQr>(`${this.resumeUrl}/${jobId}`, {});
+  }
+
   cancelarJob(jobId: string): Observable<ProgresoEnvioQr> {
     return this.http.post<ProgresoEnvioQr>(`${this.cancelUrl}/${jobId}`, {});
   }
@@ -56,6 +68,8 @@ export class ServicioEnvioCredencialesQr {
     busqueda?: string;
     page?: number;
     pageSize?: number;
+    sortBy?: CampoOrdenTablaQr;
+    sortDir?: DireccionOrdenTablaQr;
   }): Observable<PaginaEstadoEnvioQr> {
     let httpParams = new HttpParams().set('cursoId', params.cursoId);
 
@@ -73,6 +87,14 @@ export class ServicioEnvioCredencialesQr {
 
     if (params.pageSize) {
       httpParams = httpParams.set('pageSize', params.pageSize);
+    }
+
+    if (params.sortBy) {
+      httpParams = httpParams.set('sortBy', params.sortBy);
+    }
+
+    if (params.sortDir) {
+      httpParams = httpParams.set('sortDir', params.sortDir);
     }
 
     return this.http.get<PaginaEstadoEnvioQr>(this.studentsUrl, { params: httpParams });

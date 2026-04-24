@@ -11,6 +11,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ServicioEnvioCredencialesQr } from '../../qr-credential-delivery/services/qr-credential-delivery.service';
 import {
+  CampoOrdenTablaQr,
+  DireccionOrdenTablaQr,
   EstadoFilaEnvioQr,
   EstadoFiltroEnvioQr,
   FilaEstadoEnvioQr,
@@ -111,7 +113,12 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
                   <th>Tutor</th>
                   <th>Email tutor</th>
                   <th>Estado</th>
-                  <th>Fecha QR</th>
+                  <th class="sortable-col">
+                    <button type="button" class="sort-btn" (click)="alternarOrdenFechaQr()">
+                      Fecha QR
+                      <span class="sort-indicator">{{ indicadorOrdenFechaQr() }}</span>
+                    </button>
+                  </th>
                   <th class="actions-col">Acciones</th>
                 </tr>
               </thead>
@@ -178,6 +185,8 @@ export class QrCredentialStatusTableComponent implements OnInit {
   cursos: OpcionCursoEnvioQr[] = [];
   cursoSeleccionadoId: string | null = null;
   estadoSeleccionado: EstadoFiltroEnvioQr = 'TODOS';
+  ordenCampo: CampoOrdenTablaQr = 'NOMBRE';
+  ordenDireccion: DireccionOrdenTablaQr = 'ASC';
 
   alumnos: FilaEstadoEnvioQr[] = [];
 
@@ -236,6 +245,18 @@ export class QrCredentialStatusTableComponent implements OnInit {
   limpiarBusqueda(): void {
     this.busqueda = '';
     this.aplicarFiltros();
+  }
+
+  alternarOrdenFechaQr(): void {
+    if (this.ordenCampo !== 'FECHA_QR') {
+      this.ordenCampo = 'FECHA_QR';
+      this.ordenDireccion = 'DESC';
+    } else {
+      this.ordenDireccion = this.ordenDireccion === 'DESC' ? 'ASC' : 'DESC';
+    }
+
+    this.paginaActual = 1;
+    this.cargarAlumnos();
   }
 
   irPaginaAnterior(): void {
@@ -310,6 +331,14 @@ export class QrCredentialStatusTableComponent implements OnInit {
     }
 
     return parsed.toLocaleDateString('es-AR');
+  }
+
+  indicadorOrdenFechaQr(): string {
+    if (this.ordenCampo !== 'FECHA_QR') {
+      return '<>';
+    }
+
+    return this.ordenDireccion === 'DESC' ? 'v' : '^';
   }
 
   previsualizarQr(row: FilaEstadoEnvioQr): void {
@@ -407,7 +436,9 @@ export class QrCredentialStatusTableComponent implements OnInit {
       estado: this.estadoSeleccionado,
       busqueda: this.busqueda,
       page: paginaSolicitada,
-      pageSize: this.pageSize
+      pageSize: this.pageSize,
+      sortBy: this.ordenCampo,
+      sortDir: this.ordenDireccion
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

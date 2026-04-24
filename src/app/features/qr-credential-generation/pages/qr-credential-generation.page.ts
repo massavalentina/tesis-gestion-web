@@ -65,7 +65,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Curso</mat-label>
             <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
-              <mat-option [value]="null">Todos los cursos</mat-option>
+              <mat-option [value]="null">Seleccioná un curso</mat-option>
               <mat-option *ngFor="let curso of cursos" [value]="curso.id">
                 {{ curso.label }}
               </mat-option>
@@ -91,7 +91,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
         </div>
 
         <p class="hint" *ngIf="!cursoSeleccionadoId">
-          El resumen muestra todos los cursos. Para iniciar la generación tenés que elegir uno.
+          Seleccioná un curso para ver el resumen y ejecutar la generación.
         </p>
 
         <p class="error" *ngIf="errorMensaje">{{ errorMensaje }}</p>
@@ -103,7 +103,7 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
           </article>
 
           <article class="summary-card">
-            <span>Total QR activos</span>
+            <span>Total QR creados</span>
             <strong>{{ resumen.totalQrActivos }}</strong>
           </article>
 
@@ -314,14 +314,14 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     }
 
     if (resumen.totalQrActivos === 0) {
-      return 'No existen QRs activos. El alcance "Estudiantes activos" o "Estudiantes sin QR" debería cubrir el caso inicial.';
+      return 'No existen QRs creados. El alcance "Estudiantes activos" o "Estudiantes sin QR" debería cubrir el caso inicial.';
     }
 
     if (resumen.totalPendientesGenerar === 0) {
-      return 'Todos los estudiantes activos ya tienen un QR activo. Usá "Generar a todos" solo si necesitás regenerarlos.';
+      return 'Todos los estudiantes activos ya tienen un QR creado. Usá "Generar a todos" solo si necesitás regenerarlos.';
     }
 
-    return 'Hay alumnos con y sin QR activo. "Estudiantes sin QR" evita regenerar los ya vigentes; "Generar a todos" reemplaza los actuales.';
+    return 'Hay alumnos con y sin QR creado. "Estudiantes sin QR" evita regenerar los ya vigentes; "Generar a todos" reemplaza los actuales.';
   }
 
   private obtenerMensajeError(error: unknown, fallback: string): string {
@@ -520,7 +520,10 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
       : progreso.estado === 'CANCELLED'
         ? {
             titulo: 'Proceso cancelado',
-            mensaje: progreso.ultimoMensaje ?? 'La generación se detuvo antes de completarse.',
+            mensaje: progreso.ultimoMensaje
+              ?? (progreso.procesados >= progreso.total
+                ? 'La solicitud de detención llegó cuando el proceso ya estaba finalizando. Revisá el resumen final para confirmar el resultado.'
+                : 'La generación se detuvo antes de completarse.'),
             icono: 'info',
             color: 'accent' as const
           }
@@ -569,8 +572,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.abrirDialogoFeedback({
       titulo: 'Estamos deteniendo la generación',
       mensaje: mantenerGenerados
-        ? 'Vamos a terminar el alumno que está en curso y a conservar los QRs generados hasta ahora.'
-        : 'Vamos a terminar el alumno que está en curso y luego a revertir los QRs generados hasta ahora.',
+        ? 'Se completará el alumno en curso y se conservarán los QR generados hasta la última actualización.'
+        : 'Se completará el alumno en curso y luego se revertirán los QR generados hasta la última actualización.',
       modo: 'loading'
     });
 
