@@ -387,6 +387,17 @@
 .col-hora   { color: #475569; white-space: nowrap; }
 .col-estado { min-width: 100px; }
 
+/* Chips azules de asistencia (LLT, RE/RA/RAE) en tabla y detalle */
+.pd-asist-chip { display: inline-block; border-radius: 10px; padding: 1px 7px; font-size: 0.70rem; font-weight: 700; white-space: nowrap; cursor: default; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+/* Retiro chips en parte diario */
+.pd-llegada-chip { display: inline-block; border-radius: 10px; padding: 1px 7px; font-size: 0.70rem; font-weight: 600; white-space: nowrap; cursor: default; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.pd-retiro-chip { display: inline-flex; align-items: center; gap: 3px; border-radius: 10px; padding: 1px 7px; font-size: 0.70rem; font-weight: 600; white-space: nowrap; cursor: default; }
+.pd-retiro-chip-naranja { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.pd-retiro-chip-rojo    { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.pd-retiro-chip-verde   { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.pd-retiro-icon { font-size: 13px; height: 13px; width: 13px; }
+
 .fila-presente td { background: rgba(21,128,61,.03); }
 .fila-ausente  td { background: rgba(185,28,28,.03); }
 .fila-retirado td { background: rgba(180,83,9,.03);  }
@@ -427,6 +438,7 @@
 .log-badge--nota       { background: #f0fdf4; color: #15803d; }
 .log-badge--asistencia { background: #fff7ed; color: #c2410c; }
 .log-badge--horario    { background: #eff6ff; color: #1d4ed8; }
+.log-badge--retiro     { background: #f5f3ff; color: #6d28d9; }
 
 .log-ts      { font-size: 0.75rem; font-weight: 600; color: #475569; }
 .log-autor-tag { font-size: 0.75rem; color: #94a3b8; margin-left: auto; }
@@ -795,6 +807,7 @@
   .pp-log-badge--nota       { background: #f0fdf4; color: #15803d; }
   .pp-log-badge--asistencia { background: #fff7ed; color: #c2410c; }
   .pp-log-badge--horario    { background: #eff6ff; color: #1d4ed8; }
+  .pp-log-badge--retiro     { background: #f5f3ff; color: #6d28d9; }
   .pp-log-detalle { font-size: 7.5pt; color: #475569; }
 
   .pp-empty { color: #94a3b8; font-size: 8pt; font-style: italic; padding: 4pt 0; }

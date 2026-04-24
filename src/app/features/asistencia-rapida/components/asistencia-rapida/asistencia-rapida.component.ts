@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs/operators';
 
@@ -21,6 +21,8 @@ import {
 import { RegistrarAsistenciaRapida } from '../../models/registrar-asistencia-rapida.model';
 import { AsistenciaRapidaResponse } from '../../models/asistencia-rapida-response.model';
 import { EstudianteBusquedaRapida } from '../../models/estudiante-busqueda-rapida.model';
+
+import { MatInputModule } from '@angular/material/input';
 
 import {
   AsistenciaConfirmDialogComponent,
@@ -38,12 +40,14 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatListModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatInputModule,
     MatDialogModule
   ],
   templateUrl: './asistencia-rapida.component.html',
@@ -65,6 +69,9 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
   readonly turnoSeleccionado: 'MANANA' = 'MANANA';
   readonly SIN_DEFINIR_ID = '__SIN_DEFINIR__';
+
+  /** Hora manual opcional (HH:MM). Si está seteada, reemplaza la hora del servidor. */
+  horaManual: string | null = null;
 
   tipoSeleccionadoId: string | null = null;
   tipoError = false;
@@ -198,6 +205,12 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
     this.asistenciaRapidaService.getServerTime().subscribe({
       next: st => {
+        // Si el usuario ingresó hora manual, usarla con formato HH:mm:ss; si no, usar la del servidor.
+        // El input type="time" devuelve "HH:mm" sin segundos; el backend espera "HH:mm:ss".
+        // ?.trim() || para que un string vacío "" también caiga al fallback.
+        const horaBase = this.horaManual?.trim();
+        const horaEfectiva = horaBase ? `${horaBase}:00` : st.hora;
+
         const tipo = this.tipos.find(t => t.id === this.tipoSeleccionadoId);
         const tipoTexto = tipo ? `${tipo.codigo} - ${tipo.descripcion}` : 'Tipo seleccionado';
 
@@ -211,7 +224,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
           dni: this.alumnoSeleccionado!.documento,
           curso: this.alumnoSeleccionado!.curso ?? '-',
           fecha: st.fecha,
-          hora: st.hora,
+          hora: horaEfectiva,
           tipoTexto,
           detalle: esSinDefinir
             ? 'El alumno volverá a figurar como no registrado hoy en la búsqueda rápida.'
@@ -244,7 +257,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
               next: (resp: AsistenciaRapidaResponse) => {
                 const sdata: AsistenciaSuccessDialogData = {
                   titulo: 'Turno restablecido',
-                  mensaje: `${resp.mensaje} (${st.fecha} ${st.hora}hs)`
+                  mensaje: `${resp.mensaje} (${st.fecha} ${horaEfectiva}hs)`
                 };
 
                 const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {
@@ -271,7 +284,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
             fecha: st.fecha,
             turno: this.turnoSeleccionado,
             tipoAsistenciaId: this.tipoSeleccionadoId!,
-            hora: st.hora
+            hora: horaEfectiva  // hora manual si está seteada, o la del servidor
           };
 
           this.asistenciaRapidaService.registrarAsistencia(dto).subscribe({
@@ -280,7 +293,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
                 titulo: this.alumnoSeleccionado!.registradoHoy
                   ? 'Corrección realizada'
                   : 'Registro realizado',
-                mensaje: `${resp.mensaje} (${st.fecha} ${st.hora}hs)`
+                mensaje: `${resp.mensaje} (${st.fecha} ${horaEfectiva}hs)`
               };
 
               const sref = this.dialog.open(AsistenciaSuccessDialogComponent, {

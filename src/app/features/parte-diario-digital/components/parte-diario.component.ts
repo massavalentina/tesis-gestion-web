@@ -30,6 +30,8 @@ import { ClaseDictadaDialogComponent, ClaseDictadaDialogData, ClaseDictadaDialog
 import { DetalleEstudianteDialogComponent, DetalleDialogData }
   from '../../asistencia-general-manual/components/detalle-estudiante-dialog/detalle-estudiante-dialog.component';
 import { FilaAsistenciaManual } from '../../asistencia-general-manual/models/fila-asistencia-manual.model';
+import { RetiroInfoDialogComponent, RetiroInfoDialogData }
+  from '../../retiro-anticipado/components/retiro-info-dialog/retiro-info-dialog.component';
 
 // ── Date adapter DD/MM/YYYY (igual que asistencia-manual) ────────────────────
 @Injectable()
@@ -188,9 +190,18 @@ export class ParteDiarioComponent implements OnInit {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
-  get presentes(): EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'Presente')   ?? []; }
+  get presentes(): EstudianteParte[]  {
+    return this.turnoActual?.estudiantes.filter(e =>
+      e.estado === 'Presente' ||
+      (e.estado === 'Retirado' && e.retiroActivo?.etiquetaEstado === 'Reingresado')
+    ) ?? [];
+  }
   get ausentes():  EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'Ausente')    ?? []; }
-  get retirados(): EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'Retirado')   ?? []; }
+  get retirados(): EstudianteParte[]  {
+    return this.turnoActual?.estudiantes.filter(e =>
+      e.estado === 'Retirado' && e.retiroActivo?.etiquetaEstado !== 'Reingresado'
+    ) ?? [];
+  }
   get sinReg():    EstudianteParte[]  { return this.turnoActual?.estudiantes.filter(e => e.estado === 'SinRegistro') ?? []; }
 
   sortNombreAsc = true;
@@ -210,6 +221,49 @@ export class ParteDiarioComponent implements OnInit {
       case 'Retirado':    return 'chip-retirado';
       default:            return 'chip-sin';
     }
+  }
+
+  retiroChipClass(etiqueta: string): string {
+    switch (etiqueta) {
+      case 'ConReingreso':     return 'naranja';
+      case 'ReingresoVencido': return 'rojo';
+      case 'Reingresado':      return 'verde';
+      default:                 return 'naranja';
+    }
+  }
+
+  retiroChipIcon(etiqueta: string): string {
+    switch (etiqueta) {
+      case 'ConReingreso':     return 'schedule';
+      case 'ReingresoVencido': return 'warning';
+      case 'Reingresado':      return 'check_circle';
+      default:                 return 'schedule';
+    }
+  }
+
+  retiroEtiquetaLabel(etiqueta: string): string {
+    switch (etiqueta) {
+      case 'ConReingreso':     return 'Reingreso Pendiente';
+      case 'ReingresoVencido': return 'Reingreso Vencido';
+      case 'Reingresado':      return 'Reingresado';
+      default:                 return etiqueta;
+    }
+  }
+
+  onVerRetiro(est: EstudianteParte): void {
+    if (!est.retiroActivo) return;
+    this.dialog.open(RetiroInfoDialogComponent, {
+      width:        '580px',
+      maxWidth:     '96vw',
+      disableClose: false,
+      data: {
+        estudiante:   { idEstudiante: est.idEstudiante, nombre: est.nombre, apellido: est.apellido, documento: est.documento },
+        cursoLabel:   this.printCursoLabel,
+        retiroActivo: { ...est.retiroActivo },
+        fecha:        this.fechaString,
+        readonly:     true,
+      } satisfies RetiroInfoDialogData,
+    });
   }
 
   formatTimestamp(ts: string): string {
@@ -261,6 +315,10 @@ export class ParteDiarioComponent implements OnInit {
   getCodeClass(code: string): string {
     if (!code || code === '—') return 'code-null';
     return 'code-' + code.toLowerCase().replace(/[^a-z]/g, '');
+  }
+
+  isLLT(codigo: string | null | undefined): boolean {
+    return !!codigo && codigo.toUpperCase().startsWith('LLT');
   }
 
   printTimestamp = '';
@@ -375,7 +433,7 @@ export class ParteDiarioComponent implements OnInit {
 
     const ref = this.dialog.open<ClaseDictadaDialogComponent, ClaseDictadaDialogData, ClaseDictadaDialogResult | null>(
       ClaseDictadaDialogComponent,
-      { data: { clase, nuevoDictada }, width: '460px' },
+      { data: { clase, nuevoDictada }, width: '460px', autoFocus: false },
     );
 
     ref.afterClosed().subscribe(result => {
@@ -400,6 +458,11 @@ export class ParteDiarioComponent implements OnInit {
   // ── Detalle estudiante ────────────────────────────────────────────────────
 
   onVerEstudiante(est: EstudianteParte): void {
+    const isManana = this.turnoActivo === 'manana';
+    const chipLabel = est.codigoAsistencia
+      ? `${est.codigoAsistencia} (${isManana ? 'mañana' : 'tarde'})`
+      : null;
+
     const fila: FilaAsistenciaManual = {
       estudiante:             { idEstudiante: est.idEstudiante, nombre: est.nombre, apellido: est.apellido, documento: est.documento },
       tipoManianaId:          null,
@@ -410,6 +473,8 @@ export class ParteDiarioComponent implements OnInit {
       error:                  null,
       guardandoFila:          false,
       valorTotalInasistencia: null,
+      retiroActivoManana:     isManana  ? (est.retiroActivo ?? null) : null,
+      retiroActivoTarde:      !isManana ? (est.retiroActivo ?? null) : null,
     };
 
     const d = this.fechaCtrl.value ?? new Date();
@@ -418,7 +483,14 @@ export class ParteDiarioComponent implements OnInit {
     this.dialog.open<DetalleEstudianteDialogComponent, DetalleDialogData>(
       DetalleEstudianteDialogComponent,
       {
-        data: { fila, fecha: this.fechaString, fechaDisplay, tipos: [] },
+        data: {
+          fila, fecha: this.fechaString, fechaDisplay, tipos: [],
+          mananaChipLabel: isManana  ? chipLabel : null,
+          tardeChipLabel:  !isManana ? chipLabel : null,
+          mananaLlegadaChipLabel: isManana && est.codigoLlegadaManiana
+            ? `${est.codigoLlegadaManiana} (mañana)`
+            : null,
+        },
         width: '620px',
         maxHeight: '85vh',
       },

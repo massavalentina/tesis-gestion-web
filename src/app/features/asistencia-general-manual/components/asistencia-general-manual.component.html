@@ -17,13 +17,6 @@
           <p class="page-subtitle">Registrá la asistencia diaria de los estudiantes por curso y turno</p>
         </div>
       </div>
-      <button mat-stroked-button *ngIf="!esMobile"
-              (click)="mostrarTestCol = !mostrarTestCol"
-              [color]="mostrarTestCol ? 'warn' : ''"
-              style="margin-left:auto; align-self:center"
-              matTooltip="Mostrar columna de test de inasistencia">
-        <mat-icon>science</mat-icon> TEST
-      </button>
     </div>
 
     <!-- FILTROS -->
@@ -248,6 +241,27 @@
                     <mat-icon *ngIf="fila.guardado && !fila.error && !(tabActivo === 0 ? fila.modificadoManana : fila.modificadoTarde)"
                               class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
                     <mat-icon *ngIf="fila.error" class="icon-error" [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
+
+                    <!-- Botón de retiro: solo visible para no-TEA y si el retiro es del turno activo -->
+                    <ng-container *ngIf="!fila.estudiante.teaGeneral">
+                      <button *ngIf="retiroTurnoActivo(fila)"
+                              class="retiro-chip-btn retiro-chip-{{ retiroChipClass(fila) }}"
+                              (click)="abrirRetiroGeneral(fila)"
+                              [matTooltip]="retiroTooltip(fila)"
+                              matTooltipPosition="left">
+                        <mat-icon class="retiro-chip-icon">directions_run</mat-icon>
+                        {{ retiroEtiquetaLabel(fila) }}
+                      </button>
+                      <button *ngIf="puedeNuevoRetiro(fila)"
+                              mat-icon-button
+                              class="btn-retiro-nuevo"
+                              (click)="abrirRetiroGeneral(fila)"
+                              [matTooltip]="retiroTooltip(fila)"
+                              matTooltipPosition="left">
+                        <mat-icon>directions_run</mat-icon>
+                      </button>
+                    </ng-container>
+
                     <button mat-icon-button (click)="abrirDetalle(fila)"
                             matTooltip="Ver detalle por espacio curricular"
                             matTooltipPosition="left">
@@ -276,6 +290,9 @@
                       <div class="avatar" [class.avatar-tea]="fila.estudiante.teaGeneral">{{ fila.estudiante.nombre.charAt(0) }}</div>
                       <span class="movil-nombre-texto">{{ fila.estudiante.apellido }}, {{ fila.estudiante.nombre }}</span>
                       <span class="movil-tea-chip" *ngIf="fila.estudiante.teaGeneral">TEA</span>
+                      <span *ngIf="fila.valorTotalInasistencia !== null" class="movil-inasist-chip">
+                        Inasist.: {{ fila.valorTotalInasistencia }}
+                      </span>
                     </div>
 
                     <!-- TEA: aviso sin selector -->

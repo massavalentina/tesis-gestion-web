@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { QrCredentialPreviewCardComponent } from '../../credenciales-qr/components/qr-credential-preview-card.component';
 
 export interface DatosPreviewQrAlumno {
   nombreCompleto: string;
@@ -11,15 +12,14 @@ export interface DatosPreviewQrAlumno {
 @Component({
   selector: 'app-delivery-qr-preview-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, QrCredentialPreviewCardComponent],
   template: `
     <div class="dlg">
       <h2>Preview QR</h2>
-      <p>{{ data.nombreCompleto }}</p>
-
-      <div class="image-wrap">
-        <img [src]="data.imageUrl" alt="QR del alumno" />
-      </div>
+      <app-qr-credential-preview-card
+        [nombreCompleto]="data.nombreCompleto"
+        [imageUrl]="data.imageUrl">
+      </app-qr-credential-preview-card>
 
       <mat-dialog-actions align="end">
         <button mat-raised-button color="primary" (click)="cerrar()">Cerrar</button>
@@ -29,24 +29,6 @@ export interface DatosPreviewQrAlumno {
   styles: [`
     .dlg { color: #0f2f4b; max-width: 92vw; }
     h2 { margin: 0; font-size: 24px; font-weight: 900; line-height: 1.15; }
-    p { margin: 8px 0 14px; color: rgba(15, 47, 75, 0.74); }
-    .image-wrap {
-      border-radius: 14px;
-      border: 1px solid #dce8f3;
-      background: #fff;
-      padding: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    img {
-      width: min(100%, 320px);
-      height: auto;
-      border: 1px solid #dce8f3;
-      border-radius: 10px;
-      background: #fff;
-      padding: 8px;
-    }
   `]
 })
 export class DialogoPreviewQrAlumnoComponent {

@@ -26,6 +26,22 @@
     </div>
   </div>
 
+  <!-- Hora manual: siempre visible, no depende de que haya alumno seleccionado -->
+  <div class="hora-manual-row">
+    <mat-icon class="hora-ico">schedule</mat-icon>
+    <mat-form-field appearance="outline" class="field-hora-manual">
+      <mat-label>Hora del registro (opcional)</mat-label>
+      <input matInput type="time" [(ngModel)]="horaManual" />
+      <button *ngIf="horaManual" matIconSuffix mat-icon-button
+              aria-label="Quitar hora" (click)="horaManual = null"
+              matTooltip="Usar hora del servidor">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+    <span class="hora-hint" *ngIf="!horaManual">Usa la hora del servidor si se deja vacío</span>
+    <span class="hora-hint hora-hint-activa" *ngIf="horaManual">Hora personalizada activa</span>
+  </div>
+
   <div class="spinner" *ngIf="cargando">
     <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
   </div>
@@ -43,7 +59,10 @@
       <div class="item-alumno item-tea" *ngIf="alumno.teaGeneral">
         <div class="info">
           <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
-          <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+          <div class="info-meta">
+            <span class="curso-chip">{{ alumno.curso }}</span>
+            <span class="meta-dni">DNI {{ alumno.documento }}</span>
+          </div>
         </div>
         <span class="estado estado-tea">TEA</span>
       </div>
@@ -58,7 +77,10 @@
 
         <div class="info">
           <strong>{{ alumno.apellido }}, {{ alumno.nombre }}</strong>
-          <span>{{ alumno.curso }} · DNI {{ alumno.documento }}</span>
+          <div class="info-meta">
+            <span class="curso-chip">{{ alumno.curso }}</span>
+            <span class="meta-dni">DNI {{ alumno.documento }}</span>
+          </div>
         </div>
 
         <span class="estado"
@@ -78,7 +100,10 @@
 
     <p class="alumno">
       {{ alumnoSeleccionado.apellido }}, {{ alumnoSeleccionado.nombre }}
-      <span class="alumno-dni">DNI {{ alumnoSeleccionado.documento }}</span>
+      <span class="alumno-curso-fila">
+        <span class="curso-chip">{{ alumnoSeleccionado.curso }}</span>
+        <span class="alumno-dni">DNI {{ alumnoSeleccionado.documento }}</span>
+      </span>
     </p>
 
     <div class="aviso-correccion" *ngIf="alumnoSeleccionado.registradoHoy">

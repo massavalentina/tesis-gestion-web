@@ -11,6 +11,7 @@ import { Subscription, interval } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import {
   AlcanceEnvioQr,
+  FilaEstadoEnvioQr,
   OpcionCursoEnvioQr,
   ProgresoEnvioQr,
   ResumenEnvioQr
@@ -20,13 +21,22 @@ import {
   DatosConfirmacionEnvioQr,
   DialogoConfirmacionEnvioQrComponent
 } from '../components/confirm-delivery-dialog.component';
+import {
+  DatosConfirmacionEnvioIndividualQr,
+  DialogoConfirmacionEnvioIndividualQrComponent
+} from '../components/confirm-single-delivery-dialog.component';
 import { DialogoProgresoEnvioQrComponent } from '../components/delivery-progress-dialog.component';
 import { DialogoResultadoEnvioQrComponent } from '../components/delivery-result-dialog.component';
 import {
   DatosCancelacionEnvioQr,
   DialogoCancelacionEnvioQrComponent
 } from '../components/cancel-delivery-dialog.component';
+import {
+  DatosResultadoEnvioIndividualQr,
+  DialogoResultadoEnvioIndividualQrComponent
+} from '../components/single-delivery-result-dialog.component';
 import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-sync.service';
+import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
 
 @Component({
   selector: 'app-qr-credential-delivery-page',
@@ -129,6 +139,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   private progressDialogRef?: MatDialogRef<DialogoProgresoEnvioQrComponent>;
   private cancelDialogRef?: MatDialogRef<DialogoCancelacionEnvioQrComponent>;
   private closeProgressDialogTimeoutId?: number;
+  private readonly objectUrls = new ObjectUrlRegistry();
 
   cursos: OpcionCursoEnvioQr[] = [];
   cursoSeleccionadoId: string | null = null;
@@ -141,6 +152,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
 
   progreso: ProgresoEnvioQr | null = null;
   currentJobId: string | null = null;
+  enviandoAlumnoIds = new Set<string>();
   cancelacionSolicitada = false;
   pausaSolicitadaParaDecision = false;
   decisionCancelacionPendiente = false;
@@ -155,6 +167,8 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       this.cancelarCierreDialogoProgresoPendiente();
       this.cerrarDialogoCancelacion();
       this.cerrarDialogoProgreso();
+      this.liberarTodosObjectUrls();
+      this.enviandoAlumnoIds.clear();
     });
   }
 
@@ -612,5 +626,22 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     }
 
     return fallback;
+  }
+
+  private crearObjectUrl(blob: Blob): string {
+    return this.objectUrls.create(blob);
+  }
+
+  private liberarObjectUrl(url: string): void {
+    this.objectUrls.revoke(url);
+  }
+
+  private liberarTodosObjectUrls(): void {
+    this.objectUrls.clear();
+  }
+
+  private construirNombreArchivoQr(row: FilaEstadoEnvioQr): string {
+    const base = (row.dni || row.idEstudiante).replace(/[^a-zA-Z0-9_-]/g, '');
+    return `credencial-${base || row.idEstudiante}.png`;
   }
 }

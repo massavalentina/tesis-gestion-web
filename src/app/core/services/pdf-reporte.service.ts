@@ -127,6 +127,10 @@ export interface DetalleEstudianteData {
   llegadasTarde: number;
   ausentePorLLT: number;
   retirosAnticipados: number;
+  /** Retiros Express (código RE) */
+  retirosExpress: number;
+  /** Retiros Anticipados Extendidos (código RAE) */
+  retirosAnticipadosExtendidos: number;
   porcentajeAsistencia: number;
   fechaDesde: string | null;
   fechaHasta: string | null;
@@ -154,9 +158,11 @@ export class PdfReporteService {
 
     autoTable(doc, {
       startY: y,
+      // Columnas: sin "% Asistencia", con "Retiro Express" y "Ret. Ant. Ext."
       head: [[
         'Estudiante', 'DNI',
-        'Presencias', 'Inasistencias', 'Llegadas Tarde', 'Ausente LLT', 'Retiros', '% Asistencia'
+        'Presencias', 'Inasistencias', 'Llegadas Tarde', 'Ausente LLT',
+        'Retiro Ant.', 'Retiro Express', 'Ret. Ant. Ext.'
       ]],
       body: data.estudiantes.map(est => [
         `${est.apellido}, ${est.nombre}`,
@@ -166,7 +172,8 @@ export class PdfReporteService {
         est.llegadasTarde,
         est.ausentePorLLT,
         est.retirosAnticipados,
-        `${est.porcentajeAsistencia}%`,
+        est.retirosExpress ?? 0,
+        est.retirosAnticipadosExtendidos ?? 0,
       ]),
       headStyles: {
         fillColor: HEADER_BG,
@@ -177,33 +184,23 @@ export class PdfReporteService {
       bodyStyles: { fontSize: 8 },
       alternateRowStyles: { fillColor: [245, 248, 255] },
       columnStyles: {
-        0: { cellWidth: 55 },
-        1: { cellWidth: 28, halign: 'center' },
-        2: { cellWidth: 22, halign: 'center' },
-        3: { cellWidth: 26, halign: 'center' },
-        4: { cellWidth: 26, halign: 'center' },
-        5: { cellWidth: 22, halign: 'center' },
-        6: { cellWidth: 18, halign: 'center' },
-        7: { cellWidth: 22, halign: 'center' },
+        0: { cellWidth: 50 },
+        1: { cellWidth: 24, halign: 'center' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 24, halign: 'center' },
+        4: { cellWidth: 24, halign: 'center' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 20, halign: 'center' },
+        7: { cellWidth: 24, halign: 'center' },
+        8: { cellWidth: 24, halign: 'center' },
       },
       didParseCell: (hookData) => {
-        // Colorear celda de inasistencias
+        // Colorear celda de inasistencias (col. 3)
         if (hookData.section === 'body' && hookData.column.index === 3) {
           const est = data.estudiantes[hookData.row.index];
           if (est) {
             const [r, g, b] = badgeColor(est.inasistencias, est.teaGeneral);
             hookData.cell.styles.textColor = [r, g, b];
-            hookData.cell.styles.fontStyle = 'bold';
-          }
-        }
-        // Colorear % asistencia (verde si >=75, rojo si <50, amarillo si entre)
-        if (hookData.section === 'body' && hookData.column.index === 7) {
-          const est = data.estudiantes[hookData.row.index];
-          if (est) {
-            const p = est.porcentajeAsistencia;
-            if (p >= 75) hookData.cell.styles.textColor = VERDE;
-            else if (p < 50) hookData.cell.styles.textColor = ROJO;
-            else hookData.cell.styles.textColor = NARANJA;
             hookData.cell.styles.fontStyle = 'bold';
           }
         }
@@ -240,14 +237,12 @@ export class PdfReporteService {
 
     autoTable(doc, {
       startY: y,
-      head: [['Estudiante', 'DNI', 'Presencias', 'Inasistencias', 'Llegadas Tarde', 'Retiros', '% Asistencia', 'Condición']],
+      head: [['Estudiante', 'DNI', 'Presencias', 'Inasistencias', '% Asistencia', 'Condición']],
       body: data.estudiantes.map(est => [
         `${est.apellido}, ${est.nombre}`,
         est.documento,
         est.presencias,
         est.inasistencias,
-        est.llegadasTarde,
-        est.retirosAnticipados,
         `${est.porcentajeAsistencia}%`,
         condicionTexto(est.porcentajeAsistencia, est.teaGeneral),
       ]),
@@ -259,21 +254,19 @@ export class PdfReporteService {
         1: { cellWidth: 28, halign: 'center' },
         2: { cellWidth: 22, halign: 'center' },
         3: { cellWidth: 26, halign: 'center' },
-        4: { cellWidth: 26, halign: 'center' },
-        5: { cellWidth: 18, halign: 'center' },
-        6: { cellWidth: 22, halign: 'center' },
-        7: { cellWidth: 24, halign: 'center' },
+        4: { cellWidth: 22, halign: 'center' },
+        5: { cellWidth: 24, halign: 'center' },
       },
       didParseCell: (hookData) => {
         if (hookData.section === 'body') {
           const est = data.estudiantes[hookData.row.index];
           if (!est) return;
-          if (hookData.column.index === 6) {
+          if (hookData.column.index === 4) {
             const [r, g, b] = porcentajeColor(est.porcentajeAsistencia, est.teaGeneral);
             hookData.cell.styles.textColor = [r, g, b];
             hookData.cell.styles.fontStyle = 'bold';
           }
-          if (hookData.column.index === 7) {
+          if (hookData.column.index === 5) {
             const [r, g, b] = porcentajeColor(est.porcentajeAsistencia, est.teaGeneral);
             hookData.cell.styles.textColor = [r, g, b];
             hookData.cell.styles.fontStyle = 'bold';
@@ -345,13 +338,13 @@ export class PdfReporteService {
 
       autoTable(doc, {
         startY: y,
-        head: [['Fecha', 'Clase', 'Asistencia', 'Código', 'Hora entrada']],
+        // Sin columna "Hora entrada" según requerimiento
+        head: [['Fecha', 'Clase', 'Asistencia', 'Código']],
         body: data.registros.map(r => [
           formatFecha(r.fecha),
           r.dictada ? 'Dictada' : 'No dictada',
           r.dictada ? (r.presente === null ? '-' : r.presente ? 'Presente' : 'Ausente') : '—',
           r.codigo ?? '—',
-          r.horaEntrada ?? '—',
         ]),
         headStyles: { fillColor: HEADER_BG, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 8 },
@@ -361,7 +354,6 @@ export class PdfReporteService {
           1: { cellWidth: 28, halign: 'center' },
           2: { cellWidth: 28, halign: 'center' },
           3: { cellWidth: 24, halign: 'center' },
-          4: { cellWidth: 28, halign: 'center' },
         },
         didParseCell: (hookData) => {
           if (hookData.section === 'body') {
@@ -401,15 +393,15 @@ export class PdfReporteService {
 
     y += 12;
 
-    // Tarjetas de resumen
+    // Tarjetas de resumen — sin % Asistencia; Ret. Exp. antes que Ret. Ant.
     const tarjetas = [
-      { label: 'Presencias',     valor: data.presencias,          color: [0,0,0] as [number,number,number] },
-      { label: 'Inasistencias',  valor: data.inasistencias,       color: badgeColor(data.inasistencias, data.teaGeneral) },
-      { label: 'Llegadas Tarde', valor: data.llegadasTarde,       color: [0,0,0] as [number,number,number] },
-      { label: 'Ausente LLT',    valor: data.ausentePorLLT,       color: [0,0,0] as [number,number,number] },
-      { label: 'Retiros',        valor: data.retirosAnticipados,  color: [0,0,0] as [number,number,number] },
-      { label: '% Asistencia',   valor: `${data.porcentajeAsistencia}%`,
-        color: data.porcentajeAsistencia >= 75 ? VERDE : data.porcentajeAsistencia < 50 ? ROJO : NARANJA },
+      { label: 'Presencias',     valor: data.presencias,                  color: [0,0,0] as [number,number,number] },
+      { label: 'Inasistencias',  valor: data.inasistencias,               color: badgeColor(data.inasistencias, data.teaGeneral) },
+      { label: 'Llegadas Tarde', valor: data.llegadasTarde,               color: [0,0,0] as [number,number,number] },
+      { label: 'Ausente LLT',    valor: data.ausentePorLLT,               color: [0,0,0] as [number,number,number] },
+      { label: 'Ret. Exp.',      valor: data.retirosExpress,              color: [0,0,0] as [number,number,number] },
+      { label: 'Ret. Ant.',      valor: data.retirosAnticipados,          color: [0,0,0] as [number,number,number] },
+      { label: 'Ret. Ant. Ext.', valor: data.retirosAnticipadosExtendidos, color: [0,0,0] as [number,number,number] },
     ];
 
     const cardW = (pageW - 28) / tarjetas.length;
@@ -546,7 +538,7 @@ export class PdfReporteService {
       ['Amarillo: 10–14 faltas', AMARILLO],
       ['Naranja: 15–20 faltas', NARANJA],
       ['Rojo: 21+ faltas', ROJO],
-      ['Gris: TEA (≥25 faltas)', GRIS],
+      ['Gris: TEA (+25 Faltas)', GRIS],
     ];
 
     let x = 14;

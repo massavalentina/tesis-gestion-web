@@ -16,10 +16,18 @@ import { FilaAsistenciaManual }           from '../../models/fila-asistencia-man
 import { TipoAsistenciaManual }           from '../../models/tipo-asistencia-manual.model';
 
 export interface DetalleDialogData {
-  fila:         FilaAsistenciaManual;
-  fecha:        string;
-  fechaDisplay: string;
-  tipos:        TipoAsistenciaManual[];
+  fila:              FilaAsistenciaManual;
+  fecha:             string;
+  fechaDisplay:      string;
+  tipos:             TipoAsistenciaManual[];
+  /** Etiqueta de texto para el chip de mañana cuando tipos[] está vacío (ej. desde Parte Diario). */
+  mananaChipLabel?:  string | null;
+  /** Etiqueta de texto para el chip de tarde cuando tipos[] está vacío (ej. desde Parte Diario). */
+  tardeChipLabel?:   string | null;
+  /** Etiqueta del chip de llegada mañana (LLT/LLTE/LLTC) cuando el estudiante tiene retiro.
+   *  Usada como fallback en la rama retiro cuando tipoLlegadaManana no resuelve (tipos[]=[]).
+   */
+  mananaLlegadaChipLabel?: string | null;
 }
 
 @Component({
@@ -40,24 +48,42 @@ export interface DetalleDialogData {
           <h2 class="det-nombre">{{ data.fila.estudiante.apellido }}, {{ data.fila.estudiante.nombre }}</h2>
           <p class="det-fecha">{{ data.fechaDisplay }}</p>
           <div class="det-chips-turno">
-            <ng-container *ngIf="tipoManana as t">
-              <span class="turno-chip turno-chip--manana">
-                <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>
-                &nbsp;· {{ t.descripcion }} (mañana)
-              </span>
+            <!-- ── MAÑANA ── -->
+            <ng-container *ngIf="data.fila.retiroActivoManana; else sinRetiroManana">
+              <ng-container *ngIf="tipoLlegadaManana as tll">
+                <span class="turno-chip"><strong>{{ tll.codigo }}</strong>&nbsp;· {{ tll.descripcion }} (mañana)</span>
+              </ng-container>
+              <ng-container *ngIf="!tipoLlegadaManana && data.mananaLlegadaChipLabel">
+                <span class="turno-chip">{{ data.mananaLlegadaChipLabel }}</span>
+              </ng-container>
+              <span class="turno-chip"><strong>{{ data.fila.retiroActivoManana!.tipoRetiro ?? 'Retiro' }}</strong>&nbsp;· Retiro {{ data.fila.retiroActivoManana!.horarioRetiro }}</span>
             </ng-container>
-            <ng-container *ngIf="!tipoManana">
-              <span class="turno-chip turno-chip--sin">— Sin registro (mañana)</span>
+            <ng-template #sinRetiroManana>
+              <ng-container *ngIf="tipoManana as t">
+                <span class="turno-chip"><strong>{{ t.codigo }}</strong>&nbsp;· {{ t.descripcion }} (mañana)</span>
+              </ng-container>
+              <ng-container *ngIf="!tipoManana && data.mananaChipLabel">
+                <span class="turno-chip">{{ data.mananaChipLabel }}</span>
+              </ng-container>
+              <ng-container *ngIf="!tipoManana && !data.mananaChipLabel">
+                <span class="turno-chip turno-chip--sin">— Sin registro (mañana)</span>
+              </ng-container>
+            </ng-template>
+            <!-- ── TARDE ── -->
+            <ng-container *ngIf="data.fila.retiroActivoTarde; else sinRetiroTarde">
+              <span class="turno-chip"><strong>{{ data.fila.retiroActivoTarde!.tipoRetiro ?? 'Retiro' }}</strong>&nbsp;· Retiro {{ data.fila.retiroActivoTarde!.horarioRetiro }} (tarde)</span>
             </ng-container>
-            <ng-container *ngIf="tipoTarde as t">
-              <span class="turno-chip turno-chip--tarde">
-                <span [class]="'opt-' + t.codigo.toLowerCase()">{{ t.codigo }}</span>
-                &nbsp;· {{ t.descripcion }} (tarde)
-              </span>
-            </ng-container>
-            <ng-container *ngIf="!tipoTarde">
-              <span class="turno-chip turno-chip--sin">— Sin registro (tarde)</span>
-            </ng-container>
+            <ng-template #sinRetiroTarde>
+              <ng-container *ngIf="tipoTarde as t">
+                <span class="turno-chip"><strong>{{ t.codigo }}</strong>&nbsp;· {{ t.descripcion }} (tarde)</span>
+              </ng-container>
+              <ng-container *ngIf="!tipoTarde && data.tardeChipLabel">
+                <span class="turno-chip">{{ data.tardeChipLabel }}</span>
+              </ng-container>
+              <ng-container *ngIf="!tipoTarde && !data.tardeChipLabel">
+                <span class="turno-chip turno-chip--sin">— Sin registro (tarde)</span>
+              </ng-container>
+            </ng-template>
           </div>
         </div>
         <button mat-icon-button (click)="cerrar()" class="det-close-btn">
@@ -117,6 +143,7 @@ export interface DetalleDialogData {
                           (click)="item.presente = !item.presente">
                     {{ item.presente ? 'Presente' : 'Ausente' }}
                   </button>
+                  <span *ngIf="item.motivo === 'Retiro anticipado'" class="chip-retiro-motivo">Retiro</span>
                 </ng-container>
                 <ng-template #sinRegistro>
                   <span class="sin-reg">—</span>
@@ -193,10 +220,11 @@ export interface DetalleDialogData {
       border-radius: 12px;
       font-size: 0.78rem;
       font-weight: 500;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
     }
-    .turno-chip--manana { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .turno-chip--tarde  { background: #fefce8; color: #a16207; border: 1px solid #fef08a; }
-    .turno-chip--sin    { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+    .turno-chip--sin { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
     .det-close-btn { flex-shrink: 0; }
 
     .det-loading {
@@ -274,6 +302,12 @@ export interface DetalleDialogData {
     .chip-presente { background: #dcfce7; color: #15803d; }
     .chip-ausente  { background: #fee2e2; color: #b91c1c; }
     .chip-asist:hover { filter: brightness(0.93); }
+    .chip-retiro-motivo {
+      display: inline-block; margin-left: 4px;
+      background: #f5f3ff; color: #6d28d9;
+      border: 1px solid #ddd6fe; border-radius: 8px;
+      padding: 1px 7px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;
+    }
     .sin-reg { color: #94a3b8; }
 
     /* Footer: botón guardar */
@@ -344,6 +378,11 @@ export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
 
   get tipoTarde(): TipoAsistenciaManual | null {
     const id = this.data.fila.tipoTardeId;
+    return id ? (this.data.tipos.find(t => t.id === id) ?? null) : null;
+  }
+
+  get tipoLlegadaManana(): TipoAsistenciaManual | null {
+    const id = this.data.fila.tipoLlegadaManianaId;
     return id ? (this.data.tipos.find(t => t.id === id) ?? null) : null;
   }
 

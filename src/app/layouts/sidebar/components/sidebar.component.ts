@@ -125,7 +125,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLink="/reporte-asistencia"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: false }">
-            Reporte Asistencia General
+            Asistencia General
           </a>
 
           <a class="subitem"
@@ -133,7 +133,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLink="/reporte-asistencia-docente"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: false }">
-            Inasistencias por Espacio
+            Asistencia por EC
           </a>
         </div>
 
@@ -267,7 +267,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: false }"
              (click)="closeMobile()">
-            Reporte Asistencia General
+            Asistencia General
           </a>
 
           <a class="subitem"
@@ -276,7 +276,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: false }"
              (click)="closeMobile()">
-            Inasistencias por Espacio
+            Asistencia por EC
           </a>
         </div>
 
