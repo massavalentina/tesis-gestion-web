@@ -423,7 +423,7 @@ export class ParteDiarioComponent implements OnInit {
         });
         if (hayConflicto) {
           this.snack.open(
-            'El rango de esta clase se superpone con otra clase ya dictada. Ajustá el horario antes de activarla.',
+            'El horario de esta clase se superpone con otra clase ya dictada. Por favor ajuste el horario antes de marcarla como dictada de modo que no se generan conflictos de superposición.',
             'OK', { duration: 5000 },
           );
           return;
@@ -558,20 +558,26 @@ export class ParteDiarioComponent implements OnInit {
     const s = this.horaAMinutos(c.horaSalida);
     if (isNaN(e) || isNaN(s)) return null;
     const minutos = s - e;
-    if (minutos <= 0)  return 'La hora de salida debe ser posterior a la de entrada.';
-    if (minutos < 40)  return `Duración mínima 40 min — actual: ${minutos} min.`;
+    if (minutos <= 0) return 'La hora de salida debe ser posterior a la de entrada.';
+    if (minutos < 40) return `Duración mínima 40 min — actual: ${minutos} min.`;
+    if (this.turnoActivo === 'manana') {
+      if (e < this.horaAMinutos('07:30')) return 'El inicio no puede ser anterior a las 07:30.';
+      if (s > this.horaAMinutos('13:20')) return 'El fin no puede ser posterior a las 13:20.';
+    } else {
+      if (e < this.horaAMinutos('13:20')) return 'El inicio no puede ser anterior a las 13:20.';
+      if (s > this.horaAMinutos('18:00')) return 'El fin no puede ser posterior a las 18:00.';
+    }
     if (this.tieneSuperposicion(c)) return 'El rango se superpone con otra clase.';
     return null;
   }
 
-  /** true si algún slot dictado tiene hora inválida, duración < 40 min o superposición. */
+  /** true si algún slot dictado tiene formato inválido o falla alguna validación de errorHorario. */
   timesInvalidos(): boolean {
     const re = /^\d{2}:\d{2}$/;
     return this.horarioPendiente.some(c => {
       if (c.dictada === false) return false;
       if (!re.test(c.horaEntrada) || !re.test(c.horaSalida)) return true;
-      const minutos = this.horaAMinutos(c.horaSalida) - this.horaAMinutos(c.horaEntrada);
-      return minutos < 40 || this.tieneSuperposicion(c);
+      return this.errorHorario(c) !== null;
     });
   }
 
@@ -615,6 +621,27 @@ export class ParteDiarioComponent implements OnInit {
   onResetearHorario(clase: HorarioClase): void {
     const cursoId = this.cursoCtrl.value;
     if (!cursoId) return;
+
+    // Validate: original times vs other dictated classes' current effective times
+    const clases = this.turnoActual?.horarioClases ?? [];
+    const e1 = this.horaAMinutos(clase.horaEntradaOriginal!);
+    const s1 = this.horaAMinutos(clase.horaSalidaOriginal!);
+    if (!isNaN(e1) && !isNaN(s1) && s1 > e1) {
+      const hayConflicto = clases.some(other => {
+        if (other.idHorario === clase.idHorario || other.dictada === false) return false;
+        const e2 = this.horaAMinutos(other.horaEntrada);
+        const s2 = this.horaAMinutos(other.horaSalida);
+        if (isNaN(e2) || isNaN(s2)) return false;
+        return e1 < s2 && e2 < s1;
+      });
+      if (hayConflicto) {
+        this.snack.open(
+          'El restablecimiento del horario de esta clase implica un conflicto de superposición de horarios con otra clase. Por favor solucione el conflicto editando los horarios de ambas clases de modo que se eliminen los conflictos y se valide el horario.',
+          'OK', { duration: 7000 },
+        );
+        return;
+      }
+    }
 
     this.dialog.open<ConfirmResetearHorarioDialogComponent, ConfirmResetearData, boolean>(
       ConfirmResetearHorarioDialogComponent,

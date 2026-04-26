@@ -8,5 +8,7 @@ export interface RegistrarAsistenciaManual {
    * — Desarrollo: se envía desde el campo de hora del formulario.
    * — Producción: se omite (undefined/null) y el backend usa DateTime.Now.
    */
-  hora?:            string | null;
+  hora?:               string | null;
+  /** Si true, los APEs manuales del turno se preservan en lugar de recalcular. */
+  priorizarManualesEC?: boolean;
 }

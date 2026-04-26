@@ -19,4 +19,10 @@ export interface FilaAsistenciaManual {
   retiroActivoManana?: RetiroActivo | null;
   /** Retiro activo del turno tarde (null si no tiene) */
   retiroActivoTarde?:  RetiroActivo | null;
+  /** undefined=sin decisión, true=priorizar manuales EC, false=recalcular */
+  priorizarManualesManana?: boolean;
+  priorizarManualesTarde?:  boolean;
+  /** Backup del tipo anterior (para revertir al cancelar el modal) */
+  tipoManianaIdPrev?: string | null;
+  tipoTardeIdPrev?:   string | null;
 }

@@ -36,6 +36,7 @@ import { FilaAsistenciaManual }             from '../models/fila-asistencia-manu
 import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistencia-manual.model';
 import { RegistrarAsistenciaManual }        from '../models/registrar-asistencia-manual.model';
 import { DescarteDialogComponent }          from './descarte-dialog/descarte-dialog.component';
+import { ConfirmacionManualesDialogComponent, ConfirmacionManualesDialogData, ConfirmacionManualesResult } from './confirmacion-manuales-dialog/confirmacion-manuales-dialog.component';
 import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog/detalle-estudiante-dialog.component';
 import { RetiroDialogComponent, RetiroDialogData } from '../../retiro-anticipado/components/retiro-dialog/retiro-dialog.component';
 import { RetiroInfoDialogComponent, RetiroInfoDialogData } from '../../retiro-anticipado/components/retiro-info-dialog/retiro-info-dialog.component';
@@ -353,10 +354,14 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         const mapa = new Map(asistencias.map(a => [a.documento, a]));
         this.filas = estudiantes.map(est => {
           const ex = mapa.get(est.documento);
+          const manianaId = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
+          const tardeId   = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
           return {
             estudiante:      est,
-            tipoManianaId:   ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null,
-            tipoTardeId:     ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
+            tipoManianaId:   manianaId,
+            tipoTardeId:     tardeId,
+            tipoManianaIdPrev: manianaId,
+            tipoTardeIdPrev:   tardeId,
             guardado: !!ex, error: null,
             modificadoManana: false, modificadoTarde: false, guardandoFila: false,
             valorTotalInasistencia: ex ? ex.valorTotal : null,
@@ -388,6 +393,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           const ex = mapa.get(f.estudiante.documento);
           f.tipoManianaId = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
           f.tipoTardeId   = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
+          f.tipoManianaIdPrev = f.tipoManianaId;
+          f.tipoTardeIdPrev   = f.tipoTardeId;
           f.tipoLlegadaManianaId = ex?.codigoLlegadaManana
             ? (this.todosTipos.find(t => t.codigo === ex.codigoLlegadaManana)?.id ?? null)
             : null;
@@ -396,6 +403,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           f.valorTotalInasistencia = ex ? ex.valorTotal : null;
           f.retiroActivoManana = null;
           f.retiroActivoTarde  = null;
+          f.priorizarManualesManana = undefined;
+          f.priorizarManualesTarde  = undefined;
         });
         this.dataSource.data = [...this.filas];
         this.cargandoTabla   = false;
@@ -479,12 +488,70 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   onTipoManianaChange(f: FilaAsistenciaManual): void {
     f.guardado = false; f.error = null; f.modificadoManana = true;
+    f.priorizarManualesManana = undefined;
     this.dataSource.data = [...this.filas];
+    this.verificarManualesECRow(f, 'MANANA');
   }
 
   onTipoTardeChange(f: FilaAsistenciaManual): void {
     f.guardado = false; f.error = null; f.modificadoTarde = true;
+    f.priorizarManualesTarde = undefined;
     this.dataSource.data = [...this.filas];
+    this.verificarManualesECRow(f, 'TARDE');
+  }
+
+  private verificarManualesECRow(f: FilaAsistenciaManual, turno: 'MANANA' | 'TARDE'): void {
+    const limite = '13:20';
+    this.service.getAsistenciaEspaciosDia(f.estudiante.idEstudiante, this.fechaHoy).subscribe({
+      next: (items) => {
+        const esManana = turno === 'MANANA';
+        const tieneManuales = items.some(i =>
+          i.dictada === true &&
+          (i.motivo === 'Presente Manual' || i.motivo === 'Ausente Manual') &&
+          (esManana ? i.horarioEntrada < limite : i.horarioEntrada >= limite)
+        );
+
+        if (!tieneManuales) {
+          if (esManana) f.priorizarManualesManana = false;
+          else          f.priorizarManualesTarde  = false;
+          return;
+        }
+
+        const nombre = `${f.estudiante.apellido}, ${f.estudiante.nombre}`;
+        const ref = this.dialog.open(ConfirmacionManualesDialogComponent, {
+          width: '420px',
+          maxWidth: '96vw',
+          disableClose: false,
+          data: { modo: 'individual', nombreEstudiante: nombre } satisfies ConfirmacionManualesDialogData,
+        });
+
+        const sub = ref.afterClosed().subscribe((result: ConfirmacionManualesResult) => {
+          if (result === 'priorizar') {
+            if (esManana) f.priorizarManualesManana = true;
+            else          f.priorizarManualesTarde  = true;
+          } else if (result === 'recalcular') {
+            if (esManana) f.priorizarManualesManana = false;
+            else          f.priorizarManualesTarde  = false;
+          } else {
+            // Cancelar: revertir al valor anterior
+            if (esManana) {
+              f.tipoManianaId = f.tipoManianaIdPrev ?? null;
+              f.modificadoManana = false;
+            } else {
+              f.tipoTardeId = f.tipoTardeIdPrev ?? null;
+              f.modificadoTarde = false;
+            }
+          }
+          this.dataSource.data = [...this.filas];
+        });
+        this.subs.push(sub);
+      },
+      error: () => {
+        // Si falla la verificación, continuar sin modal (recalcular por defecto)
+        if (turno === 'MANANA') f.priorizarManualesManana = false;
+        else                    f.priorizarManualesTarde  = false;
+      },
+    });
   }
 
   // ── Retiro anticipado ─────────────────────────────────────────────────────
@@ -775,8 +842,22 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   private buildDtos(fila: FilaAsistenciaManual): RegistrarAsistenciaManual[] {
     const hora = this.horaGlobal ? `${this.horaGlobal}:00` : null;
     const dtos: RegistrarAsistenciaManual[] = [];
-    if (fila.tipoManianaId) dtos.push({ estudianteId: fila.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'MANANA', tipoAsistenciaId: fila.tipoManianaId, hora });
-    if (fila.tipoTardeId)   dtos.push({ estudianteId: fila.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'TARDE',  tipoAsistenciaId: fila.tipoTardeId,   hora });
+    if (fila.tipoManianaId) dtos.push({
+      estudianteId: fila.estudiante.idEstudiante,
+      fecha: this.fechaHoy,
+      turno: 'MANANA',
+      tipoAsistenciaId: fila.tipoManianaId,
+      hora,
+      priorizarManualesEC: fila.priorizarManualesManana === true,
+    });
+    if (fila.tipoTardeId) dtos.push({
+      estudianteId: fila.estudiante.idEstudiante,
+      fecha: this.fechaHoy,
+      turno: 'TARDE',
+      tipoAsistenciaId: fila.tipoTardeId,
+      hora,
+      priorizarManualesEC: fila.priorizarManualesTarde === true,
+    });
     return dtos;
   }
 
@@ -788,11 +869,14 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     if (!tipoId) { this.notify('Definí la asistencia para este turno.', 'OK'); return; }
 
     const dto: RegistrarAsistenciaManual = {
-      estudianteId:     fila.estudiante.idEstudiante,
-      fecha:            this.fechaHoy,
-      turno:            esManana ? 'MANANA' : 'TARDE',
-      tipoAsistenciaId: tipoId,
-      hora:             this.horaGlobal ? `${this.horaGlobal}:00` : null,
+      estudianteId:       fila.estudiante.idEstudiante,
+      fecha:              this.fechaHoy,
+      turno:              esManana ? 'MANANA' : 'TARDE',
+      tipoAsistenciaId:   tipoId,
+      hora:               this.horaGlobal ? `${this.horaGlobal}:00` : null,
+      priorizarManualesEC: esManana
+        ? fila.priorizarManualesManana === true
+        : fila.priorizarManualesTarde  === true,
     };
 
     fila.error = null; fila.guardandoFila = true;
@@ -803,13 +887,14 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         fila.guardandoFila = false;
         if (esManana) {
           fila.modificadoManana = false;
-          // SA limpia el turno: dejar la fila como "sin definir" inmediatamente
-          if (eraSA) { fila.tipoManianaId = null; fila.guardado = false; }
-          else        { fila.guardado = true; }
+          fila.priorizarManualesManana = undefined;
+          if (eraSA) { fila.tipoManianaId = null; fila.tipoManianaIdPrev = null; fila.guardado = false; }
+          else        { fila.tipoManianaIdPrev = tipoId; fila.guardado = true; }
         } else {
           fila.modificadoTarde = false;
-          if (eraSA) { fila.tipoTardeId = null; fila.guardado = false; }
-          else        { fila.guardado = true; }
+          fila.priorizarManualesTarde = undefined;
+          if (eraSA) { fila.tipoTardeId = null; fila.tipoTardeIdPrev = null; fila.guardado = false; }
+          else        { fila.tipoTardeIdPrev = tipoId; fila.guardado = true; }
         }
         this.dataSource.data = [...this.filas];
         this.actualizarValorTest();
@@ -828,19 +913,98 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     this.confirmarGuardar = false;
     const todos = this.filas.flatMap(f => this.buildDtos(f));
     if (!todos.length) { this.notify('No hay asistencias definidas.', 'OK'); return; }
-    this.guardandoLote = true;
 
+    // Filas modificadas cuya decisión de priorizar aún no fue tomada
+    const filasIndecisasManana = this.filas.filter(f => f.modificadoManana && f.priorizarManualesManana === undefined);
+    const filasIndecisasTarde  = this.filas.filter(f => f.modificadoTarde  && f.priorizarManualesTarde  === undefined);
+
+    if (!filasIndecisasManana.length && !filasIndecisasTarde.length) {
+      this.ejecutarGuardarTodo(todos);
+      return;
+    }
+
+    // Construir requests para verificar
+    const requests = [
+      ...filasIndecisasManana.map(f => ({ estudianteId: f.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'MANANA' })),
+      ...filasIndecisasTarde.map(f  => ({ estudianteId: f.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'TARDE'  })),
+    ];
+
+    this.guardandoLote = true;
+    const sub = this.service.verificarManualesEc(requests).subscribe({
+      next: (resultados) => {
+        const conManuales = resultados.filter(r => r.tieneManuales);
+
+        // Marcar los sin manuales como recalcular
+        filasIndecisasManana.forEach(f => {
+          const res = resultados.find(r => r.estudianteId === f.estudiante.idEstudiante && r.turno === 'MANANA');
+          if (res && !res.tieneManuales) f.priorizarManualesManana = false;
+        });
+        filasIndecisasTarde.forEach(f => {
+          const res = resultados.find(r => r.estudianteId === f.estudiante.idEstudiante && r.turno === 'TARDE');
+          if (res && !res.tieneManuales) f.priorizarManualesTarde = false;
+        });
+
+        if (!conManuales.length) {
+          // Nadie tiene manuales → proceder
+          this.ejecutarGuardarTodo(this.filas.flatMap(f => this.buildDtos(f)));
+          return;
+        }
+
+        // Hay estudiantes con manuales → abrir modal masivo
+        this.guardandoLote = false;
+        const nombres = conManuales.map(r => {
+          const fila = this.filas.find(f => f.estudiante.idEstudiante === r.estudianteId);
+          return fila ? `${fila.estudiante.apellido}, ${fila.estudiante.nombre}` : r.estudianteId;
+        });
+
+        const ref = this.dialog.open(ConfirmacionManualesDialogComponent, {
+          width: '480px',
+          maxWidth: '96vw',
+          disableClose: false,
+          data: { modo: 'masivo', nombresEstudiantes: nombres } satisfies ConfirmacionManualesDialogData,
+        });
+
+        const sub2 = ref.afterClosed().subscribe((result: ConfirmacionManualesResult) => {
+          if (result === null || result === undefined) return; // cancelar → abortar
+
+          const priorizar = result === 'priorizar';
+          conManuales.forEach(r => {
+            const fila = this.filas.find(f => f.estudiante.idEstudiante === r.estudianteId);
+            if (!fila) return;
+            if (r.turno === 'MANANA') fila.priorizarManualesManana = priorizar;
+            else                      fila.priorizarManualesTarde  = priorizar;
+          });
+          // Los que no tenían manuales ya se marcaron como false
+          this.ejecutarGuardarTodo(this.filas.flatMap(f => this.buildDtos(f)));
+        });
+        this.subs.push(sub2);
+      },
+      error: (err) => {
+        console.error(err);
+        this.guardandoLote = false;
+        this.notify('Error al verificar cambios manuales. Intente de nuevo.', 'Cerrar', 4000);
+      },
+    });
+    this.subs.push(sub);
+  }
+
+  private ejecutarGuardarTodo(todos: RegistrarAsistenciaManual[]): void {
+    this.guardandoLote = true;
     const sub = this.service.registrarLote(todos).subscribe({
       next: (res) => {
         this.filas.forEach(f => {
           if (f.tipoManianaId || f.tipoTardeId) {
             const mananaSA = this.esSinDefinir(f.tipoManianaId) && f.tipoManianaId !== null;
             const tardeSA  = this.esSinDefinir(f.tipoTardeId)   && f.tipoTardeId   !== null;
-            if (mananaSA) f.tipoManianaId = null;
-            if (tardeSA)  f.tipoTardeId   = null;
+            if (mananaSA) { f.tipoManianaId = null; f.tipoManianaIdPrev = null; }
+            else          { f.tipoManianaIdPrev = f.tipoManianaId; }
+            if (tardeSA)  { f.tipoTardeId   = null; f.tipoTardeIdPrev  = null; }
+            else          { f.tipoTardeIdPrev  = f.tipoTardeId;   }
             f.guardado         = !mananaSA && !tardeSA;
             f.modificadoManana = false;
             f.modificadoTarde  = false;
+            f.priorizarManualesManana = undefined;
+            f.priorizarManualesTarde  = undefined;
           }
         });
         this.dataSource.data = [...this.filas];

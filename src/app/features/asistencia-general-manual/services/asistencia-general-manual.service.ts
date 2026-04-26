@@ -94,6 +94,20 @@ export class AsistenciaGeneralManualService {
     return this.http.put<void>(`${this.asistenciaUrl}/espacio`, dto);
   }
 
+  actualizarAsistenciaEspacioLote(dtos: { estudianteId: string; idClaseDictada: string; presente: boolean }[]): Observable<void> {
+    return this.http.put<void>(`${this.asistenciaUrl}/espacio/lote`, dtos);
+  }
+
+  // ── Verificar si hay APEs manuales para una lista de estudiante+turno ────
+  verificarManualesEc(
+    requests: { estudianteId: string; fecha: string; turno: string }[]
+  ): Observable<{ estudianteId: string; turno: string; tieneManuales: boolean }[]> {
+    return this.http.post<{ estudianteId: string; turno: string; tieneManuales: boolean }[]>(
+      `${this.asistenciaUrl}/verificar-manuales-ec`,
+      requests
+    );
+  }
+
   // ── Retiro activo del estudiante para el día ──────────────────────────────
   getRetiroActivo(estudianteId: string, fecha: string): Observable<RetiroActivo | null> {
     return this.http.get<RetiroActivo | null>(

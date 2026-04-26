@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule }              from '@angular/common';
-import { forkJoin, Subscription }    from 'rxjs';
+import { Subscription }    from 'rxjs';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule }           from '@angular/material/button';
@@ -435,14 +435,12 @@ export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
       return;
     }
     this.guardandoTodo = true;
-    forkJoin(
-      modificados.map(item =>
-        this.service.actualizarAsistenciaEspacio({
-          estudianteId:   this.data.fila.estudiante.idEstudiante,
-          idClaseDictada: item.idClaseDictada!,
-          presente:       item.presente!,
-        })
-      )
+    this.service.actualizarAsistenciaEspacioLote(
+      modificados.map(item => ({
+        estudianteId:   this.data.fila.estudiante.idEstudiante,
+        idClaseDictada: item.idClaseDictada!,
+        presente:       item.presente!,
+      }))
     ).subscribe({
       next: () => {
         modificados.forEach(i => { i.presenteOriginal = i.presente; });
