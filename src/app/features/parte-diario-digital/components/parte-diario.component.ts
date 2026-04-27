@@ -285,15 +285,16 @@ export class ParteDiarioComponent implements OnInit {
    * "• Apellido, Nombre (M): P → A"
    */
   private parsearLineaAsistencia(linea: string): {
-    nombre: string; turno: string; codigoAntes: string; codigoDespues: string;
+    nombre: string; turno: string; codigoAntes: string; codigoDespues: string; hora?: string;
   } | null {
-    const m = linea.match(/^[•\-]\s*(.+?)\s*\(([MT])\):\s*(\S+)\s*→\s*(\S+)\s*$/);
+    const m = linea.match(/^[•\-]\s*(.+?)\s*\(([MT])\):\s*(\S+)\s*→\s*(\S+?)(?:\s*@\s*(\d{2}:\d{2}))?\s*$/);
     if (!m) return null;
     return {
       nombre:        m[1].trim(),
       turno:         m[2] === 'M' ? 'Mañana' : 'Tarde',
       codigoAntes:   m[3],
       codigoDespues: m[4],
+      hora:          m[5] ?? undefined,
     };
   }
 
@@ -301,12 +302,13 @@ export class ParteDiarioComponent implements OnInit {
   getLineasAsistencia(detalle: string): {
     nombre?: string; turno?: string;
     codigoAntes?: string; codigoDespues?: string;
+    hora?: string;
     rawText: string;
   }[] {
     return this.getLineasDetalle(detalle).map(linea => {
       const p = this.parsearLineaAsistencia(linea);
       return p
-        ? { nombre: p.nombre, turno: p.turno, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, rawText: linea }
+        ? { nombre: p.nombre, turno: p.turno, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, hora: p.hora, rawText: linea }
         : { rawText: linea };
     });
   }
@@ -315,6 +317,33 @@ export class ParteDiarioComponent implements OnInit {
   getCodeClass(code: string): string {
     if (!code || code === '—') return 'code-null';
     return 'code-' + code.toLowerCase().replace(/[^a-z]/g, '');
+  }
+
+  /**
+   * Parsea el detalle de un evento ESPACIO CURRICULAR:
+   * Primera línea: nombre del estudiante ("Apellido, Nombre")
+   * Líneas siguientes: "• Materia (HH:mm–HH:mm): Antes → Después"
+   */
+  getLineasEC(detalle: string): {
+    nombre: string;
+    items: { rawText: string; materia?: string; horario?: string; antes?: string; despues?: string }[];
+  } {
+    const lineas = detalle.split('\n').filter(l => l.trim().length > 0);
+    const nombre = lineas[0] ?? '';
+    const items  = lineas.slice(1).map(linea => {
+      const m = linea.match(/^[•\-]\s*(.+?)\s*\(([^)]+)\):\s*(.+?)\s*→\s*(.+?)\s*$/);
+      if (!m) return { rawText: linea };
+      return { rawText: linea, materia: m[1].trim(), horario: m[2].trim(), antes: m[3].trim(), despues: m[4].trim() };
+    });
+    return { nombre, items };
+  }
+
+  /** Clase CSS para las píldoras Presente/Ausente/Sin registro del log EC. */
+  getECEstadoClass(estado: string): string {
+    const s = estado?.trim().toLowerCase();
+    if (s === 'presente') return 'code-presente';
+    if (s === 'ausente')  return 'code-ausente';
+    return 'code-sinregistro';
   }
 
   isLLT(codigo: string | null | undefined): boolean {

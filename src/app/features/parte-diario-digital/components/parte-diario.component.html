@@ -59,7 +59,6 @@
         <span class="stat-label">Sin registro</span>
       </div>
       <div class="stat-card stat-card--pct">
-        <mat-icon>percent</mat-icon>
         <span class="stat-num">{{ turnoActual?.porcentajeAsistencia ?? 0 }}%</span>
         <span class="stat-label">Asistencia</span>
       </div>
@@ -351,6 +350,7 @@
           <div class="log-entry-meta">
             <span [class]="'log-badge log-badge--' + (com.subTipo === 'RETIRO' ? 'asistencia' : com.subTipo.toLowerCase())">{{ com.subTipo === 'RETIRO' ? 'ASISTENCIA' : com.subTipo }}</span>
             <span *ngIf="com.subTipo === 'RETIRO'" class="log-badge log-badge--retiro">RETIRO</span>
+            <span *ngIf="com.titulo === 'ESPACIO CURRICULAR'" class="log-badge log-badge--espacio">ESPACIO CURRICULAR</span>
             <span class="log-ts">{{ formatTimestamp(com.timestamp) }}</span>
             <span class="log-autor-tag">{{ com.autor }}</span>
           </div>
@@ -360,31 +360,58 @@
             <p class="log-nota-text">{{ com.contenido }}</p>
           </ng-container>
 
-          <!-- ASISTENCIA / HORARIO: título + detalle -->
+          <!-- Eventos con título + detalle -->
           <ng-container *ngIf="com.subTipo !== 'NOTA'">
-            <div class="log-event-titulo">{{ com.titulo }}</div>
-            <div *ngIf="com.detalle" class="log-event-detalle">
 
-              <!-- Asistencia: líneas con píldoras de color -->
-              <ng-container *ngIf="com.subTipo === 'ASISTENCIA'">
-                <div *ngFor="let r of getLineasAsistencia(com.detalle)" class="log-detalle-row">
-                  <ng-container *ngIf="r.nombre">
-                    <span class="log-asist-nombre">{{ r.nombre }}</span>
-                    <span class="log-asist-turno">({{ r.turno }})</span>
-                    <span [class]="'code-pill ' + getCodeClass(r.codigoAntes!)">{{ r.codigoAntes }}</span>
-                    <span class="log-arrow">→</span>
-                    <span [class]="'code-pill ' + getCodeClass(r.codigoDespues!)">{{ r.codigoDespues }}</span>
-                  </ng-container>
-                  <span *ngIf="!r.nombre">{{ r.rawText }}</span>
-                </div>
-              </ng-container>
+            <!-- ESPACIO CURRICULAR: rendering especial -->
+            <ng-container *ngIf="com.titulo === 'ESPACIO CURRICULAR'">
+              <div class="log-event-titulo">Cambio Manual en Asistencia por EC</div>
+              <div *ngIf="com.detalle" class="log-event-detalle">
+                <ng-container *ngFor="let ec of [getLineasEC(com.detalle)]">
+                  <div class="log-detalle-row" style="margin-bottom: 2px;">
+                    <strong class="log-asist-nombre">{{ ec.nombre }}</strong>
+                  </div>
+                  <div *ngFor="let item of ec.items" class="log-detalle-row">
+                    <ng-container *ngIf="item.materia">
+                      <span class="log-asist-turno">{{ item.materia }} ({{ item.horario }}):</span>
+                      <span [class]="'code-pill ' + getECEstadoClass(item.antes!)">{{ item.antes }}</span>
+                      <span class="log-arrow">→</span>
+                      <span [class]="'code-pill ' + getECEstadoClass(item.despues!)">{{ item.despues }}</span>
+                    </ng-container>
+                    <span *ngIf="!item.materia">{{ item.rawText }}</span>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
 
-              <!-- Horario: líneas de texto plano -->
-              <ng-container *ngIf="com.subTipo !== 'ASISTENCIA'">
-                <div *ngFor="let linea of getLineasDetalle(com.detalle)" class="log-detalle-row">{{ linea }}</div>
-              </ng-container>
+            <!-- Eventos regulares (ASISTENCIA general, HORARIO, RETIRO) -->
+            <ng-container *ngIf="com.titulo !== 'ESPACIO CURRICULAR'">
+              <div class="log-event-titulo">{{ com.titulo }}</div>
+              <div *ngIf="com.detalle" class="log-event-detalle">
 
-            </div>
+                <!-- Asistencia: líneas con píldoras de código -->
+                <ng-container *ngIf="com.subTipo === 'ASISTENCIA'">
+                  <div *ngFor="let r of getLineasAsistencia(com.detalle)" class="log-detalle-row">
+                    <ng-container *ngIf="r.nombre">
+                      <span class="log-asist-nombre">{{ r.nombre }}</span>
+                      <span class="log-asist-turno">({{ r.turno }})</span>
+                      <span [class]="'code-pill ' + getCodeClass(r.codigoAntes!)">{{ r.codigoAntes }}</span>
+                      <span class="log-arrow">→</span>
+                      <span [class]="'code-pill ' + getCodeClass(r.codigoDespues!)">{{ r.codigoDespues }}</span>
+                      <span *ngIf="r.hora" class="log-hora">Hora de registro {{ r.hora }}</span>
+                    </ng-container>
+                    <span *ngIf="!r.nombre">{{ r.rawText }}</span>
+                  </div>
+                </ng-container>
+
+                <!-- Horario/Retiro: líneas de texto plano -->
+                <ng-container *ngIf="com.subTipo !== 'ASISTENCIA'">
+                  <div *ngFor="let linea of getLineasDetalle(com.detalle)" class="log-detalle-row">{{ linea }}</div>
+                </ng-container>
+
+              </div>
+            </ng-container>
+
           </ng-container>
         </div>
 

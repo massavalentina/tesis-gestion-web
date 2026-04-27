@@ -101,7 +101,7 @@
 .stat-card--present { background: rgba(21,128,61,.09);  border-color: rgba(21,128,61,.2);  color: #15803d; }
 .stat-card--absent  { background: rgba(185,28,28,.09);  border-color: rgba(185,28,28,.2);  color: #b91c1c; }
 .stat-card--retired { background: rgba(180,83,9,.09);   border-color: rgba(180,83,9,.2);   color: #b45309; }
-.stat-card--pct     { background: rgba(30,64,175,.09);  border-color: rgba(30,64,175,.2);  color: #1e40af; }
+.stat-card--pct     { background: rgba(30,64,175,.09);  border-color: rgba(30,64,175,.2);  color: #1e40af; justify-content: center; }
 
 /* ── Turno tabs ──────────────────────────────────────────────── */
 .pd-tabs {
@@ -439,6 +439,7 @@
 .log-badge--asistencia { background: #fff7ed; color: #c2410c; }
 .log-badge--horario    { background: #eff6ff; color: #1d4ed8; }
 .log-badge--retiro     { background: #f5f3ff; color: #6d28d9; }
+.log-badge--espacio    { background: #f0fdfa; color: #0f766e; }
 
 .log-ts      { font-size: 0.75rem; font-weight: 600; color: #475569; }
 .log-autor-tag { font-size: 0.75rem; color: #94a3b8; margin-left: auto; }
@@ -478,6 +479,7 @@
 .log-asist-nombre { font-weight: 500; color: #1e293b; font-size: 0.82rem; }
 .log-asist-turno  { font-size: 0.75rem; color: #94a3b8; }
 .log-arrow        { color: #94a3b8; font-size: 0.8rem; }
+.log-hora         { font-size: 0.72rem; color: #94a3b8; }
 
 /* ── Píldoras de código de asistencia ──────────────────────── */
 .code-pill {
@@ -489,10 +491,12 @@
   font-family: 'Open Sans', monospace, sans-serif;
   line-height: 1.6;
 }
-.code-p, .code-llt, .code-llte                { background: rgba(21,128,61,.12);    color: #15803d; }
-.code-a, .code-lltc, .code-anc               { background: rgba(185,28,28,.12);    color: #b91c1c; }
-.code-ra, .code-rae, .code-re                { background: rgba(180,83,9,.12);     color: #b45309; }
-.code-sa, .code-null                         { background: rgba(100,116,139,.12);  color: #64748b; }
+.code-p, .code-presente                  { background: rgba(21,128,61,.12);    color: #15803d; }  /* verde   — Presente          */
+.code-a, .code-ausente                   { background: rgba(185,28,28,.12);    color: #b91c1c; }  /* rojo    — Ausente           */
+.code-llt, .code-llte, .code-lltc       { background: rgba(194,65,12,.12);    color: #c2410c; }  /* naranja — Llegada tarde     */
+.code-ra, .code-rae, .code-re           { background: rgba(245,158,11,.18);   color: #b45309; }  /* ámbar   — Retiro            */
+.code-anc                                { background: rgba(100,116,139,.12);  color: #64748b; }  /* gris    — Ausencia no comp. */
+.code-sa, .code-null, .code-sinregistro { background: rgba(100,116,139,.10);  color: #94a3b8; }  /* gris claro — Sin asistencia / nulo */
 
 .log-empty {
   color: #94a3b8;
