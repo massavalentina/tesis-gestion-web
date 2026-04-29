@@ -90,10 +90,51 @@
   font-weight: 700;
   color: #333;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .reporte-table td {
   color: #333;
+}
+
+/* Altura mínima del encabezado para que respire */
+.reporte-table tr.mat-mdc-header-row,
+.reporte-table tr.mat-header-row {
+  height: auto;
+  min-height: 64px;
+}
+
+/* Columnas numéricas: centrar datos */
+.reporte-table td.col-num {
+  text-align: center;
+}
+
+/* Columnas numéricas: centrar header */
+.reporte-table th.col-num {
+  text-align: center;
+}
+
+.reporte-table th.col-num ::ng-deep .mat-sort-header-container {
+  justify-content: center;
+  position: relative;
+}
+
+.reporte-table th.col-num ::ng-deep .mat-sort-header-arrow {
+  position: absolute;
+  right: 0;
+}
+
+/* Encabezados de 2 renglones */
+.reporte-table th.col-header-wrap {
+  white-space: normal;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.reporte-table th.col-header-wrap ::ng-deep .mat-sort-header-content {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
 }
 
 .reporte-table tr.mat-mdc-row:hover {

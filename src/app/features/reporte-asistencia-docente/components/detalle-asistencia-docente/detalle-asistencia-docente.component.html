@@ -41,7 +41,7 @@
     </div>
     <div class="card">
       <span class="card-valor">{{ inasistencias }}</span>
-      <span class="card-label">Inasistencias</span>
+      <span class="card-label">Ausencias</span>
     </div>
     <div class="card">
       <span class="card-valor">{{ llegadasTarde }}</span>
@@ -100,7 +100,7 @@
         </td>
       </ng-container>
 
-      <!-- Presente -->
+      <!-- Asistencia -->
       <ng-container matColumnDef="presente">
         <th mat-header-cell *matHeaderCellDef>Asistencia</th>
         <td mat-cell *matCellDef="let r">
@@ -110,20 +110,72 @@
         </td>
       </ng-container>
 
-      <!-- Código general -->
+      <!-- Detalle (ex Código) -->
       <ng-container matColumnDef="codigo">
-        <th mat-header-cell *matHeaderCellDef>Código</th>
-        <td mat-cell *matCellDef="let r">
-          <span *ngIf="r.codigo" class="codigo-chip" [class]="getCodigoBadge(r.codigo)">
-            {{ r.codigo }}
-          </span>
-          <span *ngIf="!r.codigo" class="text-muted">—</span>
+        <th mat-header-cell *matHeaderCellDef>Detalle</th>
+        <td mat-cell *matCellDef="let r" class="col-detalle">
+
+          <!-- No dictada -->
+          <span *ngIf="!r.dictada" class="text-muted">—</span>
+
+          <!-- Presente puro (sin RE, sin estar ausente) -->
+          <ng-container *ngIf="r.dictada && r.presente === true && !isRetiroExpress(r)">
+            <span class="codigo-chip codigo-presente">P</span>
+          </ng-container>
+
+          <!-- RE: Retiro express — no genera inasistencia en el espacio -->
+          <ng-container *ngIf="r.dictada && isRetiroExpress(r)">
+            <span class="codigo-chip codigo-presente">P</span>
+            <div class="detalle-sub">
+              <span class="codigo-chip codigo-retiro">RE</span>
+              <span class="hora-text" *ngIf="r.horaSalida"> {{ r.horaSalida }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Ausente por llegada tarde (LLT / LLTE / LLTC) -->
+          <ng-container *ngIf="r.dictada && r.presente === false && isLlegadaTarde(r)">
+            <span class="codigo-chip codigo-ausente">A</span>
+            <div class="detalle-sub">
+              <span class="codigo-chip" [class]="getCodigoBadge(r.codigo)">{{ r.codigo }}</span>
+              <span class="hora-text" *ngIf="r.horaEntrada"> {{ r.horaEntrada }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Ausente por retiro anticipado (RA / RAE) -->
+          <ng-container *ngIf="r.dictada && r.presente === false && isRetiroNormal(r)">
+            <span class="codigo-chip codigo-ausente">A</span>
+            <!-- Si también llegó tarde antes del retiro -->
+            <div class="detalle-sub" *ngIf="tieneTambienLlegadaTarde(r)">
+              <span class="codigo-chip" [class]="getCodigoBadge(r.codigoLlegada)">{{ r.codigoLlegada }}</span>
+              <span class="hora-text" *ngIf="r.horaEntrada"> {{ r.horaEntrada }}</span>
+            </div>
+            <!-- El retiro -->
+            <div class="detalle-sub">
+              <span class="codigo-chip codigo-retiro">{{ r.codigo }}</span>
+              <span class="hora-text" *ngIf="r.horaSalida"> {{ r.horaSalida }}</span>
+            </div>
+            <!-- Reingreso si aplica -->
+            <div class="detalle-sub" *ngIf="r.horaReingreso">
+              <span class="hora-text">→ Reingreso: {{ r.horaReingreso }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Ausente puro (A, ANC, o nulo) -->
+          <ng-container *ngIf="r.dictada && r.presente === false && isAusenciaPura(r)">
+            <span class="codigo-chip" [class]="getCodigoBadge(r.codigo)">{{ r.codigo ?? 'A' }}</span>
+          </ng-container>
+
+          <!-- Clase dictada pero sin registro de asistencia aún -->
+          <ng-container *ngIf="r.dictada && r.presente === null">
+            <span class="text-muted">—</span>
+          </ng-container>
+
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>
       <tr mat-row *matRowDef="let row; columns: columnas;"
-          [class.fila-ausente]="row.dictada && row.presente === false"></tr>
+          [class.fila-ausente]="row.dictada && row.presente === false && !isRetiroExpress(row)"></tr>
 
     </table>
   </div>

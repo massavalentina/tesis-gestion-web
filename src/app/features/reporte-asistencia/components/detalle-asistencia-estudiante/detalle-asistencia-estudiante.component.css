@@ -112,10 +112,11 @@
   font-size: 2.2rem;
 }
 
-/* Fila inferior: 5 cards más compactas */
+/* Filas inferiores: cards compactas con espacio para etiquetas de 2 líneas */
 .card-chica {
-  padding: 10px 8px;
+  padding: 12px 8px;
   min-width: 72px;
+  min-height: 70px;
 }
 
 .card-valor {
@@ -128,6 +129,12 @@
   font-size: 0.75rem;
   color: #777;
   text-align: center;
+}
+
+.card-label-wrap {
+  white-space: normal;
+  max-width: 90px;
+  line-height: 1.3;
 }
 
 /* Reusar badges del reporte para el card de inasistencias */
@@ -157,10 +164,25 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* Filas con mayor altura para que respiren cuando hay 2 elementos en la celda */
+.detalle-table tr.mat-mdc-row,
+.detalle-table tr.mat-row {
+  height: auto;
+  min-height: 60px;
+}
+
+.detalle-table .mat-mdc-cell,
+.detalle-table .mat-cell {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  vertical-align: top;
+}
+
 .total-registros {
   font-size: 0.82rem;
   color: #888;
   margin-bottom: 8px;
+  padding-left: 16px;
 }
 
 .detalle-table {
@@ -236,19 +258,58 @@
   font-style: italic;
 }
 
+/* Banner de inasistencias por retiros anticipados */
+.ra-acum-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f3e5f5;
+  border: 1px solid #e1bee7;
+  color: #6a1b9a;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.ra-acum-ico {
+  font-size: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.ra-acum-detalle {
+  display: block;
+  font-size: 0.78rem;
+  color: #4a148c;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Código ANC */
+.codigo-anc { background-color: #e8eaf6; color: #283593; }
+
 /* ── Valor inasistencia ── */
-.col-valor { text-align: center; }
+.col-valor {
+  text-align: center;
+  vertical-align: middle !important;
+}
 .valor-negativo { color: #c62828; font-weight: 600; }
 .valor-ok { color: #4caf50; font-weight: 600; }
 
+/* Separación entre código principal y retiro en la misma celda */
+.retiro-linea {
+  margin-top: 8px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
-  .cards-fila { gap: 8px; }
+  .cards-fila { gap: 6px; flex-wrap: wrap; }
   /* Las 2 grandes se achican un poco */
   .card-grande { padding: 16px 10px; }
   .card-valor-lg { font-size: 1.7rem; }
-  /* Las 5 chicas se comprimen pero siguen en fila */
-  .card-chica { min-width: 52px; padding: 8px 4px; }
-  .card-valor { font-size: 1.2rem; }
-  .card-label { font-size: 0.68rem; }
+  /* Las 7 chicas se comprimen pero siguen en fila */
+  .card-chica { min-width: 44px; padding: 8px 4px; }
+  .card-valor { font-size: 1.1rem; }
+  .card-label { font-size: 0.65rem; }
 }

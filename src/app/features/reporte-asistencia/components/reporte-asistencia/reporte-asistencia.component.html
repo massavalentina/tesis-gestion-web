@@ -96,54 +96,46 @@
 
       <!-- Columna DNI -->
       <ng-container matColumnDef="dni">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>DNI</th>
-        <td mat-cell *matCellDef="let est">{{ est.documento }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">DNI</th>
+        <td mat-cell *matCellDef="let est" class="col-num">{{ est.documento }}</td>
       </ng-container>
 
-      <!-- Columna Presencias -->
-      <ng-container matColumnDef="presencias">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Pres.</th>
-        <td mat-cell *matCellDef="let est">{{ est.presencias }}</td>
-      </ng-container>
-
-      <!-- Columna Inasistencias -->
+      <!-- Columna Inasistencias totales -->
       <ng-container matColumnDef="inasistencias">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Inasist.</th>
-        <td mat-cell *matCellDef="let est">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">Inasistencias</th>
+        <td mat-cell *matCellDef="let est" class="col-num">
           <span class="badge" [class]="getBadgeClase(est.inasistencias, est.teaGeneral)">
             {{ est.teaGeneral ? 'TEA' : est.inasistencias }}
           </span>
         </td>
       </ng-container>
 
-      <!-- Columna Llegadas Tarde -->
-      <ng-container matColumnDef="llegadasTarde">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ll. Tarde</th>
-        <td mat-cell *matCellDef="let est">{{ est.llegadasTarde }}</td>
+      <!-- Columna Presencias (P) -->
+      <ng-container matColumnDef="presencias">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">P</th>
+        <td mat-cell *matCellDef="let est" class="col-num">{{ est.presencias }}</td>
       </ng-container>
 
-      <!-- Columna Ausente LLT -->
+      <!-- Columna Ausencias al establecimiento (A) -->
+      <ng-container matColumnDef="ausencias">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">A</th>
+        <td mat-cell *matCellDef="let est" class="col-num">{{ getAusenciasPuras(est) }}</td>
+      </ng-container>
+
+      <!-- Columna Ausente por Llegada Tarde -->
       <ng-container matColumnDef="ausentePorLLT">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Aus. LLT</th>
-        <td mat-cell *matCellDef="let est">{{ est.ausentePorLLT }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num col-header-wrap">
+          Ausencia por<br>llegada tarde
+        </th>
+        <td mat-cell *matCellDef="let est" class="col-num">{{ est.ausentePorLLT }}</td>
       </ng-container>
 
-      <!-- Columna Retiros Anticipados (RA) -->
-      <ng-container matColumnDef="retirosAnticipados">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Ant.</th>
-        <td mat-cell *matCellDef="let est">{{ est.retirosAnticipados }}</td>
-      </ng-container>
-
-      <!-- Columna Retiro Express (RE) -->
-      <ng-container matColumnDef="retirosExpress">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Exp.</th>
-        <td mat-cell *matCellDef="let est">{{ est.retirosExpress ?? 0 }}</td>
-      </ng-container>
-
-      <!-- Columna Retiro Anticipado Extendido (RAE) -->
-      <ng-container matColumnDef="retirosAnticipadosExtendidos">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ret. Ant. Ext.</th>
-        <td mat-cell *matCellDef="let est">{{ est.retirosAnticipadosExtendidos ?? 0 }}</td>
+      <!-- Columna Ausente por Retiro Anticipado -->
+      <ng-container matColumnDef="ausentePorRA">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num col-header-wrap">
+          Ausencia por<br>retiro anticipado
+        </th>
+        <td mat-cell *matCellDef="let est" class="col-num">{{ est.ausentePorRA ?? 0 }}</td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>

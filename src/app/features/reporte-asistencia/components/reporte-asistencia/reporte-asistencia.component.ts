@@ -102,13 +102,11 @@ export class ReporteAsistenciaComponent implements OnInit {
   columnas = [
     'estudiante',
     'dni',
-    'presencias',
     'inasistencias',
-    'llegadasTarde',
+    'presencias',
+    'ausencias',
     'ausentePorLLT',
-    'retirosAnticipados',
-    'retirosExpress',
-    'retirosAnticipadosExtendidos',
+    'ausentePorRA',
   ];
 
   constructor(
@@ -126,11 +124,9 @@ export class ReporteAsistenciaComponent implements OnInit {
         case 'dni': return item.documento;
         case 'presencias': return item.presencias;
         case 'inasistencias': return item.inasistencias;
-        case 'llegadasTarde': return item.llegadasTarde;
+        case 'ausencias': return item.ausenciasPuras ?? 0;
         case 'ausentePorLLT': return item.ausentePorLLT;
-        case 'retirosAnticipados': return item.retirosAnticipados;
-        case 'retirosExpress': return item.retirosExpress ?? 0;
-        case 'retirosAnticipadosExtendidos': return item.retirosAnticipadosExtendidos ?? 0;
+        case 'ausentePorRA': return item.ausentePorRA ?? 0;
         default: return '';
       }
     };
@@ -219,11 +215,14 @@ export class ReporteAsistenciaComponent implements OnInit {
       documento: est.documento,
       presencias: est.presencias.toString(),
       inasistencias: est.inasistencias.toString(),
+      ausenciasPuras: (est.ausenciasPuras ?? 0).toString(),
       llegadasTarde: est.llegadasTarde.toString(),
       ausentePorLLT: est.ausentePorLLT.toString(),
       retirosAnticipados: est.retirosAnticipados.toString(),
       retirosExpress: (est.retirosExpress ?? 0).toString(),
       retirosAnticipadosExtendidos: (est.retirosAnticipadosExtendidos ?? 0).toString(),
+      ausentePorRA: (est.ausentePorRA ?? 0).toString(),
+      ancCount: (est.ausentesNoComputables ?? 0).toString(),
       porcentajeAsistencia: est.porcentajeAsistencia.toString(),
       teaGeneral: est.teaGeneral.toString(),
       origen: 'reporte',
@@ -253,6 +252,10 @@ export class ReporteAsistenciaComponent implements OnInit {
       fechaHasta: this.fechaHasta ? this.toIsoDate(this.fechaHasta) : null,
       estudiantes: this.dataSource.filteredData,
     });
+  }
+
+  getAusenciasPuras(est: ReporteAsistenciaItem): number {
+    return est.ausenciasPuras ?? 0;
   }
 
   getBadgeClase(inasistencias: number, teaGeneral: boolean): string {

@@ -53,7 +53,6 @@ export class DetalleAsistenciaDocenteComponent implements OnInit {
   cargando = true;
   error = false;
 
-  // Columna 'horaEntrada' eliminada por requerimiento
   columnas = ['fecha', 'dictada', 'presente', 'codigo'];
 
   constructor(
@@ -136,28 +135,58 @@ export class DetalleAsistenciaDocenteComponent implements OnInit {
     });
   }
 
-  getPresenteClase(registro: DetalleDocenteRegistro): string {
-    if (!registro.dictada) return 'codigo-default';
-    if (registro.presente === null) return 'codigo-default';
-    return registro.presente ? 'codigo-presente' : 'codigo-ausente';
+  // ── Columna Asistencia ────────────────────────────────────────────────────
+
+  getPresenteTexto(r: DetalleDocenteRegistro): string {
+    if (!r.dictada) return '-';
+    if (r.presente === null) return '-';
+    return r.presente ? 'Presente' : 'Ausente';
   }
 
-  getPresenteTexto(registro: DetalleDocenteRegistro): string {
-    if (!registro.dictada) return 'No dictada';
-    if (registro.presente === null) return '-';
-    return registro.presente ? 'Presente' : 'Ausente';
+  getPresenteClase(r: DetalleDocenteRegistro): string {
+    if (!r.dictada || r.presente === null) return 'codigo-default';
+    return r.presente ? 'codigo-presente' : 'codigo-ausente';
+  }
+
+  // ── Columna Detalle ───────────────────────────────────────────────────────
+
+  /** Llegada tarde (sin retiro): LLT, LLTE, LLTC en TipoManiana */
+  isLlegadaTarde(r: DetalleDocenteRegistro): boolean {
+    return ['LLT', 'LLTE', 'LLTC'].includes((r.codigo ?? '').toUpperCase());
+  }
+
+  /** Retiro anticipado normal (RA/RAE en TipoManiana) */
+  isRetiroNormal(r: DetalleDocenteRegistro): boolean {
+    return ['RA', 'RAE'].includes((r.codigo ?? '').toUpperCase());
+  }
+
+  /** Retiro express (RE en TipoManiana): no genera inasistencia en el espacio */
+  isRetiroExpress(r: DetalleDocenteRegistro): boolean {
+    return (r.codigo ?? '').toUpperCase() === 'RE';
+  }
+
+  /** Hubo también llegada tarde (TipoLlegadaManiana) además de retiro */
+  tieneTambienLlegadaTarde(r: DetalleDocenteRegistro): boolean {
+    return ['LLT', 'LLTE', 'LLTC'].includes((r.codigoLlegada ?? '').toUpperCase());
+  }
+
+  /** Ausencia pura: A, ANC, null (no es LLT, RA/RAE ni RE) */
+  isAusenciaPura(r: DetalleDocenteRegistro): boolean {
+    return !this.isLlegadaTarde(r) && !this.isRetiroNormal(r) && !this.isRetiroExpress(r);
   }
 
   getCodigoBadge(codigo: string | null): string {
     switch ((codigo ?? '').toUpperCase()) {
-      case 'P': return 'codigo-presente';
-      case 'A': return 'codigo-ausente';
+      case 'P':    return 'codigo-presente';
+      case 'A':    return 'codigo-ausente';
+      case 'ANC':  return 'codigo-anc';
       case 'LLT':
       case 'LLTE': return 'codigo-tarde';
       case 'LLTC': return 'codigo-lltc';
       case 'RA':
-      case 'RAE': return 'codigo-retiro';
-      default: return 'codigo-default';
+      case 'RAE':
+      case 'RE':   return 'codigo-retiro';
+      default:     return 'codigo-default';
     }
   }
 

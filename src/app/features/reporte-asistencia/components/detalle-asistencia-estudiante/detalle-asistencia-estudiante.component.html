@@ -33,41 +33,65 @@
   <!-- Tarjetas resumen (solo si vienen del reporte) -->
   <div class="resumen-cards" *ngIf="presencias !== null">
 
-    <!-- Fila superior: 2 cards grandes con los datos principales -->
+    <!-- Fila 1: Presencias | Ausencias | Ausencia no computable | Inasistencias -->
     <div class="cards-fila">
       <div class="card card-grande">
         <span class="card-valor card-valor-lg">{{ presencias }}</span>
         <span class="card-label">Presencias</span>
       </div>
       <div class="card card-grande">
+        <span class="card-valor card-valor-lg">{{ ausenciasPuras ?? 0 }}</span>
+        <span class="card-label">Ausencias</span>
+      </div>
+      <div class="card card-grande">
+        <span class="card-valor card-valor-lg">{{ ancCount ?? 0 }}</span>
+        <span class="card-label card-label-wrap">Ausencia no computable</span>
+      </div>
+      <div class="card card-grande">
         <span class="card-valor card-valor-lg" [class]="getBadgeClase(inasistencias, teaGeneral)">
-          {{ inasistencias }}
+          {{ teaGeneral ? 'TEA' : inasistencias }}
         </span>
         <span class="card-label">Inasistencias</span>
       </div>
     </div>
 
-    <!-- Fila inferior: 5 cards más chicas con el detalle de movimientos -->
+    <!-- Fila 2: Llegadas tarde -->
     <div class="cards-fila">
       <div class="card card-chica">
-        <span class="card-valor">{{ llegadasTarde }}</span>
-        <span class="card-label">Llegadas Tarde</span>
+        <span class="card-valor">{{ ausentePorLLT ?? 0 }}</span>
+        <span class="card-label card-label-wrap">Ausencia por llegada tarde</span>
       </div>
       <div class="card card-chica">
-        <span class="card-valor">{{ ausentePorLLT }}</span>
-        <span class="card-label">Ausente LLT</span>
+        <span class="card-valor">{{ llegadasTarde ?? 0 }}</span>
+        <span class="card-label">LLT</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ llegadasTardeExtendidas ?? 0 }}</span>
+        <span class="card-label">LLTE</span>
+      </div>
+      <div class="card card-chica">
+        <span class="card-valor">{{ llegadasTardeCompletas ?? 0 }}</span>
+        <span class="card-label">LLTC</span>
+      </div>
+    </div>
+
+    <!-- Fila 3: Retiros -->
+    <div class="cards-fila">
+      <div class="card card-chica">
+        <span class="card-valor">{{ ausentePorRA ?? 0 }}</span>
+        <span class="card-label card-label-wrap">Ausencia por retiro anticipado</span>
       </div>
       <div class="card card-chica">
         <span class="card-valor">{{ retirosExpress ?? 0 }}</span>
-        <span class="card-label">Ret. Exp.</span>
+        <span class="card-label">RE</span>
       </div>
       <div class="card card-chica">
-        <span class="card-valor">{{ retirosAnticipados }}</span>
-        <span class="card-label">Ret. Ant.</span>
+        <span class="card-valor">{{ retirosAnticipados ?? 0 }}</span>
+        <span class="card-label">RA</span>
       </div>
       <div class="card card-chica">
         <span class="card-valor">{{ retirosAnticipadosExtendidos ?? 0 }}</span>
-        <span class="card-label">Ret. Ant. Ext.</span>
+        <span class="card-label">RAE</span>
       </div>
     </div>
 
@@ -100,6 +124,16 @@
     </span>
   </div>
 
+  <!-- Nota de inasistencias acumuladas por retiros anticipados -->
+  <div class="ra-acum-banner" *ngIf="(ausentePorRA ?? 0) > 0">
+    <mat-icon class="ra-acum-ico">directions_run</mat-icon>
+    <span>
+      <strong>{{ ausentePorRA }} inasistencia{{ (ausentePorRA ?? 0) === 1 ? '' : 's' }}</strong>
+      sumada{{ (ausentePorRA ?? 0) === 1 ? '' : 's' }} por retiros anticipados
+      <span class="ra-acum-detalle">(RA = 0,5 falta · RAE turno mañana = 1 falta · RAE turno tarde = 0,5 falta)</span>
+    </span>
+  </div>
+
   <!-- Tabla de registros -->
   <div class="table-wrapper" *ngIf="!cargando && !error && registrosFiltrados.length > 0">
 
@@ -117,6 +151,7 @@
       <ng-container matColumnDef="manana">
         <th mat-header-cell *matHeaderCellDef>Mañana</th>
         <td mat-cell *matCellDef="let r">
+          <!-- Código principal (P, A, LLT, LLTE, LLTC, ANC…) -->
           <span class="codigo-chip" [class]="getCodigoBadge(r.codigoManana)">
             {{ r.codigoManana }}
           </span>
@@ -124,6 +159,12 @@
           <span class="lltc-nota" *ngIf="(r.codigoManana ?? '').toUpperCase() === 'LLTC'">
             Inasistencia por llegadas tardes
           </span>
+          <!-- Código de retiro adicional (RA, RAE, RE) cuando hay llegada + retiro el mismo día -->
+          <div class="retiro-linea" *ngIf="r.codigoRetiroManana">
+            <span class="codigo-chip codigo-retiro">{{ r.codigoRetiroManana }}</span>
+            <span class="hora-text" *ngIf="r.horaSalidaManana"> Salida: {{ r.horaSalidaManana }}</span>
+            <span class="hora-text" *ngIf="r.horaReingresoManana"> → {{ r.horaReingresoManana }}</span>
+          </div>
         </td>
       </ng-container>
 
@@ -131,15 +172,22 @@
       <ng-container matColumnDef="tarde">
         <th mat-header-cell *matHeaderCellDef>Tarde</th>
         <td mat-cell *matCellDef="let r">
+          <!-- Código principal tarde -->
           <span class="codigo-chip" [class]="getCodigoBadge(r.codigoTarde)">
             {{ r.codigoTarde }}
           </span>
+          <!-- Código de retiro adicional tarde -->
+          <div class="retiro-linea" *ngIf="r.codigoRetiroTarde">
+            <span class="codigo-chip codigo-retiro">{{ r.codigoRetiroTarde }}</span>
+            <span class="hora-text" *ngIf="r.horaSalidaTarde"> Salida: {{ r.horaSalidaTarde }}</span>
+            <span class="hora-text" *ngIf="r.horaReingresoTarde"> → {{ r.horaReingresoTarde }}</span>
+          </div>
         </td>
       </ng-container>
 
       <!-- Valor -->
       <ng-container matColumnDef="valor">
-        <th mat-header-cell *matHeaderCellDef>Valor Inasist.</th>
+        <th mat-header-cell *matHeaderCellDef class="col-valor">Valor Inasistencia</th>
         <td mat-cell *matCellDef="let r" class="col-valor">
           <span *ngIf="r.valorTotal > 0" class="valor-negativo">{{ r.valorTotal }}</span>
           <span *ngIf="r.valorTotal === 0" class="valor-ok">0</span>

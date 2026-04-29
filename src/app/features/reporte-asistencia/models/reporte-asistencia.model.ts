@@ -12,6 +12,12 @@ export interface ReporteAsistenciaItem {
   retirosExpress: number;
   /** Cantidad de Retiros Anticipados Extendidos (código RAE) */
   retirosAnticipadosExtendidos: number;
+  /** Inasistencias acumuladas por retiros anticipados (RA/RAE) */
+  ausentePorRA?: number;
+  /** Inasistencias generadas exclusivamente por código A (ausente al establecimiento) */
+  ausenciasPuras?: number;
+  /** Cantidad de Ausencias No Computables (código ANC) */
+  ausentesNoComputables?: number;
   porcentajeAsistencia: number;
   teaGeneral: boolean;
 }

@@ -191,6 +191,25 @@
   gap: 6px;
 }
 
+/* ── Columnas numéricas centradas ── */
+.reporte-table td.col-num {
+  text-align: center;
+}
+
+.reporte-table th.col-num {
+  text-align: center;
+}
+
+.reporte-table th.col-num ::ng-deep .mat-sort-header-container {
+  justify-content: center;
+  position: relative;
+}
+
+.reporte-table th.col-num ::ng-deep .mat-sort-header-arrow {
+  position: absolute;
+  right: 0;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-titulo { font-size: 1.1rem; }
