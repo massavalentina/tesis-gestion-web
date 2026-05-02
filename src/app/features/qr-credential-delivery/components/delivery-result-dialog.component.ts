@@ -53,16 +53,16 @@ export interface DatosResultadoEnvioQr {
   styles: [`
     .dlg { text-align: center; padding: 8px 4px 4px; max-width: 92vw; color: #0f2f4b; }
     .icon {
-      display: inline-flex; align-items: center; justify-content: center; width: 68px; height: 68px;
-      border-radius: 20px; background: #dff3e8; color: #1f6a5c; margin-bottom: 12px; border: 1px solid #cae8d8;
+      display: flex; align-items: center; justify-content: center; width: 68px; height: 68px;
+      border-radius: 20px; background: #dff3e8; color: #1f6a5c; margin: 0 auto 12px; border: 1px solid #cae8d8;
     }
     .icon.warn { background: #f9e0dd; color: #b3261e; border-color: #efcbc7; }
     .icon.accent { background: #fff1d7; color: #9a6700; border-color: #f4dfb0; }
     .icon mat-icon { font-size: 34px; width: 34px; height: 34px; }
     .badge {
-      display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px;
       background: #f0f8f3; border: 1px solid #cae8d8; color: #1f6a5c; font-size: 12px;
-      font-weight: 900; margin-bottom: 12px;
+      font-weight: 900; margin: 0 auto 12px; width: fit-content;
     }
     .badge.warn { background: #fff3f1; border-color: #efcbc7; color: #b0473f; }
     .badge.accent { background: #fff8e7; border-color: #f4dfb0; color: #9a6700; }

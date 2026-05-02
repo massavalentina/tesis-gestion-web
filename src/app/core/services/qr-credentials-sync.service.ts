@@ -4,6 +4,7 @@ import { Observable, Subject } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class QrCredentialsSyncService {
   private readonly generationUpdatedSubject = new Subject<string>();
+  private readonly deliveryUpdatedSubject = new Subject<string>();
 
   notifyGenerationUpdated(cursoId: string): void {
     if (!cursoId) {
@@ -15,5 +16,17 @@ export class QrCredentialsSyncService {
 
   get generationUpdated$(): Observable<string> {
     return this.generationUpdatedSubject.asObservable();
+  }
+
+  notifyDeliveryUpdated(cursoId: string): void {
+    if (!cursoId) {
+      return;
+    }
+
+    this.deliveryUpdatedSubject.next(cursoId);
+  }
+
+  get deliveryUpdated$(): Observable<string> {
+    return this.deliveryUpdatedSubject.asObservable();
   }
 }

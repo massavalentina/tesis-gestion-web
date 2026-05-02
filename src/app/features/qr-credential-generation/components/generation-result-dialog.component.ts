@@ -31,9 +31,28 @@ export interface DatosResultadoGeneracionQr {
       <h2>{{ data.titulo }}</h2>
       <p class="message">{{ data.mensaje }}</p>
 
+      <div class="summary">
+        <div class="summary__item">
+          <span>Generados</span>
+          <strong>{{ data.generados }}</strong>
+        </div>
+        <div class="summary__item">
+          <span>Desactivados</span>
+          <strong>{{ data.desactivados }}</strong>
+        </div>
+        <div class="summary__item">
+          <span>Omitidos</span>
+          <strong>{{ data.omitidos }}</strong>
+        </div>
+        <div class="summary__item">
+          <span>Errores</span>
+          <strong>{{ data.errores }}</strong>
+        </div>
+      </div>
+
       <div class="actions">
         <button mat-raised-button class="btn-primary" (click)="cerrar()">
-          Salir
+          Cerrar
         </button>
       </div>
     </div>
@@ -47,7 +66,7 @@ export interface DatosResultadoGeneracionQr {
     }
 
     .icon {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       width: 68px;
@@ -55,7 +74,7 @@ export interface DatosResultadoGeneracionQr {
       border-radius: 20px;
       background: #dff3e8;
       color: #1f6a5c;
-      margin-bottom: 12px;
+      margin: 0 auto 12px;
       border: 1px solid #cae8d8;
     }
 
@@ -78,8 +97,9 @@ export interface DatosResultadoGeneracionQr {
     }
 
     .badge {
-      display: inline-flex;
+      display: flex;
       align-items: center;
+      justify-content: center;
       padding: 6px 12px;
       border-radius: 999px;
       background: #f0f8f3;
@@ -87,7 +107,8 @@ export interface DatosResultadoGeneracionQr {
       color: #1f6a5c;
       font-size: 12px;
       font-weight: 900;
-      margin-bottom: 12px;
+      margin: 0 auto 12px;
+      width: fit-content;
     }
 
     .badge.warn {
@@ -112,9 +133,38 @@ export interface DatosResultadoGeneracionQr {
 
     .message {
       color: rgba(15, 47, 75, 0.74);
-      margin: 0 0 18px;
+      margin: 0 0 14px;
       line-height: 1.45;
       font-size: 14px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .summary__item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #dce8f3;
+      background: #f8fbff;
+      display: grid;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .summary__item span {
+      color: #63809c;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .summary__item strong {
+      color: #22435f;
+      font-size: 15px;
+      font-weight: 900;
     }
 
     .actions {
@@ -134,6 +184,10 @@ export interface DatosResultadoGeneracionQr {
     @media (max-width: 560px) {
       h2 {
         font-size: 20px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
       }
     }
   `]
