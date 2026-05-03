@@ -1129,6 +1129,70 @@
   margin-bottom: 10px;
 }
 
+/* ── Botón info en tabla de tutores ── */
+.btn-tabla-info {
+  color: #757575;
+}
+.btn-tabla-info:hover {
+  background: #f5f5f5;
+  border-color: #bdbdbd;
+  color: #424242;
+}
+
+/* Ajuste de ancho: columna acciones ahora tiene 3 iconos */
+.tutores-tabla th:nth-child(1) { width: 29%; }
+.tutores-tabla th:nth-child(6) { width: 13%; }
+
+/* ── Alertas de datos incompletos en la ficha ── */
+.ficha-alerta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 7px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6d4c00;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.ficha-alerta-chip-tutor {
+  background: #fce4ec;
+  border-color: #f48fb1;
+  color: #880e4f;
+}
+
+.alerta-chip-icon {
+  font-size: 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #f57f17;
+  flex-shrink: 0;
+}
+
+.ficha-alerta-chip-tutor .alerta-chip-icon {
+  color: #c2185b;
+}
+
+/* ── Modal detalle tutor ── */
+.modal-detalle-body {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detalle-tutor-nombre {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-titulo,

@@ -118,6 +118,13 @@
 
               <div class="col-header">DATOS ESTUDIANTE</div>
 
+              <!-- Alerta: datos opcionales del estudiante sin completar -->
+              <div class="ficha-alerta-chip ficha-alerta-chip-tutor"
+                   *ngIf="estudianteTieneDatosFaltantes(est.idEstudiante)">
+                <mat-icon class="alerta-chip-icon">info</mat-icon>
+                Alumno con datos incompletos
+              </div>
+
               <div class="ficha-campo">
                 <span class="campo-label">NOMBRE COMPLETO</span>
                 <span class="campo-valor">{{ est.apellido }}, {{ est.nombre }}</span>
@@ -129,6 +136,10 @@
               <div class="ficha-campo">
                 <span class="campo-label">FECHA NACIMIENTO</span>
                 <span class="campo-valor">{{ ficha.fechaNacimiento | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="ficha-campo">
+                <span class="campo-label">SEXO</span>
+                <span class="campo-valor" [class.muted]="!ficha.sexo">{{ ficha.sexo || '-' }}</span>
               </div>
               <div class="ficha-campo">
                 <span class="campo-label">DOMICILIO</span>
@@ -187,7 +198,14 @@
             <!-- ── COLUMNA DERECHA: Tutor ── -->
             <div class="ficha-col">
 
-              <div class="col-header">DATOS TUTOR</div>
+              <div class="col-header">DATOS TUTOR PRINCIPAL</div>
+
+              <!-- Alerta: datos opcionales del tutor principal sin completar -->
+              <div class="ficha-alerta-chip ficha-alerta-chip-tutor"
+                   *ngIf="tutorPrincipalTieneDatosFaltantes(est.idEstudiante)">
+                <mat-icon class="alerta-chip-icon">info</mat-icon>
+                Tutor con datos incompletos
+              </div>
 
               <ng-container *ngIf="getTutorPrincipal(est.idEstudiante) as tutor; else sinTutores">
 
@@ -210,12 +228,24 @@
                   <span class="campo-valor">{{ tutor.relacionEstudiante || '-' }}</span>
                 </div>
                 <div class="ficha-campo">
+                  <span class="campo-label">FECHA NACIMIENTO</span>
+                  <span class="campo-valor">{{ tutor.fechaNacimiento | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="ficha-campo">
                   <span class="campo-label">TELÉFONO CONTACTO</span>
                   <span class="campo-valor">{{ tutor.telefono || '-' }}</span>
                 </div>
                 <div class="ficha-campo">
-                  <span class="campo-label">DISPONIBILIDAD HORARIA</span>
-                  <span class="campo-valor">{{ tutor.disponibilidad || '-' }}</span>
+                  <span class="campo-label">CORREO ELECTRÓNICO</span>
+                  <span class="campo-valor" [class.muted]="!tutor.correo">{{ tutor.correo || '-' }}</span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">DOMICILIO</span>
+                  <span class="campo-valor" [class.muted]="!tutor.domicilio">{{ tutor.domicilio || '-' }}</span>
+                </div>
+                <div class="ficha-campo">
+                  <span class="campo-label">DISPONIBILIDAD</span>
+                  <span class="campo-valor" [class.muted]="!tutor.disponibilidad">{{ tutor.disponibilidad || '-' }}</span>
                 </div>
 
               </ng-container>
@@ -224,8 +254,11 @@
                 <div class="ficha-campo"><span class="campo-label">NOMBRE COMPLETO</span><span class="campo-valor muted">-</span></div>
                 <div class="ficha-campo"><span class="campo-label">DNI</span><span class="campo-valor muted">-</span></div>
                 <div class="ficha-campo"><span class="campo-label">RELACIÓN ESTUDIANTE</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">FECHA NACIMIENTO</span><span class="campo-valor muted">-</span></div>
                 <div class="ficha-campo"><span class="campo-label">TELÉFONO CONTACTO</span><span class="campo-valor muted">-</span></div>
-                <div class="ficha-campo"><span class="campo-label">DISPONIBILIDAD HORARIA</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">CORREO ELECTRÓNICO</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">DOMICILIO</span><span class="campo-valor muted">-</span></div>
+                <div class="ficha-campo"><span class="campo-label">DISPONIBILIDAD</span><span class="campo-valor muted">-</span></div>
               </ng-template>
 
               <!-- Botón principal derecho -->
@@ -344,6 +377,11 @@
                   </td>
                   <td>
                     <div class="acciones-cell">
+                      <button class="btn-tabla-icono btn-tabla-info"
+                              matTooltip="Ver fecha de nacimiento y domicilio"
+                              (click)="verDetalleTutor(tutor)">
+                        <mat-icon>info_outline</mat-icon>
+                      </button>
                       <button class="btn-tabla-icono btn-tabla-editar"
                               matTooltip="Editar tutor"
                               (click)="editarTutor(tutor, est.idEstudiante)">
@@ -491,11 +529,19 @@
               </mat-form-field>
             </div>
 
-            <div class="modal-form-row">
+            <div class="modal-form-row two-col">
               <mat-form-field appearance="outline">
                 <mat-label>Fecha de nacimiento</mat-label>
                 <input matInput type="date" formControlName="fechaNacimiento">
                 <mat-error>{{ ctrlError(modal.form, 'fechaNacimiento') }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Sexo</mat-label>
+                <mat-select formControlName="sexo">
+                  <mat-option value="">-</mat-option>
+                  <mat-option value="M">Masculino</mat-option>
+                  <mat-option value="F">Femenino</mat-option>
+                </mat-select>
               </mat-form-field>
             </div>
 
@@ -583,43 +629,27 @@
               </mat-form-field>
             </div>
 
-            <!-- DNI + Fecha nacimiento (fecha solo para nuevo tutor) -->
+            <!-- DNI + Fecha nacimiento -->
             <div class="modal-form-row two-col">
               <mat-form-field appearance="outline">
                 <mat-label>DNI</mat-label>
                 <input matInput formControlName="documento" placeholder="12345678">
                 <mat-error>{{ ctrlError(modal.form, 'documento') }}</mat-error>
               </mat-form-field>
-              <mat-form-field appearance="outline" *ngIf="!modal.idTutor; else dniFiller">
-                <mat-label>Fecha de nacimiento <span class="campo-req">*</span></mat-label>
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de nacimiento</mat-label>
                 <input matInput type="date" formControlName="fechaNacimiento">
                 <mat-error>{{ ctrlError(modal.form, 'fechaNacimiento') }}</mat-error>
               </mat-form-field>
-              <ng-template #dniFiller>
-                <mat-form-field appearance="outline">
-                  <mat-label>Número de contacto</mat-label>
-                  <input matInput formControlName="telefono" placeholder="1123456789">
-                  <mat-error>{{ ctrlError(modal.form, 'telefono') }}</mat-error>
-                </mat-form-field>
-              </ng-template>
             </div>
 
-            <!-- Teléfono (solo en nuevo tutor ocupa la segunda fila) -->
-            <div class="modal-form-row two-col" *ngIf="!modal.idTutor">
+            <!-- Teléfono + Correo -->
+            <div class="modal-form-row two-col">
               <mat-form-field appearance="outline">
                 <mat-label>Número de contacto</mat-label>
                 <input matInput formControlName="telefono" placeholder="1123456789">
                 <mat-error>{{ ctrlError(modal.form, 'telefono') }}</mat-error>
               </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Correo de contacto</mat-label>
-                <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com">
-                <mat-error>{{ ctrlError(modal.form, 'correo') }}</mat-error>
-              </mat-form-field>
-            </div>
-
-            <!-- Correo (en edición ocupa fila completa) -->
-            <div class="modal-form-row" *ngIf="modal.idTutor">
               <mat-form-field appearance="outline">
                 <mat-label>Correo de contacto</mat-label>
                 <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com">
@@ -746,6 +776,40 @@
               <mat-spinner *ngIf="modal.eliminando" diameter="16"></mat-spinner>
               <span *ngIf="!modal.eliminando">Eliminar</span>
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: DETALLE TUTOR (fecha nacimiento + domicilio)
+       ══════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="modalDetalleTutor as modal">
+    <div class="modal-overlay" (click)="cerrarModalDetalleTutor()">
+      <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-titulo">DATOS ADICIONALES</span>
+          <button class="modal-close" (click)="cerrarModalDetalleTutor()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="modal-detalle-body">
+          <div class="detalle-tutor-nombre">{{ modal.tutor.apellido }}, {{ modal.tutor.nombre }}</div>
+          <div class="ficha-campo">
+            <span class="campo-label">FECHA NACIMIENTO</span>
+            <span class="campo-valor" [class.muted]="!modal.tutor.fechaNacimiento">
+              {{ modal.tutor.fechaNacimiento ? (modal.tutor.fechaNacimiento | date:'dd/MM/yyyy') : '-' }}
+            </span>
+          </div>
+          <div class="ficha-campo">
+            <span class="campo-label">DOMICILIO</span>
+            <span class="campo-valor" [class.muted]="!modal.tutor.domicilio">
+              {{ modal.tutor.domicilio || '-' }}
+            </span>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-modal-save" (click)="cerrarModalDetalleTutor()">Cerrar</button>
           </div>
         </div>
       </div>

@@ -14,6 +14,7 @@ export interface UpdateEstudianteDto {
   documento: string;
   fechaNacimiento: string;
   domicilio: string | null;
+  sexo?: string | null;
 }
 
 export interface UpdateTutorDto {
