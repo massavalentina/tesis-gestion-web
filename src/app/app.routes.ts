@@ -96,6 +96,12 @@ export const routes: Routes = [
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),
       },
+      {
+        path: 'reporte-retiros',
+        loadComponent: () =>
+          import('../app/features/reporte-retiros/components/reporte-retiros/reporte-retiros.component')
+            .then(m => m.ReporteRetirosComponent),
+      },
     ],
   }
 ];

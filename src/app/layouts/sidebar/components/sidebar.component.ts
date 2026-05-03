@@ -120,21 +120,40 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Parte Diario
           </a>
 
-          <a class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }">
-            Asistencia General
-          </a>
+          <!-- Sub-grupo Reportes -->
+          <button class="subitem subitem-parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleReportes()">
+            <span>Reportes</span>
+            <mat-icon class="chevron-sub" [class.open]="isReportesOpen">expand_more</mat-icon>
+          </button>
 
-          <a class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia-docente"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }">
-            Asistencia por EC
-          </a>
+          <div class="sub-submenu" *ngIf="isReportesOpen" @expandCollapse>
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-asistencia"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: false }">
+              Asistencia General
+            </a>
+
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-asistencia-docente"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: false }">
+              Asistencia por EC
+            </a>
+
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-retiros"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: true }">
+              Listado de Retiros
+            </a>
+          </div>
         </div>
 
         <!-- Credenciales QR -->
@@ -261,23 +280,43 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Parte Diario
           </a>
 
-          <a class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }"
-             (click)="closeMobile()">
-            Asistencia General
-          </a>
+          <!-- Sub-grupo Reportes (mobile) -->
+          <button class="subitem subitem-parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleReportes()">
+            <span>Reportes</span>
+            <mat-icon class="chevron-sub" [class.open]="isReportesOpen">expand_more</mat-icon>
+          </button>
 
-          <a class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia-docente"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }"
-             (click)="closeMobile()">
-            Asistencia por EC
-          </a>
+          <div class="sub-submenu" *ngIf="isReportesOpen" @expandCollapse>
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-asistencia"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: false }"
+               (click)="closeMobile()">
+              Asistencia General
+            </a>
+
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-asistencia-docente"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: false }"
+               (click)="closeMobile()">
+              Asistencia por EC
+            </a>
+
+            <a class="subsubitem"
+               matRipple
+               routerLink="/reporte-retiros"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: true }"
+               (click)="closeMobile()">
+              Listado de Retiros
+            </a>
+          </div>
         </div>
 
         <!-- Credenciales QR -->
@@ -329,6 +368,7 @@ export class SidebarComponent {
   isMobile = false;
   open = false;
   asistenciaOpen = false;
+  isReportesOpen = false;
   scannerActivo = false;
 
   get mostrarEscaneoQr(): boolean {
@@ -360,6 +400,10 @@ export class SidebarComponent {
 
   closeAsistencia() {
     this.asistenciaOpen = false;
+  }
+
+  toggleReportes() {
+    this.isReportesOpen = !this.isReportesOpen;
   }
 
   closeMobile() {

@@ -204,6 +204,59 @@ nav {
 }
 
 /* ============================= */
+/* SUB-SUBMENÚ (Reportes) */
+/* ============================= */
+
+.subitem-parent {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: space-between;
+}
+
+.sub-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  margin-left: 0.75rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.subsubitem {
+  height: 36px;
+  padding: 0 0.75rem;
+
+  display: flex;
+  align-items: center;
+
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #334155;
+  text-decoration: none !important;
+
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.subsubitem:hover,
+.subsubitem:active,
+.subsubitem:focus-visible {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+.subsubitem.is-active-sub {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  font-weight: 600;
+}
+
+/* ============================= */
 /* FLECHITA */
 /* ============================= */
 
@@ -213,6 +266,17 @@ nav {
 }
 
 .chevron.open {
+  transform: rotate(180deg);
+}
+
+.chevron-sub {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.chevron-sub.open {
   transform: rotate(180deg);
 }
 

@@ -524,6 +524,10 @@
   pointer-events: none;
 }
 
+/* Páginas 2+ tienen margen superior para la banda fija; página 1 no */
+@page            { margin-top: 44pt }
+@page :first     { margin-top: 0    }
+
 @media print {
 
   /* Ocultar toda la UI de pantalla */
@@ -548,7 +552,12 @@
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
   /* ── Encabezado de página 1 ── */
+  /* position:relative + z-index:200 + background:white tapa la banda fija en p.1 */
   .pp-header {
+    position: relative;
+    z-index: 200;
+    background: white;
+    padding-top: 18pt;
     text-align: center;
     margin-bottom: 22pt;
     padding-bottom: 10pt;
@@ -573,26 +582,31 @@
 
   /* ── Encabezado en páginas 2+ ── */
   /*
+    position: fixed en print → el navegador lo repite en la parte superior de
+    CADA página impresa (incluida la 1ª, donde aparece como banda fina encima
+    del encabezado principal). Se añade margin-top al pp-header para compensar.
     Fondo #f0f9ff (sky-50) → en B&N queda gris ~97%: legible.
-    Borde izquierdo azul primary → en B&N queda gris medio: visible.
-    Sin fondo oscuro sobre texto → seguro en B&N.
   */
   .pp-page-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6pt;
     padding: 5pt 10pt;
-    margin-bottom: 12pt;
     background: #f0f9ff;
-    border: 0.5pt solid #bae6fd;
+    border-bottom: 0.5pt solid #bae6fd;
     border-left: 3pt solid #0284c7;
-    border-radius: 0 4pt 4pt 0;
     font-family: 'Open Sans', sans-serif;
     font-size: 8.5pt;
     font-weight: 600;
     color: #0c4a6e;
+    z-index: 100;
   }
+
   .pp-ph-logo {
     height: 14pt;
     width: auto;

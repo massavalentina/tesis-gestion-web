@@ -416,7 +416,13 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="print-only">
 
-      <!-- Encabezado con logo + título -->
+      <!-- Encabezado fijo — aparece en TODAS las páginas (position:fixed en @media print) -->
+      <div class="pp-page-header">
+        <img src="logo.jpg" class="pp-ph-logo" alt="Logo" />
+        <span>Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</span>
+      </div>
+
+      <!-- Encabezado con logo + título (página 1) -->
       <div class="pp-header">
         <img src="logo.jpg" class="pp-logo" alt="Logo Colegio" />
         <div class="pp-titulo">Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</div>
@@ -429,13 +435,7 @@
       </div>
 
       <!-- Plantilla reutilizable para un turno -->
-      <ng-template #bloqueturno let-turno let-label="label" let-showHdr="showHdr">
-
-        <!-- Encabezado repetido en páginas 2+ -->
-        <div *ngIf="showHdr" class="pp-page-header">
-          <img src="logo.jpg" class="pp-ph-logo" alt="Logo" />
-          <span>Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</span>
-        </div>
+      <ng-template #bloqueturno let-turno let-label="label">
 
         <div class="pp-turno-sep">
           <h2 class="pp-turno-titulo">{{ label }}</h2>
@@ -562,15 +562,11 @@
       <!-- Separador + Turno Tarde -->
       <ng-container *ngIf="resumen!.tarde.disponible">
         <div class="pp-section-sep"></div>
-        <ng-container *ngTemplateOutlet="bloqueturno; context: { $implicit: resumen!.tarde, label: 'Turno Tarde', showHdr: true }"></ng-container>
+        <ng-container *ngTemplateOutlet="bloqueturno; context: { $implicit: resumen!.tarde, label: 'Turno Tarde' }"></ng-container>
       </ng-container>
 
       <!-- Separador + Actividad del día -->
       <div class="pp-section-sep"></div>
-      <div class="pp-page-header">
-        <img src="logo.jpg" class="pp-ph-logo" alt="Logo" />
-        <span>Parte Diario &ndash; {{ printCursoLabel }} &ndash; {{ printFechaLarga }}</span>
-      </div>
       <div class="pp-turno-sep">
         <h2 class="pp-turno-titulo">Actividad del día</h2>
       </div>
