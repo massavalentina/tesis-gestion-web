@@ -6,7 +6,8 @@
       "Bash(npx ng:*)",
       "Bash(grep -E \"\\\\.\\(ts|js|java|cs\\)$\")",
       "Bash(powershell:*)",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(dotnet build *)"
     ]
   }
 }
