@@ -163,8 +163,9 @@
                 <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-estudiante">Estudiante</th>
                 <td mat-cell *matCellDef="let fila" class="col-estudiante">
                   <div class="nombre-cell">
-                    <div class="avatar">{{ fila.estudiante.nombre.charAt(0) }}</div>
+                    <div class="avatar" [class.avatar-tea]="fila.estudiante.teaGeneral">{{ fila.estudiante.nombre.charAt(0) }}</div>
                     <span class="nombre-texto">{{ fila.estudiante.apellido }}, {{ fila.estudiante.nombre }}</span>
+                    <span class="tea-chip" *ngIf="fila.estudiante.teaGeneral">TEA</span>
                   </div>
                 </td>
               </ng-container>
@@ -242,25 +243,23 @@
                               class="icon-ok" matTooltip="Guardado">check_circle</mat-icon>
                     <mat-icon *ngIf="fila.error" class="icon-error" [matTooltip]="fila.error ?? 'Error'">error</mat-icon>
 
-                    <!-- Botón de retiro: solo visible para no-TEA y si el retiro es del turno activo -->
-                    <ng-container *ngIf="!fila.estudiante.teaGeneral">
-                      <button *ngIf="retiroTurnoActivo(fila)"
-                              class="retiro-chip-btn retiro-chip-{{ retiroChipClass(fila) }}"
-                              (click)="abrirRetiroGeneral(fila)"
-                              [matTooltip]="retiroTooltip(fila)"
-                              matTooltipPosition="left">
-                        <mat-icon class="retiro-chip-icon">directions_run</mat-icon>
-                        {{ retiroEtiquetaLabel(fila) }}
-                      </button>
-                      <button *ngIf="puedeNuevoRetiro(fila)"
-                              mat-icon-button
-                              class="btn-retiro-nuevo"
-                              (click)="abrirRetiroGeneral(fila)"
-                              [matTooltip]="retiroTooltip(fila)"
-                              matTooltipPosition="left">
-                        <mat-icon>directions_run</mat-icon>
-                      </button>
-                    </ng-container>
+                    <!-- Botón de retiro: visible para todos (incluyendo TEA) -->
+                    <button *ngIf="retiroTurnoActivo(fila)"
+                            class="retiro-chip-btn retiro-chip-{{ retiroChipClass(fila) }}"
+                            (click)="abrirRetiroGeneral(fila)"
+                            [matTooltip]="retiroTooltip(fila)"
+                            matTooltipPosition="left">
+                      <mat-icon class="retiro-chip-icon">directions_run</mat-icon>
+                      {{ retiroEtiquetaLabel(fila) }}
+                    </button>
+                    <button *ngIf="puedeNuevoRetiro(fila)"
+                            mat-icon-button
+                            class="btn-retiro-nuevo"
+                            (click)="abrirRetiroGeneral(fila)"
+                            [matTooltip]="retiroTooltip(fila)"
+                            matTooltipPosition="left">
+                      <mat-icon>directions_run</mat-icon>
+                    </button>
 
                     <button mat-icon-button (click)="abrirDetalle(fila)"
                             matTooltip="Ver detalle por espacio curricular"

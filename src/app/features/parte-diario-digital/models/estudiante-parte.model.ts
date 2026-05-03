@@ -11,4 +11,5 @@ export interface EstudianteParte {
   horaEntrada: string | null;
   horaSalida: string | null;
   retiroActivo?: RetiroActivo | null;
+  teaGeneral?: boolean;
 }

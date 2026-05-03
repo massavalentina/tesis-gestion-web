@@ -102,6 +102,7 @@
                       (click)="onVerEstudiante(e)"
                       [matTooltip]="e.apellido + ', ' + e.nombre">
                 {{ e.apellido }}, {{ e.nombre[0] }}.
+                <span class="tea-chip" *ngIf="e.teaGeneral">TEA</span>
               </button>
             </div>
           </div>
@@ -119,6 +120,7 @@
                       (click)="onVerEstudiante(e)"
                       [matTooltip]="(e.horaEntrada ? 'Entrada: ' + e.horaEntrada : '')">
                 {{ e.apellido }}, {{ e.nombre[0] }}.
+                <span class="tea-chip" *ngIf="e.teaGeneral">TEA</span>
               </button>
             </div>
           </div>
@@ -136,6 +138,7 @@
                       (click)="e.retiroActivo ? onVerRetiro(e) : onVerEstudiante(e)"
                       [matTooltip]="e.apellido + ', ' + e.nombre + (e.retiroActivo?.horarioRetiro ? ' · Retiro: ' + e.retiroActivo!.horarioRetiro : '')">
                 {{ e.apellido }}, {{ e.nombre[0] }}.
+                <span class="tea-chip" *ngIf="e.teaGeneral">TEA</span>
                 <span *ngIf="e.retiroActivo?.etiquetaEstado"
                       [class]="'pd-retiro-chip pd-retiro-chip-' + retiroChipClass(e.retiroActivo!.etiquetaEstado!)">
                   <mat-icon class="pd-retiro-icon">{{ retiroChipIcon(e.retiroActivo!.etiquetaEstado!) }}</mat-icon>
@@ -158,6 +161,7 @@
                       (click)="onVerEstudiante(e)"
                       [matTooltip]="e.apellido + ', ' + e.nombre">
                 {{ e.apellido }}, {{ e.nombre[0] }}.
+                <span class="tea-chip" *ngIf="e.teaGeneral">TEA</span>
               </button>
             </div>
           </div>
@@ -290,7 +294,10 @@
                 [class.fila-presente]="e.estado === 'Presente'"
                 [class.fila-retirado]="e.estado === 'Retirado'"
                 [class.fila-ausente]="e.estado === 'Ausente'">
-              <td class="col-nombre">{{ e.apellido }}, {{ e.nombre }}</td>
+              <td class="col-nombre">
+                {{ e.apellido }}, {{ e.nombre }}
+                <span class="tea-chip" *ngIf="e.teaGeneral">TEA</span>
+              </td>
               <td class="col-doc">{{ e.documento }}</td>
               <td class="col-estado">
                 <span class="est-chip" [class]="'est-chip chip-' + e.estado.toLowerCase()">
