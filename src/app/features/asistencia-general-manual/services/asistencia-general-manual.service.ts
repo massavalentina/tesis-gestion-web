@@ -8,6 +8,7 @@ import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistenci
 import { RegistrarAsistenciaManual } from '../models/registrar-asistencia-manual.model';
 import { AsistenciaEspacioItem }     from '../models/asistencia-estudiante-dia.model';
 import { RetiroActivo }              from '../../retiro-anticipado/models/retiro-activo.model';
+import { environment }               from '../../../../environments/environment';
 
 export interface AsistenciaManualResponse {
   id:         string;
@@ -26,10 +27,11 @@ export interface AsistenciaExistenteHoy {
 @Injectable({ providedIn: 'root' })
 export class AsistenciaGeneralManualService {
 
-  private readonly cursosUrl     = 'https://localhost:7146/api/cursos';
-  private readonly asistenciaUrl = 'https://localhost:7146/api/asistencia';
-  private readonly tiposUrl      = 'https://localhost:7146/api/asistencia-rapida/tipos';
-  private readonly servertimeUrl = 'https://localhost:7146/api/asistencia-rapida/servertime';
+  private readonly base          = environment.apiUrl;
+  private readonly cursosUrl     = `${this.base}/api/cursos`;
+  private readonly asistenciaUrl = `${this.base}/api/asistencia`;
+  private readonly tiposUrl      = `${this.base}/api/asistencia-rapida/tipos`;
+  private readonly servertimeUrl = `${this.base}/api/asistencia-rapida/servertime`;
 
   constructor(private http: HttpClient) {}
 
@@ -95,7 +97,7 @@ export class AsistenciaGeneralManualService {
   // ── Retiro activo del estudiante para el día ──────────────────────────────
   getRetiroActivo(estudianteId: string, fecha: string): Observable<RetiroActivo | null> {
     return this.http.get<RetiroActivo | null>(
-      `https://localhost:7146/api/retiro/activo`,
+      `${this.base}/api/retiro/activo`,
       { params: { estudianteId, fecha } }
     );
   }

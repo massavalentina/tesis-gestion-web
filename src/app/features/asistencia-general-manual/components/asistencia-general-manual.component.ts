@@ -125,10 +125,18 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
   tabActivo        = 0;
   tieneTurnoTarde  = true;
 
-  // ── Filtro de fecha: solo días hábiles (lun–vie) ──────────────────────────
+  // ── Límite máximo del datepicker: hoy ────────────────────────────────────
+  readonly hoy = new Date();
+
+  // ── Filtro de fecha: solo días hábiles pasados o de hoy (lun–vie, ≤ hoy) ──
   readonly diasHabiles = (d: Date | null): boolean => {
-    const dia = (d ?? new Date()).getDay();
-    return dia !== 0 && dia !== 6;
+    if (!d) return false;
+    const dia = d.getDay();
+    if (dia === 0 || dia === 6) return false;
+    // Comparar solo la fecha, sin hora
+    const soloFecha = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const soloHoy   = new Date(this.hoy.getFullYear(), this.hoy.getMonth(), this.hoy.getDate());
+    return soloFecha <= soloHoy;
   };
 
   // ── Responsive ────────────────────────────────────────────────────────────
