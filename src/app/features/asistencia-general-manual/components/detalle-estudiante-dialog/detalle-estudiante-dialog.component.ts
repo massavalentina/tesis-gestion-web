@@ -113,7 +113,7 @@ export interface DetalleDialogData {
               <th>Materia</th>
               <th>Horario</th>
               <th>Estado clase</th>
-              <th>Asistencia</th>
+              <th class="th-asist">Asistencia <mat-icon class="th-edit-icon">edit</mat-icon></th>
             </tr>
           </thead>
           <tbody>
@@ -284,6 +284,8 @@ export interface DetalleDialogData {
     .horario-original-text { font-size: 0.72rem; color: #d97706; text-decoration: line-through; }
     .col-estado  { min-width: 100px; }
     .col-asist   { min-width: 130px; }
+    .th-asist    { display: flex; align-items: center; gap: 4px; }
+    .th-edit-icon { font-size: 13px; height: 13px; width: 13px; color: #94a3b8; vertical-align: middle; }
 
     .fila-modificada td { background: #fefce8; }
 
@@ -299,9 +301,9 @@ export interface DetalleDialogData {
     .chip-sin       { background: #f1f5f9; color: #94a3b8; }
 
     .chip-asist  { border: none; font-family: inherit; font-size: 0.78rem; font-weight: 500; cursor: pointer; }
+    .chip-asist:hover { filter: brightness(0.93); }
     .chip-presente { background: #dcfce7; color: #15803d; }
     .chip-ausente  { background: #fee2e2; color: #b91c1c; }
-    .chip-asist:hover { filter: brightness(0.93); }
     .chip-retiro-motivo {
       display: inline-block; margin-left: 4px;
       background: #f5f3ff; color: #6d28d9;
