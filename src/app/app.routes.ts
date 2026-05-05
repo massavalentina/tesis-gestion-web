@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { WeatherComponent } from '../app/deploy-test/weather.component';
-import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generation/pages/qr-credential-generation.page';
 import { LayoutComponent } from './layouts/layout.component';
 import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
+import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
 
 export const routes: Routes = [
   {
@@ -46,7 +46,10 @@ export const routes: Routes = [
       
       {
         path: 'attendance/scan',
-        component: PaginaEscanerAsistencia
+        loadComponent: () =>
+          import('../app/features/qr-scanner/pages/escaner.page')
+            .then(m => m.PaginaEscanerAsistencia),
+        canDeactivate: [colaPendienteGuard]
       },
       {
         path: 'credenciales-qr',

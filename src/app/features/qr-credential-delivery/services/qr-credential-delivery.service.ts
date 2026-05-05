@@ -20,7 +20,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ServicioEnvioCredencialesQr {
   private readonly baseUrl = environment.apiUrl;
-  private readonly cursosUrl = `${this.baseUrl}/api/asistencia/scanner/cursosscanner`;
+  private readonly cursosUrl = `${this.baseUrl}/api/asistencia/cursos`;
   private readonly summaryUrl = `${this.baseUrl}/api/qr-credentials/delivery/summary`;
   private readonly startJobUrl = `${this.baseUrl}/api/qr-credentials/delivery/start-job`;
   private readonly progressUrl = `${this.baseUrl}/api/qr-credentials/delivery/progress`;

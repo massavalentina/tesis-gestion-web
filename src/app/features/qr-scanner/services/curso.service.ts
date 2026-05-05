@@ -7,7 +7,7 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class ServicioCurso {
 
-  private readonly urlBase = `${environment.apiUrl}/api/asistencia/scanner/cursosscanner`;
+  private readonly urlBase = `${environment.apiUrl}/api/asistencia/cursos`;
 
   constructor(private http: HttpClient) {}
 

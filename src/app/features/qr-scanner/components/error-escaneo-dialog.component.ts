@@ -1,6 +1,5 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 export interface DatosErrorEscaneo {
@@ -13,45 +12,60 @@ export interface DatosErrorEscaneo {
   standalone: true,
   imports: [
     MatDialogModule,
-    MatIconModule,
     MatButtonModule
   ],
   template: `
     <div class="error-dialog">
       <button class="close-btn" (click)="cerrar()">✕</button>
 
-      <div class="icon">
-        <mat-icon>error</mat-icon>
-      </div>
+      <div class="icon">!</div>
 
       <h2>{{ data.titulo }}</h2>
 
       <p [innerHTML]="data.mensaje"></p>
+
+      <mat-dialog-actions align="center" class="acciones">
+        <button mat-raised-button class="btn" (click)="cerrar()">Entendido</button>
+      </mat-dialog-actions>
     </div>
   `,
   styles: [`
     .error-dialog {
       position: relative;
-      background: white;
+      background: #fff;
       border-radius: 24px;
-      padding: 24px 20px 28px;
+      padding: 26px 20px 16px;
       text-align: center;
-      max-width: 320px;
+      max-width: 330px;
     }
 
-    .icon mat-icon {
-      font-size: 48px;
-      color: #f9a825;
+    .icon {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fff7ed;
+      border: 2px solid #fdba74;
+      color: #c2410c;
+      font-size: 1.85rem;
+      font-weight: 900;
     }
 
     h2 {
-      color: #d32f2f;
-      margin: 12px 0;
+      color: #b91c1c;
+      margin: 0 0 10px;
+      font-size: 1.28rem;
+      font-weight: 800;
     }
 
     p {
-      color: #d32f2f;
-      font-weight: 500;
+      margin: 0;
+      color: #7f1d1d;
+      font-weight: 600;
+      font-size: 0.94rem;
+      line-height: 1.35;
     }
 
     .close-btn {
@@ -60,8 +74,23 @@ export interface DatosErrorEscaneo {
       right: 12px;
       border: none;
       background: transparent;
-      font-size: 20px;
+      font-size: 24px;
+      line-height: 1;
+      color: #0f172a;
       cursor: pointer;
+    }
+
+    .acciones {
+      justify-content: center;
+      padding-top: 16px;
+    }
+
+    .btn {
+      min-width: 128px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #fff !important;
     }
   `]
 })
@@ -71,7 +100,7 @@ export class DialogoErrorEscaneoComponent {
     @Inject(MAT_DIALOG_DATA) public data: DatosErrorEscaneo
   ) {}
 
-  cerrar() {
+  cerrar(): void {
     this.referenciaDialogo.close();
   }
 }

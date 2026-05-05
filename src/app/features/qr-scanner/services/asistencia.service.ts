@@ -3,8 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  ConfirmarAsistenciaItemPayload,
   RespuestaVistaPreviaAsistencia,
-  SolicitudVistaPreviaAsistencia
+  SolicitudVistaPreviaAsistencia,
+  TurnoSesionResponse
 } from '../models/escaner.models';
 
 @Injectable({ providedIn: 'root' })
@@ -16,10 +18,9 @@ export class ServicioAsistencia {
 
   vistaPrevia(
     qr: string,
-    idCurso: string,
-    turno: string
+    turno?: string | null
   ): Observable<RespuestaVistaPreviaAsistencia> {
-    const solicitud: SolicitudVistaPreviaAsistencia = { qr, idCurso, turno };
+    const solicitud: SolicitudVistaPreviaAsistencia = { qr, turno };
 
     return this.http.post<RespuestaVistaPreviaAsistencia>(
       `${this.urlBase}/preview`,
@@ -27,11 +28,14 @@ export class ServicioAsistencia {
     );
   }
 
-  confirmar(payload: {
-    turno: string;
-    attendanceTypeId: string;
-    studentIds: string[];
-  }): Observable<void> {
+  obtenerTurnoSesion(turno?: string | null): Observable<TurnoSesionResponse> {
+    const url = turno
+      ? `${this.urlBase}/session-turno?turno=${encodeURIComponent(turno)}`
+      : `${this.urlBase}/session-turno`;
+    return this.http.get<TurnoSesionResponse>(url);
+  }
+
+  confirmar(payload: { items: ConfirmarAsistenciaItemPayload[] }): Observable<void> {
     return this.http.post<void>(
       `${this.urlBase}/confirm`,
       payload
