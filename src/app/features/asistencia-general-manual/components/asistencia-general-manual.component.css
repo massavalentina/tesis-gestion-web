@@ -573,6 +573,20 @@ th.col-movil-th { text-align: left !important; }
   word-break: break-word;
 }
 
+/* TEA chip desktop */
+.tea-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e0e0e0;
+  color: #424242;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
 /* TEA en tarjeta mobile */
 .movil-card-tea {
   background: #fafafa;

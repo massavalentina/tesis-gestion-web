@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
-import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Observable, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
@@ -28,6 +28,27 @@ import {
   QrCredentialPreviewMetaItem
 } from '../../../credenciales-qr/components/qr-credential-preview-card.component';
 import { ObjectUrlRegistry } from '../../../../utils/object-url-registry';
+
+function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) return null;
+  const fecha = new Date(control.value);
+  if (isNaN(fecha.getTime())) return { fechaInvalida: true };
+  const hoy = new Date();
+  const limite = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+  return fecha <= limite ? null : { menorDeEdad: true };
+}
+
+function validarEdadEstudiante(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) return null;
+  const fecha = new Date(control.value);
+  if (isNaN(fecha.getTime())) return { fechaInvalida: true };
+  const hoy = new Date();
+  const limiteMaxBirth = new Date(hoy.getFullYear() - 11, hoy.getMonth(), hoy.getDate());
+  const limiteMinBirth = new Date(hoy.getFullYear() - 25, hoy.getMonth(), hoy.getDate());
+  if (fecha > limiteMaxBirth) return { demasiadoJoven: true };
+  if (fecha < limiteMinBirth) return { demasiadoMayor: true };
+  return null;
+}
 
 interface ModalEstudianteState {
   idEstudiante: string;
@@ -52,6 +73,10 @@ interface ModalEliminarState {
   idTutor: string;
   nombreTutor: string;
   eliminando: boolean;
+}
+
+interface ModalDetalleTutorState {
+  tutor: TutorFicha;
 }
 
 interface ModalCredencialQrState {
@@ -107,6 +132,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   modalTutor: ModalTutorState | null = null;
   modalEliminar: ModalEliminarState | null = null;
   modalCredencialQr: ModalCredencialQrState | null = null;
+  modalDetalleTutor: ModalDetalleTutorState | null = null;
   alertBloqueo: string | null = null;
 
   private readonly qrObjectUrls = new ObjectUrlRegistry();
@@ -440,6 +466,10 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
       const min = (ctrl.getError('minlength') as { requiredLength: number }).requiredLength;
       return `Mínimo ${min} caracteres`;
     }
+    if (ctrl.hasError('menorDeEdad')) return 'Debe ser mayor de 18 años';
+    if (ctrl.hasError('demasiadoJoven')) return 'El alumno debe tener al menos 11 años';
+    if (ctrl.hasError('demasiadoMayor')) return 'El alumno no puede tener más de 25 años';
+    if (ctrl.hasError('fechaInvalida')) return 'Fecha inválida';
     return 'Campo inválido';
   }
 
@@ -459,8 +489,9 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
         documento: new FormControl(est.documento, [Validators.required, Validators.pattern(/^\d{7,8}$/)]),
         fechaNacimiento: new FormControl(
           ficha?.fechaNacimiento ? ficha.fechaNacimiento.substring(0, 10) : '',
-          [Validators.required]
+          [Validators.required, validarEdadEstudiante]
         ),
+        sexo: new FormControl(ficha?.sexo ?? ''),
         domicilio: new FormControl(ficha?.domicilio ?? ''),
       }),
     };
@@ -495,6 +526,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
       documento: v['documento'],
       fechaNacimiento: v['fechaNacimiento'],
       domicilio: (v['domicilio'] as string) || null,
+      sexo: (v['sexo'] as string) || null,
     }).pipe(
       catchError(() => {
         this.snackBar.open('Error al guardar. Intentá de nuevo.', 'Cerrar', { duration: 4000 });
@@ -509,6 +541,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
         ficha.documento = v['documento'];
         ficha.fechaNacimiento = v['fechaNacimiento'];
         ficha.domicilio = (v['domicilio'] as string) || null;
+        ficha.sexo = (v['sexo'] as string) || null;
       }
       const est = this.estudiantes.find(e => e.idEstudiante === modal.idEstudiante);
       if (est) {
@@ -541,7 +574,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
       domicilio: new FormControl(tutor?.domicilio ?? ''),
       fechaNacimiento: new FormControl(
         tutor?.fechaNacimiento ? tutor.fechaNacimiento.substring(0, 10) : '',
-        esNuevo ? [Validators.required] : []
+        esNuevo ? [Validators.required, validarMayorDe18] : [validarMayorDe18]
       ),
       esPrincipal: new FormControl(tutor?.esPrincipal ?? false),
     });
@@ -875,6 +908,34 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
         { duration: 4000 }
       );
     });
+  }
+
+  // ─────────────────────────────────────────────
+  // Modal: Detalle Tutor (fecha nacimiento + domicilio)
+  // ─────────────────────────────────────────────
+
+  verDetalleTutor(tutor: TutorFicha): void {
+    this.modalDetalleTutor = { tutor };
+  }
+
+  cerrarModalDetalleTutor(): void {
+    this.modalDetalleTutor = null;
+  }
+
+  // ─────────────────────────────────────────────
+  // Alertas de datos incompletos
+  // ─────────────────────────────────────────────
+
+  estudianteTieneDatosFaltantes(idEstudiante: string): boolean {
+    const ficha = this.fichaMap.get(idEstudiante);
+    if (!ficha) return false;
+    return !ficha.domicilio || !ficha.sexo;
+  }
+
+  tutorPrincipalTieneDatosFaltantes(idEstudiante: string): boolean {
+    const tutor = this.getTutorPrincipal(idEstudiante);
+    if (!tutor) return false;
+    return !tutor.domicilio || !tutor.disponibilidad;
   }
 
   private cargarDatosCredencialQrModal(idEstudiante: string): void {

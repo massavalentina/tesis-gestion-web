@@ -7,6 +7,7 @@ export interface FichaDetalle {
   documento: string;
   fechaNacimiento: string;
   domicilio: string | null;
+  sexo?: string | null;
   codigoCurso: string | null;
   credencialQrActiva: boolean | null;
   tutores: TutorFicha[];
