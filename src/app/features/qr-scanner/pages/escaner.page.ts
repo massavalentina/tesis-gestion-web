@@ -448,6 +448,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
         nombre: respuesta.student.name,
         apellido: respuesta.student.lastName,
         curso: respuesta.student.course,
+        fotoEstudiante: respuesta.student.profileImagePath ?? null,
         turno: turnoRegistro,
         tipoAsistencia: tipoActual.code,
         esReemplazo: !!registroPrevio || yaRegistradoEnTurno,

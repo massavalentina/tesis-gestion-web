@@ -16,6 +16,7 @@ export interface RespuestaVistaPreviaAsistencia {
     name: string;
     lastName: string;
     course: string;
+    profileImagePath?: string | null;
   };
   attendance: {
     time: string;
