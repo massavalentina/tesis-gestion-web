@@ -1,29 +1,22 @@
 import { Component } from '@angular/core';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-cancelar-registro-dialog',
+  selector: 'app-abandono-pendiente-dialog',
   standalone: true,
-  imports: [
-    MatDialogModule,
-    MatButtonModule
-  ],
+  imports: [MatDialogModule, MatButtonModule],
   template: `
-    <h2 mat-dialog-title class="title">Cancelar registro</h2>
+    <h2 mat-dialog-title class="title">Asistencias sin registrar</h2>
 
     <mat-dialog-content class="contenido">
-      <p class="texto">
-        Se perderán <strong>todas las asistencias escaneadas</strong>.
-        <br />
-        ¿Deseás continuar?
-      </p>
+      <p class="sub">Si sale de esta pantalla los registros se perderán.</p>
     </mat-dialog-content>
 
     <mat-dialog-actions align="center" class="acciones">
       <button mat-stroked-button class="btn btn--ghost" (click)="cancelar()">Volver</button>
       <button mat-raised-button class="btn btn--warn" (click)="confirmar()">
-        Cancelar registro
+        Salir y descartar
       </button>
     </mat-dialog-actions>
   `,
@@ -39,17 +32,16 @@ import { MatButtonModule } from '@angular/material/button';
       padding-top: 0;
     }
 
-    .texto {
-      margin: 0;
-      color: #334155;
-      font-size: 0.9rem;
-      line-height: 1.4;
+    .sub {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 0.82rem;
     }
 
     .acciones {
       justify-content: center;
       gap: 10px;
-      padding-top: 10px;
+      padding-top: 8px;
     }
 
     .btn {
@@ -69,9 +61,9 @@ import { MatButtonModule } from '@angular/material/button';
     }
   `]
 })
-export class DialogoCancelarRegistroComponent {
+export class DialogoAbandonoPendienteComponent {
   constructor(
-    private referenciaDialogo: MatDialogRef<DialogoCancelarRegistroComponent>
+    private readonly referenciaDialogo: MatDialogRef<DialogoAbandonoPendienteComponent>
   ) {}
 
   confirmar(): void {

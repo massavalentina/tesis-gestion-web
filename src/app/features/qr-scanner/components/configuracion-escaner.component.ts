@@ -3,11 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
 import { ConfiguracionEscaneo, OpcionSeleccion } from '../models/escaner.models';
 import { ServicioTipoAsistencia } from '../services/tipoasistencia.service';
 import { ServicioTurno } from '../services/turno.service';
-import { ServicioCurso } from '../services/curso.service';
 
 @Component({
   selector: 'app-configuracion-escaner',
@@ -17,22 +17,15 @@ import { ServicioCurso } from '../services/curso.service';
     FormsModule,
     MatButtonModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatSlideToggleModule
   ],
   template: `
     <div class="config">
       <mat-form-field appearance="fill" class="pill">
-        <mat-label>Curso</mat-label>
-        <mat-select [(ngModel)]="idCurso">
-          <mat-option *ngFor="let curso of cursos" [value]="curso.id">
-            {{ curso.label }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="pill">
         <mat-label>Turno</mat-label>
         <mat-select [(ngModel)]="turnoSeleccionado">
+          <mat-option [value]="null">Automático por horario</mat-option>
           <mat-option *ngFor="let turno of turnos" [value]="turno">
             {{ turno.label }}
           </mat-option>
@@ -42,11 +35,14 @@ import { ServicioCurso } from '../services/curso.service';
       <mat-form-field appearance="fill" class="pill">
         <mat-label>Tipo de Asistencia</mat-label>
         <mat-select [(ngModel)]="idTipoAsistencia">
+          <mat-option [value]="null">Presente (P) por defecto</mat-option>
           <mat-option *ngFor="let tipo of tiposAsistencia" [value]="tipo.id">
             {{ tipo.label }}
           </mat-option>
         </mat-select>
       </mat-form-field>
+
+      <mat-slide-toggle [(ngModel)]="modoRafaga">Modo Ráfaga</mat-slide-toggle>
 
       <div class="action-buttons">
         <button
@@ -71,24 +67,19 @@ import { ServicioCurso } from '../services/curso.service';
 })
 export class ComponenteConfiguracionEscaner implements OnInit {
 
-  idCurso?: string;
   turnoSeleccionado?: OpcionSeleccion;
   idTipoAsistencia?: string;
+  modoRafaga = false;
 
-  cursos: OpcionSeleccion[] = [];
   turnos: OpcionSeleccion[] = [];
   tiposAsistencia: OpcionSeleccion[] = [];
 
   constructor(
-    private servicioCurso: ServicioCurso,
     private servicioTurno: ServicioTurno,
     private servicioTipoAsistencia: ServicioTipoAsistencia
   ) {}
 
   ngOnInit(): void {
-    this.servicioCurso.obtenerCursos()
-      .subscribe(res => this.cursos = res);
-
     this.servicioTurno.obtenerTurnos()
       .subscribe(res => this.turnos = res);
 
@@ -109,22 +100,20 @@ export class ComponenteConfiguracionEscaner implements OnInit {
   }
 
   esValido(): boolean {
-    return !!(this.idCurso && this.turnoSeleccionado && this.idTipoAsistencia);
+    return this.turnos.length > 0 && this.tiposAsistencia.length > 0;
   }
 
   obtenerConfiguracion(): ConfiguracionEscaneo | null {
-    if (!this.esValido()) return null;
-
     const tipoAsistenciaSeleccionado = this.tiposAsistencia.find(
       tipo => tipo.id === this.idTipoAsistencia
     );
 
     return {
-      idCurso: this.idCurso!,
-      turno: this.turnoSeleccionado!.label,
-      idTipoAsistencia: this.idTipoAsistencia!,
+      turno: this.turnoSeleccionado?.id ?? null,
+      idTipoAsistencia: this.idTipoAsistencia ?? null,
       etiquetaTipoAsistencia:
-        tipoAsistenciaSeleccionado?.label ?? this.idTipoAsistencia!
+        tipoAsistenciaSeleccionado?.label ?? null,
+      modoRafaga: this.modoRafaga
     };
   }
 }

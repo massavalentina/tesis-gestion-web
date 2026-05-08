@@ -2,7 +2,9 @@
 :host {
   display: block;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background:
     radial-gradient(circle at top, rgba(208, 230, 248, 0.85) 0%, rgba(208, 230, 248, 0) 34%),
     linear-gradient(180deg, #f7fbff 0%, #eef4f8 100%);
@@ -11,43 +13,46 @@
 
 .page-content {
   width: 100%;
-  min-height: calc(100vh - 86px);
+  height: 100%;
+  min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px 18px 110px;
+  padding: 16px 14px 98px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .scanner-shell {
-  width: min(100%, 420px);
+  width: min(100%, 390px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0 auto;
 }
 
 .scanner-copy {
   width: min(100%, 370px);
   text-align: center;
-  margin-bottom: 6px;
+  margin-bottom: 18px;
 }
 
 .scanner-copy h1 {
-  margin: 10px 0 8px;
+  margin: 16px 0 20px;
   color: #272727;
   font-size: 24px;
-  line-height: 1.1;
+  line-height: 1.16;
   font-style: italic;
   font-weight: 800;
 }
 
 .scanner-copy p {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 336px;
   color: rgba(39, 39, 39, 0.72);
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .scanner-badge {
@@ -61,6 +66,114 @@
   font-size: 11px;
   font-style: italic;
   font-weight: 800;
+}
+
+.config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+  padding-top: 12px;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill {
+  width: min(100%, 308px);
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill .mdc-text-field {
+  border-radius: 999px !important;
+  background-color: #fff;
+  border: 1px solid rgba(210, 210, 210, 0.96);
+  overflow: hidden;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill .mdc-line-ripple {
+  display: none;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill .mdc-select__anchor {
+  min-height: 54px;
+  padding: 12px 16px 6px;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill .mdc-select__selected-text {
+  color: #334155;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.tipo-desc {
+  margin-left: 4px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.code-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.code-pill--trigger {
+  min-width: 40px;
+}
+
+.chip-p { background: rgba(21, 128, 61, .12); color: #15803d; border-color: #bbf7d0; }
+.chip-a { background: rgba(185, 28, 28, .12); color: #b91c1c; border-color: #fecaca; }
+.chip-anc { background: rgba(2, 132, 199, .12); color: #0369a1; border-color: #bae6fd; }
+.chip-llt, .chip-llte, .chip-lltc { background: rgba(194, 65, 12, .12); color: #c2410c; border-color: #fed7aa; }
+
+.rafaga-hint {
+  width: min(100%, 308px);
+  margin-top: -4px;
+  text-align: center;
+  font-size: 0.76rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+:host ::ng-deep .rafaga-toggle {
+  width: min(100%, 308px);
+  display: flex;
+  justify-content: center;
+}
+
+:host ::ng-deep .rafaga-toggle .mdc-form-field {
+  margin: 0 auto;
+}
+
+.pending-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.pending-btn {
+  border-radius: 999px !important;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0 16px !important;
+}
+
+.pending-btn--primary {
+  background: linear-gradient(180deg, #3f88c5 0%, #2f6ea3 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 18px rgba(47, 110, 163, 0.26) !important;
+}
+
+.pending-btn--ghost {
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+  background: #fff !important;
 }
 
 .bottom-bar {
@@ -162,6 +275,106 @@
   object-fit: cover;
 }
 
+.overlay-footer {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 26px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 320;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill.pill--overlay {
+  width: clamp(84px, 24vw, 102px) !important;
+  min-width: 84px !important;
+  max-width: 102px !important;
+  flex: 0 0 auto;
+}
+
+:host ::ng-deep .pill--overlay .mdc-text-field {
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 2px solid var(--overlay-accent, rgba(203, 213, 225, 0.95));
+  box-shadow: 0 6px 14px rgba(2, 6, 23, 0.2);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+:host ::ng-deep .pill--overlay .mdc-text-field:hover,
+:host ::ng-deep .pill--overlay.mat-focused .mdc-text-field {
+  background: rgba(255, 255, 255, 0.97) !important;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.24);
+}
+
+:host ::ng-deep .pill--overlay .mat-mdc-form-field-focus-overlay {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+:host ::ng-deep .pill--overlay .mdc-select__anchor {
+  min-height: 38px;
+  padding: 6px 9px 6px;
+}
+
+:host ::ng-deep .pill--overlay .mdc-floating-label,
+:host ::ng-deep .pill--overlay .mat-mdc-select-arrow,
+:host ::ng-deep .pill--overlay .mdc-select__selected-text {
+  color: var(--overlay-accent, #334155) !important;
+}
+
+:host ::ng-deep .pill--overlay .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+:host ::ng-deep .pill--overlay .overlay-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 2px;
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0;
+}
+
+:host ::ng-deep .pill--overlay .mat-mdc-select-arrow svg {
+  fill: currentColor;
+}
+
+:host ::ng-deep .pill--overlay .mdc-notched-outline__leading,
+:host ::ng-deep .pill--overlay .mdc-notched-outline__notch,
+:host ::ng-deep .pill--overlay .mdc-notched-outline__trailing {
+  border: 0 !important;
+}
+
+:host ::ng-deep .rafaga-toggle .mdc-switch.mdc-switch--unselected .mdc-switch__track {
+  opacity: 1;
+  background: #e2e8f0 !important;
+}
+
+.feedback-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 290;
+  pointer-events: none;
+  opacity: 0.32;
+}
+
+.feedback-flash.success {
+  background: #19b84f;
+}
+
+.feedback-flash.error {
+  background: #d32f2f;
+}
+
 .scan-error {
   position: fixed;
   bottom: 120px;
@@ -191,16 +404,22 @@
 }
 
 .scan-counter--overlay {
-  position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 0;
-  z-index: 320;
-  background: rgba(16, 22, 29, 0.72);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
+  position: static;
+  margin: 0;
+  z-index: 1;
+  background: transparent;
+  color: #f8fafc;
+  border: none;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  font-size: 16px;
+}
+
+.scan-counter--ghost {
+  visibility: hidden;
 }
 
 .close-scanner {
@@ -220,10 +439,15 @@
 
 @media (min-width: 768px) {
   .page-content {
-    padding: 32px 24px 120px;
+    padding: 28px 24px 106px;
   }
 
   .scanner-copy h1 {
     font-size: 28px;
+  }
+
+  .pending-actions {
+    width: 100%;
+    justify-content: center;
   }
 }

@@ -1,0 +1,87 @@
+<div class="page">
+
+  <!-- ── Header ── -->
+  <header class="page__header">
+    <button mat-icon-button class="btn-volver" (click)="volver()" aria-label="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-texto">
+      <h1>Ficha de usuario</h1>
+      <p>Gestión de Usuarios</p>
+    </div>
+  </header>
+
+  <!-- ── Loading ── -->
+  <div class="estado-center" *ngIf="cargando()">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- ── Error carga ── -->
+  <div class="estado-center estado-error" *ngIf="error() && !cargando()">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error() }}</span>
+    <button mat-stroked-button (click)="cargar()">Reintentar</button>
+  </div>
+
+  <!-- ── Contenido ── -->
+  <div class="card" *ngIf="!cargando() && !error() && usuario()">
+
+    <!-- Perfil -->
+    <div class="perfil-header">
+      <div class="avatar-grande">{{ u.nombre[0] }}{{ u.apellido[0] }}</div>
+      <div class="perfil-info">
+        <div class="nombre-completo">{{ u.apellido }}, {{ u.nombre }}</div>
+        <span class="estado-badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
+          {{ u.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+        <div class="roles-row" *ngIf="u.roles.length > 0">
+          <span *ngFor="let r of u.roles"
+                class="rol-chip"
+                [ngClass]="u.activo ? rolColor(r) : 'chip-gris'">{{ r }}</span>
+        </div>
+        <div class="roles-row" *ngIf="u.roles.length === 0">
+          <span class="rol-chip chip-gris">Sin rol</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos -->
+    <div class="datos-grid">
+      <div class="dato-item">
+        <span class="dato-label">Email</span>
+        <span class="dato-valor">{{ u.email }}</span>
+      </div>
+      <div class="dato-item">
+        <span class="dato-label">Documento</span>
+        <span class="dato-valor">{{ u.documento }}</span>
+      </div>
+      <div class="dato-item" *ngIf="u.telefono">
+        <span class="dato-label">Teléfono</span>
+        <span class="dato-valor">{{ u.telefono }}</span>
+      </div>
+      <div class="dato-item">
+        <span class="dato-label">Creado el</span>
+        <span class="dato-valor">{{ formatFecha(u.fechaCreacion) }}</span>
+      </div>
+    </div>
+
+    <!-- Acción + error -->
+    <div class="acciones-section">
+      <div class="error-accion" *ngIf="errorAccion()">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorAccion() }}</span>
+      </div>
+      <button mat-flat-button
+              [class.btn-desactivar]="u.activo"
+              [class.btn-activar]="!u.activo"
+              (click)="iniciarAccion()"
+              [disabled]="accionando()">
+        <mat-spinner *ngIf="accionando()" diameter="18" class="spinner-inline"></mat-spinner>
+        <mat-icon *ngIf="!accionando()">{{ u.activo ? 'person_off' : 'person' }}</mat-icon>
+        <span *ngIf="!accionando()">{{ u.activo ? 'Desactivar usuario' : 'Activar usuario' }}</span>
+      </button>
+    </div>
+
+  </div>
+
+</div>

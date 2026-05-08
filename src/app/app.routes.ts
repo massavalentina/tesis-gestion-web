@@ -1,14 +1,29 @@
 import { Routes } from '@angular/router';
 import { WeatherComponent } from '../app/deploy-test/weather.component';
-import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generation/pages/qr-credential-generation.page';
 import { LayoutComponent } from './layouts/layout.component';
 import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
 import { authGuard } from './core/auth/guards/auth.guard';
 import { permisoGuard } from './core/auth/guards/permiso.guard';
 import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
+import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
+// import { authGuard } from './core/guards/auth.guard';
+
 
 export const routes: Routes = [
+  // {
+  //   path: 'login',
+  //   loadComponent: () =>
+  //     import('./features/auth/login/login.component')
+  //       .then(m => m.LoginComponent),
+  // },
+  // {
+  //   path: 'cambiar-contrasena',
+  //   loadComponent: () =>
+  //     import('./features/auth/cambiar-contrasena/cambiar-contrasena.component')
+  //       .then(m => m.CambiarContrasenaComponent),
+  //   canActivate: [authGuard],
+  // },
   {
     path: 'weather-test',
     component: WeatherComponent,
@@ -32,6 +47,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
+    // canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -65,7 +81,9 @@ export const routes: Routes = [
       {
         path: 'attendance/scan',
         component: PaginaEscanerAsistencia,
-        canActivate: [authGuard, permisoGuard('ASISTENCIA_QR_RW')],
+        canActivate: [authGuard, permisoGuard('ASISTENCIA_QR_RW'),
+        canDeactivate: [colaPendienteGuard]
+        ]
       },
       {
         path: 'credenciales-qr',
@@ -129,6 +147,18 @@ export const routes: Routes = [
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),
         canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_RW')],
+      },
+      {
+        path: 'gestion-usuarios',
+        loadComponent: () =>
+          import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
+            .then(m => m.GestionUsuariosComponent),
+      },
+      {
+        path: 'gestion-usuarios/:id',
+        loadComponent: () =>
+          import('../app/features/gestion-usuarios/components/ficha-usuario/ficha-usuario.component')
+            .then(m => m.FichaUsuarioComponent),
       },
     ],
   },

@@ -1,14 +1,13 @@
 export interface ConfiguracionEscaneo {
-  idCurso: string;
-  turno: string;
-  idTipoAsistencia: string;
-  etiquetaTipoAsistencia: string;
+  turno?: string | null;
+  idTipoAsistencia?: string | null;
+  etiquetaTipoAsistencia?: string | null;
+  modoRafaga: boolean;
 }
 
 export interface SolicitudVistaPreviaAsistencia {
   qr: string;
-  idCurso: string;
-  turno: string;
+  turno?: string | null;
 }
 
 export interface RespuestaVistaPreviaAsistencia {
@@ -17,10 +16,13 @@ export interface RespuestaVistaPreviaAsistencia {
     name: string;
     lastName: string;
     course: string;
+    profileImagePath?: string | null;
   };
   attendance: {
     time: string;
     attendanceType: string;
+    attendanceTypeCode?: string | null;
+    alreadyRegisteredTurno?: boolean;
     turno: string;
   };
 }
@@ -35,9 +37,31 @@ export interface AlumnoEscaneado {
   nombre: string;
   apellido: string;
   curso: string;
+  turno: string;
+  attendanceTypeId: string;
+  attendanceTypeCode: string;
+  attendanceTypeLabel: string;
 }
 
 export interface OpcionSeleccion {
   id: string;
   label: string;
+}
+
+export interface TurnoSesionResponse {
+  turno: string;
+  serverTime: string;
+  cutoffTime: string;
+}
+
+export interface ConfirmarAsistenciaItemPayload {
+  studentId: string;
+  attendanceTypeId: string;
+  turno: string;
+}
+
+export interface ErrorConfirmacionDetalle {
+  studentId: string;
+  code: string;
+  message: string;
 }

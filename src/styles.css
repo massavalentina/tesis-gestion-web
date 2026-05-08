@@ -238,6 +238,63 @@ html, body {
   background: rgba(60,120,180,.15) !important;
 }
 
+.cdk-overlay-pane .asr-select-panel.mat-mdc-select-panel {
+  min-width: 98px !important;
+}
+
+.cdk-overlay-pane .asr-select-panel .mat-mdc-option .mdc-list-item__primary-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.scanner-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: 24px !important;
+  padding: 18px 18px 14px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+  border: 1px solid rgba(199, 217, 235, 0.95);
+  box-shadow: 0 26px 56px rgba(20, 40, 62, 0.22) !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast {
+  margin-bottom: 112px !important;
+  pointer-events: none !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast .mdc-snackbar__surface {
+  border-radius: 999px !important;
+  min-height: 30px !important;
+  padding: 0 6px !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24) !important;
+  pointer-events: none !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast .mat-mdc-snack-bar-label {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  padding: 6px 8px !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast.scanner-toast--success .mdc-snackbar__surface {
+  background: rgba(248, 255, 251, 0.96) !important;
+  border: 1px solid #bbf7d0;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast.scanner-toast--success .mat-mdc-snack-bar-label {
+  color: #15803d !important;
+  font-style: italic;
+  font-weight: 700 !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast.scanner-toast--neutral .mdc-snackbar__surface {
+  background: rgba(15, 23, 42, 0.9) !important;
+}
+
+.mat-mdc-snack-bar-container.scanner-toast.scanner-toast--neutral .mat-mdc-snack-bar-label {
+  color: #f8fafc !important;
+}
+
 .qr-generation-dialog .mat-mdc-dialog-surface {
   border-radius: 28px !important;
   padding: 22px 22px 20px !important;
@@ -250,6 +307,15 @@ html, body {
   .qr-generation-dialog .mat-mdc-dialog-surface {
     padding: 18px 18px 16px !important;
     border-radius: 24px !important;
+  }
+
+  .scanner-dialog-panel .mat-mdc-dialog-surface {
+    border-radius: 22px !important;
+    padding: 16px 16px 12px !important;
+  }
+
+  .mat-mdc-snack-bar-container.scanner-toast {
+    margin-bottom: 126px !important;
   }
 }
 
