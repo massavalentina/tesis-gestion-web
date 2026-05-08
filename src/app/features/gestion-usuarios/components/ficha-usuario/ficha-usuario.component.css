@@ -1,0 +1,214 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #ecf3f8;
+}
+
+/* ── Página ── */
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ── */
+.page__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-volver {
+  color: #0f2f4b;
+  flex-shrink: 0;
+}
+
+.header-texto h1 {
+  margin: 0;
+  color: #0f2f4b;
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.header-texto p {
+  margin: 3px 0 0;
+  color: rgba(15, 47, 75, 0.6);
+  font-size: 13px;
+}
+
+/* ── Card ── */
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 47, 75, 0.07);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Perfil header ── */
+.perfil-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.avatar-grande {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.perfil-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nombre-completo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f2f4b;
+  line-height: 1.2;
+}
+
+/* ── Estado badge ── */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  width: fit-content;
+}
+.estado-badge.activo   { background: #dcfce7; color: #16a34a; }
+.estado-badge.inactivo { background: #f1f5f9; color: #64748b; }
+
+/* ── Roles ── */
+.roles-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rol-chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip-celeste { background: #e0f2fe; color: #0369a1; }
+.chip-violeta { background: #ede9fe; color: #7c3aed; }
+.chip-naranja { background: #fff7ed; color: #c2410c; }
+.chip-rojo    { background: #fee2e2; color: #dc2626; }
+.chip-teal    { background: #ccfbf1; color: #0f766e; }
+.chip-gris    { background: #f1f5f9; color: #64748b; }
+
+/* ── Datos grid ── */
+.datos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dato-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dato-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.dato-valor {
+  font-size: 0.95rem;
+  color: #0f2f4b;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+/* ── Acciones ── */
+.acciones-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.btn-desactivar {
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 10px;
+}
+.btn-desactivar:hover:not([disabled]) { background: #fca5a5; }
+
+.btn-activar {
+  background: #dcfce7;
+  color: #16a34a;
+  border-radius: 10px;
+}
+.btn-activar:hover:not([disabled]) { background: #bbf7d0; }
+
+.spinner-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.error-accion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c62828;
+  font-size: 0.875rem;
+}
+.error-accion mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* ── Estados vacíos ── */
+.estado-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: #64748b;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 47, 75, 0.07);
+}
+
+.estado-error { color: #c62828; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .page { padding: 12px; }
+  .card { padding: 16px; gap: 18px; }
+  .datos-grid { padding: 16px; grid-template-columns: 1fr 1fr; }
+  .nombre-completo { font-size: 1.15rem; }
+}

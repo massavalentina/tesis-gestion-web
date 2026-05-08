@@ -1,0 +1,255 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #ecf3f8;
+}
+
+/* ── Página ── */
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+/* ── Header ── */
+.page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-texto h1 {
+  margin: 0;
+  color: #0f2f4b;
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+}
+
+.header-texto p {
+  margin: 6px 0 0;
+  color: rgba(15, 47, 75, 0.72);
+  font-size: 14px;
+}
+
+.btn-nuevo {
+  background: #0284c7;
+  color: white;
+  border-radius: 10px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.btn-nuevo:hover { background: #0369a1; }
+
+/* ── Card ── */
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 47, 75, 0.07);
+  overflow: hidden;
+}
+
+/* ── Filtros section ── */
+.filtros-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.filtros-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filtros-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Stat chips (filtros) ── */
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  user-select: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.stat-chip mat-icon { font-size: 15px; height: 15px; width: 15px; }
+.stat-chip span     { opacity: 0.8; }
+.stat-chip strong   { font-weight: 700; }
+.stat-chip[role="button"] { cursor: pointer; }
+.stat-chip[role="button"]:hover { transform: translateY(-1px); }
+.stat-chip.chip-activo { box-shadow: 0 0 0 2px currentColor; font-weight: 700; }
+.stat-chip.chip-activo span { opacity: 1; }
+
+/* Colores compartidos (stat chips + rol chips en tabla) */
+.chip-azul        { background: #e0f2fe; color: #0369a1; }
+.chip-verde       { background: #dcfce7; color: #16a34a; }
+.chip-rojo-estado { background: #fee2e2; color: #dc2626; }
+.chip-rojo        { background: #fee2e2; color: #dc2626; }
+.chip-celeste     { background: #e0f2fe; color: #0369a1; }
+.chip-violeta     { background: #ede9fe; color: #7c3aed; }
+.chip-naranja     { background: #fff7ed; color: #c2410c; }
+.chip-gris-rol    { background: #f1f5f9; color: #64748b; }
+.chip-teal        { background: #ccfbf1; color: #0f766e; }
+.chip-gris        { background: #f1f5f9; color: #64748b; }
+
+/* ── Tabla ── */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.usuarios-table {
+  width: 100%;
+  background: white;
+}
+
+/* Gradient header (Angular Material MDC) */
+:host ::ng-deep .usuarios-table .mat-mdc-header-row {
+  background: linear-gradient(0deg, #2f659b, #3c78b4) !important;
+}
+:host ::ng-deep .usuarios-table .mat-mdc-header-cell {
+  background: linear-gradient(0deg, #2f659b, #3c78b4) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  white-space: nowrap;
+}
+:host ::ng-deep .usuarios-table .mat-sort-header-container {
+  justify-content: center;
+}
+:host ::ng-deep .usuarios-table .mat-sort-header-arrow {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.usuarios-table tr.mat-mdc-row:hover {
+  background: #f0f9ff;
+}
+
+.fila-clickeable { cursor: pointer; }
+
+.fila-inactiva td { opacity: 0.5; }
+
+/* Chips de roles en filas inactivas → todos en gris */
+.fila-inactiva .rol-chip {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+}
+
+/* ── Celda nombre ── */
+.nombre-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.fila-inactiva .avatar {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.nombre-completo {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #0f2f4b;
+}
+
+.email-mobile {
+  font-size: 0.78rem;
+  color: #64748b;
+  display: none;
+}
+
+/* ── Chips de roles (en tabla) ── */
+.roles-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rol-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Badge estado ── */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.estado-badge.activo   { background: #dcfce7; color: #16a34a; }
+.estado-badge.inactivo { background: #f1f5f9; color: #64748b; }
+
+/* ── Estados vacíos ── */
+.estado-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: #64748b;
+}
+
+.estado-center mat-icon { opacity: 0.5; }
+.estado-error { color: #c62828; }
+.estado-error mat-icon { opacity: 1; }
+.estado-vacio { flex-direction: column; font-size: 0.9rem; }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .page { padding: 12px; }
+  .col-desktop { display: none; }
+  .email-mobile { display: block; }
+  .filtros-section { padding: 12px; gap: 14px; }
+  .stat-chip { font-size: 11px; padding: 4px 10px; }
+}

@@ -4,8 +4,22 @@ import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generat
 import { LayoutComponent } from './layouts/layout.component';
 import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
+// import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  // {
+  //   path: 'login',
+  //   loadComponent: () =>
+  //     import('./features/auth/login/login.component')
+  //       .then(m => m.LoginComponent),
+  // },
+  // {
+  //   path: 'cambiar-contrasena',
+  //   loadComponent: () =>
+  //     import('./features/auth/cambiar-contrasena/cambiar-contrasena.component')
+  //       .then(m => m.CambiarContrasenaComponent),
+  //   canActivate: [authGuard],
+  // },
   {
     path: 'weather-test',
     component: WeatherComponent
@@ -17,6 +31,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
+    // canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -43,7 +58,7 @@ export const routes: Routes = [
           import('../app/features/parte-diario-digital/components/parte-diario.component')
             .then(m => m.ParteDiarioComponent),
       },
-      
+
       {
         path: 'attendance/scan',
         loadComponent: () =>
@@ -98,6 +113,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),
+      },
+      {
+        path: 'gestion-usuarios',
+        loadComponent: () =>
+          import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
+            .then(m => m.GestionUsuariosComponent),
+      },
+      {
+        path: 'gestion-usuarios/:id',
+        loadComponent: () =>
+          import('../app/features/gestion-usuarios/components/ficha-usuario/ficha-usuario.component')
+            .then(m => m.FichaUsuarioComponent),
       },
     ],
   }

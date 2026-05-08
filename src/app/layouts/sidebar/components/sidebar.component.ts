@@ -70,7 +70,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia()">
+           (click)="closeAsistencia(); closeCuentas()">
           <mat-icon>home</mat-icon>
           <span>Inicio</span>
         </a>
@@ -143,7 +143,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia()">
+           (click)="closeAsistencia(); closeCuentas()">
           <mat-icon>qr_code</mat-icon>
           <span>Credenciales QR</span>
         </a>
@@ -154,21 +154,30 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/ficha-alumno"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia()">
+           (click)="closeAsistencia(); closeCuentas()">
           <mat-icon>assignment_ind</mat-icon>
           <span>Ficha de Alumno</span>
         </a>
 
-        <!-- Cuenta -->
-        <a class="item"
-           matRipple
-           routerLink="/cuenta"
-           routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia()">
-          <mat-icon>person</mat-icon>
-          <span>Cuenta</span>
-        </a>
+        <!-- Cuentas (padre desplegable) -->
+        <button class="item parent"
+                type="button"
+                matRipple
+                (click)="toggleCuentas()">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Cuentas</span>
+          <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
+        </button>
+
+        <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
+          <a class="subitem"
+             matRipple
+             routerLink="/gestion-usuarios"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }">
+            Usuarios
+          </a>
+        </div>
 
       </nav>
     </aside>
@@ -286,7 +295,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia(); closeMobile()">
+           (click)="closeAsistencia(); closeCuentas(); closeMobile()">
           <mat-icon>qr_code</mat-icon>
           <span>Credenciales QR</span>
         </a>
@@ -297,21 +306,31 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
            routerLink="/ficha-alumno"
            routerLinkActive="is-active"
            [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia(); closeMobile()">
+           (click)="closeAsistencia(); closeCuentas(); closeMobile()">
           <mat-icon>assignment_ind</mat-icon>
           <span>Ficha de Alumno</span>
         </a>
 
-        <!-- Cuenta -->
-        <a class="item"
-           matRipple
-           routerLink="/cuenta"
-           routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia(); closeMobile()">
-          <mat-icon>person</mat-icon>
-          <span>Cuenta</span>
-        </a>
+        <!-- Cuentas -->
+        <button class="item parent"
+                type="button"
+                matRipple
+                (click)="toggleCuentas()">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Cuentas</span>
+          <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
+        </button>
+
+        <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
+          <a class="subitem"
+             matRipple
+             routerLink="/gestion-usuarios"
+             routerLinkActive="is-active-sub"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="closeMobile()">
+            Usuarios
+          </a>
+        </div>
 
         <!-- Cerrar sesión -->
         <a class="item" matRipple (click)="closeMobile()">
@@ -329,6 +348,7 @@ export class SidebarComponent {
   isMobile = false;
   open = false;
   asistenciaOpen = false;
+  cuentasOpen = false;
   scannerActivo = false;
 
   get mostrarEscaneoQr(): boolean {
@@ -356,10 +376,20 @@ export class SidebarComponent {
 
   toggleAsistencia() {
     this.asistenciaOpen = !this.asistenciaOpen;
+    if (this.asistenciaOpen) this.cuentasOpen = false;
   }
 
   closeAsistencia() {
     this.asistenciaOpen = false;
+  }
+
+  toggleCuentas() {
+    this.cuentasOpen = !this.cuentasOpen;
+    if (this.cuentasOpen) this.asistenciaOpen = false;
+  }
+
+  closeCuentas() {
+    this.cuentasOpen = false;
   }
 
   closeMobile() {
