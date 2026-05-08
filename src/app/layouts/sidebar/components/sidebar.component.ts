@@ -8,6 +8,7 @@ import { LayoutModule } from '@angular/cdk/layout';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 const SLIDE = trigger('slide', [
@@ -170,6 +171,18 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>Cuenta</span>
         </a>
 
+        <!-- Gestión de Roles — solo Secretario -->
+        <a *ngIf="puedeGestionarRoles"
+           class="item"
+           matRipple
+           routerLink="/gestion-roles"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia()">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Gestión de Roles</span>
+        </a>
+
       </nav>
     </aside>
 
@@ -313,6 +326,18 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>Cuenta</span>
         </a>
 
+        <!-- Gestión de Roles — solo Secretario -->
+        <a *ngIf="puedeGestionarRoles"
+           class="item"
+           matRipple
+           routerLink="/gestion-roles"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeAsistencia(); closeMobile()">
+          <mat-icon>manage_accounts</mat-icon>
+          <span>Gestión de Roles</span>
+        </a>
+
         <!-- Cerrar sesión -->
         <a class="item" matRipple (click)="closeMobile()">
           <mat-icon>logout</mat-icon>
@@ -331,14 +356,18 @@ export class SidebarComponent {
   asistenciaOpen = false;
   scannerActivo = false;
 
+  readonly puedeGestionarRoles: boolean;
+
   get mostrarEscaneoQr(): boolean {
     return this.isMobile;
   }
 
   constructor(
     private breakpointObserver: BreakpointObserver,
-    private scannerUiStateService: ScannerUiStateService
+    private scannerUiStateService: ScannerUiStateService,
+    authService: AuthService,
   ) {
+    this.puedeGestionarRoles = authService.tienePermiso('ASIGNACION_ROLES_RW');
     this.breakpointObserver.observe([Breakpoints.Handset])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {

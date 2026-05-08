@@ -19,6 +19,7 @@ import {
   FichaAlumnoService,
   QrCredentialStatusDto
 } from '../../services/ficha-alumno.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { CursoFicha } from '../../models/curso-ficha.model';
 import { EstudianteFicha } from '../../models/estudiante-ficha.model';
 import { FichaDetalle } from '../../models/ficha-detalle.model';
@@ -112,6 +113,9 @@ interface ModalCredencialQrState {
   styleUrl: './ficha-alumno.component.css'
 })
 export class FichaAlumnoComponent implements OnInit, OnDestroy {
+  readonly esDocente: boolean;
+  readonly esDirector: boolean;
+
   cursos: CursoFicha[] = [];
   cursoSeleccionado: CursoFicha | null = null;
 
@@ -147,14 +151,19 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     private fichaService: FichaAlumnoService,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    authService: AuthService,
+  ) {
+    this.esDocente  = authService.tieneRol('Docente');
+    this.esDirector = authService.tieneRol('Director');
+  }
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     const cursoId = params.get('cursoId');
     const estudianteId = params.get('estudianteId');
 
+    // TODO: filtrar por cursos asignados al docente (EspacioCurricular)
     this.fichaService.getCursos().pipe(
       catchError(() => {
         this.errorCursos = true;

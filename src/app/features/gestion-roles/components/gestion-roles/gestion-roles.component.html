@@ -1,0 +1,153 @@
+<div class="gr-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="gr-header">
+    <div class="gr-header-text">
+      <span class="gr-titulo">Gestión de Roles</span>
+      <span class="gr-subtitulo">
+        Asigná y quitá roles de los usuarios del sistema.
+        <span class="gr-badge-total" *ngIf="!cargando && !error">{{ totalUsuarios }} usuarios</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Estado: cargando ─────────────────────────────────────────── -->
+  <div class="gr-estado-center" *ngIf="cargando">
+    <mat-spinner diameter="38"></mat-spinner>
+    <span>Cargando usuarios...</span>
+  </div>
+
+  <!-- ── Estado: error ────────────────────────────────────────────── -->
+  <div class="gr-estado-center gr-error" *ngIf="error && !cargando">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudieron cargar los usuarios.</span>
+  </div>
+
+  <ng-container *ngIf="!cargando && !error">
+
+    <!-- ── Buscador ─────────────────────────────────────────────────── -->
+    <div class="gr-search-wrap">
+      <mat-icon class="gr-search-icon">search</mat-icon>
+      <input
+        class="gr-search-input"
+        type="text"
+        placeholder="Buscar por nombre, DNI o mail..."
+        [(ngModel)]="filtro" />
+      <button *ngIf="filtro" class="gr-search-clear" (click)="filtro = ''">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- ── Sin resultados ───────────────────────────────────────────── -->
+    <div class="gr-estado-center gr-muted" *ngIf="filasFiltradas.length === 0">
+      <mat-icon>person_search</mat-icon>
+      <span>Ningún usuario coincide con la búsqueda.</span>
+    </div>
+
+    <!-- ── Tabla ────────────────────────────────────────────────────── -->
+    <div class="gr-tabla-wrap" *ngIf="filasFiltradas.length > 0">
+      <table class="gr-tabla">
+        <thead>
+          <tr>
+            <th class="col-usuario">Usuario</th>
+            <th class="col-dni">DNI</th>
+            <th class="col-roles">Roles asignados</th>
+            <th class="col-agregar">Agregar rol</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of filasFiltradas" class="gr-fila">
+
+            <!-- Usuario -->
+            <td class="col-usuario">
+              <div class="gr-usuario-cell">
+                <div class="gr-avatar">{{ displayIniciales(fila) }}</div>
+                <div class="gr-usuario-info">
+                  <span class="gr-nombre">{{ displayNombre(fila) }}</span>
+                  <span class="gr-mail" *ngIf="fila.nombre || fila.apellido">{{ fila.mail }}</span>
+                </div>
+              </div>
+            </td>
+
+            <!-- DNI -->
+            <td class="col-dni">
+              <span class="gr-dni" *ngIf="fila.documento">{{ fila.documento }}</span>
+              <span class="gr-sin-dato" *ngIf="!fila.documento">—</span>
+            </td>
+
+            <!-- Roles asignados -->
+            <td class="col-roles">
+              <div class="gr-chips">
+                <ng-container *ngIf="fila.roles.length > 0; else sinRoles">
+
+                  <!-- Chips de roles reales -->
+                  <span *ngFor="let rol of fila.roles"
+                        class="gr-chip"
+                        [class]="'gr-chip ' + colorRol(rol.nombre)">
+                    {{ rol.nombre }}
+                    <button
+                      class="gr-chip-remove"
+                      [disabled]="!!fila.eliminandoRolId || fila.actualizandoDelegado"
+                      [matTooltip]="'Quitar ' + rol.nombre"
+                      (click)="quitarRol(fila, rol)">
+                      <mat-spinner *ngIf="fila.eliminandoRolId === rol.idRol" diameter="11" class="chip-spinner"></mat-spinner>
+                      <mat-icon *ngIf="fila.eliminandoRolId !== rol.idRol">close</mat-icon>
+                    </button>
+                  </span>
+
+                  <!-- Chip sintético Preceptor Delegado -->
+                  <span *ngIf="tieneRolPreceptor(fila) && fila.esDelegado === true"
+                        class="gr-chip chip-preceptor-delegado">
+                    Preceptor Delegado
+                    <button
+                      class="gr-chip-remove"
+                      [disabled]="fila.actualizandoDelegado || !!fila.eliminandoRolId"
+                      matTooltip="Quitar Preceptor Delegado"
+                      (click)="quitarDelegado(fila)">
+                      <mat-spinner *ngIf="fila.actualizandoDelegado" diameter="11" class="chip-spinner"></mat-spinner>
+                      <mat-icon *ngIf="!fila.actualizandoDelegado">close</mat-icon>
+                    </button>
+                  </span>
+
+                </ng-container>
+                <ng-template #sinRoles>
+                  <span class="gr-sin-roles">Sin roles</span>
+                </ng-template>
+              </div>
+            </td>
+
+            <!-- Agregar rol -->
+            <td class="col-agregar">
+              <div class="gr-agregar" *ngIf="rolesAsignables(fila).length > 0; else completo">
+                <select
+                  class="gr-select"
+                  [(ngModel)]="fila.rolParaAgregar"
+                  [disabled]="fila.agregando">
+                  <option [ngValue]="null" disabled selected>Seleccionar...</option>
+                  <option *ngFor="let r of rolesAsignables(fila)" [ngValue]="r.idRol">
+                    {{ r.nombre }}
+                  </option>
+                </select>
+                <button
+                  class="gr-btn-agregar"
+                  [disabled]="!fila.rolParaAgregar || fila.agregando"
+                  matTooltip="Asignar rol"
+                  (click)="agregarRol(fila)">
+                  <mat-spinner *ngIf="fila.agregando" diameter="15" class="btn-spinner"></mat-spinner>
+                  <mat-icon *ngIf="!fila.agregando">add</mat-icon>
+                </button>
+              </div>
+              <ng-template #completo>
+                <span class="gr-completo" matTooltip="Tiene todos los roles disponibles">
+                  <mat-icon>check_circle</mat-icon>
+                </span>
+              </ng-template>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </ng-container>
+</div>

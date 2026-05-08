@@ -9,7 +9,26 @@
       "Bash(dotnet run:*)",
       "Bash(xargs grep *)",
       "Bash(dir /s /b)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(Get-ChildItem -Path . -Recurse -Filter \"*.routes.ts\" -Depth 3)",
+      "Bash(Select-Object -Property FullName)",
+      "Bash(Get-ChildItem -Path \"src\\\\app\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-api\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-web\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(dotnet restore *)",
+      "PowerShell(head *)",
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-api\" -Directory)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-api\" -Recurse -Filter \"*.cs\")",
+      "Bash(Select-Object -First 20 FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-api\\\\TesisGestorApi\\\\DTOs\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(Remove-Item *)",
+      "Bash(Get-ChildItem *)"
     ]
   }
 }

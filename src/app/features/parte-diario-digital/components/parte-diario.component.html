@@ -177,7 +177,8 @@
         <div class="pd-card-header">
           <mat-icon>schedule</mat-icon>
           <span>Horario del día</span>
-          <ng-container *ngIf="!modoEdicionHorario">
+          <!-- Docente solo tiene acceso de lectura al horario -->
+          <ng-container *ngIf="!modoEdicionHorario && !esDocente">
             <button class="clase-mover-btn" style="margin-left:auto"
                     (click)="entrarModoEdicion()"
                     matTooltip="Reorganizar horario del día"
@@ -235,7 +236,16 @@
               <mat-icon>info_outline</mat-icon> {{ clase.motivo }}
             </div>
           </div>
-          <button class="clase-toggle"
+          <!-- Docente: indicador de estado sin acción -->
+          <span *ngIf="esDocente"
+                class="clase-toggle"
+                [class.clase-toggle--dictada]="clase.dictada !== false"
+                [class.clase-toggle--nodictada]="clase.dictada === false">
+            <mat-icon>{{ clase.dictada === false ? 'close' : 'check' }}</mat-icon>
+            {{ clase.dictada === false ? 'No Dictada' : (clase.dictada === true ? 'Dictada' : 'Sin reg.') }}
+          </span>
+          <button *ngIf="!esDocente"
+                  class="clase-toggle"
                   [class.clase-toggle--dictada]="clase.dictada !== false"
                   [class.clase-toggle--nodictada]="clase.dictada === false"
                   (click)="onToggleClase(clase)"
@@ -257,7 +267,7 @@
               <mat-icon>keyboard_arrow_down</mat-icon>
             </button>
           </div>
-          <button *ngIf="!modoEdicionHorario && clase.horaEntradaOriginal"
+          <button *ngIf="!modoEdicionHorario && clase.horaEntradaOriginal && !esDocente"
                   class="clase-mover-btn clase-mover-btn--reset"
                   (click)="onResetearHorario(clase)"
                   matTooltip="Restablecer horario original ({{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }})">

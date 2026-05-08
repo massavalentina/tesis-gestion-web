@@ -16,6 +16,7 @@ import { debounceTime, distinctUntilChanged, filter, switchMap, tap, catchError 
 
 import { FichaAlumnoService } from '../../../features/ficha-alumno/services/ficha-alumno.service';
 import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/estudiante-busqueda-ficha.model';
+import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -74,18 +75,21 @@ import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/e
       </div>
 
       <div class="user-area" *ngIf="!isMobile">
-        <span class="username">Preceptor, Daniel</span>
+        <div class="username">
+          <span class="username-nombre">{{ nombreUsuario }}</span>
+          <span class="username-rol">{{ rolUsuario }}</span>
+        </div>
 
         <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
           <mat-icon class="avatar">account_circle</mat-icon>
         </button>
 
         <mat-menu #userMenu="matMenu" xPosition="before">
-          <button mat-menu-item>
+          <button mat-menu-item (click)="irACuenta()">
             <mat-icon>person</mat-icon>
             <span>Cuenta</span>
           </button>
-          <button mat-menu-item>
+          <button mat-menu-item (click)="cerrarSesion()">
             <mat-icon>logout</mat-icon>
             <span>Cerrar sesión</span>
           </button>
@@ -103,14 +107,21 @@ export class NavbarComponent implements OnDestroy {
   buscando = false;
   mostrarResultados = false;
 
+  nombreUsuario: string;
+  rolUsuario: string;
+
   private searchSub: Subscription;
 
   constructor(
     private breakpointObserver: BreakpointObserver,
     private fichaService: FichaAlumnoService,
     private router: Router,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private authService: AuthService,
   ) {
+    const usuario = authService.obtenerUsuario();
+    this.nombreUsuario = usuario?.nombre ?? '';
+    this.rolUsuario    = usuario?.roles[0] ?? '';
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
       this.isMobile = result.matches;
     });
@@ -160,6 +171,15 @@ export class NavbarComponent implements OnDestroy {
     this.searchCtrl.setValue('');
     this.resultados = [];
     this.mostrarResultados = false;
+  }
+
+  irACuenta(): void {
+    this.router.navigate(['/cuenta']);
+  }
+
+  cerrarSesion(): void {
+    this.authService.cerrarSesion();
+    this.router.navigate(['/dev-login']);
   }
 
   ngOnDestroy(): void {

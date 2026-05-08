@@ -28,7 +28,7 @@
   <!-- Botón masivo: notificar a todos los tutores desactualizados del curso.
        Visible solo cuando hay un curso seleccionado y ya cargaron los estudiantes. -->
   <div class="curso-acciones"
-       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0">
+       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0 && !esDocente && !esDirector">
     <button class="btn-notificar-curso"
             [class.btn-notificar-disabled]="!hayAlgunoParaNotificar()"
             [disabled]="enviandoNotificacionCurso || !hayAlgunoParaNotificar()"
@@ -151,7 +151,7 @@
               </div>
 
               <!-- Botón principal izquierdo -->
-              <div class="col-btn-row">
+              <div class="col-btn-row" *ngIf="!esDocente && !esDirector">
                 <button class="btn-accion" (click)="editarDatos(est)">
                   <mat-icon class="btn-accion-icon">edit</mat-icon>
                   EDITAR DATOS
@@ -162,8 +162,8 @@
               <!-- Separador interno -->
               <div class="col-sep"></div>
 
-              <!-- Badges -->
-              <div class="info-row">
+              <!-- Badges: Docente no puede ver credenciales QR -->
+              <div class="info-row" *ngIf="!esDocente">
                 <span class="info-label">Credencial QR personal</span>
                 <span class="credencial-badge" [class]="getCredencialClass(est.idEstudiante)">
                   {{ getCredencialLabel(est.idEstudiante) }}
@@ -302,7 +302,7 @@
               <mat-icon>chevron_left</mat-icon> Volver
             </button>
 
-            <div class="tutores-header-actions">
+            <div class="tutores-header-actions" *ngIf="!esDocente && !esDirector">
               <!-- Botón de notificación: habilitado solo si los datos llevan > 6 meses sin
                    actualizar Y no se envió una notificación en los últimos 6 meses. -->
               <button class="btn-notificar-tutor"
@@ -382,12 +382,14 @@
                               (click)="verDetalleTutor(tutor)">
                         <mat-icon>info_outline</mat-icon>
                       </button>
-                      <button class="btn-tabla-icono btn-tabla-editar"
+                      <button *ngIf="!esDocente && !esDirector"
+                              class="btn-tabla-icono btn-tabla-editar"
                               matTooltip="Editar tutor"
                               (click)="editarTutor(tutor, est.idEstudiante)">
                         <mat-icon>edit</mat-icon>
                       </button>
-                      <button class="btn-tabla-icono btn-tabla-eliminar"
+                      <button *ngIf="!esDocente && !esDirector"
+                              class="btn-tabla-icono btn-tabla-eliminar"
                               [matTooltip]="tutor.esPrincipal ? 'Primero asigná otro tutor como principal' : 'Eliminar tutor'"
                               (click)="intentarEliminarTutor(tutor, est.idEstudiante)">
                         <mat-icon>delete_outline</mat-icon>
@@ -444,7 +446,9 @@
                       [disabled]="modal.regenerando">
                 Cerrar
               </button>
-              <button type="button"
+              <!-- Director puede ver la credencial pero no emitir/regenerar -->
+              <button *ngIf="!esDirector"
+                      type="button"
                       class="btn-modal-save"
                       (click)="solicitarRegeneracionCredencialQr()"
                       [disabled]="modal.cargando || modal.regenerando">

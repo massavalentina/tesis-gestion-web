@@ -18,6 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule }         from '@angular/material/divider';
 
 import { ParteDiarioService, AgregarComentarioDto, ReorganizarHorarioDto, SlotReorganizadoDto } from '../services/parte-diario.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { ParteDiarioResumen }  from '../models/parte-diario-resumen.model';
 import { ComentarioParte }     from '../models/comentario-parte.model';
 import { TurnoParte }          from '../models/turno-parte.model';
@@ -134,6 +135,8 @@ export class ConfirmDescartarHorarioDialogComponent {}
 })
 export class ParteDiarioComponent implements OnInit {
 
+  readonly esDocente: boolean;
+
   cursoCtrl  = new FormControl<string | null>(null);
   fechaCtrl  = new FormControl<Date>(ParteDiarioComponent.ultimoDiaLaboral());
 
@@ -170,9 +173,13 @@ export class ParteDiarioComponent implements OnInit {
     private service: ParteDiarioService,
     private dialog:  MatDialog,
     private snack:   MatSnackBar,
-  ) {}
+    authService: AuthService,
+  ) {
+    this.esDocente = authService.tieneRol('Docente');
+  }
 
   ngOnInit(): void {
+    // TODO: filtrar por cursos asignados al docente (EspacioCurricular)
     this.service.getCursos().subscribe({
       next: c => { this.cursos = c; },
     });
