@@ -1,4 +1,4 @@
-<div class="ficha-container">
+﻿<div class="ficha-container">
 
   <!-- Header con breadcrumb -->
   <div class="ficha-header">
@@ -28,7 +28,7 @@
   <!-- Botón masivo: notificar a todos los tutores desactualizados del curso.
        Visible solo cuando hay un curso seleccionado y ya cargaron los estudiantes. -->
   <div class="curso-acciones"
-       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0 && !esDocente && !esDirector">
+       *ngIf="cursoSeleccionado && !cargandoEstudiantes && !errorEstudiantes && estudiantes.length > 0 && esSecretario">
     <button class="btn-notificar-curso"
             [class.btn-notificar-disabled]="!hayAlgunoParaNotificar()"
             [disabled]="enviandoNotificacionCurso || !hayAlgunoParaNotificar()"
@@ -106,14 +106,14 @@
 
       <ng-container *ngIf="getFicha(est.idEstudiante) as ficha">
 
-        <!-- ══════════════════════════════════════
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: RESUMEN
-             ══════════════════════════════════════ -->
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
         <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante)">
 
           <div class="ficha-grid">
 
-            <!-- ── COLUMNA IZQUIERDA: Estudiante ── -->
+            <!-- â”€â”€ COLUMNA IZQUIERDA: Estudiante â”€â”€ -->
             <div class="ficha-col">
 
               <div class="col-header">DATOS ESTUDIANTE</div>
@@ -151,7 +151,7 @@
               </div>
 
               <!-- Botón principal izquierdo -->
-              <div class="col-btn-row" *ngIf="!esDocente && !esDirector">
+              <div class="col-btn-row" *ngIf="!esDocente && !esEquipoDirectivo">
                 <button class="btn-accion" (click)="editarDatos(est)">
                   <mat-icon class="btn-accion-icon">edit</mat-icon>
                   EDITAR DATOS
@@ -195,7 +195,7 @@
             <!-- Divisor vertical -->
             <div class="ficha-divisor"></div>
 
-            <!-- ── COLUMNA DERECHA: Tutor ── -->
+            <!-- â”€â”€ COLUMNA DERECHA: Tutor â”€â”€ -->
             <div class="ficha-col">
 
               <div class="col-header">DATOS TUTOR PRINCIPAL</div>
@@ -292,9 +292,9 @@
 
         </div><!-- /alumno-detalle (resumen) -->
 
-        <!-- ══════════════════════════════════════
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: TUTORES
-             ══════════════════════════════════════ -->
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
         <div class="tutores-view" *ngIf="vistaTutoresIds.has(est.idEstudiante)">
 
           <div class="tutores-view-header">
@@ -302,10 +302,11 @@
               <mat-icon>chevron_left</mat-icon> Volver
             </button>
 
-            <div class="tutores-header-actions" *ngIf="!esDocente && !esDirector">
+            <div class="tutores-header-actions" *ngIf="!esDocente && !esEquipoDirectivo">
               <!-- Botón de notificación: habilitado solo si los datos llevan > 6 meses sin
                    actualizar Y no se envió una notificación en los últimos 6 meses. -->
-              <button class="btn-notificar-tutor"
+              <button *ngIf="esSecretario"
+                      class="btn-notificar-tutor"
                       [class.btn-notificar-disabled]="!puedeEnviarNotificacion(est.idEstudiante)"
                       [disabled]="!puedeEnviarNotificacion(est.idEstudiante) || enviandoNotificacionIds.has(est.idEstudiante)"
                       [matTooltip]="puedeEnviarNotificacion(est.idEstudiante)
@@ -382,13 +383,13 @@
                               (click)="verDetalleTutor(tutor)">
                         <mat-icon>info_outline</mat-icon>
                       </button>
-                      <button *ngIf="!esDocente && !esDirector"
+                      <button *ngIf="!esDocente && !esEquipoDirectivo"
                               class="btn-tabla-icono btn-tabla-editar"
                               matTooltip="Editar tutor"
                               (click)="editarTutor(tutor, est.idEstudiante)">
                         <mat-icon>edit</mat-icon>
                       </button>
-                      <button *ngIf="!esDocente && !esDirector"
+                      <button *ngIf="!esDocente && !esEquipoDirectivo"
                               class="btn-tabla-icono btn-tabla-eliminar"
                               [matTooltip]="tutor.esPrincipal ? 'Primero asigná otro tutor como principal' : 'Eliminar tutor'"
                               (click)="intentarEliminarTutor(tutor, est.idEstudiante)">
@@ -412,9 +413,9 @@
 
   </mat-accordion>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        MODAL: CREDENCIAL QR INDIVIDUAL
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="modalCredencialQr as modal">
     <div class="modal-overlay" (click)="cerrarModalCredencialQr()">
       <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
@@ -447,7 +448,7 @@
                 Cerrar
               </button>
               <!-- Director puede ver la credencial pero no emitir/regenerar -->
-              <button *ngIf="!esDirector"
+              <button *ngIf="!esEquipoDirectivo"
                       type="button"
                       class="btn-modal-save"
                       (click)="solicitarRegeneracionCredencialQr()"
@@ -493,9 +494,9 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        MODAL: EDITAR DATOS ESTUDIANTE
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="modalEstudiante as modal">
     <div class="modal-overlay" (click)="cerrarModalEstudiante()">
       <div class="modal-card" (click)="$event.stopPropagation()">
@@ -595,9 +596,9 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        MODAL: EDITAR / AGREGAR TUTOR
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="modalTutor as modal">
     <div class="modal-overlay" (click)="cerrarModalTutor()">
       <div class="modal-card modal-card-lg" (click)="$event.stopPropagation()">
@@ -755,9 +756,9 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        MODAL: CONFIRMAR ELIMINACIÓN DE TUTOR
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="modalEliminar as modal">
     <div class="modal-overlay" (click)="cerrarModalEliminar()">
       <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
@@ -786,9 +787,9 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        MODAL: DETALLE TUTOR (fecha nacimiento + domicilio)
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="modalDetalleTutor as modal">
     <div class="modal-overlay" (click)="cerrarModalDetalleTutor()">
       <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">
@@ -820,9 +821,9 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        ALERTA: NO SE PUEDE ELIMINAR TUTOR PRINCIPAL
-       ══════════════════════════════════════════════════════════ -->
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <ng-container *ngIf="alertBloqueo">
     <div class="modal-overlay" (click)="cerrarAlertBloqueo()">
       <div class="modal-card modal-card-sm" (click)="$event.stopPropagation()">

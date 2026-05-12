@@ -7,7 +7,7 @@
     </button>
     <div class="header-texto">
       <h1>Ficha de usuario</h1>
-      <p>Gestión de Usuarios</p>
+      <p>Cuentas - Usuarios</p>
     </div>
   </header>
 
@@ -38,6 +38,8 @@
           <span *ngFor="let r of u.roles"
                 class="rol-chip"
                 [ngClass]="u.activo ? rolColor(r) : 'chip-gris'">{{ r }}</span>
+          <span *ngIf="tieneRolPreceptor && esDelegado"
+                class="rol-chip chip-delegado-header">Preceptor Delegado</span>
         </div>
         <div class="roles-row" *ngIf="u.roles.length === 0">
           <span class="rol-chip chip-gris">Sin rol</span>
@@ -65,7 +67,62 @@
       </div>
     </div>
 
-    <!-- Acción + error -->
+    <!-- ── Gestión de Roles ── -->
+    <div class="roles-section">
+      <span class="roles-titulo">Roles asignados</span>
+
+      <div class="gr-chips">
+        <ng-container *ngIf="rolesConObjeto.length > 0 || esDelegado; else sinRoles">
+
+          <span *ngFor="let rol of rolesConObjeto"
+                class="gr-chip"
+                [ngClass]="rolChipClass(rol.nombre)">
+            {{ rol.nombre }}
+            <button class="gr-chip-remove"
+                    [disabled]="!!eliminandoRolId() || actualizandoDelegado()"
+                    [matTooltip]="'Quitar ' + rol.nombre"
+                    (click)="quitarRol(rol)">
+              <mat-spinner *ngIf="eliminandoRolId() === rol.idRol" diameter="11" class="chip-spinner"></mat-spinner>
+              <mat-icon *ngIf="eliminandoRolId() !== rol.idRol">close</mat-icon>
+            </button>
+          </span>
+
+          <span *ngIf="tieneRolPreceptor && esDelegado"
+                class="gr-chip chip-preceptor-delegado">
+            Preceptor Delegado
+            <button class="gr-chip-remove"
+                    [disabled]="actualizandoDelegado() || !!eliminandoRolId()"
+                    matTooltip="Quitar Preceptor Delegado"
+                    (click)="quitarDelegado()">
+              <mat-spinner *ngIf="actualizandoDelegado()" diameter="11" class="chip-spinner"></mat-spinner>
+              <mat-icon *ngIf="!actualizandoDelegado()">close</mat-icon>
+            </button>
+          </span>
+
+        </ng-container>
+        <ng-template #sinRoles>
+          <span class="gr-sin-roles">Sin roles asignados</span>
+        </ng-template>
+      </div>
+
+      <div class="gr-agregar" *ngIf="rolesAsignables.length > 0">
+        <select class="gr-select"
+                [(ngModel)]="rolParaAgregar"
+                [disabled]="agregando()">
+          <option [ngValue]="null" disabled selected>Agregar rol...</option>
+          <option *ngFor="let r of rolesAsignables" [ngValue]="r.idRol">{{ r.nombre }}</option>
+        </select>
+        <button class="gr-btn-agregar"
+                [disabled]="!rolParaAgregar || agregando()"
+                matTooltip="Asignar rol"
+                (click)="agregarRol()">
+          <mat-spinner *ngIf="agregando()" diameter="15" class="btn-spinner"></mat-spinner>
+          <mat-icon *ngIf="!agregando()">add</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Acción + error ── -->
     <div class="acciones-section">
       <div class="error-accion" *ngIf="errorAccion()">
         <mat-icon>error_outline</mat-icon>

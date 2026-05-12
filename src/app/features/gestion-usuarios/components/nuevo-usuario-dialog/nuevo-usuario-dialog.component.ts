@@ -15,7 +15,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, timer } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { GestionUsuariosService } from '../../services/gestion-usuarios.service';
-import { Usuario } from '../../models/usuario.model';
+import { CrearUsuarioResultDto, Usuario } from '../../models/usuario.model';
 
 const ROLES_DISPONIBLES = ['Admin', 'Docente', 'Preceptor', 'Equipo Directivo', 'Secretario'];
 
@@ -91,21 +91,6 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="field-full">
-          <mat-label>Contraseña</mat-label>
-          <input matInput [type]="mostrarPassword ? 'text' : 'password'"
-                 formControlName="contraseña" autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button"
-                  (click)="mostrarPassword = !mostrarPassword">
-            <mat-icon>{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-hint>Mínimo 8 caracteres</mat-hint>
-          <mat-error *ngIf="form.get('contraseña')?.hasError('required')">Requerida</mat-error>
-          <mat-error *ngIf="form.get('contraseña')?.hasError('minlength')">
-            Mínimo 8 caracteres
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="field-full">
           <mat-label>Roles</mat-label>
           <mat-select formControlName="roles" multiple>
             <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
@@ -138,6 +123,11 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
         <strong>{{ usuarioCreado?.apellido }}, {{ usuarioCreado?.nombre }}</strong>
         se creó correctamente.
       </p>
+      <div class="contrasena-box">
+        <p class="contrasena-label">Contraseña provisoria</p>
+        <code class="contrasena-valor">{{ contrasenaProvisoria }}</code>
+        <p class="contrasena-hint">Compartila con el usuario. Vence en 7 días.</p>
+      </div>
       <button mat-flat-button class="btn-resultado btn-verde" (click)="cerrar()">
         Cerrar
       </button>
@@ -192,6 +182,32 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
     }
     .spinner-inline { display: inline-block; vertical-align: middle; }
 
+    /* ── Contraseña provisoria ── */
+    .contrasena-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+      width: 100%;
+    }
+    .contrasena-label {
+      margin: 0 0 4px;
+      font-size: 0.78rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .contrasena-valor {
+      display: block;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.1em;
+    }
+    .contrasena-hint { margin: 4px 0 0; font-size: 0.78rem; color: #94a3b8; }
+
     /* ── Pantalla de resultado ── */
     .resultado-container {
       padding: 32px 28px 24px;
@@ -232,11 +248,11 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
 })
 export class NuevoUsuarioDialogComponent {
   readonly roles = ROLES_DISPONIBLES;
-  mostrarPassword = false;
 
-  estado      = signal<EstadoDialog>('formulario');
-  guardando   = signal(false);
+  estado             = signal<EstadoDialog>('formulario');
+  guardando          = signal(false);
   usuarioCreado: Usuario | null = null;
+  contrasenaProvisoria = '';
   errorMensaje = '';
 
   form: FormGroup;
@@ -257,9 +273,8 @@ export class NuevoUsuarioDialogComponent {
         validators:      [Validators.required],
         asyncValidators: [this.documentoUnicoValidator()],
       }),
-      telefono:  ['', Validators.pattern(/^\d*$/)],
-      contraseña: ['', [Validators.required, Validators.minLength(8)]],
-      roles:      [[]],
+      telefono: ['', Validators.pattern(/^\d*$/)],
+      roles:    [[]],
     });
   }
 
@@ -296,9 +311,10 @@ export class NuevoUsuarioDialogComponent {
     this.guardando.set(true);
 
     this.service.crear(this.form.value).subscribe({
-      next: (usuario: Usuario) => {
+      next: (resultado: CrearUsuarioResultDto) => {
         this.guardando.set(false);
-        this.usuarioCreado = usuario;
+        this.usuarioCreado       = resultado.usuario;
+        this.contrasenaProvisoria = resultado.contrasenaProvisoria;
         this.estado.set('exito');
       },
       error: (err) => {

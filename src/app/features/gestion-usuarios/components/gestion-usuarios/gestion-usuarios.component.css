@@ -116,6 +116,35 @@
 .chip-gris-rol    { background: #f1f5f9; color: #64748b; }
 .chip-teal        { background: #ccfbf1; color: #0f766e; }
 .chip-gris        { background: #f1f5f9; color: #64748b; }
+.chip-delegado    { background: #fdf4ff; color: #a21caf; }
+
+/* ── Select de rol ── */
+.rol-select-field {
+  min-width: 210px;
+  font-size: 13px;
+}
+
+:host ::ng-deep .rol-select-field .mat-mdc-text-field-wrapper {
+  background: #f8fafc;
+}
+
+:host ::ng-deep .rol-select-field .mdc-notched-outline__leading,
+:host ::ng-deep .rol-select-field .mdc-notched-outline__notch,
+:host ::ng-deep .rol-select-field .mdc-notched-outline__trailing {
+  border-color: #e2e8f0;
+}
+
+:host ::ng-deep .rol-select-field .mat-mdc-form-field-infix {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  min-height: unset;
+}
+
+:host ::ng-deep .rol-select-field .mat-mdc-select-value,
+:host ::ng-deep .rol-select-field .mat-mdc-select-placeholder {
+  font-size: 13px;
+  color: #374151;
+}
 
 /* ── Tabla ── */
 .table-wrapper {
@@ -192,7 +221,16 @@
 .nombre-completo {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #0f2f4b;
+  color: #0284c7;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+.fila-clickeable:hover .nombre-completo {
+  text-decoration-color: #0284c7;
+}
+.fila-inactiva .nombre-completo {
+  color: #64748b;
 }
 
 .email-mobile {

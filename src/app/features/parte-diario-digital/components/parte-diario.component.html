@@ -177,8 +177,8 @@
         <div class="pd-card-header">
           <mat-icon>schedule</mat-icon>
           <span>Horario del día</span>
-          <!-- Docente solo tiene acceso de lectura al horario -->
-          <ng-container *ngIf="!modoEdicionHorario && !esDocente">
+          <!-- Docente y Equipo Directivo solo tienen acceso de lectura al horario -->
+          <ng-container *ngIf="!modoEdicionHorario && !esDocente && !esEquipoDirectivo">
             <button class="clase-mover-btn" style="margin-left:auto"
                     (click)="entrarModoEdicion()"
                     matTooltip="Reorganizar horario del día"
@@ -236,15 +236,15 @@
               <mat-icon>info_outline</mat-icon> {{ clase.motivo }}
             </div>
           </div>
-          <!-- Docente: indicador de estado sin acción -->
-          <span *ngIf="esDocente"
+          <!-- Docente / Equipo Directivo: indicador de estado sin acción -->
+          <span *ngIf="esDocente || esEquipoDirectivo"
                 class="clase-toggle"
                 [class.clase-toggle--dictada]="clase.dictada !== false"
                 [class.clase-toggle--nodictada]="clase.dictada === false">
             <mat-icon>{{ clase.dictada === false ? 'close' : 'check' }}</mat-icon>
             {{ clase.dictada === false ? 'No Dictada' : (clase.dictada === true ? 'Dictada' : 'Sin reg.') }}
           </span>
-          <button *ngIf="!esDocente"
+          <button *ngIf="!esDocente && !esEquipoDirectivo"
                   class="clase-toggle"
                   [class.clase-toggle--dictada]="clase.dictada !== false"
                   [class.clase-toggle--nodictada]="clase.dictada === false"
@@ -267,7 +267,7 @@
               <mat-icon>keyboard_arrow_down</mat-icon>
             </button>
           </div>
-          <button *ngIf="!modoEdicionHorario && clase.horaEntradaOriginal && !esDocente"
+          <button *ngIf="!modoEdicionHorario && clase.horaEntradaOriginal && !esDocente && !esEquipoDirectivo"
                   class="clase-mover-btn clase-mover-btn--reset"
                   (click)="onResetearHorario(clase)"
                   matTooltip="Restablecer horario original ({{ clase.horaEntradaOriginal }} – {{ clase.horaSalidaOriginal }})">

@@ -7,6 +7,8 @@ import { authGuard } from './core/auth/guards/auth.guard';
 import { permisoGuard } from './core/auth/guards/permiso.guard';
 import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
+import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
+import { credencialesQrGuard } from './core/auth/guards/credenciales-qr.guard';
 // import { authGuard } from './core/guards/auth.guard';
 
 
@@ -31,7 +33,7 @@ export const routes: Routes = [
   {
     path: 'qr-credentials/generation',
     component: PaginaGeneracionCredencialesQr,
-    canActivate: [authGuard, permisoGuard('CREDENCIALES_QR_RW')],
+    canActivate: [authGuard, credencialesQrGuard],
   },
   // ⚠️ SOLO DESARROLLO — Eliminar esta ruta antes de pasar a producción
   {
@@ -76,21 +78,20 @@ export const routes: Routes = [
           import('../app/features/parte-diario-digital/components/parte-diario.component')
             .then(m => m.ParteDiarioComponent),
         // Docente puede ver el parte diario (solo lectura + comentarios + PDF)
-        canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW'], ['Docente'])],
+        canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW', 'PARTE_DIARIO_R'], ['Docente', 'Equipo Directivo'])],
       },
       {
         path: 'attendance/scan',
         component: PaginaEscanerAsistencia,
-        canActivate: [authGuard, permisoGuard('ASISTENCIA_QR_RW'),
-        canDeactivate: [colaPendienteGuard]
-        ]
+        canActivate: [authGuard, permisoGuard('ASISTENCIA_QR_RW')],
+        canDeactivate: [colaPendienteGuard],
       },
       {
         path: 'credenciales-qr',
         loadComponent: () =>
           import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
             .then(m => m.CredencialesQrComponent),
-        canActivate: [authGuard, permisoGuard('CREDENCIALES_QR_RW')],
+        canActivate: [authGuard, credencialesQrGuard],
       },
       {
         path: 'cuenta',
@@ -98,13 +99,6 @@ export const routes: Routes = [
           import('../app/features/proximamente/proximamente.component')
             .then(m => m.ProximamenteComponent),
         canActivate: [authGuard],
-      },
-      {
-        path: 'gestion-roles',
-        loadComponent: () =>
-          import('../app/features/gestion-roles/components/gestion-roles/gestion-roles.component')
-            .then(m => m.GestionRolesComponent),
-        canActivate: [authGuard, permisoGuard('ASIGNACION_ROLES_RW')],
       },
       {
         path: 'ficha-alumno',
@@ -118,14 +112,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/reporte-asistencia/reporte-asistencia.component')
             .then(m => m.ReporteAsistenciaComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_R')],
+        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_RW')],
       },
       {
         path: 'reporte-asistencia/detalle/:estudianteId',
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_R')],
+        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_RW')],
       },
       {
         path: 'ficha-alumno/detalle/:estudianteId',
@@ -153,12 +147,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
             .then(m => m.GestionUsuariosComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Secretario'])],
       },
       {
         path: 'gestion-usuarios/:id',
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/ficha-usuario/ficha-usuario.component')
             .then(m => m.FichaUsuarioComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Secretario'])],
       },
     ],
   },

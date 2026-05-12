@@ -154,6 +154,119 @@
   word-break: break-all;
 }
 
+/* ── Chip delegado en header ── */
+.chip-delegado-header { background: #7c3aed; color: #fff; }
+
+/* ── Roles section ── */
+.roles-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.roles-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.gr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  min-height: 32px;
+}
+
+.gr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.45rem 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-docente            { background: #dbeafe; color: #1d4ed8; }
+.chip-eq-directivo       { background: #fff7ed; color: #c2410c; }
+.chip-secretario         { background: #fef9c3; color: #a16207; }
+.chip-preceptor          { background: #ede9fe; color: #6d28d9; }
+.chip-preceptor-delegado { background: #7c3aed; color: #fff; }
+.chip-admin              { background: #fee2e2; color: #b91c1c; }
+.chip-default            { background: #f1f5f9; color: #475569; }
+
+.gr-chip-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.gr-chip-remove mat-icon { font-size: 13px; width: 13px; height: 13px; }
+.gr-chip-remove:hover:not(:disabled) { opacity: 1; }
+.gr-chip-remove:disabled { cursor: default; }
+
+.chip-spinner { display: flex; }
+
+.gr-sin-roles {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+.gr-agregar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 320px;
+}
+
+.gr-select {
+  height: 34px;
+  padding: 0 0.5rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #334155;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  flex: 1;
+  transition: border-color 0.2s;
+}
+.gr-select:focus    { border-color: #0284c7; }
+.gr-select:disabled { opacity: 0.5; cursor: default; }
+
+.gr-btn-agregar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: #0284c7;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.gr-btn-agregar mat-icon { font-size: 18px; width: 18px; height: 18px; }
+.gr-btn-agregar:hover:not(:disabled) { background: #0369a1; }
+.gr-btn-agregar:disabled { opacity: 0.4; cursor: default; }
+
+.btn-spinner { display: flex; }
+
 /* ── Acciones ── */
 .acciones-section {
   display: flex;

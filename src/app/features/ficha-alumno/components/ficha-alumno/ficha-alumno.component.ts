@@ -114,7 +114,8 @@ interface ModalCredencialQrState {
 })
 export class FichaAlumnoComponent implements OnInit, OnDestroy {
   readonly esDocente: boolean;
-  readonly esDirector: boolean;
+  readonly esEquipoDirectivo: boolean;
+  readonly esSecretario: boolean;
 
   cursos: CursoFicha[] = [];
   cursoSeleccionado: CursoFicha | null = null;
@@ -154,8 +155,9 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     authService: AuthService,
   ) {
-    this.esDocente  = authService.tieneRol('Docente');
-    this.esDirector = authService.tieneRol('Director');
+    this.esDocente         = authService.tieneRol('Docente');
+    this.esEquipoDirectivo = authService.tieneRol('Equipo Directivo');
+    this.esSecretario      = authService.tieneRol('Secretario') || !!authService.obtenerUsuario()?.esAdmin;
   }
 
   ngOnInit(): void {

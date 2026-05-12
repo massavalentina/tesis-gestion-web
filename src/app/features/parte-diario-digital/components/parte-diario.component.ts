@@ -136,6 +136,7 @@ export class ConfirmDescartarHorarioDialogComponent {}
 export class ParteDiarioComponent implements OnInit {
 
   readonly esDocente: boolean;
+  readonly esEquipoDirectivo: boolean;
 
   cursoCtrl  = new FormControl<string | null>(null);
   fechaCtrl  = new FormControl<Date>(ParteDiarioComponent.ultimoDiaLaboral());
@@ -176,6 +177,7 @@ export class ParteDiarioComponent implements OnInit {
     authService: AuthService,
   ) {
     this.esDocente = authService.tieneRol('Docente');
+    this.esEquipoDirectivo = authService.tieneRol('Equipo Directivo');
   }
 
   ngOnInit(): void {
