@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../auth.service';
+import { AuthService } from '../../../features/auth/services/auth.service';
 
 /** Permite el acceso si el usuario es admin, tiene alguno de los permisos
  *  indicados, O tiene alguno de los roles indicados. */

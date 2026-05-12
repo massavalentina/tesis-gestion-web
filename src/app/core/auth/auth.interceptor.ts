@@ -8,7 +8,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
+import { AuthService } from '../../features/auth/services/auth.service';
 
 interface RefreshResponse {
   accessToken: string;
@@ -47,13 +47,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
               }),
               catchError(() => {
                 authService.cerrarSesion();
-                router.navigate(['/dev-login']);
+                router.navigate(['/login']);
                 return throwError(() => error);
               })
             );
         }
         authService.cerrarSesion();
-        router.navigate(['/dev-login']);
+        router.navigate(['/login']);
       }
       return throwError(() => error);
     })

@@ -14,6 +14,9 @@ export interface UsuarioSesion {
   nombre: string;
   apellido: string;
   roles: string[];
+  permisos: string[];
+  esAdmin: boolean;
+  esPreceptorDelegado: boolean;
   requiresPasswordChange: boolean;
   exp: number;
 }
@@ -21,10 +24,16 @@ export interface UsuarioSesion {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly apiUrl = `${environment.apiUrl}/api/auth`;
+  private readonly ACCESS_TOKEN_KEY = 'accessToken';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
   private readonly _currentUser$ = new BehaviorSubject<UsuarioSesion | null>(null);
 
   get currentUser$(): Observable<UsuarioSesion | null> {
     return this._currentUser$.asObservable();
+  }
+
+  get currentUser(): UsuarioSesion | null {
+    return this._currentUser$.value;
   }
 
   get isAuthenticated(): boolean {
@@ -33,11 +42,13 @@ export class AuthService {
     return user.exp * 1000 > Date.now();
   }
 
-  get currentUser(): UsuarioSesion | null {
-    return this._currentUser$.value;
+  get requiresPasswordChange(): boolean {
+    return this._currentUser$.value?.requiresPasswordChange ?? false;
   }
 
   constructor(private http: HttpClient, private router: Router) {}
+
+  // ── HTTP methods ──────────────────────────────────────────────────────────
 
   login(dto: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, dto).pipe(
@@ -59,19 +70,30 @@ export class AuthService {
     );
   }
 
+  // ── Session management ────────────────────────────────────────────────────
+
+  /** Stores tokens and updates the current user session (used by dev-login). */
+  guardarTokens(accessToken: string, refreshToken: string): void {
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    const payload = this._decodificarToken(accessToken);
+    this._currentUser$.next(payload);
+  }
+
   logout(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     this._currentUser$.next(null);
     this.router.navigate(['/login']);
   }
 
-  getAccessToken(): string | null {
-    return localStorage.getItem('accessToken');
+  /** Alias for logout() — used by guards and components that call cerrarSesion(). */
+  cerrarSesion(): void {
+    this.logout();
   }
 
   initFromStorage(): void {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
     if (!token) return;
 
     const payload = this._decodificarToken(token);
@@ -81,8 +103,8 @@ export class AuthService {
     }
 
     if (payload.exp * 1000 <= Date.now()) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
       this._currentUser$.next(null);
       return;
     }
@@ -90,9 +112,43 @@ export class AuthService {
     this._currentUser$.next(payload);
   }
 
+  // ── Token accessors ───────────────────────────────────────────────────────
+
+  getAccessToken(): string | null {
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+  }
+
+  obtenerAccessToken(): string | null {
+    return this.getAccessToken();
+  }
+
+  obtenerRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  // ── User info ─────────────────────────────────────────────────────────────
+
+  obtenerUsuario(): UsuarioSesion | null {
+    return this._currentUser$.value;
+  }
+
+  estaLogueado(): boolean {
+    return this.isAuthenticated;
+  }
+
+  tienePermiso(codigo: string): boolean {
+    return this._currentUser$.value?.permisos.includes(codigo) ?? false;
+  }
+
+  tieneRol(rol: string): boolean {
+    return this._currentUser$.value?.roles.includes(rol) ?? false;
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
   private _guardarSesion(res: LoginResponse): void {
-    localStorage.setItem('accessToken', res.accessToken);
-    localStorage.setItem('refreshToken', res.refreshToken);
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, res.accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, res.refreshToken);
     const payload = this._decodificarToken(res.accessToken);
     this._currentUser$.next(payload);
   }
@@ -103,20 +159,25 @@ export class AuthService {
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1]));
       return {
-        idUsuario:              payload['sub'],
-        email:                  payload['email'],
-        nombre:                 payload['nombre'],
-        apellido:               payload['apellido'],
-        roles:                  Array.isArray(payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'])
-                                  ? payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-                                  : payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-                                      ? [payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']]
-                                      : [],
+        idUsuario:              payload['idUsuario'] ?? '',
+        email:                  payload['email'] ?? '',
+        nombre:                 payload['nombre'] ?? '',
+        apellido:               payload['apellido'] ?? '',
+        roles:                  this._parsearClaim(payload['roles']),
+        permisos:               this._parsearClaim(payload['permisos']),
+        esAdmin:                payload['es_admin'] === 'true',
+        esPreceptorDelegado:    payload['tipo_preceptor'] === 'delegado',
         requiresPasswordChange: payload['requiresPasswordChange'] === 'true',
         exp:                    payload['exp'],
       };
     } catch {
       return null;
     }
+  }
+
+  private _parsearClaim(valor: unknown): string[] {
+    if (Array.isArray(valor)) return valor as string[];
+    if (typeof valor === 'string') return [valor];
+    return [];
   }
 }

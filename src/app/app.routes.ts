@@ -9,8 +9,6 @@ import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
 import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { credencialesQrGuard } from './core/auth/guards/credenciales-qr.guard';
-// import { authGuard } from './core/guards/auth.guard';
-
 
 export const routes: Routes = [
   {

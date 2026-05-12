@@ -18,7 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule }         from '@angular/material/divider';
 
 import { ParteDiarioService, AgregarComentarioDto, ReorganizarHorarioDto, SlotReorganizadoDto } from '../services/parte-diario.service';
-import { AuthService } from '../../../core/auth/auth.service';
+import { AuthService } from '../../auth/services/auth.service';
 import { ParteDiarioResumen }  from '../models/parte-diario-resumen.model';
 import { ComentarioParte }     from '../models/comentario-parte.model';
 import { TurnoParte }          from '../models/turno-parte.model';

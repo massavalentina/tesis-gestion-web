@@ -165,10 +165,6 @@ export class NavbarComponent implements OnDestroy {
     }
   }
 
-  irACuenta(): void {
-    this.router.navigate(['/perfil']);
-  }
-
   irAFicha(est: EstudianteBusquedaFicha): void {
     this.limpiar();
     this.router.navigate(['/ficha-alumno'], {
@@ -183,12 +179,7 @@ export class NavbarComponent implements OnDestroy {
   }
 
   irACuenta(): void {
-    this.router.navigate(['/cuenta']);
-  }
-
-  cerrarSesion(): void {
-    this.authService.cerrarSesion();
-    this.router.navigate(['/dev-login']);
+    this.router.navigate(['/perfil']);
   }
 
   ngOnDestroy(): void {

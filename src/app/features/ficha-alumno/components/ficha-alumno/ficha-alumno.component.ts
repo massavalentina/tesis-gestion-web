@@ -19,7 +19,7 @@ import {
   FichaAlumnoService,
   QrCredentialStatusDto
 } from '../../services/ficha-alumno.service';
-import { AuthService } from '../../../../core/auth/auth.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { CursoFicha } from '../../models/curso-ficha.model';
 import { EstudianteFicha } from '../../models/estudiante-ficha.model';
 import { FichaDetalle } from '../../models/ficha-detalle.model';
