@@ -58,51 +58,21 @@
       </div>
 
       <div class="filtros-grupo">
-        <span class="filtros-label">Roles</span>
-        <div class="chips-row">
-          <div class="stat-chip chip-rojo"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('Admin')"
-               (click)="toggleFiltroRol('Admin')">
-            <span>Admin</span>
-            <strong>{{ cantRol('Admin') }}</strong>
-          </div>
-          <div class="stat-chip chip-celeste"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('Docente')"
-               (click)="toggleFiltroRol('Docente')">
-            <span>Docente</span>
-            <strong>{{ cantRol('Docente') }}</strong>
-          </div>
-          <div class="stat-chip chip-violeta"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('Preceptor')"
-               (click)="toggleFiltroRol('Preceptor')">
-            <span>Preceptor</span>
-            <strong>{{ cantRol('Preceptor') }}</strong>
-          </div>
-          <div class="stat-chip chip-naranja"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('Equipo Directivo')"
-               (click)="toggleFiltroRol('Equipo Directivo')">
-            <span>Eq. Directivo</span>
-            <strong>{{ cantRol('Equipo Directivo') }}</strong>
-          </div>
-          <div class="stat-chip chip-teal"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('Secretario')"
-               (click)="toggleFiltroRol('Secretario')">
-            <span>Secretario</span>
-            <strong>{{ cantRol('Secretario') }}</strong>
-          </div>
-          <div class="stat-chip chip-gris-rol"
-               role="button"
-               [class.chip-activo]="filtrosRoles().includes('sin-rol')"
-               (click)="toggleFiltroRol('sin-rol')">
-            <span>Sin Rol</span>
-            <strong>{{ cantSinRol }}</strong>
-          </div>
-        </div>
+        <span class="filtros-label">Rol</span>
+        <mat-form-field class="rol-select-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-select [value]="filtroRol()"
+                      (selectionChange)="setFiltroRol($event.value)"
+                      placeholder="Todos los roles">
+            <mat-option [value]="null">Todos los roles</mat-option>
+            <mat-option value="Admin">Admin ({{ cantRol('Admin') }})</mat-option>
+            <mat-option value="Equipo Directivo">Equipo Directivo ({{ cantRol('Equipo Directivo') }})</mat-option>
+            <mat-option value="Secretario">Secretario ({{ cantRol('Secretario') }})</mat-option>
+            <mat-option value="preceptor-delegado">Preceptor Delegado ({{ cantDelegados }})</mat-option>
+            <mat-option value="Preceptor">Preceptor ({{ cantRol('Preceptor') }})</mat-option>
+            <mat-option value="Docente">Docente ({{ cantRol('Docente') }})</mat-option>
+            <mat-option value="sin-rol">Sin Rol ({{ cantSinRol }})</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
 
     </div>
@@ -145,6 +115,7 @@
               <span *ngFor="let r of u.roles"
                     class="rol-chip"
                     [ngClass]="rolColor(r)">{{ r }}</span>
+              <span *ngIf="u.esDelegado" class="rol-chip chip-delegado">Preceptor Delegado</span>
               <span *ngIf="u.roles.length === 0" class="rol-chip chip-gris">Sin rol</span>
             </div>
           </td>

@@ -169,6 +169,32 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
     }
     .spinner-inline { display: inline-block; vertical-align: middle; }
 
+    /* ── Contraseña provisoria ── */
+    .contrasena-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+      width: 100%;
+    }
+    .contrasena-label {
+      margin: 0 0 4px;
+      font-size: 0.78rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .contrasena-valor {
+      display: block;
+      font-family: monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: 0.1em;
+    }
+    .contrasena-hint { margin: 4px 0 0; font-size: 0.78rem; color: #94a3b8; }
+
     /* ── Pantalla de resultado ── */
     .resultado-container {
       padding: 32px 28px 24px;

@@ -1,0 +1,308 @@
+.gr-page {
+  padding: 1.5rem;
+  max-width: 1000px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.gr-header {
+  margin-bottom: 1.5rem;
+}
+
+.gr-titulo {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.2rem;
+}
+
+.gr-subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.gr-badge-total {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+
+/* ── Estados ─────────────────────────────────────────────────────── */
+.gr-estado-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.gr-error { color: #ef4444; }
+.gr-muted { color: #94a3b8; }
+
+/* ── Buscador ─────────────────────────────────────────────────────── */
+.gr-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0 0.9rem;
+  height: 44px;
+  margin-bottom: 1.25rem;
+  max-width: 420px;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: #0284c7;
+    background: #f0f9ff;
+  }
+}
+
+.gr-search-icon {
+  color: #94a3b8;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.gr-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  flex: 1;
+  font-size: 0.88rem;
+  color: #1e293b;
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.gr-search-clear {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { color: #475569; }
+}
+
+/* ── Tabla ───────────────────────────────────────────────────────── */
+.gr-tabla-wrap {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+
+.gr-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gr-tabla thead th {
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.gr-fila {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: #fafbff; }
+}
+
+.gr-fila td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+}
+
+/* ── Columnas ────────────────────────────────────────────────────── */
+.col-usuario { width: 28%; }
+.col-dni     { width: 12%; }
+.col-roles   { width: 38%; }
+.col-agregar { width: 22%; }
+
+/* ── Celda usuario ───────────────────────────────────────────────── */
+.gr-usuario-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gr-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gr-usuario-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow: hidden;
+}
+
+.gr-nombre {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gr-mail {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Celda DNI ───────────────────────────────────────────────────── */
+.gr-dni {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+  letter-spacing: 0.02em;
+}
+
+.gr-sin-dato {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+}
+
+/* ── Chips ───────────────────────────────────────────────────────── */
+.gr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.gr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.45rem 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.chip-docente            { background: #dbeafe; color: #1d4ed8; }
+.chip-director           { background: #dcfce7; color: #15803d; }
+.chip-secretario         { background: #fef9c3; color: #a16207; }
+.chip-preceptor          { background: #ede9fe; color: #6d28d9; }
+.chip-preceptor-delegado { background: #7c3aed; color: #fff; }
+.chip-admin              { background: #fee2e2; color: #b91c1c; }
+.chip-default            { background: #f1f5f9; color: #475569; }
+
+.gr-chip-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+  &:hover:not(:disabled) { opacity: 1; }
+  &:disabled { cursor: default; }
+}
+
+.chip-spinner { display: flex; }
+
+.gr-sin-roles {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* ── Agregar rol ─────────────────────────────────────────────────── */
+.gr-agregar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gr-select {
+  height: 32px;
+  padding: 0 0.5rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #334155;
+  background: #f8fafc;
+  cursor: pointer;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  transition: border-color 0.2s;
+
+  &:focus { border-color: #0284c7; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.gr-btn-agregar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #0284c7;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover:not(:disabled) { background: #0369a1; }
+  &:disabled { opacity: 0.4; cursor: default; }
+}
+
+.btn-spinner { display: flex; }
+
+.gr-completo {
+  display: flex;
+  align-items: center;
+  color: #86efac;
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}

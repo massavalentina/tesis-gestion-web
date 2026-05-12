@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { GestionUsuariosService } from '../../services/gestion-usuarios.service';
 import { Usuario } from '../../models/usuario.model';
 import { NuevoUsuarioDialogComponent } from '../nuevo-usuario-dialog/nuevo-usuario-dialog.component';
@@ -22,6 +24,8 @@ import { NuevoUsuarioDialogComponent } from '../nuevo-usuario-dialog/nuevo-usuar
     MatIconModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatSelectModule,
+    MatFormFieldModule,
   ],
   templateUrl: './gestion-usuarios.component.html',
   styleUrl:    './gestion-usuarios.component.css',
@@ -37,7 +41,7 @@ export class GestionUsuariosComponent implements OnInit {
   cargando     = signal(true);
   error        = signal('');
   filtroEstado = signal<'activo' | 'inactivo' | null>(null);
-  filtrosRoles = signal<string[]>([]);
+  filtroRol    = signal<string | null>(null);
 
   constructor(
     private service: GestionUsuariosService,
@@ -57,12 +61,13 @@ export class GestionUsuariosComponent implements OnInit {
     };
     this.dataSource.filterPredicate = (u: Usuario, filterJson: string) => {
       if (!filterJson) return true;
-      const { estado, roles } = JSON.parse(filterJson) as { estado: string | null; roles: string[] };
+      const { estado, rol } = JSON.parse(filterJson) as { estado: string | null; rol: string | null };
       if (estado === 'activo'   && !u.activo) return false;
       if (estado === 'inactivo' &&  u.activo) return false;
-      if (roles.length > 0) {
-        if (roles.includes('sin-rol')) return u.roles.length === 0;
-        return roles.every(rol => u.roles.some(r => r.toLowerCase() === rol.toLowerCase()));
+      if (rol) {
+        if (rol === 'sin-rol')            return u.roles.length === 0 && !u.esDelegado;
+        if (rol === 'preceptor-delegado') return u.esDelegado === true;
+        return u.roles.some(r => r.toLowerCase() === rol.toLowerCase());
       }
       return true;
     };
@@ -73,12 +78,32 @@ export class GestionUsuariosComponent implements OnInit {
   get cantTotal()    { return this.dataSource.data.length; }
   get cantActivos()  { return this.dataSource.data.filter(u =>  u.activo).length; }
   get cantInactivos(){ return this.dataSource.data.filter(u => !u.activo).length; }
-  get cantSinRol()   { return this.dataSource.data.filter(u => u.roles.length === 0).length; }
+  get cantSinRol()   { return this.dataSource.data.filter(u => u.roles.length === 0 && !u.esDelegado).length; }
+  get cantDelegados(){ return this.dataSource.data.filter(u => u.esDelegado === true).length; }
 
   cantRol(rol: string): number {
     return this.dataSource.data.filter(u =>
       u.roles.some(r => r.toLowerCase() === rol.toLowerCase())
     ).length;
+  }
+
+  // ── Prioridad de rol para ordenamiento ──────────────────────────────────────
+  private rolPrioridad(u: Usuario): number {
+    if (u.esDelegado) return 3;
+    const roles = u.roles.map(r => r.toLowerCase());
+    if (roles.includes('admin'))            return 0;
+    if (roles.includes('equipo directivo')) return 1;
+    if (roles.includes('secretario'))       return 2;
+    if (roles.includes('preceptor'))        return 4;
+    if (roles.includes('docente'))          return 5;
+    return 6;
+  }
+
+  private sortUsuarios(usuarios: Usuario[]): Usuario[] {
+    return [...usuarios].sort((a, b) => {
+      if (a.activo !== b.activo) return a.activo ? -1 : 1;
+      return this.rolPrioridad(a) - this.rolPrioridad(b);
+    });
   }
 
   // ── Filtros ─────────────────────────────────────────────────────────────────
@@ -87,21 +112,17 @@ export class GestionUsuariosComponent implements OnInit {
     this.aplicarFiltro();
   }
 
-  toggleFiltroRol(rol: string): void {
-    this.filtrosRoles.update(roles => {
-      if (roles.includes(rol)) return roles.filter(r => r !== rol);
-      if (rol === 'sin-rol')   return ['sin-rol'];
-      return [...roles.filter(r => r !== 'sin-rol'), rol];
-    });
+  setFiltroRol(rol: string | null): void {
+    this.filtroRol.set(rol);
     this.aplicarFiltro();
   }
 
   private aplicarFiltro(): void {
     const estado = this.filtroEstado();
-    const roles  = this.filtrosRoles();
-    this.dataSource.filter = (!estado && roles.length === 0)
+    const rol    = this.filtroRol();
+    this.dataSource.filter = (!estado && !rol)
       ? ''
-      : JSON.stringify({ estado, roles });
+      : JSON.stringify({ estado, rol });
   }
 
   // ── Acciones ────────────────────────────────────────────────────────────────
@@ -109,7 +130,7 @@ export class GestionUsuariosComponent implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     this.service.getAll().subscribe({
-      next:  (usuarios) => { this.dataSource.data = usuarios; this.cargando.set(false); },
+      next:  (usuarios) => { this.dataSource.data = this.sortUsuarios(usuarios); this.cargando.set(false); },
       error: ()         => { this.error.set('No se pudieron cargar los usuarios.'); this.cargando.set(false); },
     });
   }
@@ -130,12 +151,13 @@ export class GestionUsuariosComponent implements OnInit {
 
   rolColor(rol: string): string {
     switch (rol.toLowerCase()) {
-      case 'docente':          return 'chip-celeste';
-      case 'preceptor':        return 'chip-violeta';
-      case 'equipo directivo': return 'chip-naranja';
-      case 'admin':            return 'chip-rojo';
-      case 'secretario':       return 'chip-teal';
-      default:                 return 'chip-gris';
+      case 'docente':             return 'chip-celeste';
+      case 'preceptor':           return 'chip-violeta';
+      case 'preceptor delegado':  return 'chip-delegado';
+      case 'equipo directivo':    return 'chip-naranja';
+      case 'admin':               return 'chip-rojo';
+      case 'secretario':          return 'chip-teal';
+      default:                    return 'chip-gris';
     }
   }
 }

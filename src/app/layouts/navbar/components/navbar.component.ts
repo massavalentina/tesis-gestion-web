@@ -76,9 +76,10 @@ import { AuthService } from '../../../features/auth/services/auth.service';
       </div>
 
       <div class="user-area" *ngIf="!isMobile">
-        <span class="username" *ngIf="authService.currentUser$ | async as u">
-          {{ u.apellido }}, {{ u.nombre }}
-        </span>
+        <div class="username">
+          <span class="username-nombre">{{ nombreUsuario }}</span>
+          <span class="username-rol">{{ rolUsuario }}</span>
+        </div>
 
         <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
           <mat-icon class="avatar">account_circle</mat-icon>
@@ -107,6 +108,9 @@ export class NavbarComponent implements OnDestroy {
   buscando = false;
   mostrarResultados = false;
 
+  nombreUsuario: string;
+  rolUsuario: string;
+
   private searchSub: Subscription;
 
   constructor(
@@ -116,6 +120,13 @@ export class NavbarComponent implements OnDestroy {
     private elementRef: ElementRef,
     public authService: AuthService,
   ) {
+    const usuario = authService.obtenerUsuario();
+    this.nombreUsuario = usuario?.nombre ?? '';
+    const roles: string[] = usuario?.roles ? [...usuario.roles] : [];
+    if (usuario?.esPreceptorDelegado && !roles.includes('Preceptor Delegado')) {
+      roles.push('Preceptor Delegado');
+    }
+    this.rolUsuario = roles.join(' · ');
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
       this.isMobile = result.matches;
     });
@@ -169,6 +180,15 @@ export class NavbarComponent implements OnDestroy {
     this.searchCtrl.setValue('');
     this.resultados = [];
     this.mostrarResultados = false;
+  }
+
+  irACuenta(): void {
+    this.router.navigate(['/cuenta']);
+  }
+
+  cerrarSesion(): void {
+    this.authService.cerrarSesion();
+    this.router.navigate(['/dev-login']);
   }
 
   ngOnDestroy(): void {

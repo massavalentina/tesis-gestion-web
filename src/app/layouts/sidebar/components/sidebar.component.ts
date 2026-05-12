@@ -77,7 +77,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </a>
 
         <!-- Asistencia (padre desplegable) -->
-        <button class="item parent"
+        <button *ngIf="mostrarSeccionAsistencia"
+                class="item parent"
                 type="button"
                 matRipple
                 (click)="toggleAsistencia()">
@@ -87,8 +88,9 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </button>
 
         <!-- Submenú asistencia -->
-        <div class="submenu" *ngIf="asistenciaOpen" @expandCollapse>
-          <a class="subitem"
+        <div class="submenu" *ngIf="asistenciaOpen && mostrarSeccionAsistencia" @expandCollapse>
+          <a *ngIf="mostrarBusquedaRapida"
+             class="subitem"
              matRipple
              routerLink="/asistencia-rapida"
              routerLinkActive="is-active-sub"
@@ -105,7 +107,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Escáner QR
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaManual"
+             class="subitem"
              matRipple
              routerLink="/asistencia-manual-curso"
              routerLinkActive="is-active-sub"
@@ -113,7 +116,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Asistencia Manual
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarParteDiario"
+             class="subitem"
              matRipple
              routerLink="/parte-diario-digital"
              routerLinkActive="is-active-sub"
@@ -121,7 +125,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Parte Diario
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaGeneral"
+             class="subitem"
              matRipple
              routerLink="/reporte-asistencia"
              routerLinkActive="is-active-sub"
@@ -129,7 +134,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Asistencia General
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaPorEC"
+             class="subitem"
              matRipple
              routerLink="/reporte-asistencia-docente"
              routerLinkActive="is-active-sub"
@@ -139,7 +145,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </div>
 
         <!-- Credenciales QR -->
-        <a class="item"
+        <a *ngIf="mostrarCredencialesQr"
+           class="item"
            matRipple
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
@@ -150,7 +157,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </a>
 
         <!-- Ficha de Alumno -->
-        <a class="item"
+        <a *ngIf="mostrarFichaAlumno"
+           class="item"
            matRipple
            routerLink="/ficha-alumno"
            routerLinkActive="is-active"
@@ -160,25 +168,27 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>Ficha de Alumno</span>
         </a>
 
-        <!-- Cuentas (padre desplegable) -->
-        <button class="item parent"
-                type="button"
-                matRipple
-                (click)="toggleCuentas()">
-          <mat-icon>manage_accounts</mat-icon>
-          <span>Cuentas</span>
-          <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
-        </button>
+        <!-- Cuentas (padre desplegable) — solo Secretario/Admin -->
+        <ng-container *ngIf="puedeGestionarUsuarios">
+          <button class="item parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleCuentas()">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>Cuentas</span>
+            <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
+          </button>
 
-        <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
-          <a class="subitem"
-             matRipple
-             routerLink="/gestion-usuarios"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }">
-            Usuarios
-          </a>
-        </div>
+          <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
+            <a class="subitem"
+               matRipple
+               routerLink="/gestion-usuarios"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: true }">
+              Usuarios
+            </a>
+          </div>
+        </ng-container>
 
       </nav>
     </aside>
@@ -224,7 +234,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </a>
 
         <!-- Asistencia -->
-        <button class="item parent"
+        <button *ngIf="mostrarSeccionAsistencia"
+                class="item parent"
                 type="button"
                 matRipple
                 (click)="toggleAsistencia()">
@@ -233,8 +244,9 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <mat-icon class="chevron" [class.open]="asistenciaOpen">expand_more</mat-icon>
         </button>
 
-        <div class="submenu" *ngIf="asistenciaOpen" @expandCollapse>
-          <a class="subitem"
+        <div class="submenu" *ngIf="asistenciaOpen && mostrarSeccionAsistencia" @expandCollapse>
+          <a *ngIf="mostrarBusquedaRapida"
+             class="subitem"
              matRipple
              routerLink="/asistencia-rapida"
              routerLinkActive="is-active-sub"
@@ -253,7 +265,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Escáner QR
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaManual"
+             class="subitem"
              matRipple
              routerLink="/asistencia-manual-curso"
              routerLinkActive="is-active-sub"
@@ -262,7 +275,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Asistencia Manual
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarParteDiario"
+             class="subitem"
              matRipple
              routerLink="/parte-diario-digital"
              routerLinkActive="is-active-sub"
@@ -271,7 +285,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Parte Diario
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaGeneral"
+             class="subitem"
              matRipple
              routerLink="/reporte-asistencia"
              routerLinkActive="is-active-sub"
@@ -280,7 +295,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             Asistencia General
           </a>
 
-          <a class="subitem"
+          <a *ngIf="mostrarAsistenciaPorEC"
+             class="subitem"
              matRipple
              routerLink="/reporte-asistencia-docente"
              routerLinkActive="is-active-sub"
@@ -291,7 +307,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </div>
 
         <!-- Credenciales QR -->
-        <a class="item"
+        <a *ngIf="mostrarCredencialesQr"
+           class="item"
            matRipple
            routerLink="/credenciales-qr"
            routerLinkActive="is-active"
@@ -302,7 +319,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </a>
 
         <!-- Ficha de Alumno -->
-        <a class="item"
+        <a *ngIf="mostrarFichaAlumno"
+           class="item"
            matRipple
            routerLink="/ficha-alumno"
            routerLinkActive="is-active"
@@ -312,26 +330,28 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>Ficha de Alumno</span>
         </a>
 
-        <!-- Cuentas -->
-        <button class="item parent"
-                type="button"
-                matRipple
-                (click)="toggleCuentas()">
-          <mat-icon>manage_accounts</mat-icon>
-          <span>Cuentas</span>
-          <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
-        </button>
+        <!-- Cuentas — solo Secretario/Admin -->
+        <ng-container *ngIf="puedeGestionarUsuarios">
+          <button class="item parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleCuentas()">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>Cuentas</span>
+            <mat-icon class="chevron" [class.open]="cuentasOpen">expand_more</mat-icon>
+          </button>
 
-        <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
-          <a class="subitem"
-             matRipple
-             routerLink="/gestion-usuarios"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }"
-             (click)="closeMobile()">
-            Usuarios
-          </a>
-        </div>
+          <div class="submenu" *ngIf="cuentasOpen" @expandCollapse>
+            <a class="subitem"
+               matRipple
+               routerLink="/gestion-usuarios"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: true }"
+               (click)="closeMobile()">
+              Usuarios
+            </a>
+          </div>
+        </ng-container>
 
         <!-- Mi perfil -->
         <a class="item"
@@ -363,8 +383,19 @@ export class SidebarComponent {
   cuentasOpen = false;
   scannerActivo = false;
 
+  readonly puedeGestionarUsuarios: boolean;
+  readonly mostrarBusquedaRapida: boolean;
+  readonly mostrarAsistenciaManual: boolean;
+  readonly mostrarParteDiario: boolean;
+  readonly mostrarAsistenciaGeneral: boolean;
+  readonly mostrarAsistenciaPorEC: boolean;
+  readonly mostrarCredencialesQr: boolean;
+  readonly mostrarFichaAlumno: boolean;
+  readonly mostrarSeccionAsistencia: boolean;
+  private readonly tienePermisoEscaneoQr: boolean;
+
   get mostrarEscaneoQr(): boolean {
-    return this.isMobile;
+    return this.isMobile && this.tienePermisoEscaneoQr;
   }
 
   constructor(
@@ -372,6 +403,19 @@ export class SidebarComponent {
     private scannerUiStateService: ScannerUiStateService,
     private authService: AuthService,
   ) {
+    const usuario = authService.obtenerUsuario();
+    const esAdmin = !!usuario?.esAdmin;
+
+    this.puedeGestionarUsuarios = authService.tieneRol('Secretario') || esAdmin;
+    this.mostrarBusquedaRapida    = esAdmin || authService.tienePermiso('BUSQUEDA_RAPIDA_RW');
+    this.mostrarAsistenciaManual  = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW');
+    this.mostrarParteDiario       = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW') || authService.tienePermiso('PARTE_DIARIO_R') || authService.tieneRol('Docente') || authService.tieneRol('Equipo Directivo');
+    this.mostrarAsistenciaGeneral = esAdmin || authService.tienePermiso('REPORTES_ASISTENCIA_RW');
+    this.mostrarAsistenciaPorEC   = esAdmin || authService.tienePermiso('REPORTES_ASISTENCIA_RW');
+    this.tienePermisoEscaneoQr    = esAdmin || authService.tienePermiso('ASISTENCIA_QR_RW');
+    this.mostrarCredencialesQr    = esAdmin || (!!usuario?.esPreceptorDelegado && authService.tienePermiso('CREDENCIALES_QR_RW'));
+    this.mostrarFichaAlumno       = esAdmin || authService.tienePermiso('FICHA_ALUMNO_R');
+    this.mostrarSeccionAsistencia = this.mostrarBusquedaRapida || this.mostrarAsistenciaManual || this.mostrarParteDiario || this.mostrarAsistenciaGeneral || this.mostrarAsistenciaPorEC || this.tienePermisoEscaneoQr;
     this.breakpointObserver.observe([Breakpoints.Handset])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {

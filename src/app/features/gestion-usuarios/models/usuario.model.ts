@@ -10,6 +10,7 @@ export interface Usuario {
   roles: string[];
   idDocente?: string | null;
   idPreceptor?: string | null;
+  esDelegado?: boolean | null;
 }
 
 export interface CrearUsuarioRequest {
@@ -21,6 +22,12 @@ export interface CrearUsuarioRequest {
 }
 
 export interface CrearUsuarioResult {
+  usuario: Usuario;
+  contrasenaProvisoria: string;
+  roles: string[];
+}
+
+export interface CrearUsuarioResultDto {
   usuario: Usuario;
   contrasenaProvisoria: string;
 }
