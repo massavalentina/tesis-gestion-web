@@ -4,22 +4,27 @@ import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generat
 import { LayoutComponent } from './layouts/layout.component';
 import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
-// import { authGuard } from './core/guards/auth.guard';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  // {
-  //   path: 'login',
-  //   loadComponent: () =>
-  //     import('./features/auth/login/login.component')
-  //       .then(m => m.LoginComponent),
-  // },
-  // {
-  //   path: 'cambiar-contrasena',
-  //   loadComponent: () =>
-  //     import('./features/auth/cambiar-contrasena/cambiar-contrasena.component')
-  //       .then(m => m.CambiarContrasenaComponent),
-  //   canActivate: [authGuard],
-  // },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login/login.component')
+        .then(m => m.LoginComponent),
+  },
+  {
+    path: 'olvide-contrasena',
+    loadComponent: () =>
+      import('./features/auth/olvide-contrasena/olvide-contrasena.component')
+        .then(m => m.OlvideContrasenaComponent),
+  },
+  {
+    path: 'restablecer-contrasena',
+    loadComponent: () =>
+      import('./features/auth/restablecer-contrasena/restablecer-contrasena.component')
+        .then(m => m.RestablecerContrasenaComponent),
+  },
   {
     path: 'weather-test',
     component: WeatherComponent
@@ -31,7 +36,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
-    // canActivate: [authGuard],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -73,10 +78,10 @@ export const routes: Routes = [
             .then(m => m.CredencialesQrComponent),
       },
       {
-        path: 'cuenta',
+        path: 'perfil',
         loadComponent: () =>
-          import('../app/features/proximamente/proximamente.component')
-            .then(m => m.ProximamenteComponent),
+          import('../app/features/perfil/perfil.component')
+            .then(m => m.PerfilComponent),
       },
       {
         path: 'ficha-alumno',

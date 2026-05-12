@@ -18,6 +18,9 @@ export interface CrearUsuarioRequest {
   email: string;
   documento: string;
   telefono?: string;
-  contraseña: string;
-  roles: string[];
+}
+
+export interface CrearUsuarioResult {
+  usuario: Usuario;
+  contrasenaProvisoria: string;
 }

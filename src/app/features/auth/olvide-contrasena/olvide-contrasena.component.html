@@ -1,0 +1,59 @@
+<div class="page-container">
+  <mat-card class="form-card">
+
+    <div class="logo-container">
+      <img src="logo.jpg" alt="Logo" class="logo-img" />
+    </div>
+
+    <mat-card-header>
+      <mat-card-title class="titulo-pagina">Olvidé mi contraseña</mat-card-title>
+      <mat-card-subtitle class="subtitulo-pagina">Ingresá tu email y DNI para recibir el link de restablecimiento</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+
+    <mat-card-content class="card-content">
+
+      <!-- Éxito -->
+      <div *ngIf="enviado" class="success-message">
+        <mat-icon color="primary">mark_email_read</mat-icon>
+        <p>Si los datos son correctos, recibirás un correo con el link de restablecimiento.</p>
+        <p class="hint">Revisá tu bandeja de entrada y la carpeta de spam.</p>
+        <a mat-stroked-button routerLink="/login">Volver al login</a>
+      </div>
+
+      <!-- Formulario -->
+      <form *ngIf="!enviado" [formGroup]="form" (ngSubmit)="submit()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email" />
+          <mat-error *ngIf="form.get('email')?.hasError('required')">El email es obligatorio.</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">Ingresá un email válido.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>DNI</mat-label>
+          <input matInput formControlName="documento" autocomplete="off" />
+          <mat-error *ngIf="form.get('documento')?.hasError('required')">El DNI es obligatorio.</mat-error>
+        </mat-form-field>
+
+        <div *ngIf="error" class="error-message">{{ error }}</div>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="full-width"
+          [disabled]="loading">
+          Enviar link
+        </button>
+
+        <div class="back-link">
+          <a routerLink="/login">Volver al login</a>
+        </div>
+      </form>
+
+    </mat-card-content>
+  </mat-card>
+</div>

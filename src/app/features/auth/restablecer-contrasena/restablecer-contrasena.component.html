@@ -1,0 +1,74 @@
+<div class="page-container">
+  <mat-card class="form-card">
+
+    <mat-card-header>
+      <mat-card-title>Restablecer contraseña</mat-card-title>
+      <mat-card-subtitle *ngIf="!tokenInvalido && !listo">Creá tu nueva contraseña</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+
+    <mat-card-content>
+
+      <!-- Link inválido -->
+      <div *ngIf="tokenInvalido" class="info-message warn">
+        <mat-icon color="warn">error_outline</mat-icon>
+        <p>El link de restablecimiento es inválido o ya fue utilizado.</p>
+        <a mat-stroked-button routerLink="/olvide-contrasena">Solicitar nuevo link</a>
+      </div>
+
+      <!-- Éxito -->
+      <div *ngIf="listo" class="info-message success">
+        <mat-icon color="primary">check_circle_outline</mat-icon>
+        <p>¡Contraseña actualizada correctamente! Redirigiendo...</p>
+      </div>
+
+      <!-- Formulario -->
+      <form *ngIf="!tokenInvalido && !listo" [formGroup]="form" (ngSubmit)="submit()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nueva contraseña</mat-label>
+          <input
+            matInput
+            [type]="mostrarNueva ? 'text' : 'password'"
+            formControlName="contrasenaNueva"
+            autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button" (click)="mostrarNueva = !mostrarNueva">
+            <mat-icon>{{ mostrarNueva ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('required')">La contraseña es obligatoria.</mat-error>
+          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('minlength')">Mínimo 6 caracteres.</mat-error>
+          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('sinMayuscula')">Debe contener al menos una mayúscula.</mat-error>
+          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('sinNumero')">Debe contener al menos un número.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmar contraseña</mat-label>
+          <input
+            matInput
+            [type]="mostrarConfirm ? 'text' : 'password'"
+            formControlName="confirmacionContrasenaNueva"
+            autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button" (click)="mostrarConfirm = !mostrarConfirm">
+            <mat-icon>{{ mostrarConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('required')">La confirmación es obligatoria.</mat-error>
+          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('noCoincide')">Las contraseñas no coinciden.</mat-error>
+        </mat-form-field>
+
+        <div *ngIf="error" class="error-message">{{ error }}</div>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="full-width"
+          [disabled]="loading">
+          Guardar contraseña
+        </button>
+
+      </form>
+
+    </mat-card-content>
+  </mat-card>
+</div>

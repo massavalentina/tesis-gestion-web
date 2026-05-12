@@ -8,6 +8,7 @@ import { LayoutModule } from '@angular/cdk/layout';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
+import { AuthService } from '../../../features/auth/services/auth.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 const SLIDE = trigger('slide', [
@@ -332,8 +333,19 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           </a>
         </div>
 
+        <!-- Mi perfil -->
+        <a class="item"
+           matRipple
+           routerLink="/perfil"
+           routerLinkActive="is-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           (click)="closeMobile()">
+          <mat-icon>account_circle</mat-icon>
+          <span>Mi perfil</span>
+        </a>
+
         <!-- Cerrar sesión -->
-        <a class="item" matRipple (click)="closeMobile()">
+        <a class="item" matRipple (click)="cerrarSesion()">
           <mat-icon>logout</mat-icon>
           <span>Cerrar sesión</span>
         </a>
@@ -357,7 +369,8 @@ export class SidebarComponent {
 
   constructor(
     private breakpointObserver: BreakpointObserver,
-    private scannerUiStateService: ScannerUiStateService
+    private scannerUiStateService: ScannerUiStateService,
+    private authService: AuthService,
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -394,5 +407,10 @@ export class SidebarComponent {
 
   closeMobile() {
     if (this.isMobile) this.open = false;
+  }
+
+  cerrarSesion(): void {
+    this.closeMobile();
+    this.authService.logout();
   }
 }

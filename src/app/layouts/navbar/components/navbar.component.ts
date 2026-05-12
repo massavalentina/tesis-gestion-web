@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
@@ -12,10 +12,11 @@ import { MatInputModule } from '@angular/material/input';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Subscription, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, switchMap, tap, catchError } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap, catchError } from 'rxjs/operators';
 
 import { FichaAlumnoService } from '../../../features/ficha-alumno/services/ficha-alumno.service';
 import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/estudiante-busqueda-ficha.model';
+import { AuthService } from '../../../features/auth/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -23,6 +24,7 @@ import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/e
   imports: [
     NgIf,
     NgFor,
+    AsyncPipe,
     LayoutModule,
     ReactiveFormsModule,
     MatToolbarModule,
@@ -74,18 +76,20 @@ import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/e
       </div>
 
       <div class="user-area" *ngIf="!isMobile">
-        <span class="username">Preceptor, Daniel</span>
+        <span class="username" *ngIf="authService.currentUser$ | async as u">
+          {{ u.apellido }}, {{ u.nombre }}
+        </span>
 
         <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
           <mat-icon class="avatar">account_circle</mat-icon>
         </button>
 
         <mat-menu #userMenu="matMenu" xPosition="before">
-          <button mat-menu-item>
+          <button mat-menu-item (click)="irACuenta()">
             <mat-icon>person</mat-icon>
-            <span>Cuenta</span>
+            <span>Mi perfil</span>
           </button>
-          <button mat-menu-item>
+          <button mat-menu-item (click)="authService.logout()">
             <mat-icon>logout</mat-icon>
             <span>Cerrar sesión</span>
           </button>
@@ -109,7 +113,8 @@ export class NavbarComponent implements OnDestroy {
     private breakpointObserver: BreakpointObserver,
     private fichaService: FichaAlumnoService,
     private router: Router,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    public authService: AuthService,
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
       this.isMobile = result.matches;
@@ -147,6 +152,10 @@ export class NavbarComponent implements OnDestroy {
     if (!this.elementRef.nativeElement.contains(event.target as Node)) {
       this.mostrarResultados = false;
     }
+  }
+
+  irACuenta(): void {
+    this.router.navigate(['/perfil']);
   }
 
   irAFicha(est: EstudianteBusquedaFicha): void {

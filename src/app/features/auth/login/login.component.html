@@ -1,0 +1,77 @@
+<div class="login-container">
+  <mat-card class="login-card">
+
+    <div class="logo-container">
+      <img src="logo.jpg" alt="Logo" class="logo-img" />
+    </div>
+
+    <mat-card-header>
+      <mat-card-title class="titulo-login">Iniciar sesión</mat-card-title>
+    </mat-card-header>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+
+    <!-- Estado: contraseña provisoria — link enviado -->
+    <mat-card-content *ngIf="provisoriaEnviada" class="provisoria-container">
+      <mat-icon class="provisoria-icon">mark_email_read</mat-icon>
+      <p class="provisoria-titulo">Revisá tu correo</p>
+      <p class="provisoria-texto">
+        Tu cuenta requiere un cambio de contraseña.<br/>
+        Te enviamos un link para que establezcas tu nueva contraseña.
+      </p>
+      <p class="provisoria-hint">Revisá también la carpeta de spam.</p>
+      <button mat-stroked-button color="primary" (click)="provisoriaEnviada = false">
+        Volver al login
+      </button>
+    </mat-card-content>
+
+    <!-- Formulario normal -->
+    <mat-card-content *ngIf="!provisoriaEnviada" class="card-content">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email o DNI</mat-label>
+          <input matInput formControlName="identificador" autocomplete="username" />
+          <mat-error *ngIf="form.get('identificador')?.hasError('required')">
+            Este campo es obligatorio.
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <input matInput [type]="mostrarContrasena ? 'text' : 'password'"
+                 formControlName="contrasena" autocomplete="current-password"
+                 (keydown)="checkCapsLock($event)"
+                 (blur)="capsLockOn = false" />
+          <button mat-icon-button matSuffix type="button"
+                  (click)="mostrarContrasena = !mostrarContrasena">
+            <mat-icon>{{ mostrarContrasena ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('contrasena')?.hasError('required')">
+            Este campo es obligatorio.
+          </mat-error>
+        </mat-form-field>
+
+        <div *ngIf="capsLockOn" class="caps-lock-warning">
+          <mat-icon class="caps-icon">keyboard_capslock</mat-icon>
+          Bloq Mayús activado
+        </div>
+
+        <div *ngIf="error" class="error-message">{{ error }}</div>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="full-width"
+          [disabled]="loading">
+          Ingresar
+        </button>
+
+        <div class="forgot-link">
+          <a routerLink="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
+        </div>
+      </form>
+    </mat-card-content>
+
+  </mat-card>
+</div>

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { CrearUsuarioRequest, Usuario } from '../models/usuario.model';
+import { CrearUsuarioRequest, CrearUsuarioResult, Usuario } from '../models/usuario.model';
 
 @Injectable({ providedIn: 'root' })
 export class GestionUsuariosService {
@@ -18,8 +18,8 @@ export class GestionUsuariosService {
     return this.http.get<Usuario>(`${this.base}/${id}`);
   }
 
-  crear(dto: CrearUsuarioRequest): Observable<Usuario> {
-    return this.http.post<Usuario>(this.base, dto);
+  crear(dto: CrearUsuarioRequest): Observable<CrearUsuarioResult> {
+    return this.http.post<CrearUsuarioResult>(this.base, dto);
   }
 
   desactivar(id: string): Observable<void> {

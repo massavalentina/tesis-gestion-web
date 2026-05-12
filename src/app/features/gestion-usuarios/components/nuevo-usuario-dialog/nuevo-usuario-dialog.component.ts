@@ -7,7 +7,6 @@ import {
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -15,9 +14,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, timer } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { GestionUsuariosService } from '../../services/gestion-usuarios.service';
-import { Usuario } from '../../models/usuario.model';
-
-const ROLES_DISPONIBLES = ['Admin', 'Docente', 'Preceptor', 'Equipo Directivo', 'Secretario'];
+import { CrearUsuarioResult, Usuario } from '../../models/usuario.model';
 
 type EstadoDialog = 'formulario' | 'exito' | 'error';
 
@@ -30,7 +27,6 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -90,28 +86,6 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
           </mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="field-full">
-          <mat-label>Contraseña</mat-label>
-          <input matInput [type]="mostrarPassword ? 'text' : 'password'"
-                 formControlName="contraseña" autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button"
-                  (click)="mostrarPassword = !mostrarPassword">
-            <mat-icon>{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-hint>Mínimo 8 caracteres</mat-hint>
-          <mat-error *ngIf="form.get('contraseña')?.hasError('required')">Requerida</mat-error>
-          <mat-error *ngIf="form.get('contraseña')?.hasError('minlength')">
-            Mínimo 8 caracteres
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="field-full">
-          <mat-label>Roles</mat-label>
-          <mat-select formControlName="roles" multiple>
-            <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-
         <div class="dialog-actions">
           <button mat-stroked-button type="button" (click)="cancelar()" [disabled]="guardando()">
             Cancelar
@@ -135,8 +109,11 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
       <h2 class="resultado-titulo">¡Usuario creado!</h2>
       <p class="resultado-texto">
         La cuenta de
-        <strong>{{ usuarioCreado?.apellido }}, {{ usuarioCreado?.nombre }}</strong>
+        <strong>{{ resultadoCreacion?.usuario?.apellido }}, {{ resultadoCreacion?.usuario?.nombre }}</strong>
         se creó correctamente.
+      </p>
+      <p class="resultado-texto">
+        Se envió la contraseña provisoria al correo registrado.
       </p>
       <button mat-flat-button class="btn-resultado btn-verde" (click)="cerrar()">
         Cerrar
@@ -231,12 +208,9 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
   `],
 })
 export class NuevoUsuarioDialogComponent {
-  readonly roles = ROLES_DISPONIBLES;
-  mostrarPassword = false;
-
   estado      = signal<EstadoDialog>('formulario');
   guardando   = signal(false);
-  usuarioCreado: Usuario | null = null;
+  resultadoCreacion: CrearUsuarioResult | null = null;
   errorMensaje = '';
 
   form: FormGroup;
@@ -257,9 +231,7 @@ export class NuevoUsuarioDialogComponent {
         validators:      [Validators.required],
         asyncValidators: [this.documentoUnicoValidator()],
       }),
-      telefono:  ['', Validators.pattern(/^\d*$/)],
-      contraseña: ['', [Validators.required, Validators.minLength(8)]],
-      roles:      [[]],
+      telefono: ['', Validators.pattern(/^\d*$/)],
     });
   }
 
@@ -296,9 +268,9 @@ export class NuevoUsuarioDialogComponent {
     this.guardando.set(true);
 
     this.service.crear(this.form.value).subscribe({
-      next: (usuario: Usuario) => {
+      next: (resultado: CrearUsuarioResult) => {
         this.guardando.set(false);
-        this.usuarioCreado = usuario;
+        this.resultadoCreacion = resultado;
         this.estado.set('exito');
       },
       error: (err) => {
@@ -318,6 +290,6 @@ export class NuevoUsuarioDialogComponent {
   }
 
   cerrar(): void {
-    this.dialogRef.close(this.usuarioCreado);
+    this.dialogRef.close(this.resultadoCreacion?.usuario ?? null);
   }
 }
