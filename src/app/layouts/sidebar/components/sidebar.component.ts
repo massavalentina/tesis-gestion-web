@@ -411,7 +411,7 @@ export class SidebarComponent {
     this.mostrarAsistenciaManual  = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW');
     this.mostrarParteDiario       = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW') || authService.tienePermiso('PARTE_DIARIO_R') || authService.tieneRol('Docente') || authService.tieneRol('Equipo Directivo');
     this.mostrarAsistenciaGeneral = esAdmin || authService.tienePermiso('REPORTES_ASISTENCIA_RW');
-    this.mostrarAsistenciaPorEC   = esAdmin || authService.tienePermiso('REPORTES_ASISTENCIA_RW');
+    this.mostrarAsistenciaPorEC   = esAdmin || authService.tienePermiso('REPORTES_EC_RW');
     this.tienePermisoEscaneoQr    = esAdmin || authService.tienePermiso('ASISTENCIA_QR_RW');
     this.mostrarCredencialesQr    = esAdmin || (!!usuario?.esPreceptorDelegado && authService.tienePermiso('CREDENCIALES_QR_RW'));
     this.mostrarFichaAlumno       = esAdmin || authService.tienePermiso('FICHA_ALUMNO_R');

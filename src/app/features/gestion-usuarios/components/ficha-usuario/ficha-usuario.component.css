@@ -318,6 +318,161 @@
 
 .estado-error { color: #c62828; }
 
+/* ── Asignaciones ── */
+.asig-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.asig-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.asig-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.asig-acciones {
+  display: flex;
+  gap: 6px;
+}
+
+.asig-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, opacity 0.15s;
+}
+.asig-btn mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.asig-btn:disabled { opacity: 0.4; cursor: default; }
+
+.asig-btn-primario   { background: #0284c7; color: #fff; }
+.asig-btn-primario:hover:not(:disabled)   { background: #0369a1; }
+.asig-btn-secundario { background: #e2e8f0; color: #475569; }
+.asig-btn-secundario:hover:not(:disabled) { background: #cbd5e1; }
+
+.asig-btn-sm { width: 22px; height: 22px; border-radius: 4px; }
+.asig-btn-sm mat-icon { font-size: 13px; width: 13px; height: 13px; }
+
+.asig-loading {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.asig-vacio {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Tabla ── */
+.tabla-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.tabla-historial {
+  opacity: 0.8;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.tabla thead tr {
+  background: #f1f5f9;
+}
+
+.tabla th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  white-space: nowrap;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tabla tbody tr {
+  background: white;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+.tabla tbody tr:last-child { border-bottom: none; }
+.tabla tbody tr:hover { background: #f8fafc; }
+
+.tabla td {
+  padding: 10px 14px;
+  color: #334155;
+  vertical-align: top;
+}
+
+.col-nombre   { font-weight: 600; color: #0f2f4b; min-width: 140px; }
+.col-codigo   { color: #64748b; font-family: monospace; font-size: 0.78rem; white-space: nowrap; }
+.col-curso    { white-space: nowrap; }
+.col-anio     { font-weight: 700; color: #0f2f4b; white-space: nowrap; }
+.col-division { font-weight: 600; white-space: nowrap; }
+.col-fecha    { white-space: nowrap; color: #475569; }
+.col-periodo  { white-space: nowrap; color: #64748b; font-size: 0.78rem; }
+.col-motivo   { color: #94a3b8; font-style: italic; font-size: 0.78rem; max-width: 200px; }
+.col-horarios { min-width: 160px; }
+.col-accion   { width: 36px; padding: 4px 8px; text-align: center; }
+
+.horario-chip {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin: 2px 3px 2px 0;
+  white-space: nowrap;
+}
+
+.sin-dato { color: #cbd5e1; }
+
+.asig-historial-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: #64748b;
+  padding: 2px 0;
+  transition: color 0.15s;
+  width: fit-content;
+}
+.asig-historial-toggle mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.asig-historial-toggle:hover { color: #0284c7; }
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .page { padding: 12px; }

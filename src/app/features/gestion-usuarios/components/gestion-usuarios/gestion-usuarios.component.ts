@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatSortModule, MatSort } from '@angular/material/sort';
+import { MatPaginatorModule, MatPaginator, MatPaginatorIntl } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -13,6 +14,22 @@ import { GestionUsuariosService } from '../../services/gestion-usuarios.service'
 import { Usuario } from '../../models/usuario.model';
 import { NuevoUsuarioDialogComponent } from '../nuevo-usuario-dialog/nuevo-usuario-dialog.component';
 
+function getPaginatorIntlEs(): MatPaginatorIntl {
+  const intl = new MatPaginatorIntl();
+  intl.itemsPerPageLabel = 'Por página:';
+  intl.nextPageLabel     = 'Siguiente';
+  intl.previousPageLabel = 'Anterior';
+  intl.firstPageLabel    = 'Primera página';
+  intl.lastPageLabel     = 'Última página';
+  intl.getRangeLabel     = (page, pageSize, length) => {
+    if (length === 0 || pageSize === 0) return `0 de ${length}`;
+    const start = page * pageSize + 1;
+    const end   = Math.min(start + pageSize - 1, length);
+    return `${start}–${end} de ${length}`;
+  };
+  return intl;
+}
+
 @Component({
   selector: 'app-gestion-usuarios',
   standalone: true,
@@ -20,6 +37,7 @@ import { NuevoUsuarioDialogComponent } from '../nuevo-usuario-dialog/nuevo-usuar
     CommonModule,
     MatTableModule,
     MatSortModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -27,12 +45,17 @@ import { NuevoUsuarioDialogComponent } from '../nuevo-usuario-dialog/nuevo-usuar
     MatSelectModule,
     MatFormFieldModule,
   ],
+  providers: [{ provide: MatPaginatorIntl, useFactory: getPaginatorIntlEs }],
   templateUrl: './gestion-usuarios.component.html',
   styleUrl:    './gestion-usuarios.component.css',
 })
 export class GestionUsuariosComponent implements OnInit {
   @ViewChild(MatSort) set matSort(sort: MatSort) {
     if (sort) this.dataSource.sort = sort;
+  }
+
+  @ViewChild(MatPaginator) set matPaginator(paginator: MatPaginator) {
+    if (paginator) this.dataSource.paginator = paginator;
   }
 
   readonly columnas = ['nombre', 'email', 'documento', 'roles', 'estado'];
@@ -123,6 +146,7 @@ export class GestionUsuariosComponent implements OnInit {
     this.dataSource.filter = (!estado && !rol)
       ? ''
       : JSON.stringify({ estado, rol });
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
   }
 
   // ── Acciones ────────────────────────────────────────────────────────────────

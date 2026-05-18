@@ -140,6 +140,14 @@
       </table>
     </div>
 
+    <!-- Paginador -->
+    <mat-paginator
+      *ngIf="dataSource.data.length > 0"
+      [pageSize]="10"
+      [pageSizeOptions]="[10, 25, 50]"
+      showFirstLastButtons>
+    </mat-paginator>
+
     <!-- Sin datos -->
     <div class="estado-center estado-vacio" *ngIf="dataSource.data.length === 0">
       <mat-icon>group_off</mat-icon>

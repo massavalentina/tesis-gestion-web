@@ -38,12 +38,6 @@ export const routes: Routes = [
     component: PaginaGeneracionCredencialesQr,
     canActivate: [authGuard, credencialesQrGuard],
   },
-  // ⚠️ SOLO DESARROLLO — Eliminar esta ruta antes de pasar a producción
-  {
-    path: 'dev-login',
-    loadComponent: () =>
-      import('./features/dev-login/dev-login.component').then(m => m.DevLoginComponent),
-  },
   {
     path: 'sin-permiso',
     loadComponent: () =>
@@ -135,14 +129,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/reporte-asistencia-docente/reporte-asistencia-docente.component')
             .then(m => m.ReporteAsistenciaDocenteComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_RW')],
+        canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
       },
       {
         path: 'reporte-asistencia-docente/detalle/:estudianteId/:idEC',
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_ASISTENCIA_RW')],
+        canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
       },
       {
         path: 'gestion-usuarios',
