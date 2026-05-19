@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { NgIf, NgFor } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap, catchE
 import { FichaAlumnoService } from '../../../features/ficha-alumno/services/ficha-alumno.service';
 import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/estudiante-busqueda-ficha.model';
 import { AuthService } from '../../../features/auth/services/auth.service';
+import { PROFILE_NAV_ITEM } from '../../../core/navigation/app-navigation.config';
 
 @Component({
   selector: 'app-navbar',
@@ -24,7 +25,6 @@ import { AuthService } from '../../../features/auth/services/auth.service';
   imports: [
     NgIf,
     NgFor,
-    AsyncPipe,
     LayoutModule,
     ReactiveFormsModule,
     MatToolbarModule,
@@ -101,6 +101,7 @@ import { AuthService } from '../../../features/auth/services/auth.service';
   styleUrls: ['../scss/navbar.component.scss'],
 })
 export class NavbarComponent implements OnDestroy {
+  readonly profileItem = PROFILE_NAV_ITEM;
   isMobile = false;
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
@@ -181,7 +182,7 @@ export class NavbarComponent implements OnDestroy {
   }
 
   irACuenta(): void {
-    this.router.navigate(['/perfil']);
+    this.router.navigate([this.profileItem.route]);
   }
 
   ngOnDestroy(): void {

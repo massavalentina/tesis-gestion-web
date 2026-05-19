@@ -1,15 +1,18 @@
 import {
   AfterViewChecked,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
+  inject,
   OnDestroy,
   OnInit,
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BreakpointObserver, Breakpoints, LayoutModule } from '@angular/cdk/layout';
+import { LayoutModule } from '@angular/cdk/layout';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -37,6 +40,7 @@ import { DialogoCancelarRegistroComponent } from '../components/cancelar-registr
 import { DialogoAbandonoPendienteComponent } from '../components/abandono-pendiente-dialog.component';
 import { DialogoExitoComponent } from '../components/exito-dialog.component';
 import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
+import { UiPlatformService } from '../../../core/services/ui-platform.service';
 
 type TipoAsistenciaUi = OpcionSeleccion & { code: string };
 
@@ -182,6 +186,8 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
   styleUrls: ['../scss/escaner.page.scss']
 })
 export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
+
   @ViewChild('video') video?: ElementRef<HTMLVideoElement>;
 
   escanerActivo = false;
@@ -212,13 +218,15 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     private readonly servicioTipoAsistencia: ServicioTipoAsistencia,
     private readonly dialogo: MatDialog,
     private readonly snackBar: MatSnackBar,
-    private readonly breakpointObserver: BreakpointObserver,
-    private readonly scannerUiStateService: ScannerUiStateService
+    private readonly scannerUiStateService: ScannerUiStateService,
+    private readonly uiPlatformService: UiPlatformService
   ) {
     this.scannerUiStateService.setScannerActive(false);
 
-    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
-      this.esMobile = result.matches;
+    this.uiPlatformService.isMobile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(isMobile => {
+      this.esMobile = isMobile;
       if (!this.esMobile && this.escanerActivo) {
         this.detenerEscaner();
       }
