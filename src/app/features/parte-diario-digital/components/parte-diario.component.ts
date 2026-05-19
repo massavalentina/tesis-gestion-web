@@ -499,6 +499,7 @@ export class ParteDiarioComponent implements OnInit {
           mananaLlegadaChipLabel: isManana && est.codigoLlegadaManiana
             ? `${est.codigoLlegadaManiana} (mañana)`
             : null,
+          soloLectura: this.esDocente,
         },
         width: '620px',
         maxHeight: '85vh',

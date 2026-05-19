@@ -123,8 +123,10 @@ export class NavbarComponent implements OnDestroy {
     const usuario = authService.obtenerUsuario();
     this.nombreUsuario = usuario?.nombre ?? '';
     const roles: string[] = usuario?.roles ? [...usuario.roles] : [];
-    if (usuario?.esPreceptorDelegado && !roles.includes('Preceptor Delegado')) {
-      roles.push('Preceptor Delegado');
+    if (usuario?.esPreceptorDelegado) {
+      if (!roles.includes('Preceptor Delegado')) roles.push('Preceptor Delegado');
+      const idx = roles.findIndex(r => r.toLowerCase() === 'preceptor');
+      if (idx !== -1) roles.splice(idx, 1);
     }
     this.rolUsuario = roles.join(' · ');
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {

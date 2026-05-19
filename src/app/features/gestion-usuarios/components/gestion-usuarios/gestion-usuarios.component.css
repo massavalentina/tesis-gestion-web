@@ -283,6 +283,23 @@
 .estado-error mat-icon { opacity: 1; }
 .estado-vacio { flex-direction: column; font-size: 0.9rem; }
 
+/* ── Paginador ── */
+:host ::ng-deep .mat-mdc-paginator {
+  border-top: 1px solid #f1f5f9;
+  background: white;
+  font-size: 13px;
+  color: #374151;
+  border-radius: 0 0 16px 16px;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button {
+  color: #0284c7;
+}
+
+:host ::ng-deep .mat-mdc-paginator .mat-mdc-icon-button[disabled] {
+  color: #cbd5e1;
+}
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .page { padding: 12px; }

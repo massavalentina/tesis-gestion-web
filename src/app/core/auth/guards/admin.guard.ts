@@ -5,7 +5,7 @@ import { AuthService } from '../auth.service';
 export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  if (!authService.estaLogueado()) return router.createUrlTree(['/dev-login']);
+  if (!authService.estaLogueado()) return router.createUrlTree(['/login']);
   return authService.tieneRol('Admin')
     ? true
     : router.createUrlTree(['/sin-permiso']);

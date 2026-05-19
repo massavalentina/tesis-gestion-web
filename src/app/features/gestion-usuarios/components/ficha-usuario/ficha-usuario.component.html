@@ -122,6 +122,193 @@
       </div>
     </div>
 
+    <!-- ── Espacios Curriculares (Docente) ── -->
+    <div class="asig-section" *ngIf="tieneIdDocente">
+      <div class="asig-header">
+        <span class="asig-titulo">Espacios curriculares</span>
+        <div class="asig-acciones" *ngIf="tieneRolDocente && u.activo">
+          <button class="asig-btn asig-btn-secundario"
+                  [disabled]="ecActivos().length === 0 || desasignando() || asignando()"
+                  matTooltip="Desasignar todos"
+                  (click)="abrirDesasignarECs()">
+            <mat-spinner *ngIf="desasignando()" diameter="14"></mat-spinner>
+            <mat-icon *ngIf="!desasignando()">link_off</mat-icon>
+          </button>
+          <button class="asig-btn asig-btn-primario"
+                  [disabled]="asignando() || desasignando()"
+                  matTooltip="Asignar espacio curricular"
+                  (click)="abrirAsignarEC()">
+            <mat-spinner *ngIf="asignando()" diameter="14"></mat-spinner>
+            <mat-icon *ngIf="!asignando()">add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="asig-loading" *ngIf="cargandoAsignaciones()">
+        <mat-spinner diameter="24"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!cargandoAsignaciones()">
+        <ng-container *ngIf="tieneRolDocente">
+          <p class="asig-vacio" *ngIf="ecActivos().length === 0">Sin espacios curriculares asignados.</p>
+
+          <div class="tabla-wrapper" *ngIf="ecActivos().length > 0">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Materia</th>
+                  <th>Curso</th>
+                  <th>Horarios</th>
+                  <th>Desde</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ec of ecActivos()">
+                  <td class="col-nombre">{{ ec.nombreCurricula }}</td>
+                  <td class="col-curso">{{ ec.codigoCurso }}</td>
+                  <td class="col-horarios">
+                    <span *ngIf="ec.horarios.length === 0" class="sin-dato">—</span>
+                    <span *ngFor="let h of ec.horarios" class="horario-chip">{{ formatHorario(h) }}</span>
+                  </td>
+                  <td class="col-fecha">{{ formatFecha(ec.fechaDesde) }}</td>
+                  <td class="col-accion">
+                    <button *ngIf="u.activo"
+                            class="asig-btn asig-btn-secundario asig-btn-sm"
+                            [disabled]="!!desasignandoECId() || desasignando() || asignando()"
+                            matTooltip="Desasignar"
+                            (click)="desasignarECIndividual(ec)">
+                      <mat-spinner *ngIf="desasignandoECId() === ec.idDocenteEC" diameter="12"></mat-spinner>
+                      <mat-icon *ngIf="desasignandoECId() !== ec.idDocenteEC">link_off</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+
+        <button class="asig-historial-toggle" *ngIf="ecHistorial().length > 0" (click)="toggleHistorialEC()">
+          <mat-icon>{{ mostrarHistorialEC() ? 'expand_less' : 'expand_more' }}</mat-icon>
+          Historial ({{ ecHistorial().length }})
+        </button>
+
+        <div class="tabla-wrapper tabla-historial" *ngIf="mostrarHistorialEC() && ecHistorial().length > 0">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Materia</th>
+                <th>Curso</th>
+                <th>Período</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ec of ecHistorial()">
+                <td class="col-nombre">{{ ec.nombreCurricula }}</td>
+                <td class="col-curso">{{ ec.codigoCurso }}</td>
+                <td class="col-periodo">{{ formatFecha(ec.fechaDesde) }} → {{ ec.fechaHasta ? formatFecha(ec.fechaHasta) : '—' }}</td>
+                <td class="col-motivo">{{ ec.motivo || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ── Cursos (Preceptor) ── -->
+    <div class="asig-section" *ngIf="tieneIdPreceptor">
+      <div class="asig-header">
+        <span class="asig-titulo">Cursos asignados</span>
+        <div class="asig-acciones" *ngIf="tieneRolPreceptor && u.activo">
+          <button class="asig-btn asig-btn-secundario"
+                  [disabled]="cursoActivos().length === 0 || desasignando() || asignando()"
+                  matTooltip="Desasignar todos"
+                  (click)="abrirDesasignarCursos()">
+            <mat-spinner *ngIf="desasignando()" diameter="14"></mat-spinner>
+            <mat-icon *ngIf="!desasignando()">link_off</mat-icon>
+          </button>
+          <button class="asig-btn asig-btn-primario"
+                  [disabled]="asignando() || desasignando()"
+                  matTooltip="Asignar curso"
+                  (click)="abrirAsignarCurso()">
+            <mat-spinner *ngIf="asignando()" diameter="14"></mat-spinner>
+            <mat-icon *ngIf="!asignando()">add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="asig-loading" *ngIf="cargandoAsignaciones()">
+        <mat-spinner diameter="24"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!cargandoAsignaciones()">
+        <ng-container *ngIf="tieneRolPreceptor">
+          <p class="asig-vacio" *ngIf="cursoActivos().length === 0">Sin cursos asignados.</p>
+
+          <div class="tabla-wrapper" *ngIf="cursoActivos().length > 0">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Año</th>
+                  <th>División</th>
+                  <th>Código</th>
+                  <th>Desde</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of cursoActivos()">
+                  <td class="col-anio">{{ c.anio }}°</td>
+                  <td class="col-division">{{ c.division }}</td>
+                  <td class="col-codigo">{{ c.codigoCurso }}</td>
+                  <td class="col-fecha">{{ formatFecha(c.fechaDesde) }}</td>
+                  <td class="col-accion">
+                    <button *ngIf="u.activo"
+                            class="asig-btn asig-btn-secundario asig-btn-sm"
+                            [disabled]="!!desasignandoCursoId() || desasignando() || asignando()"
+                            matTooltip="Desasignar"
+                            (click)="desasignarCursoIndividual(c)">
+                      <mat-spinner *ngIf="desasignandoCursoId() === c.idPreceptorCurso" diameter="12"></mat-spinner>
+                      <mat-icon *ngIf="desasignandoCursoId() !== c.idPreceptorCurso">link_off</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+
+        <button class="asig-historial-toggle" *ngIf="cursoHistorial().length > 0" (click)="toggleHistorialCurso()">
+          <mat-icon>{{ mostrarHistorialCurso() ? 'expand_less' : 'expand_more' }}</mat-icon>
+          Historial ({{ cursoHistorial().length }})
+        </button>
+
+        <div class="tabla-wrapper tabla-historial" *ngIf="mostrarHistorialCurso() && cursoHistorial().length > 0">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Año</th>
+                <th>División</th>
+                <th>Código</th>
+                <th>Período</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of cursoHistorial()">
+                <td class="col-anio">{{ c.anio }}°</td>
+                <td class="col-division">{{ c.division }}</td>
+                <td class="col-codigo">{{ c.codigoCurso }}</td>
+                <td class="col-periodo">{{ formatFecha(c.fechaDesde) }} → {{ c.fechaHasta ? formatFecha(c.fechaHasta) : '—' }}</td>
+                <td class="col-motivo">{{ c.motivo || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+
     <!-- ── Acción + error ── -->
     <div class="acciones-section">
       <div class="error-accion" *ngIf="errorAccion()">
