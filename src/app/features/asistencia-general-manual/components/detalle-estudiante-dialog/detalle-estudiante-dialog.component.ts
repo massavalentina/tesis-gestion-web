@@ -28,6 +28,8 @@ export interface DetalleDialogData {
    *  Usada como fallback en la rama retiro cuando tipoLlegadaManana no resuelve (tipos[]=[]).
    */
   mananaLlegadaChipLabel?: string | null;
+  /** Si true, el diálogo muestra la info en modo solo lectura (sin edición de asistencia). */
+  soloLectura?: boolean;
 }
 
 @Component({
@@ -113,7 +115,7 @@ export interface DetalleDialogData {
               <th>Materia</th>
               <th>Horario</th>
               <th>Estado clase</th>
-              <th class="th-asist">Asistencia <mat-icon class="th-edit-icon">edit</mat-icon></th>
+              <th class="th-asist">Asistencia <mat-icon class="th-edit-icon" *ngIf="!data.soloLectura">edit</mat-icon></th>
             </tr>
           </thead>
           <tbody>
@@ -137,7 +139,14 @@ export interface DetalleDialogData {
               </td>
               <td class="col-asist">
                 <ng-container *ngIf="item.dictada === true && item.presente !== null; else sinRegistro">
-                  <button class="chip-estado chip-asist"
+                  <span *ngIf="data.soloLectura"
+                        class="chip-estado chip-asist"
+                        [class.chip-presente]="item.presente === true"
+                        [class.chip-ausente]="item.presente === false">
+                    {{ item.presente ? 'Presente' : 'Ausente' }}
+                  </span>
+                  <button *ngIf="!data.soloLectura"
+                          class="chip-estado chip-asist"
                           [class.chip-presente]="item.presente === true"
                           [class.chip-ausente]="item.presente === false"
                           (click)="item.presente = !item.presente">
@@ -155,7 +164,7 @@ export interface DetalleDialogData {
       </div>
 
       <!-- Footer: botón guardar y panel de confirmación al cerrar -->
-      <ng-container *ngIf="!cargando && items.length > 0 && (hayModificaciones || confirmarCierre)">
+      <ng-container *ngIf="!cargando && items.length > 0 && (hayModificaciones || confirmarCierre) && !data.soloLectura">
         <mat-divider></mat-divider>
 
         <div *ngIf="hayModificaciones && !confirmarCierre" class="det-footer">

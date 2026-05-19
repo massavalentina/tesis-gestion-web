@@ -148,15 +148,13 @@ export class FichaUsuarioComponent implements OnInit {
   }
 
   private cargarAsignaciones(u: Usuario): void {
-    const esDocente   = u.roles.some(r => r.toLowerCase() === 'docente');
-    const esPreceptor = u.roles.some(r => r.toLowerCase() === 'preceptor');
-    if (!esDocente && !esPreceptor) return;
+    if (!u.idDocente && !u.idPreceptor) return;
 
     this.cargandoAsignaciones.set(true);
-    const docente$   = esDocente && u.idDocente
+    const docente$   = u.idDocente
       ? this.asignacionService.getECsDocente(u.idDocente)
       : of(null);
-    const preceptor$ = esPreceptor && u.idPreceptor
+    const preceptor$ = u.idPreceptor
       ? this.asignacionService.getCursosPreceptor(u.idPreceptor)
       : of(null);
 
@@ -184,6 +182,14 @@ export class FichaUsuarioComponent implements OnInit {
 
   get tieneRolDocente(): boolean {
     return this.usuario()?.roles.some(r => r.toLowerCase() === 'docente') ?? false;
+  }
+
+  get tieneIdDocente(): boolean {
+    return !!this.usuario()?.idDocente;
+  }
+
+  get tieneIdPreceptor(): boolean {
+    return !!this.usuario()?.idPreceptor;
   }
 
   get rolesConObjeto(): Rol[] {
