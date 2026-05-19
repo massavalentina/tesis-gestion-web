@@ -135,10 +135,6 @@ export interface RetiroInfoDialogData {
             <mat-label>Motivo</mat-label>
             <textarea matInput [(ngModel)]="motivoEdit" rows="2"></textarea>
           </mat-form-field>
-          <mat-form-field class="ri-ef-field" appearance="outline">
-            <mat-label>Preceptor *</mat-label>
-            <input matInput [(ngModel)]="preceptorEdit" placeholder="Nombre del preceptor" />
-          </mat-form-field>
           <div class="ri-ef-toggle-row">
             <span class="ri-ef-toggle-label">Con reingreso:</span>
             <mat-button-toggle-group [(ngModel)]="conReingresoEdit" aria-label="Con reingreso">
@@ -243,11 +239,6 @@ export interface RetiroInfoDialogData {
             <h3 class="ri-section-title">
               <mat-icon>login</mat-icon> Registrar Reingreso
             </h3>
-
-            <mat-form-field class="ri-field" appearance="outline">
-              <mat-label>Nombre del preceptor</mat-label>
-              <input matInput [(ngModel)]="preceptorReingreso" placeholder="Ej: Martínez, Juan" />
-            </mat-form-field>
 
             <mat-form-field class="ri-field" appearance="outline">
               <mat-label>Hora de reingreso</mat-label>
@@ -402,7 +393,6 @@ export class RetiroInfoDialogComponent implements OnInit {
   guardandoEdit   = false;
   intentoGuardar  = false;
   horaRetiroEdit  = '';
-  preceptorEdit   = '';
   motivoEdit      = '';
   conReingresoEdit        = false;
   horaLimiteReingresoEdit = '';
@@ -417,7 +407,6 @@ export class RetiroInfoDialogComponent implements OnInit {
   // Estado reingreso
   guardandoReingreso = false;
   horaReingreso      = '';
-  preceptorReingreso = '';
 
   // Estado cancelación
   cancelando = false;
@@ -454,7 +443,6 @@ export class RetiroInfoDialogComponent implements OnInit {
   }
 
   get reingresoValido(): boolean {
-    if (!this.preceptorReingreso.trim()) return false;
     if (!RetiroInfoDialogComponent.HORA_RE.test(this.horaReingreso)) return false;
     if (this.toMin(this.horaReingreso) <= this.toMin(this.data.retiroActivo.horarioRetiro)) return false;
     return this.errorRangoHora(this.horaReingreso) === null;
@@ -530,7 +518,6 @@ export class RetiroInfoDialogComponent implements OnInit {
 
   get editValido(): boolean {
     if (this.errorHoraRetiro !== null) return false;
-    if (!this.preceptorEdit.trim()) return false;
     if (this.errorHoraLimite !== null) return false;
     if (this.errorHoraReingreso !== null) return false;
     if (!this.data.retiroActivo.idTutor) {
@@ -567,7 +554,6 @@ export class RetiroInfoDialogComponent implements OnInit {
   private sincronizarCamposEdicion(): void {
     const r = this.data.retiroActivo;
     this.horaRetiroEdit          = r.horarioRetiro;
-    this.preceptorEdit           = r.nombrePreceptor ?? '';
     this.motivoEdit              = r.motivo ?? '';
     this.conReingresoEdit        = r.conReingreso;
     this.horaLimiteReingresoEdit = r.horarioLimiteReingreso ?? '';
@@ -605,7 +591,6 @@ export class RetiroInfoDialogComponent implements OnInit {
     const r = this.data.retiroActivo;
     this.retiroService.actualizarRetiro(r.idRetiro, {
       horarioRetiro:           `${this.horaRetiroEdit}:00`,
-      nombrePreceptor:         this.preceptorEdit,
       motivo:                  this.motivoEdit,
       conReingreso:            this.conReingresoEdit,
       horarioLimiteReingreso:  this.conReingresoEdit && this.horaLimiteReingresoEdit
@@ -639,7 +624,6 @@ export class RetiroInfoDialogComponent implements OnInit {
     this.retiroService.registrarReingreso({
       idRetiro:         this.data.retiroActivo.idRetiro,
       horarioReingreso: `${this.horaReingreso}:00`,
-      nombrePreceptor:  this.preceptorReingreso,
     }).subscribe({
       next: (retiro) => {
         this.guardandoReingreso = false;

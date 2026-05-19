@@ -34,7 +34,6 @@ export class RetiroService {
 
   actualizarRetiro(idRetiro: string, dto: {
     horarioRetiro:          string;
-    nombrePreceptor:        string;
     motivo?:                string;
     conReingreso?:          boolean;
     horarioLimiteReingreso?: string;

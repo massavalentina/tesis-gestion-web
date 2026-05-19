@@ -15,5 +15,4 @@ export interface RegistrarRetiro {
   relacionResponsable:    string | null;
   telefonoResponsable:    string | null;
   correoResponsable:      string | null;
-  nombrePreceptor:        string;
 }
