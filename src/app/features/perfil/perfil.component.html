@@ -1,102 +1,143 @@
-<div class="perfil-container">
+<div class="page">
 
   <!-- Cargando -->
-  <div *ngIf="cargando()" class="loading-center">
-    <mat-spinner diameter="48" />
+  <div class="estado-center" *ngIf="cargando()">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
 
   <!-- Error de carga -->
-  <div *ngIf="!cargando() && errorCarga()" class="error-carga">
-    {{ errorCarga() }}
+  <div class="estado-center estado-error" *ngIf="!cargando() && errorCarga()">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ errorCarga() }}</span>
   </div>
 
   <!-- Contenido -->
   <ng-container *ngIf="!cargando() && !errorCarga() && perfil()">
 
-    <div class="page-header">
-      <h1>Mi perfil</h1>
-    </div>
+    <header class="page__header">
+      <div class="header-texto">
+        <h1>Mi perfil</h1>
+      </div>
+    </header>
 
-    <!-- Datos personales -->
-    <mat-card class="section-card">
-      <mat-card-header>
-        <mat-card-title>Datos personales</mat-card-title>
-      </mat-card-header>
+    <div class="card">
 
-      <mat-progress-bar *ngIf="guardandoDatos" mode="indeterminate" />
+      <!-- Avatar + nombre -->
+      <div class="perfil-header">
+        <div class="avatar-grande">{{ p.nombre[0] }}{{ p.apellido[0] }}</div>
+        <div class="perfil-info">
+          <div class="nombre-completo">{{ p.apellido }}, {{ p.nombre }}</div>
+          <span class="estado-badge activo">Activo</span>
+        </div>
+      </div>
 
-      <mat-card-content>
-        <form [formGroup]="formDatos">
-
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="nombre" />
-              <mat-error *ngIf="formDatos.get('nombre')?.hasError('required')">El nombre es obligatorio.</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Apellido</mat-label>
-              <input matInput formControlName="apellido" />
-              <mat-error *ngIf="formDatos.get('apellido')?.hasError('required')">El apellido es obligatorio.</mat-error>
-            </mat-form-field>
+      <!-- Datos personales -->
+      <div class="datos-section">
+        <div class="datos-header">
+          <span class="datos-titulo">Datos personales</span>
+          <div class="datos-acciones">
+            <ng-container *ngIf="!editandoDatos">
+              <button class="btn-editar" (click)="habilitarEdicion()">
+                <mat-icon>edit</mat-icon>
+                Editar
+              </button>
+            </ng-container>
+            <ng-container *ngIf="editandoDatos">
+              <button class="btn-cancelar" (click)="cancelarEdicion()" [disabled]="guardandoDatos">
+                Cancelar
+              </button>
+              <button class="btn-guardar"
+                      (click)="guardarDatos()"
+                      [disabled]="formDatos.invalid || formDatos.pending || guardandoDatos">
+                <mat-spinner *ngIf="guardandoDatos" diameter="14" class="btn-spinner-sm"></mat-spinner>
+                <span *ngIf="!guardandoDatos">Guardar</span>
+              </button>
+            </ng-container>
           </div>
+        </div>
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" />
-              <mat-error *ngIf="formDatos.get('email')?.hasError('required')">El email es obligatorio.</mat-error>
-              <mat-error *ngIf="formDatos.get('email')?.hasError('email')">Ingresá un email válido.</mat-error>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="half-width">
-              <mat-label>Teléfono</mat-label>
-              <input matInput formControlName="telefono" />
-            </mat-form-field>
+        <!-- Vista -->
+        <div class="datos-grid" *ngIf="!editandoDatos">
+          <div class="dato-item">
+            <span class="dato-label">Nombre</span>
+            <span class="dato-valor">{{ p.nombre }}</span>
           </div>
+          <div class="dato-item">
+            <span class="dato-label">Apellido</span>
+            <span class="dato-valor">{{ p.apellido }}</span>
+          </div>
+          <div class="dato-item">
+            <span class="dato-label">Email</span>
+            <span class="dato-valor">{{ p.email }}</span>
+          </div>
+          <div class="dato-item">
+            <span class="dato-label">Teléfono</span>
+            <span class="dato-valor">{{ p.telefono || '—' }}</span>
+          </div>
+          <div class="dato-item">
+            <span class="dato-label">DNI</span>
+            <span class="dato-valor">{{ p.documento }}</span>
+          </div>
+          <div class="dato-item">
+            <span class="dato-label">Fecha de alta</span>
+            <span class="dato-valor">{{ formatFecha(p.fechaCreacion) }}</span>
+          </div>
+        </div>
+        <div *ngIf="datosSaved" class="edit-success">
+          <mat-icon>check_circle</mat-icon> Datos actualizados correctamente.
+        </div>
 
-          <!-- Campos de solo lectura -->
-          <div class="form-row readonly-row">
-            <div class="readonly-field">
-              <span class="readonly-label">DNI</span>
-              <span class="readonly-value">{{ p.documento }}</span>
+        <!-- Edición -->
+        <form class="datos-form" *ngIf="editandoDatos" [formGroup]="formDatos">
+          <div class="edit-row">
+            <div class="edit-field">
+              <label class="dato-label">Nombre</label>
+              <input class="edit-input" formControlName="nombre" autocomplete="off" />
+              <span class="edit-error" *ngIf="formDatos.get('nombre')?.touched && formDatos.get('nombre')?.hasError('tieneNumeros')">No puede contener números</span>
+              <span class="edit-error" *ngIf="formDatos.get('nombre')?.touched && formDatos.get('nombre')?.hasError('minLetras')">Mínimo 2 caracteres</span>
+              <span class="edit-error" *ngIf="formDatos.get('nombre')?.touched && formDatos.get('nombre')?.hasError('required')">Requerido</span>
             </div>
-            <div class="readonly-field">
-              <span class="readonly-label">Fecha de alta</span>
-              <span class="readonly-value">{{ formatFecha(p.fechaCreacion) }}</span>
+            <div class="edit-field">
+              <label class="dato-label">Apellido</label>
+              <input class="edit-input" formControlName="apellido" autocomplete="off" />
+              <span class="edit-error" *ngIf="formDatos.get('apellido')?.touched && formDatos.get('apellido')?.hasError('tieneNumeros')">No puede contener números</span>
+              <span class="edit-error" *ngIf="formDatos.get('apellido')?.touched && formDatos.get('apellido')?.hasError('minLetras')">Mínimo 2 caracteres</span>
+              <span class="edit-error" *ngIf="formDatos.get('apellido')?.touched && formDatos.get('apellido')?.hasError('required')">Requerido</span>
             </div>
           </div>
-
-          <div class="roles-row">
-            <span class="readonly-label">Roles</span>
-            <div class="roles-chips">
-              <mat-chip *ngFor="let rol of p.roles">{{ rol }}</mat-chip>
+          <div class="edit-row">
+            <div class="edit-field">
+              <label class="dato-label">Email</label>
+              <div class="edit-input-wrap">
+                <input class="edit-input" formControlName="email" type="email" autocomplete="off" />
+                <mat-spinner *ngIf="formDatos.get('email')?.pending" diameter="14" class="field-spinner"></mat-spinner>
+              </div>
+              <span class="edit-error" *ngIf="formDatos.get('email')?.touched && formDatos.get('email')?.hasError('emailInvalido')">Email inválido</span>
+              <span class="edit-error" *ngIf="formDatos.get('email')?.touched && formDatos.get('email')?.hasError('required')">Requerido</span>
+              <span class="edit-error" *ngIf="formDatos.get('email')?.touched && formDatos.get('email')?.hasError('emailTomado')">Email ya registrado</span>
+            </div>
+            <div class="edit-field">
+              <label class="dato-label">Teléfono</label>
+              <input class="edit-input" formControlName="telefono" inputmode="numeric" autocomplete="off" />
+              <span class="edit-error" *ngIf="formDatos.get('telefono')?.touched && formDatos.get('telefono')?.hasError('pattern')">Solo números</span>
             </div>
           </div>
-
-          <div *ngIf="errorDatos" class="error-message">{{ errorDatos }}</div>
-          <div *ngIf="datosSaved" class="success-inline">Datos actualizados correctamente.</div>
-
+          <!-- Campos solo lectura en edición -->
+          <div class="edit-row">
+            <div class="edit-field readonly-in-edit">
+              <span class="dato-label">DNI</span>
+              <span class="dato-valor">{{ p.documento }}</span>
+            </div>
+            <div class="edit-field readonly-in-edit">
+              <span class="dato-label">Fecha de alta</span>
+              <span class="dato-valor">{{ formatFecha(p.fechaCreacion) }}</span>
+            </div>
+          </div>
+          <div *ngIf="errorDatos" class="edit-error-global">{{ errorDatos }}</div>
         </form>
-      </mat-card-content>
+      </div>
 
-      <mat-card-actions>
-        <ng-container *ngIf="!editandoDatos">
-          <button mat-stroked-button color="primary" (click)="habilitarEdicion()">
-            <mat-icon>edit</mat-icon> Editar
-          </button>
-        </ng-container>
-        <ng-container *ngIf="editandoDatos">
-          <button mat-flat-button color="primary" (click)="guardarDatos()" [disabled]="guardandoDatos || formDatos.invalid">
-            Guardar
-          </button>
-          <button mat-stroked-button (click)="cancelarEdicion()" [disabled]="guardandoDatos">
-            Cancelar
-          </button>
-        </ng-container>
-      </mat-card-actions>
-    </mat-card>
+    </div>
 
   </ng-container>
 </div>

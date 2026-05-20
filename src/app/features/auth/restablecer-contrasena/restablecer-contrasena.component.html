@@ -1,14 +1,20 @@
 <div class="page-container">
   <mat-card class="form-card">
 
+    <div class="logo-container">
+      <img src="logo.jpg" alt="Logo" class="logo-img" />
+    </div>
+
     <mat-card-header>
-      <mat-card-title>Restablecer contraseña</mat-card-title>
-      <mat-card-subtitle *ngIf="!tokenInvalido && !listo">Creá tu nueva contraseña</mat-card-subtitle>
+      <mat-card-title class="titulo-pagina">Restablecer contraseña</mat-card-title>
+      <mat-card-subtitle class="subtitulo-pagina" *ngIf="!tokenInvalido && !listo">
+        Creá tu nueva contraseña
+      </mat-card-subtitle>
     </mat-card-header>
 
     <mat-progress-bar *ngIf="loading" mode="indeterminate" />
 
-    <mat-card-content>
+    <mat-card-content class="card-content">
 
       <!-- Link inválido -->
       <div *ngIf="tokenInvalido" class="info-message warn">
@@ -26,7 +32,7 @@
       <!-- Formulario -->
       <form *ngIf="!tokenInvalido && !listo" [formGroup]="form" (ngSubmit)="submit()">
 
-        <mat-form-field appearance="outline" class="full-width">
+        <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
           <mat-label>Nueva contraseña</mat-label>
           <input
             matInput
@@ -36,13 +42,10 @@
           <button mat-icon-button matSuffix type="button" (click)="mostrarNueva = !mostrarNueva">
             <mat-icon>{{ mostrarNueva ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('required')">La contraseña es obligatoria.</mat-error>
-          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('minlength')">Mínimo 6 caracteres.</mat-error>
-          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('sinMayuscula')">Debe contener al menos una mayúscula.</mat-error>
-          <mat-error *ngIf="form.get('contrasenaNueva')?.hasError('sinNumero')">Debe contener al menos un número.</mat-error>
+          <mat-error *ngIf="errorNueva">{{ errorNueva }}</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full-width">
+        <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
           <mat-label>Confirmar contraseña</mat-label>
           <input
             matInput
@@ -53,7 +56,7 @@
             <mat-icon>{{ mostrarConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('required')">La confirmación es obligatoria.</mat-error>
-          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('noCoincide')">Las contraseñas no coinciden.</mat-error>
+          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('noCoincide') && !form.get('confirmacionContrasenaNueva')?.hasError('required')">Las contraseñas no coinciden.</mat-error>
         </mat-form-field>
 
         <div *ngIf="error" class="error-message">{{ error }}</div>
@@ -62,7 +65,7 @@
           mat-flat-button
           color="primary"
           type="submit"
-          class="full-width"
+          class="full-width submit-btn"
           [disabled]="loading">
           Guardar contraseña
         </button>

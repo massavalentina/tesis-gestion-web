@@ -81,8 +81,8 @@ import { PROFILE_NAV_ITEM } from '../../../core/navigation/app-navigation.config
           <span class="username-rol">{{ rolUsuario }}</span>
         </div>
 
-        <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
-          <mat-icon class="avatar">account_circle</mat-icon>
+        <button class="avatar-btn" [matMenuTriggerFor]="userMenu">
+          {{ iniciales }}
         </button>
 
         <mat-menu #userMenu="matMenu" xPosition="before">
@@ -111,6 +111,7 @@ export class NavbarComponent implements OnDestroy {
 
   nombreUsuario: string;
   rolUsuario: string;
+  iniciales: string;
 
   private searchSub: Subscription;
 
@@ -123,6 +124,10 @@ export class NavbarComponent implements OnDestroy {
   ) {
     const usuario = authService.obtenerUsuario();
     this.nombreUsuario = usuario?.nombre ?? '';
+    const partes = this.nombreUsuario.trim().split(/\s+/);
+    this.iniciales = partes.length >= 2
+      ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+      : (partes[0]?.[0] ?? '?').toUpperCase();
     const roles: string[] = usuario?.roles ? [...usuario.roles] : [];
     if (usuario?.esPreceptorDelegado) {
       if (!roles.includes('Preceptor Delegado')) roles.push('Preceptor Delegado');

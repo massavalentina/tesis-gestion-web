@@ -63,6 +63,16 @@ export class RestablecerContrasenaComponent implements OnInit {
   mostrarNueva = false;
   mostrarConfirm = false;
 
+  get errorNueva(): string | null {
+    const c = this.form.get('contrasenaNueva');
+    if (!c || !c.errors) return null;
+    if (c.hasError('required'))     return 'La contraseña es obligatoria.';
+    if (c.hasError('minlength'))    return 'Mínimo 6 caracteres.';
+    if (c.hasError('sinMayuscula')) return 'Debe contener al menos una mayúscula.';
+    if (c.hasError('sinNumero'))    return 'Debe contener al menos un número.';
+    return null;
+  }
+
   private token = '';
   private documento = '';
 
