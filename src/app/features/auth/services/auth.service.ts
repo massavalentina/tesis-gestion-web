@@ -168,7 +168,7 @@ export class AuthService {
         esAdmin:                payload['es_admin'] === 'true',
         esPreceptorDelegado:    payload['tipo_preceptor'] === 'delegado',
         requiresPasswordChange: payload['requiresPasswordChange'] === 'true',
-        exp:                    payload['exp'],
+        exp:                    payload['exp'] ?? 0,
       };
     } catch {
       return null;
