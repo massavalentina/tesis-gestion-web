@@ -1,16 +1,35 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import {
+  FormBuilder, FormGroup, FormControl, ReactiveFormsModule,
+  Validators, AbstractControl, ValidationErrors, ValidatorFn, AsyncValidatorFn,
+} from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
+import { Observable, of, timer } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 import { AuthService } from '../auth/services/auth.service';
 import { PerfilService, PerfilUsuario } from './services/perfil.service';
+import { GestionUsuariosService } from '../gestion-usuarios/services/gestion-usuarios.service';
+
+function soloLetrasMin2(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = ((control.value as string) ?? '').trim();
+    if (/\d/.test(v)) return { tieneNumeros: true };
+    if (v.length < 2) return { minLetras: true };
+    return null;
+  };
+}
+
+function emailMinValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = ((control.value as string) ?? '').trim();
+    if (!v) return null;
+    return /^[^\s@]+@[^\s@]+$/.test(v) ? null : { emailInvalido: true };
+  };
+}
 
 @Component({
   selector: 'app-perfil',
@@ -18,14 +37,9 @@ import { PerfilService, PerfilUsuario } from './services/perfil.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatProgressBarModule,
-    MatChipsModule,
   ],
   templateUrl: './perfil.component.html',
   styleUrl: './perfil.component.scss',
@@ -35,24 +49,23 @@ export class PerfilComponent implements OnInit {
   cargando = signal(true);
   errorCarga = signal('');
 
-  // Formulario de datos personales
   formDatos: FormGroup;
   guardandoDatos = false;
   errorDatos: string | null = null;
   datosSaved = false;
   editandoDatos = false;
 
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private perfilService: PerfilService,
+    private gestionService: GestionUsuariosService,
   ) {
     this.formDatos = this.fb.group({
-      nombre:   ['', Validators.required],
-      apellido: ['', Validators.required],
-      email:    ['', [Validators.required, Validators.email]],
-      telefono: [''],
+      nombre:   ['', [Validators.required, soloLetrasMin2()]],
+      apellido: ['', [Validators.required, soloLetrasMin2()]],
+      email:    new FormControl('', { validators: [Validators.required, emailMinValidator()] }),
+      telefono: ['', Validators.pattern(/^\d*$/)],
     });
   }
 
@@ -85,21 +98,28 @@ export class PerfilComponent implements OnInit {
     this.editandoDatos = true;
     this.datosSaved    = false;
     this.errorDatos    = null;
+    const originalEmail = this.perfil()?.email ?? '';
+    const emailCtrl = this.formDatos.get('email')!;
+    emailCtrl.setAsyncValidators(this.emailUnicoValidator(originalEmail));
+    emailCtrl.updateValueAndValidity();
     this.formDatos.enable();
   }
 
   cancelarEdicion(): void {
     const p = this.perfil();
     if (!p) return;
-    this.formDatos.patchValue({ nombre: p.nombre, apellido: p.apellido, email: p.email, telefono: p.telefono ?? '' });
+    const emailCtrl = this.formDatos.get('email')!;
+    emailCtrl.clearAsyncValidators();
+    this.formDatos.patchValue({
+      nombre: p.nombre, apellido: p.apellido, email: p.email, telefono: p.telefono ?? '',
+    });
     this.formDatos.disable();
     this.editandoDatos = false;
     this.errorDatos    = null;
   }
 
   guardarDatos(): void {
-    if (this.formDatos.invalid) return;
-
+    if (this.formDatos.invalid || this.formDatos.pending) return;
     const userId = this.p.idUsuario;
     this.guardandoDatos = true;
     this.errorDatos     = null;
@@ -107,16 +127,33 @@ export class PerfilComponent implements OnInit {
     this.perfilService.actualizar(userId, this.formDatos.getRawValue()).subscribe({
       next: p => {
         this.perfil.set(p);
+        const emailCtrl = this.formDatos.get('email')!;
+        emailCtrl.clearAsyncValidators();
         this.formDatos.disable();
         this.editandoDatos  = false;
         this.guardandoDatos = false;
         this.datosSaved     = true;
+        setTimeout(() => this.datosSaved = false, 3000);
       },
       error: err => {
         this.guardandoDatos = false;
         this.errorDatos     = err?.error?.error ?? 'No se pudo guardar. Intente nuevamente.';
       },
     });
+  }
+
+  private emailUnicoValidator(originalEmail: string): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      const email = ((control.value as string) ?? '').trim().toLowerCase();
+      if (!email || email === originalEmail.toLowerCase()) return of(null);
+      return timer(400).pipe(
+        switchMap(() => this.gestionService.verificarEmail(email)),
+        map(() => null),
+        catchError((err: HttpErrorResponse) =>
+          of(err.status === 409 ? { emailTomado: true } : null)
+        )
+      );
+    };
   }
 
   formatFecha(fecha: string): string {

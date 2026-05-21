@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule, FormBuilder, FormGroup, FormControl,
-  Validators, AbstractControl, ValidationErrors, AsyncValidatorFn,
+  Validators, AbstractControl, ValidationErrors, AsyncValidatorFn, ValidatorFn,
 } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +17,23 @@ import { GestionUsuariosService } from '../../services/gestion-usuarios.service'
 import { CrearUsuarioResult, Usuario } from '../../models/usuario.model';
 
 type EstadoDialog = 'formulario' | 'exito' | 'error';
+
+function soloLetrasMin2(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = ((control.value as string) ?? '').trim();
+    if (/\d/.test(v)) return { tieneNumeros: true };
+    if (v.length < 2) return { minLetras: true };
+    return null;
+  };
+}
+
+function emailMinValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = ((control.value as string) ?? '').trim();
+    if (!v) return null;
+    return /^[^\s@]+@[^\s@]+$/.test(v) ? null : { emailInvalido: true };
+  };
+}
 
 @Component({
   selector: 'app-nuevo-usuario-dialog',
@@ -48,12 +65,16 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
             <mat-label>Nombre</mat-label>
             <input matInput formControlName="nombre" autocomplete="off" />
             <mat-error *ngIf="form.get('nombre')?.hasError('required')">Requerido</mat-error>
+            <mat-error *ngIf="form.get('nombre')?.hasError('tieneNumeros')">No puede contener números</mat-error>
+            <mat-error *ngIf="form.get('nombre')?.hasError('minLetras')">Mínimo 2 caracteres</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="field-half">
             <mat-label>Apellido</mat-label>
             <input matInput formControlName="apellido" autocomplete="off" />
             <mat-error *ngIf="form.get('apellido')?.hasError('required')">Requerido</mat-error>
+            <mat-error *ngIf="form.get('apellido')?.hasError('tieneNumeros')">No puede contener números</mat-error>
+            <mat-error *ngIf="form.get('apellido')?.hasError('minLetras')">Mínimo 2 caracteres</mat-error>
           </mat-form-field>
         </div>
 
@@ -62,7 +83,7 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
           <input matInput formControlName="email" type="email" autocomplete="off" />
           <mat-spinner matSuffix *ngIf="form.get('email')?.pending" diameter="18"></mat-spinner>
           <mat-error *ngIf="form.get('email')?.hasError('required')">Requerido</mat-error>
-          <mat-error *ngIf="form.get('email')?.hasError('email')">Email inválido</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('emailInvalido')">Email inválido</mat-error>
           <mat-error *ngIf="form.get('email')?.hasError('emailTomado')">
             Este email ya está registrado
           </mat-error>
@@ -70,9 +91,10 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
 
         <mat-form-field appearance="outline" class="field-full">
           <mat-label>Documento</mat-label>
-          <input matInput formControlName="documento" autocomplete="off" />
+          <input matInput formControlName="documento" autocomplete="off" inputmode="numeric" />
           <mat-spinner matSuffix *ngIf="form.get('documento')?.pending" diameter="18"></mat-spinner>
           <mat-error *ngIf="form.get('documento')?.hasError('required')">Requerido</mat-error>
+          <mat-error *ngIf="form.get('documento')?.hasError('pattern')">Solo se permiten números</mat-error>
           <mat-error *ngIf="form.get('documento')?.hasError('documentoTomado')">
             Este documento ya está registrado
           </mat-error>
@@ -169,32 +191,6 @@ type EstadoDialog = 'formulario' | 'exito' | 'error';
     }
     .spinner-inline { display: inline-block; vertical-align: middle; }
 
-    /* ── Contraseña provisoria ── */
-    .contrasena-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px 16px;
-      text-align: center;
-      width: 100%;
-    }
-    .contrasena-label {
-      margin: 0 0 4px;
-      font-size: 0.78rem;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .contrasena-valor {
-      display: block;
-      font-family: monospace;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #0f172a;
-      letter-spacing: 0.1em;
-    }
-    .contrasena-hint { margin: 4px 0 0; font-size: 0.78rem; color: #94a3b8; }
-
     /* ── Pantalla de resultado ── */
     .resultado-container {
       padding: 32px 28px 24px;
@@ -247,14 +243,14 @@ export class NuevoUsuarioDialogComponent {
     fb: FormBuilder,
   ) {
     this.form = fb.group({
-      nombre:   ['', Validators.required],
-      apellido: ['', Validators.required],
+      nombre:   ['', [Validators.required, soloLetrasMin2()]],
+      apellido: ['', [Validators.required, soloLetrasMin2()]],
       email: new FormControl('', {
-        validators:      [Validators.required, Validators.email],
+        validators:      [Validators.required, emailMinValidator()],
         asyncValidators: [this.emailUnicoValidator()],
       }),
       documento: new FormControl('', {
-        validators:      [Validators.required],
+        validators:      [Validators.required, Validators.pattern(/^\d+$/)],
         asyncValidators: [this.documentoUnicoValidator()],
       }),
       telefono: ['', Validators.pattern(/^\d*$/)],
@@ -263,7 +259,7 @@ export class NuevoUsuarioDialogComponent {
 
   private emailUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
-      const email = (control.value as string)?.trim();
+      const email = ((control.value as string) ?? '').trim();
       if (!email) return of(null);
       return timer(400).pipe(
         switchMap(() => this.service.verificarEmail(email)),
@@ -277,7 +273,7 @@ export class NuevoUsuarioDialogComponent {
 
   private documentoUnicoValidator(): AsyncValidatorFn {
     return (control: AbstractControl): Observable<ValidationErrors | null> => {
-      const doc = (control.value as string)?.trim();
+      const doc = ((control.value as string) ?? '').trim();
       if (!doc) return of(null);
       return timer(400).pipe(
         switchMap(() => this.service.verificarDocumento(doc)),

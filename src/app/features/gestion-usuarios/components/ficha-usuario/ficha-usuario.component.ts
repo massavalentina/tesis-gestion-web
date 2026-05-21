@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn, AsyncValidatorFn } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +10,8 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/d
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { inject } from '@angular/core';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { Observable, forkJoin, of, switchMap, timer } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { GestionUsuariosService } from '../../services/gestion-usuarios.service';
 import { GestionRolesService } from '../../../gestion-roles/services/gestion-roles.service';
 import { AsignacionService } from '../../services/asignacion.service';
@@ -76,6 +78,7 @@ const ROL_PRECEPTOR_DELEGADO: Rol = { idRol: DELEGADO_ID, nombre: 'Preceptor Del
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -98,6 +101,13 @@ export class FichaUsuarioComponent implements OnInit {
   agregando            = signal(false);
   eliminandoRolId      = signal<string | null>(null);
   actualizandoDelegado = signal(false);
+
+  // Edición de datos
+  editandoDatos  = signal(false);
+  guardandoDatos = signal(false);
+  errorDatosSave = signal('');
+  datosSaved     = signal(false);
+  formDatos!: FormGroup;
 
   // Asignaciones
   ecActivos    = signal<DocenteECActivo[]>([]);
@@ -122,6 +132,7 @@ export class FichaUsuarioComponent implements OnInit {
     private asignacionService: AsignacionService,
     private dialog:           MatDialog,
     private snack:            MatSnackBar,
+    private fb:               FormBuilder,
   ) {}
 
   ngOnInit(): void {
@@ -137,6 +148,7 @@ export class FichaUsuarioComponent implements OnInit {
     this.error.set('');
     this.errorAccion.set('');
     this.rolParaAgregar = null;
+    this.editandoDatos.set(false);
     this.service.getOne(this.id).subscribe({
       next: u => {
         this.usuario.set(u);
@@ -501,6 +513,104 @@ export class FichaUsuarioComponent implements OnInit {
 
   toggleHistorialEC(): void   { this.mostrarHistorialEC.update(v => !v); }
   toggleHistorialCurso(): void { this.mostrarHistorialCurso.update(v => !v); }
+
+  // ── Edición de datos ──────────────────────────────────────────────────
+  habilitarEdicion(): void {
+    const u = this.usuario()!;
+    this.formDatos = this.fb.group({
+      nombre:   [u.nombre,   [Validators.required, this.soloLetrasMin2()]],
+      apellido: [u.apellido, [Validators.required, this.soloLetrasMin2()]],
+      email: new FormControl(u.email, {
+        validators:      [Validators.required, this.emailMinValidator()],
+        asyncValidators: [this.emailUnicoValidator(u.email)],
+      }),
+      documento: new FormControl(u.documento, {
+        validators:      [Validators.required, Validators.pattern(/^\d+$/)],
+        asyncValidators: [this.documentoUnicoValidator(u.documento)],
+      }),
+      telefono: [u.telefono ?? '', Validators.pattern(/^\d*$/)],
+    });
+    this.editandoDatos.set(true);
+    this.errorDatosSave.set('');
+    this.datosSaved.set(false);
+  }
+
+  cancelarEdicion(): void {
+    this.editandoDatos.set(false);
+    this.errorDatosSave.set('');
+    this.datosSaved.set(false);
+  }
+
+  guardarDatos(): void {
+    if (this.formDatos.invalid || this.formDatos.pending || this.guardandoDatos()) return;
+    this.guardandoDatos.set(true);
+    this.errorDatosSave.set('');
+    const v = this.formDatos.getRawValue();
+    this.service.actualizar(this.id, {
+      nombre:    v.nombre.trim(),
+      apellido:  v.apellido.trim(),
+      email:     v.email.trim(),
+      documento: v.documento.trim(),
+      telefono:  v.telefono?.trim() || undefined,
+    }).subscribe({
+      next: u => {
+        this.usuario.set(u);
+        this.guardandoDatos.set(false);
+        this.editandoDatos.set(false);
+        this.datosSaved.set(true);
+        setTimeout(() => this.datosSaved.set(false), 3000);
+      },
+      error: err => {
+        this.guardandoDatos.set(false);
+        this.errorDatosSave.set(err?.error?.error ?? 'No se pudo guardar. Intente nuevamente.');
+      },
+    });
+  }
+
+  private soloLetrasMin2(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = ((control.value as string) ?? '').trim();
+      if (/\d/.test(v)) return { tieneNumeros: true };
+      if (v.length < 2) return { minLetras: true };
+      return null;
+    };
+  }
+
+  private emailMinValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = ((control.value as string) ?? '').trim();
+      if (!v) return null;
+      return /^[^\s@]+@[^\s@]+$/.test(v) ? null : { emailInvalido: true };
+    };
+  }
+
+  private emailUnicoValidator(originalEmail: string): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      const email = ((control.value as string) ?? '').trim().toLowerCase();
+      if (!email || email === originalEmail.toLowerCase()) return of(null);
+      return timer(400).pipe(
+        switchMap(() => this.service.verificarEmail(email)),
+        map(() => null),
+        catchError((err: HttpErrorResponse) =>
+          of(err.status === 409 ? { emailTomado: true } : null)
+        )
+      );
+    };
+  }
+
+  private documentoUnicoValidator(originalDocumento: string): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      const doc = ((control.value as string) ?? '').trim();
+      if (!doc || doc === originalDocumento) return of(null);
+      return timer(400).pipe(
+        switchMap(() => this.service.verificarDocumento(doc)),
+        map(() => null),
+        catchError((err: HttpErrorResponse) =>
+          of(err.status === 409 ? { documentoTomado: true } : null)
+        )
+      );
+    };
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────
   rolColor(rol: string): string {

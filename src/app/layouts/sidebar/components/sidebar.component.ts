@@ -1,15 +1,20 @@
 import { Component, DestroyRef, inject } from '@angular/core';
-import { NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { LayoutModule } from '@angular/cdk/layout';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.service';
 import { AuthService } from '../../../features/auth/services/auth.service';
 import { trigger, transition, style, animate } from '@angular/animations';
+import {
+  AppNavItem,
+  ASISTENCIA_NAV_ITEMS,
+  HOME_NAV_ITEM,
+  SECONDARY_NAV_ITEMS,
+} from '../../../core/navigation/app-navigation.config';
+import { UiPlatformService } from '../../../core/services/ui-platform.service';
 
 const SLIDE = trigger('slide', [
   transition(':enter', [
@@ -46,11 +51,11 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
   selector: 'app-sidebar',
   standalone: true,
   imports: [
+    NgFor,
     NgIf,
     MatIconModule,
     MatRippleModule,
     MatButtonModule,
-    LayoutModule,
     RouterLink,
     RouterLinkActive,
   ],
@@ -68,16 +73,16 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         <!-- Inicio -->
         <a class="item"
            matRipple
-           routerLink="/"
+           [routerLink]="homeItem.route"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
+           [routerLinkActiveOptions]="{ exact: homeItem.exact }"
            (click)="closeAsistencia(); closeCuentas()">
-          <mat-icon>home</mat-icon>
-          <span>Inicio</span>
+          <mat-icon>{{ homeItem.icon }}</mat-icon>
+          <span>{{ homeItem.label }}</span>
         </a>
 
         <!-- Asistencia (padre desplegable) -->
-        <button *ngIf="mostrarSeccionAsistencia"
+        <button *ngIf="visibleAsistenciaItems.length > 0"
                 class="item parent"
                 type="button"
                 matRipple
@@ -88,84 +93,26 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         </button>
 
         <!-- Submenú asistencia -->
-        <div class="submenu" *ngIf="asistenciaOpen && mostrarSeccionAsistencia" @expandCollapse>
-          <a *ngIf="mostrarBusquedaRapida"
-             class="subitem"
-             matRipple
-             routerLink="/asistencia-rapida"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }">
-            Búsqueda Rápida
-          </a>
-
+        <div class="submenu" *ngIf="asistenciaOpen && visibleAsistenciaItems.length > 0" @expandCollapse>
           <a class="subitem"
-             *ngIf="mostrarEscaneoQr"
+             *ngFor="let item of visibleAsistenciaItems; trackBy: trackByRoute"
              matRipple
-             routerLink="/attendance/scan"
+             [routerLink]="item.route"
              routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }">
-            Escáner QR
-          </a>
-
-          <a *ngIf="mostrarAsistenciaManual"
-             class="subitem"
-             matRipple
-             routerLink="/asistencia-manual-curso"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }">
-            Asistencia Manual
-          </a>
-
-          <a *ngIf="mostrarParteDiario"
-             class="subitem"
-             matRipple
-             routerLink="/parte-diario-digital"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }">
-            Parte Diario
-          </a>
-
-          <a *ngIf="mostrarAsistenciaGeneral"
-             class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }">
-            Asistencia General
-          </a>
-
-          <a *ngIf="mostrarAsistenciaPorEC"
-             class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia-docente"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }">
-            Asistencia por EC
+             [routerLinkActiveOptions]="{ exact: item.exact }">
+            {{ item.label }}
           </a>
         </div>
 
-        <!-- Credenciales QR -->
-        <a *ngIf="mostrarCredencialesQr"
+        <a *ngFor="let item of visibleDesktopSecondaryItems; trackBy: trackByRoute"
            class="item"
            matRipple
-           routerLink="/credenciales-qr"
+           [routerLink]="item.route"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
+           [routerLinkActiveOptions]="{ exact: item.exact }"
            (click)="closeAsistencia(); closeCuentas()">
-          <mat-icon>qr_code</mat-icon>
-          <span>Credenciales QR</span>
-        </a>
-
-        <!-- Ficha de Alumno -->
-        <a *ngIf="mostrarFichaAlumno"
-           class="item"
-           matRipple
-           routerLink="/ficha-alumno"
-           routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia(); closeCuentas()">
-          <mat-icon>assignment_ind</mat-icon>
-          <span>Ficha de Alumno</span>
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
         </a>
 
         <!-- Cuentas (padre desplegable) — solo Secretario/Admin -->
@@ -225,16 +172,16 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
         <!-- Inicio -->
         <a class="item"
            matRipple
-           routerLink="/"
+           [routerLink]="homeItem.route"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
+           [routerLinkActiveOptions]="{ exact: homeItem.exact }"
            (click)="closeMobile()">
-          <mat-icon>home</mat-icon>
-          <span>Inicio</span>
+          <mat-icon>{{ homeItem.icon }}</mat-icon>
+          <span>{{ homeItem.label }}</span>
         </a>
 
         <!-- Asistencia -->
-        <button *ngIf="mostrarSeccionAsistencia"
+        <button *ngIf="visibleAsistenciaItems.length > 0"
                 class="item parent"
                 type="button"
                 matRipple
@@ -244,90 +191,27 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <mat-icon class="chevron" [class.open]="asistenciaOpen">expand_more</mat-icon>
         </button>
 
-        <div class="submenu" *ngIf="asistenciaOpen && mostrarSeccionAsistencia" @expandCollapse>
-          <a *ngIf="mostrarBusquedaRapida"
-             class="subitem"
-             matRipple
-             routerLink="/asistencia-rapida"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }"
-             (click)="closeMobile()">
-            Búsqueda Rápida
-          </a>
-
+        <div class="submenu" *ngIf="asistenciaOpen && visibleAsistenciaItems.length > 0" @expandCollapse>
           <a class="subitem"
-             *ngIf="mostrarEscaneoQr"
+             *ngFor="let item of visibleAsistenciaItems; trackBy: trackByRoute"
              matRipple
-             routerLink="/attendance/scan"
+             [routerLink]="item.route"
              routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }"
+             [routerLinkActiveOptions]="{ exact: item.exact }"
              (click)="closeMobile()">
-            Escáner QR
-          </a>
-
-          <a *ngIf="mostrarAsistenciaManual"
-             class="subitem"
-             matRipple
-             routerLink="/asistencia-manual-curso"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }"
-             (click)="closeMobile()">
-            Asistencia Manual
-          </a>
-
-          <a *ngIf="mostrarParteDiario"
-             class="subitem"
-             matRipple
-             routerLink="/parte-diario-digital"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: true }"
-             (click)="closeMobile()">
-            Parte Diario
-          </a>
-
-          <a *ngIf="mostrarAsistenciaGeneral"
-             class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }"
-             (click)="closeMobile()">
-            Asistencia General
-          </a>
-
-          <a *ngIf="mostrarAsistenciaPorEC"
-             class="subitem"
-             matRipple
-             routerLink="/reporte-asistencia-docente"
-             routerLinkActive="is-active-sub"
-             [routerLinkActiveOptions]="{ exact: false }"
-             (click)="closeMobile()">
-            Asistencia por EC
+            {{ item.label }}
           </a>
         </div>
 
-        <!-- Credenciales QR -->
-        <a *ngIf="mostrarCredencialesQr"
+        <a *ngFor="let item of visibleMobileSecondaryItems; trackBy: trackByRoute"
            class="item"
            matRipple
-           routerLink="/credenciales-qr"
+           [routerLink]="item.route"
            routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
+           [routerLinkActiveOptions]="{ exact: item.exact }"
            (click)="closeAsistencia(); closeCuentas(); closeMobile()">
-          <mat-icon>qr_code</mat-icon>
-          <span>Credenciales QR</span>
-        </a>
-
-        <!-- Ficha de Alumno -->
-        <a *ngIf="mostrarFichaAlumno"
-           class="item"
-           matRipple
-           routerLink="/ficha-alumno"
-           routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeAsistencia(); closeCuentas(); closeMobile()">
-          <mat-icon>assignment_ind</mat-icon>
-          <span>Ficha de Alumno</span>
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
         </a>
 
         <!-- Cuentas — solo Secretario/Admin -->
@@ -352,18 +236,6 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
             </a>
           </div>
         </ng-container>
-
-        <!-- Mi perfil -->
-        <a class="item"
-           matRipple
-           routerLink="/perfil"
-           routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="closeMobile()">
-          <mat-icon>account_circle</mat-icon>
-          <span>Mi perfil</span>
-        </a>
-
         <!-- Cerrar sesión -->
         <a class="item" matRipple (click)="cerrarSesion()">
           <mat-icon>logout</mat-icon>
@@ -377,49 +249,35 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
 })
 export class SidebarComponent {
   private readonly destroyRef = inject(DestroyRef);
+  readonly homeItem = HOME_NAV_ITEM;
   isMobile = false;
   open = false;
   asistenciaOpen = false;
   cuentasOpen = false;
   scannerActivo = false;
+  visibleAsistenciaItems: AppNavItem[] = [];
+  visibleDesktopSecondaryItems: AppNavItem[] = [];
+  visibleMobileSecondaryItems: AppNavItem[] = [];
 
   readonly puedeGestionarUsuarios: boolean;
-  readonly mostrarBusquedaRapida: boolean;
-  readonly mostrarAsistenciaManual: boolean;
-  readonly mostrarParteDiario: boolean;
-  readonly mostrarAsistenciaGeneral: boolean;
-  readonly mostrarAsistenciaPorEC: boolean;
-  readonly mostrarCredencialesQr: boolean;
-  readonly mostrarFichaAlumno: boolean;
-  readonly mostrarSeccionAsistencia: boolean;
-  private readonly tienePermisoEscaneoQr: boolean;
-
-  get mostrarEscaneoQr(): boolean {
-    return this.isMobile && this.tienePermisoEscaneoQr;
-  }
+  private readonly esAdmin: boolean;
+  private readonly usuarioEsPreceptorDelegado: boolean;
 
   constructor(
-    private breakpointObserver: BreakpointObserver,
     private scannerUiStateService: ScannerUiStateService,
     private authService: AuthService,
+    private uiPlatformService: UiPlatformService,
   ) {
     const usuario = authService.obtenerUsuario();
-    const esAdmin = !!usuario?.esAdmin;
+    this.esAdmin = !!usuario?.esAdmin;
+    this.usuarioEsPreceptorDelegado = !!usuario?.esPreceptorDelegado;
 
-    this.puedeGestionarUsuarios = authService.tieneRol('Secretario') || esAdmin;
-    this.mostrarBusquedaRapida    = esAdmin || authService.tienePermiso('BUSQUEDA_RAPIDA_RW');
-    this.mostrarAsistenciaManual  = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW');
-    this.mostrarParteDiario       = esAdmin || authService.tienePermiso('ASISTENCIA_MANUAL_RW') || authService.tienePermiso('PARTE_DIARIO_R') || authService.tieneRol('Docente') || authService.tieneRol('Equipo Directivo');
-    this.mostrarAsistenciaGeneral = esAdmin || authService.tienePermiso('REPORTES_ASISTENCIA_RW');
-    this.mostrarAsistenciaPorEC   = esAdmin || authService.tienePermiso('REPORTES_EC_RW');
-    this.tienePermisoEscaneoQr    = esAdmin || authService.tienePermiso('ASISTENCIA_QR_RW');
-    this.mostrarCredencialesQr    = esAdmin || (!!usuario?.esPreceptorDelegado && authService.tienePermiso('CREDENCIALES_QR_RW'));
-    this.mostrarFichaAlumno       = esAdmin || authService.tienePermiso('FICHA_ALUMNO_R');
-    this.mostrarSeccionAsistencia = this.mostrarBusquedaRapida || this.mostrarAsistenciaManual || this.mostrarParteDiario || this.mostrarAsistenciaGeneral || this.mostrarAsistenciaPorEC || this.tienePermisoEscaneoQr;
-    this.breakpointObserver.observe([Breakpoints.Handset])
+    this.puedeGestionarUsuarios = authService.tieneRol('Secretario') || this.esAdmin;
+    this.uiPlatformService.isMobile$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
-        this.isMobile = result.matches;
+        this.isMobile = result;
+        this.actualizarItemsVisibles();
         if (!this.isMobile) this.open = false;
       });
 
@@ -429,6 +287,10 @@ export class SidebarComponent {
         this.scannerActivo = active;
         if (active) this.open = false;
       });
+  }
+
+  trackByRoute(_: number, item: AppNavItem): string {
+    return item.route;
   }
 
   toggleAsistencia() {
@@ -456,5 +318,47 @@ export class SidebarComponent {
   cerrarSesion(): void {
     this.closeMobile();
     this.authService.logout();
+  }
+
+  private actualizarItemsVisibles(): void {
+    this.visibleAsistenciaItems = ASISTENCIA_NAV_ITEMS.filter(item => this.canShowNavItem(item));
+    const visibleSecondaryItems = SECONDARY_NAV_ITEMS.filter(item => this.canShowNavItem(item));
+    this.visibleDesktopSecondaryItems = visibleSecondaryItems.filter(item => item.sectionId !== 'perfil');
+    this.visibleMobileSecondaryItems = visibleSecondaryItems;
+  }
+
+  private canShowNavItem(item: AppNavItem): boolean {
+    if (!this.uiPlatformService.canAccessSection(item.sectionId)) {
+      return false;
+    }
+
+    switch (item.sectionId) {
+      case 'asistenciaRapida':
+        return this.esAdmin || this.authService.tienePermiso('BUSQUEDA_RAPIDA_RW');
+      case 'qrScanner':
+        return this.esAdmin || this.authService.tienePermiso('ASISTENCIA_QR_RW');
+      case 'asistenciaManual':
+        return this.esAdmin || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW');
+      case 'parteDiario':
+        return this.esAdmin
+          || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW')
+          || this.authService.tienePermiso('PARTE_DIARIO_R')
+          || this.authService.tieneRol('Docente')
+          || this.authService.tieneRol('Equipo Directivo');
+      case 'reporteAsistencia':
+        return this.esAdmin || this.authService.tienePermiso('REPORTES_ASISTENCIA_RW');
+      case 'reporteAsistenciaDocente':
+        return this.esAdmin || this.authService.tienePermiso('REPORTES_EC_RW');
+      case 'credencialesQr':
+        return this.esAdmin
+          || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
+      case 'fichaAlumno':
+        return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
+      case 'perfil':
+      case 'home':
+        return true;
+      default:
+        return false;
+    }
   }
 }

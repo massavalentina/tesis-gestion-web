@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { WeatherComponent } from '../app/deploy-test/weather.component';
 import { PaginaGeneracionCredencialesQr } from './features/qr-credential-generation/pages/qr-credential-generation.page';
 import { LayoutComponent } from './layouts/layout.component';
@@ -9,6 +9,13 @@ import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
 import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { credencialesQrGuard } from './core/auth/guards/credenciales-qr.guard';
+import { AppSectionId, buildSectionRouteData } from './core/navigation/platform-visibility.config';
+
+const withSectionData = (
+  sectionId: AppSectionId
+): Pick<Route, 'data'> => ({
+  data: buildSectionRouteData(sectionId),
+});
 
 export const routes: Routes = [
   {
@@ -35,6 +42,7 @@ export const routes: Routes = [
   },
   {
     path: 'qr-credentials/generation',
+    ...withSectionData('credencialesQr'),
     component: PaginaGeneracionCredencialesQr,
     canActivate: [authGuard, credencialesQrGuard],
   },
@@ -50,12 +58,14 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        ...withSectionData('home'),
         loadComponent: () =>
           import('../app/features/home/home/home.component')
             .then(m => m.HomeComponent),
       },
       {
         path: 'asistencia-rapida',
+        ...withSectionData('asistenciaRapida'),
         loadComponent: () =>
           import('../app/features/asistencia-rapida/components/asistencia-rapida/asistencia-rapida.component')
             .then(m => m.AsistenciaRapidaComponent),
@@ -63,6 +73,7 @@ export const routes: Routes = [
       },
       {
         path: 'asistencia-manual-curso',
+        ...withSectionData('asistenciaManual'),
         loadComponent: () =>
           import('../app/features/asistencia-general-manual/components/asistencia-general-manual.component')
             .then(m => m.AsistenciaGeneralManualComponent),
@@ -71,6 +82,7 @@ export const routes: Routes = [
       },
       {
         path: 'parte-diario-digital',
+        ...withSectionData('parteDiario'),
         loadComponent: () =>
           import('../app/features/parte-diario-digital/components/parte-diario.component')
             .then(m => m.ParteDiarioComponent),
@@ -79,12 +91,14 @@ export const routes: Routes = [
       },
       {
         path: 'attendance/scan',
+        ...withSectionData('qrScanner'),
         component: PaginaEscanerAsistencia,
         canActivate: [authGuard, permisoGuard('ASISTENCIA_QR_RW')],
         canDeactivate: [colaPendienteGuard],
       },
       {
         path: 'credenciales-qr',
+        ...withSectionData('credencialesQr'),
         loadComponent: () =>
           import('../app/features/credenciales-qr/components/credenciales-qr/credenciales-qr.component')
             .then(m => m.CredencialesQrComponent),
@@ -92,12 +106,14 @@ export const routes: Routes = [
       },
       {
         path: 'perfil',
+        ...withSectionData('perfil'),
         loadComponent: () =>
           import('../app/features/perfil/perfil.component')
             .then(m => m.PerfilComponent),
       },
       {
         path: 'ficha-alumno',
+        ...withSectionData('fichaAlumno'),
         loadComponent: () =>
           import('../app/features/ficha-alumno/components/ficha-alumno/ficha-alumno.component')
             .then(m => m.FichaAlumnoComponent),
@@ -105,6 +121,7 @@ export const routes: Routes = [
       },
       {
         path: 'reporte-asistencia',
+        ...withSectionData('reporteAsistencia'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/reporte-asistencia/reporte-asistencia.component')
             .then(m => m.ReporteAsistenciaComponent),
@@ -112,6 +129,7 @@ export const routes: Routes = [
       },
       {
         path: 'reporte-asistencia/detalle/:estudianteId',
+        ...withSectionData('reporteAsistencia'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
@@ -119,6 +137,7 @@ export const routes: Routes = [
       },
       {
         path: 'ficha-alumno/detalle/:estudianteId',
+        ...withSectionData('fichaAlumno'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
@@ -126,6 +145,7 @@ export const routes: Routes = [
       },
       {
         path: 'reporte-asistencia-docente',
+        ...withSectionData('reporteAsistenciaDocente'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/reporte-asistencia-docente/reporte-asistencia-docente.component')
             .then(m => m.ReporteAsistenciaDocenteComponent),
@@ -133,6 +153,7 @@ export const routes: Routes = [
       },
       {
         path: 'reporte-asistencia-docente/detalle/:estudianteId/:idEC',
+        ...withSectionData('reporteAsistenciaDocente'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),

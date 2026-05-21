@@ -95,12 +95,6 @@ export interface RetiroDialogData {
             <form (ngSubmit)="paso1Valido && stepper.next()">
             <div class="ret-paso">
 
-              <!-- Nombre preceptor -->
-              <mat-form-field class="ret-field" appearance="outline">
-                <mat-label>Nombre del preceptor</mat-label>
-                <input matInput [(ngModel)]="nombrePreceptor" name="preceptor" placeholder="Ej: Martínez, Juan" />
-              </mat-form-field>
-
               <!-- Hora de retiro -->
               <mat-form-field class="ret-field" appearance="outline">
                 <mat-label>Hora de retiro</mat-label>
@@ -327,7 +321,6 @@ export class RetiroDialogComponent implements OnInit {
   guardando              = false;
 
   // Paso 1
-  nombrePreceptor = '';
   horaRetiro      = '';
   motivo          = '';
   conReingreso    = false;
@@ -390,8 +383,7 @@ export class RetiroDialogComponent implements OnInit {
   }
 
   get paso1Valido(): boolean {
-    return !!this.nombrePreceptor.trim()
-        && RetiroDialogComponent.HORA_RE.test(this.horaRetiro)
+    return RetiroDialogComponent.HORA_RE.test(this.horaRetiro)
         && this.errorHoraRetiro === null
         && !!this.motivo.trim()
         && this.errorHoraEstimada === null;
@@ -441,7 +433,6 @@ export class RetiroDialogComponent implements OnInit {
       relacionResponsable:    esContingente ? this.contRelacion  : null,
       telefonoResponsable:    esContingente && this.contTelefono ? this.contTelefono : null,
       correoResponsable:      esContingente && this.contCorreo   ? this.contCorreo   : null,
-      nombrePreceptor:        this.nombrePreceptor,
     };
 
     this.guardando = true;

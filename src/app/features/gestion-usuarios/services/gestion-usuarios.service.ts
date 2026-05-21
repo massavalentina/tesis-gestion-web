@@ -30,6 +30,10 @@ export class GestionUsuariosService {
     return this.http.patch<void>(`${this.base}/${id}/activar`, {});
   }
 
+  actualizar(id: string, dto: { nombre: string; apellido: string; email: string; documento: string; telefono?: string }): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.base}/${id}`, dto);
+  }
+
   verificarEmail(email: string): Observable<void> {
     return this.http.get<void>(`${this.base}/verificar-email`, { params: { email } });
   }

@@ -1,11 +1,9 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/tesis-gestor-web/browser",
   "routes": [
     {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|map|ico|png|jpg|svg))",
+      "src": "/(.*\\..*)",
       "dest": "/$1"
     },
     {

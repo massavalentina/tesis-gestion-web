@@ -128,9 +128,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 20px;
 }
 
 .dato-item {
@@ -473,10 +470,163 @@
 .asig-historial-toggle mat-icon { font-size: 16px; width: 16px; height: 16px; }
 .asig-historial-toggle:hover { color: #0284c7; }
 
+/* ── Edición de datos ── */
+.datos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.datos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.datos-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.datos-acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-editar mat-icon { font-size: 15px; width: 15px; height: 15px; }
+.btn-editar:hover { border-color: #0284c7; color: #0284c7; }
+
+.btn-cancelar {
+  padding: 5px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-cancelar:hover:not(:disabled) { border-color: #94a3b8; }
+.btn-cancelar:disabled { opacity: 0.5; cursor: default; }
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #0284c7;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-guardar:hover:not(:disabled) { background: #0369a1; }
+.btn-guardar:disabled { opacity: 0.5; cursor: default; }
+
+.btn-spinner-sm { display: flex; }
+
+/* Edit form */
+.datos-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-row {
+  display: flex;
+  gap: 16px;
+}
+
+.edit-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.edit-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #0f2f4b;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.edit-input:focus { border-color: #0284c7; }
+
+.field-spinner {
+  position: absolute;
+  right: 8px;
+}
+
+.edit-error {
+  font-size: 0.72rem;
+  color: #dc2626;
+  line-height: 1.3;
+}
+
+.edit-error-global {
+  font-size: 0.82rem;
+  color: #dc2626;
+  padding: 6px 0;
+}
+
+.edit-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #16a34a;
+  font-weight: 500;
+}
+.edit-success mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+.readonly-in-edit {
+  justify-content: center;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .page { padding: 12px; }
   .card { padding: 16px; gap: 18px; }
-  .datos-grid { padding: 16px; grid-template-columns: 1fr 1fr; }
+  .datos-grid { grid-template-columns: 1fr 1fr; }
   .nombre-completo { font-size: 1.15rem; }
 }

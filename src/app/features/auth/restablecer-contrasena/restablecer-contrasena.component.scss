@@ -3,18 +3,56 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #dde3ea;
 }
 
 .form-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 420px;
   padding: 8px;
+  background: #ffffff !important;
+  border: 1.5px solid #7dd3fc !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 24px rgba(2, 132, 199, 0.10) !important;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px 24px 0;
+}
+
+.logo-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+.titulo-pagina {
+  color: #0284c7 !important;
+  font-size: 1.4rem !important;
+  font-weight: 600 !important;
+  text-align: center;
+  width: 100%;
+}
+
+.subtitulo-pagina {
+  text-align: center;
+  width: 100%;
+}
+
+.card-content {
+  padding-top: 24px !important;
 }
 
 .full-width {
   width: 100%;
   margin-bottom: 12px;
+}
+
+.submit-btn {
+  margin-top: 4px;
 }
 
 .error-message {

@@ -69,12 +69,6 @@ export interface ReingresoDialogData {
           </div>
         </div>
 
-        <!-- Nombre preceptor -->
-        <mat-form-field class="rei-field" appearance="outline">
-          <mat-label>Nombre del preceptor</mat-label>
-          <input matInput [(ngModel)]="nombrePreceptor" placeholder="Ej: Martínez, Juan" />
-        </mat-form-field>
-
         <!-- Hora de reingreso -->
         <mat-form-field class="rei-field" appearance="outline">
           <mat-label>Hora de reingreso</mat-label>
@@ -133,12 +127,11 @@ export interface ReingresoDialogData {
 })
 export class ReingresoDialogComponent {
 
-  nombrePreceptor = '';
   horaReingreso   = '';
   guardando       = false;
 
   get formValido(): boolean {
-    return !!this.nombrePreceptor.trim() && !!this.horaReingreso;
+    return !!this.horaReingreso;
   }
 
   get etiquetaClass(): string {
@@ -161,7 +154,6 @@ export class ReingresoDialogComponent {
     this.retiroService.registrarReingreso({
       idRetiro:         this.data.retiroActivo.idRetiro,
       horarioReingreso: `${this.horaReingreso}:00`,
-      nombrePreceptor:  this.nombrePreceptor,
     }).subscribe({
       next: (retiro: RetiroActivo) => {
         this.guardando = false;

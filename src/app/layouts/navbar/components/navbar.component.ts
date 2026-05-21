@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { NgIf, NgFor } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap, catchE
 import { FichaAlumnoService } from '../../../features/ficha-alumno/services/ficha-alumno.service';
 import { EstudianteBusquedaFicha } from '../../../features/ficha-alumno/models/estudiante-busqueda-ficha.model';
 import { AuthService } from '../../../features/auth/services/auth.service';
+import { PROFILE_NAV_ITEM } from '../../../core/navigation/app-navigation.config';
 
 @Component({
   selector: 'app-navbar',
@@ -24,7 +25,6 @@ import { AuthService } from '../../../features/auth/services/auth.service';
   imports: [
     NgIf,
     NgFor,
-    AsyncPipe,
     LayoutModule,
     ReactiveFormsModule,
     MatToolbarModule,
@@ -81,8 +81,8 @@ import { AuthService } from '../../../features/auth/services/auth.service';
           <span class="username-rol">{{ rolUsuario }}</span>
         </div>
 
-        <button mat-icon-button class="avatar-btn" [matMenuTriggerFor]="userMenu">
-          <mat-icon class="avatar">account_circle</mat-icon>
+        <button class="avatar-btn" [matMenuTriggerFor]="userMenu">
+          {{ iniciales }}
         </button>
 
         <mat-menu #userMenu="matMenu" xPosition="before">
@@ -101,6 +101,7 @@ import { AuthService } from '../../../features/auth/services/auth.service';
   styleUrls: ['../scss/navbar.component.scss'],
 })
 export class NavbarComponent implements OnDestroy {
+  readonly profileItem = PROFILE_NAV_ITEM;
   isMobile = false;
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
@@ -110,6 +111,7 @@ export class NavbarComponent implements OnDestroy {
 
   nombreUsuario: string;
   rolUsuario: string;
+  iniciales: string;
 
   private searchSub: Subscription;
 
@@ -122,6 +124,10 @@ export class NavbarComponent implements OnDestroy {
   ) {
     const usuario = authService.obtenerUsuario();
     this.nombreUsuario = usuario?.nombre ?? '';
+    const partes = this.nombreUsuario.trim().split(/\s+/);
+    this.iniciales = partes.length >= 2
+      ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+      : (partes[0]?.[0] ?? '?').toUpperCase();
     const roles: string[] = usuario?.roles ? [...usuario.roles] : [];
     if (usuario?.esPreceptorDelegado) {
       if (!roles.includes('Preceptor Delegado')) roles.push('Preceptor Delegado');
@@ -181,7 +187,7 @@ export class NavbarComponent implements OnDestroy {
   }
 
   irACuenta(): void {
-    this.router.navigate(['/perfil']);
+    this.router.navigate([this.profileItem.route]);
   }
 
   ngOnDestroy(): void {

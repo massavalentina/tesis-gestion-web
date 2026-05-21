@@ -33,6 +33,7 @@ import { DetalleEstudianteDialogComponent, DetalleDialogData }
 import { FilaAsistenciaManual } from '../../asistencia-general-manual/models/fila-asistencia-manual.model';
 import { RetiroInfoDialogComponent, RetiroInfoDialogData }
   from '../../retiro-anticipado/components/retiro-info-dialog/retiro-info-dialog.component';
+import { PdfReporteService } from '../../../core/services/pdf-reporte.service';
 
 // ── Date adapter DD/MM/YYYY (igual que asistencia-manual) ────────────────────
 @Injectable()
@@ -174,7 +175,8 @@ export class ParteDiarioComponent implements OnInit {
     private service: ParteDiarioService,
     private dialog:  MatDialog,
     private snack:   MatSnackBar,
-    authService: AuthService,
+    private pdfService: PdfReporteService,
+    private authService: AuthService,
   ) {
     this.esDocente = authService.tieneRol('Docente');
     this.esEquipoDirectivo = authService.tieneRol('Equipo Directivo');
@@ -330,8 +332,6 @@ export class ParteDiarioComponent implements OnInit {
     return !!codigo && codigo.toUpperCase().startsWith('LLT');
   }
 
-  printTimestamp = '';
-
   get printCursoLabel(): string {
     return this.cursos.find(c => c.id === this.cursoCtrl.value)?.label ?? '';
   }
@@ -343,28 +343,34 @@ export class ParteDiarioComponent implements OnInit {
     return str.replace(/^(\w)/, c => c.toUpperCase()).replace(',', '');
   }
 
-  /** Filtra estudiantes de un turno por estado para la sección de impresión. */
-  getEstPorEstado(turno: TurnoParte, estado: string): EstudianteParte[] {
-    return turno.estudiantes.filter(e => e.estado === estado);
-  }
-
-  /** Lista completa de un turno ordenada alfabéticamente para la sección de impresión. */
-  getListaOrdenada(turno: TurnoParte): EstudianteParte[] {
-    return [...turno.estudiantes].sort(
-      (a, b) => a.apellido.localeCompare(b.apellido, 'es-AR') || a.nombre.localeCompare(b.nombre, 'es-AR'),
-    );
-  }
-
   imprimirPDF(): void {
     if (window.innerWidth < 1024) {
       this.snack.open('La exportación PDF solo está disponible en pantalla de escritorio.', 'OK', { duration: 3500 });
       return;
     }
+
+    if (!this.resumen) return;
+
+    const usuario = this.authService.obtenerUsuario();
+    const usuarioResponsable = [usuario?.nombre, usuario?.apellido]
+      .filter(Boolean)
+      .join(' ')
+      .trim() || usuario?.email || 'Sin identificar';
+
     const now = new Date();
     const p = (n: number) => n.toString().padStart(2, '0');
-    this.printTimestamp = `${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()} ${p(now.getHours())}:${p(now.getMinutes())}`;
-    // setTimeout 0 permite que Angular actualice el DOM antes de abrir el diálogo de impresión
-    setTimeout(() => window.print(), 0);
+    const fechaImpresion = `${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()} ${p(now.getHours())}:${p(now.getMinutes())}`;
+
+    void this.pdfService.exportarParteDiario({
+      cursoLabel: this.printCursoLabel,
+      fechaParteLarga: this.printFechaLarga,
+      fechaImpresion,
+      usuarioResponsable,
+      resumen: this.resumen,
+      comentarios: this.comentarios,
+    }).catch(() => {
+      this.snack.open('No se pudo exportar el PDF del parte diario.', 'OK', { duration: 3500 });
+    });
   }
 
   // ── Load ─────────────────────────────────────────────────────────────────

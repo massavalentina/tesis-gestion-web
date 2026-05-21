@@ -6,6 +6,11 @@ import { ReporteAsistenciaItem } from '../../features/reporte-asistencia/models/
 import { DetalleAsistencia } from '../../features/reporte-asistencia/models/detalle-asistencia.model';
 import { ReporteDocenteItem } from '../../features/reporte-asistencia-docente/models/reporte-asistencia-docente.model';
 import { DetalleDocenteRegistro } from '../../features/reporte-asistencia-docente/models/detalle-docente.model';
+import { ParteDiarioResumen } from '../../features/parte-diario-digital/models/parte-diario-resumen.model';
+import { ComentarioParte } from '../../features/parte-diario-digital/models/comentario-parte.model';
+import { TurnoParte } from '../../features/parte-diario-digital/models/turno-parte.model';
+import { HorarioClase } from '../../features/parte-diario-digital/models/horario-clase.model';
+import { EstudianteParte } from '../../features/parte-diario-digital/models/estudiante-parte.model';
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
 const VERDE    = [46, 125, 50]    as [number, number, number];
@@ -16,6 +21,7 @@ const GRIS     = [117, 117, 117]  as [number, number, number];
 const HEADER_BG = [21, 101, 192]  as [number, number, number];
 
 const HEADER_H = 26; // altura reservada para el encabezado (mm)
+type PdfWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
 
 function badgeColor(inasistencias: number, teaGeneral: boolean): [number, number, number] {
   if (teaGeneral)           return GRIS;
@@ -128,6 +134,103 @@ function codigoColor(codigo: string): [number, number, number] {
   }
 }
 
+function formatTimestamp(ts: string): string {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  return `${hh}:${mm} ${dd}/${mo}/${d.getFullYear()}`;
+}
+
+function sortEstudiantesParte(estudiantes: EstudianteParte[]): EstudianteParte[] {
+  return [...estudiantes].sort((a, b) =>
+    a.apellido.localeCompare(b.apellido, 'es-AR') || a.nombre.localeCompare(b.nombre, 'es-AR')
+  );
+}
+
+function shortStudentName(estudiante: EstudianteParte): string {
+  return `${estudiante.apellido}, ${estudiante.nombre.charAt(0)}.`;
+}
+
+function retiroEtiquetaTexto(etiqueta: string | null | undefined): string {
+  switch (etiqueta) {
+    case 'ConReingreso':
+      return 'Reingreso pendiente';
+    case 'ReingresoVencido':
+      return 'Reingreso vencido';
+    case 'Reingresado':
+      return 'Reingresado';
+    default:
+      return etiqueta ?? '';
+  }
+}
+
+function estudianteEstadoTexto(estudiante: EstudianteParte): string {
+  const partes = [estudiante.estado === 'SinRegistro' ? 'Sin reg.' : estudiante.estado];
+
+  if (estudiante.estado === 'Presente' && estudiante.codigoAsistencia?.toUpperCase().startsWith('LLT')) {
+    partes.push(estudiante.codigoAsistencia.toUpperCase());
+  }
+
+  if (estudiante.estado === 'Retirado') {
+    if (estudiante.codigoLlegadaManiana?.toUpperCase().startsWith('LLT')) {
+      partes.push(estudiante.codigoLlegadaManiana.toUpperCase());
+    }
+    if (estudiante.retiroActivo?.tipoRetiro) {
+      partes.push(estudiante.retiroActivo.tipoRetiro.toUpperCase());
+    }
+    if (estudiante.retiroActivo?.etiquetaEstado) {
+      partes.push(retiroEtiquetaTexto(estudiante.retiroActivo.etiquetaEstado));
+    }
+  }
+
+  return partes.filter(Boolean).join(' | ');
+}
+
+function estudianteEstadoColor(estado: EstudianteParte['estado']): [number, number, number] {
+  switch (estado) {
+    case 'Presente':
+      return VERDE;
+    case 'Ausente':
+      return ROJO;
+    case 'Retirado':
+      return NARANJA;
+    default:
+      return GRIS;
+  }
+}
+
+function claseEstadoTexto(clase: HorarioClase): string {
+  if (clase.dictada === false) return 'No dictada';
+  if (clase.dictada === true) return 'Dictada';
+  return 'Sin reg.';
+}
+
+function claseEstadoColor(dictada: boolean | null): [number, number, number] {
+  if (dictada === false) return ROJO;
+  if (dictada === true) return VERDE;
+  return GRIS;
+}
+
+function comentarioTipoTexto(comentario: ComentarioParte): string {
+  return comentario.subTipo === 'RETIRO'
+    ? 'ASISTENCIA / RETIRO'
+    : comentario.subTipo;
+}
+
+function comentarioEventoTexto(comentario: ComentarioParte): string {
+  return comentario.subTipo === 'NOTA'
+    ? comentario.contenido
+    : (comentario.titulo ?? '—');
+}
+
+function comentarioDetalleTexto(comentario: ComentarioParte): string {
+  return comentario.subTipo === 'NOTA'
+    ? '—'
+    : (comentario.detalle ?? '—');
+}
+
 // ─── Interfaces públicas ──────────────────────────────────────────────────────
 
 export interface ReporteCursoData {
@@ -185,6 +288,15 @@ export interface DetalleEstudianteData {
   fechaDesde: string | null;
   fechaHasta: string | null;
   registros: DetalleAsistencia[];
+}
+
+export interface ParteDiarioData {
+  cursoLabel: string;
+  fechaParteLarga: string;
+  fechaImpresion: string;
+  usuarioResponsable: string;
+  resumen: ParteDiarioResumen;
+  comentarios: ComentarioParte[];
 }
 
 // ─── Servicio ─────────────────────────────────────────────────────────────────
@@ -789,6 +901,368 @@ export class PdfReporteService {
 
     const nombreArchivo = `detalle-asistencia-${data.apellido}-${data.nombre}-${hoy().replace(/\//g, '-')}.pdf`;
     doc.save(nombreArchivo);
+  }
+
+  async exportarParteDiario(data: ParteDiarioData): Promise<void> {
+    const logo = await this.logoPromise;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdfDoc = doc as PdfWithAutoTable;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const bottomMargin = 14;
+    const tableTopMargin = HEADER_H + 16;
+    const titleTopGap = 3;
+
+    const titulo = 'Parte Diario Digital';
+    const subtitulo = `Curso: ${data.cursoLabel}`;
+
+    const renderPageChrome = (): number => {
+      const y = drawPageHeader(doc, titulo, subtitulo, logo);
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Fecha del parte: ${data.fechaParteLarga}`, 14, y + 4);
+      doc.text(`Emitido: ${data.fechaImpresion}`, pageW - 14, y + 4, { align: 'right' });
+      doc.text(`Usuario responsable: ${data.usuarioResponsable}`, 14, y + 9);
+      doc.setTextColor(0, 0, 0);
+      return y + 18;
+    };
+
+    let cursorY = renderPageChrome();
+
+    const addPage = (): void => {
+      doc.addPage();
+      cursorY = renderPageChrome();
+    };
+
+    const ensureSpace = (requiredHeight: number): void => {
+      if (cursorY + requiredHeight > pageH - bottomMargin) {
+        addPage();
+      }
+    };
+
+    const drawSectionTitle = (label: string): void => {
+      ensureSpace(12 + titleTopGap);
+      cursorY += titleTopGap;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(...HEADER_BG);
+      doc.text(label, 14, cursorY);
+      doc.setDrawColor(...HEADER_BG);
+      doc.setLineWidth(0.3);
+      doc.line(14, cursorY + 2, pageW - 14, cursorY + 2);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      cursorY += 8;
+    };
+
+    const drawEmptyMessage = (text: string): void => {
+      ensureSpace(10);
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.text(text, 14, cursorY + 4);
+      doc.setTextColor(0, 0, 0);
+      cursorY += 10;
+    };
+
+    const drawStats = (turno: TurnoParte): void => {
+      ensureSpace(20);
+      const cards = [
+        { label: 'Presentes', value: turno.presentes, color: VERDE },
+        { label: 'Ausentes', value: turno.ausentes, color: ROJO },
+        { label: 'Sin registro', value: turno.sinRegistro, color: GRIS },
+        { label: 'Asistencia', value: `${turno.porcentajeAsistencia}%`, color: HEADER_BG },
+      ];
+      const gap = 3;
+      const cardW = (pageW - 28 - gap * (cards.length - 1)) / cards.length;
+
+      cards.forEach((card, index) => {
+        const x = 14 + index * (cardW + gap);
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(248, 249, 252);
+        doc.roundedRect(x, cursorY, cardW, 14, 2, 2, 'FD');
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(card.label, x + cardW / 2, cursorY + 5, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...card.color);
+        doc.text(String(card.value), x + cardW / 2, cursorY + 10.5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+      });
+
+      doc.setTextColor(0, 0, 0);
+      cursorY += 18;
+    };
+
+    const runTable = (options: {
+      title: string;
+      head: string[][];
+      body: Array<Array<string | number>>;
+      columnStyles?: Record<number, any>;
+      headStyles?: Record<string, any>;
+      bodyStyles?: Record<string, any>;
+      alternateRowStyles?: Record<string, any>;
+      styles?: Record<string, any>;
+      didParseCell?: (hookData: any) => void;
+      didDrawCell?: (hookData: any) => void;
+    }): void => {
+      if (options.body.length === 0) {
+        drawEmptyMessage(`Sin datos para ${options.title.toLowerCase()}.`);
+        return;
+      }
+
+      ensureSpace(12 + titleTopGap);
+      cursorY += titleTopGap;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(options.title, 14, cursorY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      cursorY += 3;
+
+      autoTable(doc, {
+        startY: cursorY + 1,
+        margin: { top: tableTopMargin, left: 14, right: 14, bottom: bottomMargin },
+        theme: 'grid',
+        head: options.head,
+        body: options.body,
+        headStyles: {
+          fillColor: HEADER_BG,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8,
+          ...options.headStyles,
+        },
+        bodyStyles: {
+          fontSize: 8,
+          cellPadding: 2,
+          valign: 'middle',
+          ...options.bodyStyles,
+        },
+        styles: {
+          overflow: 'linebreak',
+          lineColor: [226, 232, 240],
+          lineWidth: 0.2,
+          ...options.styles,
+        },
+        alternateRowStyles: {
+          fillColor: [245, 248, 255],
+          ...options.alternateRowStyles,
+        },
+        columnStyles: options.columnStyles,
+        didDrawPage: (hookData) => {
+          if (hookData.pageNumber > 1) {
+            renderPageChrome();
+          }
+        },
+        didParseCell: options.didParseCell,
+        didDrawCell: options.didDrawCell,
+      });
+
+      cursorY = (pdfDoc.lastAutoTable?.finalY ?? cursorY) + 6;
+    };
+
+    const buildResumenEstudiantesRows = (turno: TurnoParte) => {
+      const estudiantes = turno.estudiantes;
+      const grupos = [
+        {
+          label: 'Sin registro',
+          color: GRIS,
+          estudiantes: estudiantes.filter(e => e.estado === 'SinRegistro'),
+        },
+        {
+          label: 'Presentes',
+          color: VERDE,
+          estudiantes: estudiantes.filter(
+            e => e.estado === 'Presente'
+              || (e.estado === 'Retirado' && e.retiroActivo?.etiquetaEstado === 'Reingresado')
+          ),
+        },
+        {
+          label: 'Retiros anticipados',
+          color: NARANJA,
+          estudiantes: estudiantes.filter(
+            e => e.estado === 'Retirado' && e.retiroActivo?.etiquetaEstado !== 'Reingresado'
+          ),
+        },
+        {
+          label: 'Ausentes',
+          color: ROJO,
+          estudiantes: estudiantes.filter(e => e.estado === 'Ausente'),
+        },
+      ].filter(grupo => grupo.estudiantes.length > 0);
+
+      return {
+        grupos,
+        rows: grupos.map(grupo => [
+          grupo.label,
+          grupo.estudiantes.length,
+          grupo.estudiantes.map(shortStudentName).join(', '),
+        ]),
+      };
+    };
+
+    const renderTurnoSection = (turno: TurnoParte, label: string): void => {
+      drawSectionTitle(label);
+      drawStats(turno);
+
+      const resumenEstudiantes = buildResumenEstudiantesRows(turno);
+      runTable({
+        title: 'Resumen de estudiantes',
+        head: [['Grupo', 'Cantidad', 'Alumnos']],
+        body: resumenEstudiantes.rows,
+        columnStyles: {
+          0: { cellWidth: 36 },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 126 },
+        },
+        didParseCell: (hookData) => {
+          if (hookData.section !== 'body') return;
+          const grupo = resumenEstudiantes.grupos[hookData.row.index];
+          if (!grupo) return;
+          if (hookData.column.index === 0) {
+            hookData.cell.styles.textColor = grupo.color;
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+
+      const horarioRows = turno.horarioClases.map(clase => [
+        `${clase.horaEntrada} – ${clase.horaSalida}${clase.horaEntradaOriginal ? `\nEra ${clase.horaEntradaOriginal} – ${clase.horaSalidaOriginal}` : ''}`,
+        clase.materia,
+        clase.docente,
+        claseEstadoTexto(clase),
+      ]);
+
+      runTable({
+        title: 'Horario del día',
+        head: [['Horario', 'Materia', 'Docente', 'Estado']],
+        body: horarioRows,
+        columnStyles: {
+          0: { cellWidth: 42 },
+          1: { cellWidth: 62 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 28, halign: 'center' },
+        },
+        didParseCell: (hookData) => {
+          if (hookData.section !== 'body') return;
+          const clase = turno.horarioClases[hookData.row.index];
+          if (!clase) return;
+          if (hookData.column.index === 3) {
+            hookData.cell.styles.textColor = claseEstadoColor(clase.dictada);
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+
+      const estudiantesOrdenados = sortEstudiantesParte(turno.estudiantes);
+      runTable({
+        title: `Lista completa — ${label}`,
+        head: [['Apellido y Nombre', 'Documento', 'Estado', 'Entrada', 'Salida']],
+        body: estudiantesOrdenados.map(estudiante => [
+          `${estudiante.apellido}, ${estudiante.nombre}${estudiante.teaGeneral ? ' (TEA)' : ''}`,
+          estudiante.documento,
+          estudianteEstadoTexto(estudiante),
+          estudiante.horaEntrada ?? '—',
+          estudiante.horaSalida ?? '—',
+        ]),
+        columnStyles: {
+          0: { cellWidth: 64 },
+          1: { cellWidth: 24, halign: 'center' },
+          2: { cellWidth: 52 },
+          3: { cellWidth: 21, halign: 'center' },
+          4: { cellWidth: 21, halign: 'center' },
+        },
+        didParseCell: (hookData) => {
+          if (hookData.section !== 'body') return;
+          const estudiante = estudiantesOrdenados[hookData.row.index];
+          if (!estudiante) return;
+
+          if (hookData.column.index === 2) {
+            hookData.cell.styles.textColor = estudianteEstadoColor(estudiante.estado);
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+
+          if (estudiante.teaGeneral) {
+            hookData.cell.styles.fillColor = [240, 240, 240];
+          } else if (estudiante.estado === 'Ausente') {
+            hookData.cell.styles.fillColor = [255, 245, 245];
+          } else if (estudiante.estado === 'Retirado') {
+            hookData.cell.styles.fillColor = [255, 247, 237];
+          } else if (estudiante.estado === 'Presente') {
+            hookData.cell.styles.fillColor = [240, 253, 244];
+          }
+        },
+      });
+    };
+
+    let renderedBlock = false;
+
+    if (data.resumen.manana.disponible) {
+      renderTurnoSection(data.resumen.manana, 'Turno Mañana');
+      renderedBlock = true;
+    }
+
+    if (data.resumen.tarde.disponible) {
+      if (renderedBlock) {
+        addPage();
+      }
+      renderTurnoSection(data.resumen.tarde, 'Turno Tarde');
+      renderedBlock = true;
+    }
+
+    if (renderedBlock) {
+      addPage();
+    }
+
+    drawSectionTitle('Actividad del día');
+
+    if (data.comentarios.length === 0) {
+      drawEmptyMessage('Sin actividad registrada para este día.');
+    } else {
+      runTable({
+        title: 'Eventos y comentarios',
+        head: [['Hora', 'Tipo', 'Evento / Nota', 'Detalle', 'Autor']],
+        body: data.comentarios.map(comentario => [
+          formatTimestamp(comentario.timestamp),
+          comentarioTipoTexto(comentario),
+          comentarioEventoTexto(comentario),
+          comentarioDetalleTexto(comentario),
+          comentario.autor,
+        ]),
+        columnStyles: {
+          0: { cellWidth: 24 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 36 },
+          3: { cellWidth: 72 },
+          4: { cellWidth: 20 },
+        },
+        bodyStyles: { fontSize: 7.5 },
+        didParseCell: (hookData) => {
+          if (hookData.section !== 'body' || hookData.column.index !== 1) return;
+          const comentario = data.comentarios[hookData.row.index];
+          if (!comentario) return;
+          hookData.cell.styles.fontStyle = 'bold';
+          switch (comentario.subTipo) {
+            case 'NOTA':
+              hookData.cell.styles.textColor = VERDE;
+              break;
+            case 'ASISTENCIA':
+              hookData.cell.styles.textColor = NARANJA;
+              break;
+            case 'HORARIO':
+              hookData.cell.styles.textColor = HEADER_BG;
+              break;
+            case 'RETIRO':
+              hookData.cell.styles.textColor = [109, 40, 217];
+              break;
+          }
+        },
+      });
+    }
+
+    doc.save(`parte-diario-${data.cursoLabel}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 
   // ── Leyendas ──────────────────────────────────────────────────────────────
