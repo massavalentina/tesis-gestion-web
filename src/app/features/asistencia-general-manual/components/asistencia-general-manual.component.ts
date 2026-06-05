@@ -892,6 +892,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     this.dialog.open(DetalleEstudianteDialogComponent, {
       width: '680px',
       maxWidth: '96vw',
+      maxHeight: '90vh',
       disableClose: true,
       data: {
         fila,

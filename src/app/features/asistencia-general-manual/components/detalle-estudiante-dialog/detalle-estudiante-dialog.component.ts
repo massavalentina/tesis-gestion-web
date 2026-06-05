@@ -9,11 +9,13 @@ import { MatProgressSpinnerModule }  from '@angular/material/progress-spinner';
 import { MatChipsModule }            from '@angular/material/chips';
 import { MatTooltipModule }          from '@angular/material/tooltip';
 import { MatDividerModule }          from '@angular/material/divider';
+import { MatTabsModule }             from '@angular/material/tabs';
 
 import { AsistenciaGeneralManualService } from '../../services/asistencia-general-manual.service';
 import { AsistenciaEspacioItem }          from '../../models/asistencia-estudiante-dia.model';
 import { FilaAsistenciaManual }           from '../../models/fila-asistencia-manual.model';
 import { TipoAsistenciaManual }           from '../../models/tipo-asistencia-manual.model';
+import { AuditoriaAsistenciaEC }          from '../../models/auditoria-asistencia-ec.model';
 
 export interface DetalleDialogData {
   fila:              FilaAsistenciaManual;
@@ -40,6 +42,7 @@ export interface DetalleDialogData {
     MatDialogModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule, MatChipsModule,
     MatTooltipModule, MatDividerModule,
+    MatTabsModule,
   ],
   template: `
     <div class="det-wrap">
@@ -95,73 +98,143 @@ export interface DetalleDialogData {
 
       <mat-divider></mat-divider>
 
-      <!-- Loading -->
+      <!-- Loading inicial -->
       <div *ngIf="cargando" class="det-loading">
         <mat-spinner diameter="36"></mat-spinner>
-        <p>Cargando espacios...</p>
+        <p>Cargando...</p>
       </div>
 
-      <!-- Empty state -->
-      <div *ngIf="!cargando && items.length === 0" class="det-empty">
-        <mat-icon>event_busy</mat-icon>
-        <p>Este estudiante no tiene clases hoy.</p>
-      </div>
+      <!-- Tab group -->
+      <mat-tab-group *ngIf="!cargando"
+                     [(selectedIndex)]="tabActivo"
+                     animationDuration="200ms"
+                     class="det-tabs">
 
-      <!-- Tabla -->
-      <div *ngIf="!cargando && items.length > 0" class="det-tabla-wrap">
-        <table class="det-tabla">
-          <thead>
-            <tr>
-              <th>Materia</th>
-              <th>Horario</th>
-              <th>Estado clase</th>
-              <th class="th-asist">Asistencia <mat-icon class="th-edit-icon" *ngIf="!data.soloLectura">edit</mat-icon></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of items"
-                [class.fila-modificada]="item.presente !== item.presenteOriginal">
-              <td class="col-materia">{{ item.nombreMateria }}</td>
-              <td class="col-horario">
-                <span>{{ item.horarioEntrada }} – {{ item.horarioSalida }}</span>
-                <ng-container *ngIf="item.horarioEntradaOriginal">
-                  <span class="horario-original-hint"
-                        [matTooltip]="'Horario original: ' + item.horarioEntradaOriginal + ' – ' + item.horarioSalidaOriginal">
-                    <mat-icon class="horario-swap-icon">swap_horiz</mat-icon>
-                    <span class="horario-original-text">{{ item.horarioEntradaOriginal }} – {{ item.horarioSalidaOriginal }}</span>
-                  </span>
-                </ng-container>
-              </td>
-              <td class="col-estado">
-                <span *ngIf="item.dictada === null"  class="chip-estado chip-sin">Sin reg.</span>
-                <span *ngIf="item.dictada === false" class="chip-estado chip-nodictada">No dictada</span>
-                <span *ngIf="item.dictada === true"  class="chip-estado chip-dictada">Dictada</span>
-              </td>
-              <td class="col-asist">
-                <ng-container *ngIf="item.dictada === true && item.presente !== null; else sinRegistro">
-                  <span *ngIf="data.soloLectura"
-                        class="chip-estado chip-asist"
-                        [class.chip-presente]="item.presente === true"
-                        [class.chip-ausente]="item.presente === false">
-                    {{ item.presente ? 'Presente' : 'Ausente' }}
-                  </span>
-                  <button *ngIf="!data.soloLectura"
-                          class="chip-estado chip-asist"
-                          [class.chip-presente]="item.presente === true"
-                          [class.chip-ausente]="item.presente === false"
-                          (click)="item.presente = !item.presente">
-                    {{ item.presente ? 'Presente' : 'Ausente' }}
-                  </button>
-                  <span *ngIf="item.motivo === 'Retiro anticipado'" class="chip-retiro-motivo">Retiro</span>
-                </ng-container>
-                <ng-template #sinRegistro>
-                  <span class="sin-reg">—</span>
-                </ng-template>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <!-- ── Tab 0: Asistencia por EC ── -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">fact_check</mat-icon>
+            Asistencia
+            <span *ngIf="hayModificaciones" class="tab-dot"></span>
+          </ng-template>
+
+          <!-- Empty state -->
+          <div *ngIf="items.length === 0" class="det-empty">
+            <mat-icon>event_busy</mat-icon>
+            <p>Este estudiante no tiene clases hoy.</p>
+          </div>
+
+          <!-- Tabla -->
+          <div *ngIf="items.length > 0" class="det-tabla-wrap">
+            <table class="det-tabla">
+              <thead>
+                <tr>
+                  <th>Materia</th>
+                  <th>Horario</th>
+                  <th>Estado clase</th>
+                  <th class="th-asist">Asistencia <mat-icon class="th-edit-icon" *ngIf="!data.soloLectura">edit</mat-icon></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of items"
+                    [class.fila-modificada]="item.presente !== item.presenteOriginal">
+                  <td class="col-materia">{{ item.nombreMateria }}</td>
+                  <td class="col-horario">
+                    <span>{{ item.horarioEntrada }} – {{ item.horarioSalida }}</span>
+                    <ng-container *ngIf="item.horarioEntradaOriginal">
+                      <span class="horario-original-hint"
+                            [matTooltip]="'Horario original: ' + item.horarioEntradaOriginal + ' – ' + item.horarioSalidaOriginal">
+                        <mat-icon class="horario-swap-icon">swap_horiz</mat-icon>
+                        <span class="horario-original-text">{{ item.horarioEntradaOriginal }} – {{ item.horarioSalidaOriginal }}</span>
+                      </span>
+                    </ng-container>
+                  </td>
+                  <td class="col-estado">
+                    <span *ngIf="item.dictada === null"  class="chip-estado chip-sin">Sin reg.</span>
+                    <span *ngIf="item.dictada === false" class="chip-estado chip-nodictada">No dictada</span>
+                    <span *ngIf="item.dictada === true"  class="chip-estado chip-dictada">Dictada</span>
+                  </td>
+                  <td class="col-asist">
+                    <ng-container *ngIf="item.dictada === true && item.presente !== null; else sinRegistro">
+                      <div class="asist-cell">
+                        <span *ngIf="data.soloLectura"
+                              class="chip-estado chip-asist"
+                              [class.chip-presente]="item.presente === true"
+                              [class.chip-ausente]="item.presente === false">
+                          {{ item.presente ? 'Presente' : 'Ausente' }}
+                        </span>
+                        <button *ngIf="!data.soloLectura"
+                                class="chip-estado chip-asist"
+                                [class.chip-presente]="item.presente === true"
+                                [class.chip-ausente]="item.presente === false"
+                                (click)="item.presente = !item.presente">
+                          {{ item.presente ? 'Presente' : 'Ausente' }}
+                        </button>
+                        <span *ngIf="item.presente === false && item.motivo === 'Retiro anticipado'" class="chip-motivo chip-motivo--retiro">Retiro</span>
+                        <span *ngIf="item.presente === false && item.motivo === 'Llegada tarde'"    class="chip-motivo chip-motivo--tarde">Tarde</span>
+                      </div>
+                    </ng-container>
+                    <ng-template #sinRegistro>
+                      <span class="sin-reg">—</span>
+                    </ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-tab>
+
+        <!-- ── Tab 1: Historial ── -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">history</mat-icon>
+            Historial
+          </ng-template>
+
+          <div class="audit-wrap">
+            <div *ngIf="cargandoAuditoria" class="audit-loading">
+              <mat-spinner diameter="24"></mat-spinner>
+            </div>
+
+            <p *ngIf="!cargandoAuditoria && auditoria.length === 0" class="audit-empty-msg">
+              Sin historial de cambios para esta fecha.
+            </p>
+
+            <div *ngIf="!cargandoAuditoria && auditoria.length > 0" class="audit-list">
+              <div *ngFor="let ev of auditoria" class="audit-item">
+                <span class="audit-tipo"
+                      [class.audit-tipo--general]="ev.tipoEvento === 1"
+                      [class.audit-tipo--retiro]="ev.tipoEvento === 2"
+                      [class.audit-tipo--manual]="ev.tipoEvento === 3">
+                  {{ ev.tipoEventoLabel }}
+                </span>
+                <div class="audit-body">
+                  <span class="audit-materia">{{ ev.nombreMateria }}</span>
+                  <div class="audit-cambio">
+                    <span class="chip-min"
+                          [class.chip-presente]="ev.estadoAnterior === true"
+                          [class.chip-ausente]="ev.estadoAnterior === false"
+                          [class.chip-sin]="ev.estadoAnterior === null">
+                      {{ ev.estadoAnterior === null ? '—' : (ev.estadoAnterior ? 'Presente' : 'Ausente') }}
+                    </span>
+                    <mat-icon class="audit-arrow">east</mat-icon>
+                    <span class="chip-min"
+                          [class.chip-presente]="ev.estadoNuevo === true"
+                          [class.chip-ausente]="ev.estadoNuevo === false">
+                      {{ ev.estadoNuevo ? 'Presente' : 'Ausente' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="audit-meta">
+                  <span class="audit-hora">{{ ev.horarioEvento }}</span>
+                  <span class="audit-user">{{ ev.apellidoUsuario }}, {{ ev.nombreUsuario }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+      </mat-tab-group>
 
       <!-- Footer: botón guardar y panel de confirmación al cerrar -->
       <ng-container *ngIf="!cargando && items.length > 0 && (hayModificaciones || confirmarCierre) && !data.soloLectura">
@@ -201,7 +274,8 @@ export interface DetalleDialogData {
       font-family: 'Open Sans', sans-serif;
       display: flex;
       flex-direction: column;
-      min-height: 200px;
+      max-height: 85vh;
+      overflow: hidden;
     }
     .det-header {
       display: flex;
@@ -246,6 +320,41 @@ export interface DetalleDialogData {
       color: #64748b;
       font-size: 0.9rem;
     }
+
+    /* ── Tabs ──────────────────────────────────────────────────────────── */
+    .det-tabs {
+      flex: 1;
+      min-height: 0; /* crítico: permite que el flex shrink/scroll funcione */
+    }
+    :host ::ng-deep .det-tabs .mat-mdc-tab-header {
+      border-bottom: 1px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+    :host ::ng-deep .det-tabs .mat-mdc-tab .mdc-tab__text-label {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    :host ::ng-deep .det-tabs .mat-mdc-tab-body-wrapper {
+      flex: 1;
+      min-height: 0;
+    }
+    :host ::ng-deep .det-tabs .mat-mdc-tab-body-content {
+      overflow-y: auto;
+      overflow-x: auto;
+      height: 100%;
+    }
+    .tab-icon { font-size: 16px; height: 16px; width: 16px; }
+    .tab-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #d97706;
+      flex-shrink: 0;
+    }
+
+    /* ── Tab 0: Asistencia ─────────────────────────────────────────────── */
     .det-empty {
       display: flex;
       flex-direction: column;
@@ -258,15 +367,20 @@ export interface DetalleDialogData {
     .det-empty mat-icon { font-size: 40px; height: 40px; width: 40px; }
     .det-empty p { margin: 0; font-size: 0.9rem; }
 
-    .det-tabla-wrap { overflow-x: auto; padding: 16px 20px 20px; }
+    .det-tabla-wrap { padding: 0 0 8px; }
     .det-tabla {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.875rem;
+      min-width: 420px; /* fuerza scroll horizontal en mobile */
     }
     .det-tabla th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: white;
       text-align: left;
-      padding: 8px 12px;
+      padding: 10px 12px 8px;
       font-size: 0.78rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -280,8 +394,11 @@ export interface DetalleDialogData {
       vertical-align: middle;
     }
     .det-tabla tr:last-child td { border-bottom: none; }
-    .col-materia { font-weight: 500; color: #1e293b; min-width: 140px; }
+    .det-tabla tbody tr:first-child td { padding-top: 12px; }
+    .col-materia { font-weight: 500; color: #1e293b; min-width: 140px; padding-left: 20px; }
     .col-horario { color: #475569; white-space: nowrap; min-width: 110px; vertical-align: middle; }
+    .det-tabla th:first-child { padding-left: 20px; }
+    .det-tabla td:last-child, .det-tabla th:last-child { padding-right: 20px; }
     .horario-original-hint {
       display: flex;
       align-items: center;
@@ -313,15 +430,107 @@ export interface DetalleDialogData {
     .chip-asist:hover { filter: brightness(0.93); }
     .chip-presente { background: #dcfce7; color: #15803d; }
     .chip-ausente  { background: #fee2e2; color: #b91c1c; }
-    .chip-retiro-motivo {
-      display: inline-block; margin-left: 4px;
-      background: #f5f3ff; color: #6d28d9;
-      border: 1px solid #ddd6fe; border-radius: 8px;
-      padding: 1px 7px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;
+
+    /* Celda de asistencia — flex para alinear chip + etiqueta de motivo */
+    .asist-cell { display: flex; align-items: center; gap: 4px; }
+
+    /* Etiquetas de motivo de ausencia en EC */
+    .chip-motivo {
+      display: inline-block;
+      border-radius: 8px;
+      padding: 1px 7px; font-size: 0.7rem; font-weight: 600;
     }
+    .chip-motivo--retiro { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .chip-motivo--tarde  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
     .sin-reg { color: #94a3b8; }
 
-    /* Footer: botón guardar */
+    /* ── Tab 1: Historial ──────────────────────────────────────────────── */
+    .audit-wrap {
+      padding: 16px 20px 20px;
+    }
+    .audit-loading {
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+    .audit-empty-msg {
+      margin: 0;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      text-align: center;
+      padding: 24px 0 8px;
+    }
+    .audit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .audit-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .audit-tipo {
+      flex-shrink: 0;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .audit-tipo--general { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .audit-tipo--retiro  { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .audit-tipo--manual  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .audit-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .audit-materia {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #1e293b;
+    }
+    .audit-cambio {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip-min {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+    .audit-arrow { font-size: 13px; height: 13px; width: 13px; color: #94a3b8; }
+    .audit-meta {
+      flex-shrink: 0;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .audit-hora {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .audit-user {
+      font-size: 0.7rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────────────── */
     .det-footer {
       display: flex;
       align-items: center;
@@ -340,7 +549,6 @@ export interface DetalleDialogData {
     }
     .hint-icon { font-size: 18px; height: 18px; width: 18px; color: #d97706; }
 
-    /* Panel de confirmación al cerrar */
     .det-confirm {
       padding: 14px 20px;
       display: flex;
@@ -375,10 +583,13 @@ export interface DetalleDialogData {
 })
 export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
 
-  items:          AsistenciaEspacioItem[] = [];
-  cargando      = true;
-  confirmarCierre = false;
-  guardandoTodo   = false;
+  items:             AsistenciaEspacioItem[]  = [];
+  auditoria:         AuditoriaAsistenciaEC[]  = [];
+  cargando         = true;
+  cargandoAuditoria = true;
+  confirmarCierre  = false;
+  guardandoTodo    = false;
+  tabActivo        = 0;
 
   private backdropSub?: Subscription;
 
@@ -412,12 +623,17 @@ export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.service.getAsistenciaEspaciosDia(
-      this.data.fila.estudiante.idEstudiante,
-      this.data.fecha,
-    ).subscribe({
+    const estudianteId = this.data.fila.estudiante.idEstudiante;
+    const fecha        = this.data.fecha;
+
+    this.service.getAsistenciaEspaciosDia(estudianteId, fecha).subscribe({
       next: items => { this.items = items; this.cargando = false; },
       error: ()    => { this.cargando = false; },
+    });
+
+    this.service.getAuditoriaEspaciosDia(estudianteId, fecha).subscribe({
+      next: audit => { this.auditoria = audit; this.cargandoAuditoria = false; },
+      error: ()    => { this.cargandoAuditoria = false; },
     });
 
     this.backdropSub = this.dialogRef.backdropClick().subscribe(() => this.cerrar());
@@ -457,6 +673,7 @@ export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
         modificados.forEach(i => { i.presenteOriginal = i.presente; });
         this.guardandoTodo   = false;
         this.confirmarCierre = false;
+        this.recargarAuditoria();
         if (cerrarAlFinal) this.dialogRef.close();
       },
       error: () => { this.guardandoTodo = false; },
@@ -465,5 +682,15 @@ export class DetalleEstudianteDialogComponent implements OnInit, OnDestroy {
 
   guardarYCerrar(): void {
     this.guardarCambios(true);
+  }
+
+  private recargarAuditoria(): void {
+    this.service.getAuditoriaEspaciosDia(
+      this.data.fila.estudiante.idEstudiante,
+      this.data.fecha,
+    ).subscribe({
+      next: audit => { this.auditoria = audit; },
+      error: () => {},
+    });
   }
 }

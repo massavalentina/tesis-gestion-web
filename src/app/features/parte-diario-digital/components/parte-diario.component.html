@@ -392,7 +392,15 @@
                     <span class="log-arrow">→</span>
                     <span [class]="'code-pill ' + getCodeClass(r.codigoDespues!)">{{ r.codigoDespues }}</span>
                   </ng-container>
-                  <span *ngIf="!r.nombre">{{ r.rawText }}</span>
+                  <ng-container *ngIf="!r.nombre">
+                    <ng-container *ngIf="r.isECLine">
+                      <span class="log-ec-materia">{{ r.materia }}</span>
+                      <span [class]="'code-pill ' + (r.estadoAntes === 'Presente' ? 'code-p' : r.estadoAntes === 'Ausente' ? 'code-a' : 'code-null')">{{ r.estadoAntes }}</span>
+                      <span class="log-arrow">→</span>
+                      <span [class]="'code-pill ' + (r.estadoDespues === 'Presente' ? 'code-p' : 'code-a')">{{ r.estadoDespues }}</span>
+                    </ng-container>
+                    <span *ngIf="!r.isECLine">{{ r.rawText }}</span>
+                  </ng-container>
                 </div>
               </ng-container>
 

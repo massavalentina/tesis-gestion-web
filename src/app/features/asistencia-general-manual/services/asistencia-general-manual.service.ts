@@ -7,6 +7,7 @@ import { EstudianteManual }          from '../models/estudiante-manual.model';
 import { TipoAsistenciaManual, CODIGOS_INTERNOS } from '../models/tipo-asistencia-manual.model';
 import { RegistrarAsistenciaManual } from '../models/registrar-asistencia-manual.model';
 import { AsistenciaEspacioItem }     from '../models/asistencia-estudiante-dia.model';
+import { AuditoriaAsistenciaEC }    from '../models/auditoria-asistencia-ec.model';
 import { RetiroActivo }              from '../../retiro-anticipado/models/retiro-activo.model';
 import { environment }               from '../../../../environments/environment';
 
@@ -92,6 +93,13 @@ export class AsistenciaGeneralManualService {
 
   actualizarAsistenciaEspacio(dto: { estudianteId: string; idClaseDictada: string; presente: boolean }): Observable<void> {
     return this.http.put<void>(`${this.asistenciaUrl}/espacio`, dto);
+  }
+
+  // ── Auditoría de asistencia por EC ───────────────────────────────────────
+  getAuditoriaEspaciosDia(estudianteId: string, fecha: string): Observable<AuditoriaAsistenciaEC[]> {
+    return this.http.get<AuditoriaAsistenciaEC[]>(
+      `${this.asistenciaUrl}/estudiante/${estudianteId}/dia/${fecha}/auditoria-ec`
+    );
   }
 
   // ── Retiro activo del estudiante para el día ──────────────────────────────

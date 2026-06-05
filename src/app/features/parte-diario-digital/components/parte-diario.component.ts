@@ -312,13 +312,20 @@ export class ParteDiarioComponent implements OnInit {
   getLineasAsistencia(detalle: string): {
     nombre?: string; turno?: string;
     codigoAntes?: string; codigoDespues?: string;
+    isECLine?: boolean; materia?: string; estadoAntes?: string; estadoDespues?: string;
     rawText: string;
   }[] {
     return this.getLineasDetalle(detalle).map(linea => {
       const p = this.parsearLineaAsistencia(linea);
-      return p
-        ? { nombre: p.nombre, turno: p.turno, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, rawText: linea }
-        : { rawText: linea };
+      if (p)
+        return { nombre: p.nombre, turno: p.turno, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, rawText: linea };
+
+      // Formato EC: "Materia: Presente → Ausente" o "Materia: — → Presente"
+      const ec = linea.match(/^(.+):\s*(Presente|Ausente|—)\s*→\s*(Presente|Ausente)\s*$/);
+      if (ec)
+        return { isECLine: true, materia: ec[1].trim(), estadoAntes: ec[2], estadoDespues: ec[3], rawText: linea };
+
+      return { rawText: linea };
     });
   }
 

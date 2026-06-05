@@ -491,6 +491,7 @@
 .log-asist-nombre { font-weight: 500; color: #1e293b; font-size: 0.82rem; }
 .log-asist-turno  { font-size: 0.75rem; color: #94a3b8; }
 .log-arrow        { color: #94a3b8; font-size: 0.8rem; }
+.log-ec-materia   { font-weight: 500; color: #1e293b; font-size: 0.82rem; margin-right: 4px; }
 
 /* ── Píldoras de código de asistencia ──────────────────────── */
 .code-pill {
