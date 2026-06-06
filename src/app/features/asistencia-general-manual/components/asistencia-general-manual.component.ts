@@ -357,10 +357,14 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
             estudiante:      est,
             tipoManianaId:   ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null,
             tipoTardeId:     ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
+            tipoLlegadaManianaId: ex?.codigoLlegadaManana
+              ? (this.todosTipos.find(t => t.codigo === ex.codigoLlegadaManana)?.id ?? null)
+              : null,
             guardado: !!ex, error: null,
             modificadoManana: false, modificadoTarde: false, guardandoFila: false,
             valorTotalInasistencia: ex ? ex.valorTotal : null,
-            retiroActivo: null,
+            retiroActivoManana: null,
+            retiroActivoTarde:  null,
           };
         });
         this.dataSource.data = [...this.filas];
@@ -563,20 +567,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
     const sub = ref.afterClosed().subscribe((result: RetiroActivo | 'cancelado' | null) => {
       if (result === 'cancelado') {
-        // Retiro cancelado — restaurar el tipo original del turno
-        if (turno === 'MANANA') {
-          fila.retiroActivoManana = null;
-          // Restaurar el tipo de llegada mañana (P/LLT/LLTE/LLTC)
-          fila.tipoManianaId = fila.tipoLlegadaManianaId ?? null;
-        } else {
-          fila.retiroActivoTarde = null;
-          // Sin TipoLlegadaTardeId todavía — se limpia
-          fila.tipoTardeId = null;
-        }
-        fila.guardado = false;
-        this.dataSource.data = [...this.filas];
-        this.actualizarValorTest();
         this.notify('Retiro cancelado correctamente.');
+        this.recargarAsistencias();
         return;
       }
       if (!result) return;

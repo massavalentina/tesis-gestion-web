@@ -48,7 +48,9 @@ export class RetiroService {
     return this.http.put<RetiroActivo>(`${this.base}/${idRetiro}`, dto);
   }
 
-  cancelarRetiro(idRetiro: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${idRetiro}`);
+  cancelarRetiro(idRetiro: string, motivo?: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${idRetiro}`, {
+      body: { motivo: motivo ?? '' },
+    });
   }
 }

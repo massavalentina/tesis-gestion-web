@@ -205,8 +205,10 @@ export interface DetalleDialogData {
                 <span class="audit-tipo"
                       [class.audit-tipo--general]="ev.tipoEvento === 1"
                       [class.audit-tipo--retiro]="ev.tipoEvento === 2"
-                      [class.audit-tipo--manual]="ev.tipoEvento === 3">
-                  {{ ev.tipoEventoLabel }}
+                      [class.audit-tipo--manual]="ev.tipoEvento === 3"
+                      [class.audit-tipo--cancelacion]="ev.tipoEvento === 4">
+                  <ng-container *ngIf="ev.tipoEvento !== 4">{{ ev.tipoEventoLabel }}</ng-container>
+                  <ng-container *ngIf="ev.tipoEvento === 4">Cancelación<br>de Retiro</ng-container>
                 </span>
                 <div class="audit-body">
                   <span class="audit-materia">{{ ev.nombreMateria }}</span>
@@ -483,9 +485,10 @@ export interface DetalleDialogData {
       font-weight: 600;
       white-space: nowrap;
     }
-    .audit-tipo--general { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .audit-tipo--retiro  { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-    .audit-tipo--manual  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .audit-tipo--general     { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .audit-tipo--retiro      { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .audit-tipo--manual      { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .audit-tipo--cancelacion { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; text-align: center; line-height: 1.3; }
     .audit-body {
       flex: 1;
       min-width: 0;

@@ -140,7 +140,7 @@ export interface RetiroDialogData {
 
           <!-- Paso 2: Adulto responsable -->
           <mat-step label="Adulto responsable">
-            <form (ngSubmit)="!guardando && paso2Valido && confirmar()">
+            <form (ngSubmit)="!guardando && confirmar()">
             <div class="ret-paso">
 
               <!-- Lista de tutores -->
@@ -170,36 +170,48 @@ export interface RetiroDialogData {
 
               <!-- Formulario contingente -->
               <div *ngIf="responsableSeleccionado === '__contingente__'" class="ret-contingente">
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>Nombre *</mat-label>
-                  <input matInput [(ngModel)]="contNombre" name="contNombre" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>Apellido *</mat-label>
-                  <input matInput [(ngModel)]="contApellido" name="contApellido" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>DNI *</mat-label>
-                  <input matInput [(ngModel)]="contDni" name="contDni" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>Relación *</mat-label>
-                  <input matInput [(ngModel)]="contRelacion" name="contRelacion" placeholder="Ej: Abuelo, Tío" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>Teléfono</mat-label>
-                  <input matInput [(ngModel)]="contTelefono" name="contTelefono" placeholder="+54 9 3541 672653" />
-                  <mat-hint *ngIf="contTelefono && !telefonoValido" style="color:#dc2626">
-                    Formato: +54 9 XXXX XXXXXX
-                  </mat-hint>
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="ret-field-half">
-                  <mat-label>Correo</mat-label>
-                  <input matInput [(ngModel)]="contCorreo" name="contCorreo" type="email" placeholder="usuario@gmail.com" />
-                  <mat-hint *ngIf="contCorreo && !correoValido" style="color:#dc2626">
-                    Ingresá un correo válido
-                  </mat-hint>
-                </mat-form-field>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nombre *</mat-label>
+                    <input matInput [(ngModel)]="contNombre" name="contNombre" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContNombre" class="ret-error-hint">{{ errorContNombre }}</span>
+                </div>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Apellido *</mat-label>
+                    <input matInput [(ngModel)]="contApellido" name="contApellido" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContApellido" class="ret-error-hint">{{ errorContApellido }}</span>
+                </div>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>DNI *</mat-label>
+                    <input matInput [(ngModel)]="contDni" name="contDni" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContDni" class="ret-error-hint">{{ errorContDni }}</span>
+                </div>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Relación *</mat-label>
+                    <input matInput [(ngModel)]="contRelacion" name="contRelacion" placeholder="Ej: Abuelo, Tío" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContRelacion" class="ret-error-hint">{{ errorContRelacion }}</span>
+                </div>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Teléfono *</mat-label>
+                    <input matInput [(ngModel)]="contTelefono" name="contTelefono" placeholder="Ej: 3541672653" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContTelefono" class="ret-error-hint">{{ errorContTelefono }}</span>
+                </div>
+                <div class="ret-cont-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Correo *</mat-label>
+                    <input matInput [(ngModel)]="contCorreo" name="contCorreo" type="email" placeholder="usuario@gmail.com" />
+                  </mat-form-field>
+                  <span *ngIf="intentoConfirmar && errorContCorreo" class="ret-error-hint">{{ errorContCorreo }}</span>
+                </div>
               </div>
 
               <div class="ret-paso-actions">
@@ -208,7 +220,7 @@ export interface RetiroDialogData {
                   Volver
                 </button>
                 <button mat-flat-button color="primary" type="submit"
-                        [disabled]="guardando || !paso2Valido">
+                        [disabled]="guardando">
                   <mat-spinner *ngIf="guardando" diameter="16" class="btn-spinner"></mat-spinner>
                   {{ guardando ? 'Registrando...' : 'Confirmar retiro' }}
                 </button>
@@ -307,7 +319,9 @@ export interface RetiroDialogData {
       background: #f8fafc;
     }
 
-    .ret-error-hint { color: #dc2626; font-size: 0.72rem; margin-top: -8px; }
+    .ret-cont-group { width: calc(50% - 6px); display: flex; flex-direction: column; gap: 2px; }
+    .ret-cont-group mat-form-field { width: 100%; }
+    .ret-error-hint { color: #dc2626; font-size: 0.72rem; margin-top: -4px; }
     .ret-paso-actions {
       display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;
     }
@@ -326,6 +340,8 @@ export class RetiroDialogComponent implements OnInit {
   conReingreso    = false;
   horaLimite      = '';
 
+  intentoConfirmar = false;
+
   // Paso 2
   responsableSeleccionado: string | null = null;
   // Contingente
@@ -337,8 +353,9 @@ export class RetiroDialogComponent implements OnInit {
   contCorreo    = '';
 
   private static readonly HORA_RE          = /^([01]\d|2[0-3]):([0-5]\d)$/;
-  private static readonly TEL_RE           = /^\+54\s9\s\d{4}\s\d{6}$/;
+  private static readonly TEL_RE           = /^\d{6,15}$/;
   private static readonly EMAIL_RE         = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  private static readonly SOLO_LETRAS      = /[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]/g;
   private static readonly LIMITE_TARDE_MIN = 13 * 60 + 20; // 13:20
   private static readonly MAX_TARDE_MIN    = 18 * 60;       // 18:00
 
@@ -354,12 +371,39 @@ export class RetiroDialogComponent implements OnInit {
     return null;
   }
 
-  get telefonoValido(): boolean {
-    return !this.contTelefono || RetiroDialogComponent.TEL_RE.test(this.contTelefono);
+  get errorContNombre(): string | null {
+    const letras = (this.contNombre.match(RetiroDialogComponent.SOLO_LETRAS) ?? []).length;
+    if (!this.contNombre.trim() || letras < 3) return 'Ingrese al menos 3 letras';
+    return null;
   }
 
-  get correoValido(): boolean {
-    return !this.contCorreo || RetiroDialogComponent.EMAIL_RE.test(this.contCorreo);
+  get errorContApellido(): string | null {
+    const letras = (this.contApellido.match(RetiroDialogComponent.SOLO_LETRAS) ?? []).length;
+    if (!this.contApellido.trim() || letras < 3) return 'Ingrese al menos 3 letras';
+    return null;
+  }
+
+  get errorContDni(): string | null {
+    if (!this.contDni.trim()) return 'Campo obligatorio';
+    if (!/^\d{7,8}$/.test(this.contDni.replace(/\./g, ''))) return 'Debe ser numérico (7 u 8 dígitos)';
+    return null;
+  }
+
+  get errorContRelacion(): string | null {
+    if (!this.contRelacion.trim() || this.contRelacion.trim().length < 3) return 'Mínimo 3 caracteres';
+    return null;
+  }
+
+  get errorContTelefono(): string | null {
+    if (!this.contTelefono.trim()) return 'Campo obligatorio';
+    if (!RetiroDialogComponent.TEL_RE.test(this.contTelefono)) return 'Solo dígitos (6–15 caracteres)';
+    return null;
+  }
+
+  get errorContCorreo(): string | null {
+    if (!this.contCorreo.trim()) return 'Campo obligatorio';
+    if (!RetiroDialogComponent.EMAIL_RE.test(this.contCorreo)) return 'Correo electrónico no válido';
+    return null;
   }
 
   get errorHoraRetiro(): string | null {
@@ -392,9 +436,8 @@ export class RetiroDialogComponent implements OnInit {
   get paso2Valido(): boolean {
     if (!this.responsableSeleccionado) return false;
     if (this.responsableSeleccionado === '__contingente__') {
-      return !!this.contNombre.trim() && !!this.contApellido.trim()
-          && !!this.contDni.trim() && !!this.contRelacion.trim()
-          && this.telefonoValido && this.correoValido;
+      return !this.errorContNombre && !this.errorContApellido && !this.errorContDni
+          && !this.errorContRelacion && !this.errorContTelefono && !this.errorContCorreo;
     }
     return true;
   }
@@ -414,6 +457,7 @@ export class RetiroDialogComponent implements OnInit {
   }
 
   confirmar(): void {
+    this.intentoConfirmar = true;
     if (!this.paso1Valido || !this.paso2Valido) return;
 
     const esContingente = this.responsableSeleccionado === '__contingente__';

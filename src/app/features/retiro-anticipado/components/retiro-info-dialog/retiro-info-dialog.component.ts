@@ -1,8 +1,9 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule }      from '@angular/common';
 import { FormsModule }       from '@angular/forms';
+import { lastValueFrom }     from 'rxjs';
 
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule }          from '@angular/material/button';
 import { MatButtonToggleModule }    from '@angular/material/button-toggle';
 import { MatIconModule }            from '@angular/material/icon';
@@ -15,6 +16,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RetiroService }    from '../../services/retiro.service';
 import { RetiroActivo }     from '../../models/retiro-activo.model';
 import { EstudianteManual } from '../../../asistencia-general-manual/models/estudiante-manual.model';
+import { ConfirmarCancelacionRetiroDialogComponent, CancelarRetiroResult } from '../confirmar-cancelacion-retiro-dialog/confirmar-cancelacion-retiro-dialog.component';
 
 export interface RetiroInfoDialogData {
   estudiante:   EstudianteManual;
@@ -368,6 +370,7 @@ export class RetiroInfoDialogComponent implements OnInit {
 
   private static readonly HORA_RE          = /^([01]\d|2[0-3]):([0-5]\d)$/;
   private static readonly SOLO_LETRAS      = /[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]/g;
+  private static readonly EMAIL_RE         = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   private static readonly LIMITE_TARDE_MIN = 13 * 60 + 20; // 13:20
   private static readonly MAX_TARDE_MIN    = 18 * 60;       // 18:00
 
@@ -465,26 +468,28 @@ export class RetiroInfoDialogComponent implements OnInit {
   }
 
   get errorDniResponsable(): string | null {
-    if (!this.dniResponsableEdit.trim()) return null;
+    if (!this.dniResponsableEdit.trim()) return 'Campo obligatorio';
     const digits = this.dniResponsableEdit.replace(/\./g, '');
-    if (!/^\d{8}$/.test(digits)) return 'Debe ser numérico de 8 dígitos (ej: 40.000.000)';
+    if (!/^\d{7,8}$/.test(digits)) return 'Debe ser numérico (7 u 8 dígitos)';
     return null;
   }
 
   get errorRelacionResponsable(): string | null {
-    if (!this.relacionResponsableEdit.trim()) return null;
-    const letras = (this.relacionResponsableEdit.match(RetiroInfoDialogComponent.SOLO_LETRAS) ?? []).length;
-    if (letras < 5) return 'Debe tener al menos 5 letras';
+    if (!this.relacionResponsableEdit.trim() || this.relacionResponsableEdit.trim().length < 3)
+      return 'Mínimo 3 caracteres';
     return null;
   }
 
   get errorTelefonoResponsable(): string | null {
     if (!this.telefonoResponsableEdit.trim()) return 'Campo obligatorio';
+    if (!/^\d{6,15}$/.test(this.telefonoResponsableEdit)) return 'Solo dígitos (6–15 caracteres)';
     return null;
   }
 
   get errorCorreoResponsable(): string | null {
     if (!this.correoResponsableEdit.trim()) return 'Campo obligatorio';
+    if (!RetiroInfoDialogComponent.EMAIL_RE.test(this.correoResponsableEdit))
+      return 'Correo electrónico no válido';
     return null;
   }
 
@@ -545,6 +550,7 @@ export class RetiroInfoDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: RetiroInfoDialogData,
     private retiroService: RetiroService,
     private snack: MatSnackBar,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -636,10 +642,16 @@ export class RetiroInfoDialogComponent implements OnInit {
     });
   }
 
-  confirmarCancelar(): void {
-    if (!confirm('¿Confirmar cancelación del retiro? Esto revertirá el tipo de asistencia.')) return;
+  async confirmarCancelar(): Promise<void> {
+    const resultado: CancelarRetiroResult | null = await lastValueFrom(
+      this.dialog.open(ConfirmarCancelacionRetiroDialogComponent, {
+        width: '420px',
+        disableClose: true,
+      }).afterClosed()
+    );
+    if (!resultado?.confirmado) return;
     this.cancelando = true;
-    this.retiroService.cancelarRetiro(this.data.retiroActivo.idRetiro).subscribe({
+    this.retiroService.cancelarRetiro(this.data.retiroActivo.idRetiro, resultado.motivo).subscribe({
       next: () => {
         this.cancelando = false;
         this.dialogRef.close('cancelado');
