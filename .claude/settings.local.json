@@ -30,7 +30,8 @@
       "Bash(Remove-Item *)",
       "Bash(Get-ChildItem *)",
       "Bash(find \"C:\\\\\\\\Users\\\\\\\\fhiac\\\\\\\\Documents\\\\\\\\GitHub\\\\\\\\tesis-gestion-api\" -type d)",
-      "Bash(find \"C:\\\\\\\\Users\\\\\\\\fhiac\\\\\\\\Documents\\\\\\\\GitHub\\\\\\\\tesis-gestion-api\" -type d -not -path \"*/.git/*\")"
+      "Bash(find \"C:\\\\\\\\Users\\\\\\\\fhiac\\\\\\\\Documents\\\\\\\\GitHub\\\\\\\\tesis-gestion-api\" -type d -not -path \"*/.git/*\")",
+      "Bash(Select-Object -First 1)"
     ]
   }
 }

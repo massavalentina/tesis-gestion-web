@@ -42,6 +42,7 @@ export const ASISTENCIA_NAV_ITEMS: AppNavItem[] = [
 export const PROFILE_NAV_ITEM = navItem('perfil', 'Mi perfil', '/perfil', 'account_circle');
 
 export const SECONDARY_NAV_ITEMS: AppNavItem[] = [
+  navItem('misEspaciosCurriculares', 'Mis espacios', '/mis-espacios-curriculares', 'menu_book', false),
   navItem('credencialesQr', 'Credenciales QR', '/credenciales-qr', 'qr_code'),
   navItem('fichaAlumno', 'Ficha de Alumno', '/ficha-alumno', 'assignment_ind'),
   PROFILE_NAV_ITEM,

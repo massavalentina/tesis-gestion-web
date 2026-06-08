@@ -173,6 +173,30 @@ export const routes: Routes = [
             .then(m => m.FichaUsuarioComponent),
         canActivate: [authGuard, permisoORolGuard([], ['Secretario'])],
       },
+      {
+        path: 'mis-espacios-curriculares',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-list/mis-ec-list.component')
+            .then(m => m.MisEcListComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-detail/mis-ec-detail.component')
+            .then(m => m.MisEcDetailComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/programas',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-programas/mis-ec-programas.component')
+            .then(m => m.MisEcProgramasComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
     ],
   },
 ];

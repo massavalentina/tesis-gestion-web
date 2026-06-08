@@ -354,6 +354,8 @@ export class SidebarComponent {
           || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
       case 'fichaAlumno':
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
+      case 'misEspaciosCurriculares':
+        return this.esAdmin || this.authService.tieneRol('Docente');
       case 'perfil':
       case 'home':
         return true;

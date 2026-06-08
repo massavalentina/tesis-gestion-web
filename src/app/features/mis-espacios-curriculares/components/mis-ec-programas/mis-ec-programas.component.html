@@ -1,0 +1,74 @@
+<div class="page-wrap">
+
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando…</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <a (click)="volverAMateria()" class="crumb-link" *ngIf="espacio">
+        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
+      </a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="crumb-current">Programas</span>
+    </nav>
+
+    <!-- Encabezado -->
+    <div class="opt-head">
+      <h2>Programas de la materia</h2>
+      <p *ngIf="espacio">
+        {{ espacio.nombreMateria }} · {{ formatCurso(espacio.anioNumero, espacio.division) }}
+      </p>
+      <p class="opt-sub">Elegí cómo querés gestionar el programa de este espacio curricular.</p>
+    </div>
+
+    <!-- Opciones -->
+    <div class="options">
+
+      <!-- Gestión mediante archivo -->
+      <div class="option" (click)="gestionarArchivo()" tabindex="0" (keyup.enter)="gestionarArchivo()" role="button">
+        <div class="option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="option-body">
+          <h3>Gestión mediante archivo</h3>
+          <p>Registrá un programa subiendo un archivo PDF elaborado previamente y asocialo al curso y espacio curricular.</p>
+          <span class="option-tag">Subir archivo</span>
+        </div>
+      </div>
+
+      <!-- Gestión por datos estructurados -->
+      <div class="option" (click)="gestionarEstructurado()" tabindex="0" (keyup.enter)="gestionarEstructurado()" role="button">
+        <div class="option-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="option-body">
+          <h3>Gestión por datos estructurados</h3>
+          <p>Creá el programa desde el formulario del sistema (objetivos, unidades y temas) y generá el PDF estandarizado.</p>
+          <span class="option-tag">Generar PDF</span>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

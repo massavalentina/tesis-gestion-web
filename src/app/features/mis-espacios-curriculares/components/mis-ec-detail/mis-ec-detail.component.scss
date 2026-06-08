@@ -1,0 +1,318 @@
+$primary: #3c78b4;
+$primary-light: #c7d9eb;
+$primary-hover: #336aa0;
+$bg: #f0f5fa;
+$surface: #ffffff;
+$border: #eaeaea;
+$text: #000000;
+$text-muted: #5b6b7d;
+$shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(60,120,180,.07);
+$shadow-hover: 0 4px 10px rgba(60,120,180,.1), 0 16px 36px rgba(60,120,180,.12);
+$radius: 16px;
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-wrap {
+  padding: 32px 28px 60px;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: 'Open Sans', sans-serif;
+  animation: fadeUp .35s both;
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  color: $text-muted;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+
+  svg { width: 13px; height: 13px; flex-shrink: 0; }
+}
+
+.crumb-link {
+  color: $primary;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: $text;
+}
+
+/* ─── Header oscuro ─── */
+.detail-head {
+  background: linear-gradient(110deg, #1e3a5f, #2a4f80);
+  border-radius: $radius;
+  padding: 24px 26px;
+  color: #fff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: $shadow;
+  flex-wrap: wrap;
+}
+
+.detail-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.14);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  svg { width: 28px; height: 28px; }
+}
+
+.detail-info {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    margin: 0 0 4px;
+  }
+
+  p {
+    opacity: .72;
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+.detail-badge {
+  background: rgba(255,255,255,.16);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ─── Horario ─── */
+.schedule-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 15px 20px;
+  margin-bottom: 24px;
+  box-shadow: $shadow;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.schedule-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: rgba(60,120,180,.1);
+  color: $primary;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  svg { width: 21px; height: 21px; }
+}
+
+.schedule-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: $text-muted;
+  margin-bottom: 6px;
+}
+
+.schedule-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.day-chip {
+  font-size: 12px;
+  font-weight: 700;
+  background: #1e3a5f;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+
+.schedule-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text;
+  margin-left: 4px;
+
+  svg { width: 14px; height: 14px; color: $primary; }
+}
+
+/* ─── Sección title ─── */
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: $text-muted;
+  margin-bottom: 14px;
+}
+
+/* ─── Tiles ─── */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.tile {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 22px;
+  box-shadow: $shadow;
+  position: relative;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+
+  h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: $text;
+  }
+
+  p {
+    font-size: 12.5px;
+    color: $text-muted;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.tile.is-active {
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-hover;
+    border-color: $primary-light;
+
+    .tile-icon {
+      background: $primary;
+      color: #fff;
+    }
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(60,120,180,.3);
+  }
+}
+
+.tile.is-link {
+  opacity: .82;
+  cursor: default;
+}
+
+.tile-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(60,120,180,.1);
+  color: $primary;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  transition: background .18s, color .18s;
+
+  svg { width: 23px; height: 23px; }
+}
+
+.tile-tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #eef1f7;
+  color: $text-muted;
+}
+
+.tile-tag--ok {
+  background: #16a34a;
+  color: #fff;
+}
+
+/* ─── Botón volver (error state) ─── */
+.btn-back {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: $primary;
+  color: #fff;
+  cursor: pointer;
+  transition: background .16s;
+
+  &:hover { background: $primary-hover; }
+}
+
+/* ─── Estados ─── */
+.state-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: $text-muted;
+  text-align: center;
+
+  p { margin: 0; font-size: 15px; }
+}
+
+.state-icon { width: 48px; height: 48px; opacity: .5; }
+.error-icon { color: #dc2626; }
+
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid $primary-light;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Responsive ─── */
+@media (max-width: 680px) {
+  .page-wrap { padding: 20px 16px 50px; }
+  .detail-head { flex-wrap: wrap; }
+  .detail-badge { margin-left: 0; }
+  .tiles { grid-template-columns: 1fr; }
+}

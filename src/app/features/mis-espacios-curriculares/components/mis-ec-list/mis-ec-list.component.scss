@@ -1,0 +1,318 @@
+$primary: #3c78b4;
+$primary-light: #c7d9eb;
+$primary-hover: #336aa0;
+$bg: #f0f5fa;
+$surface: #ffffff;
+$border: #eaeaea;
+$text: #000000;
+$text-muted: #5b6b7d;
+$shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(60,120,180,.07);
+$shadow-hover: 0 4px 10px rgba(60,120,180,.1), 0 16px 36px rgba(60,120,180,.12);
+$radius: 16px;
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-wrap {
+  padding: 32px 28px 60px;
+  max-width: 1160px;
+  margin: 0 auto;
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* ─── Encabezado ─── */
+.page-head {
+  margin-bottom: 24px;
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    color: $text;
+    margin: 0;
+  }
+
+  p {
+    color: $text-muted;
+    font-size: 14.5px;
+    margin: 5px 0 0;
+  }
+}
+
+/* ─── Filtro ─── */
+.filter-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  box-shadow: $shadow;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: $text-muted;
+  margin-bottom: 12px;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $text;
+  cursor: pointer;
+  transition: border-color .16s, color .16s, background .16s, box-shadow .16s;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: #fff;
+    box-shadow: 0 5px 14px rgba(60,120,180,.3);
+  }
+}
+
+.filter-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $text-muted;
+  margin-top: 12px;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Grid ─── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* ─── Card ─── */
+.card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 22px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: $shadow;
+  animation: fadeUp .45s both;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  outline: none;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-hover;
+    border-color: $primary-light;
+
+    .card-accent { transform: scaleY(1); }
+    .card-arrow  { opacity: 1; transform: translateX(0); }
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(60,120,180,.3);
+  }
+}
+
+.card-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: $primary;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform .22s;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.subject-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: rgba(60,120,180,.1);
+  color: $primary;
+  flex-shrink: 0;
+
+  svg { width: 22px; height: 22px; }
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 8px;
+  background: #1e3a5f;
+  color: #fff;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: $text;
+  margin: 0 0 14px;
+  line-height: 1.25;
+}
+
+/* ─── Horario dentro de la card ─── */
+.horario-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid $border;
+}
+
+.dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.day-chip {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: $primary;
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.hora-texto {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+
+  svg { width: 14px; height: 14px; color: $primary; }
+}
+
+/* ─── Meta ─── */
+.card-meta {
+  display: flex;
+  gap: 20px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text;
+}
+
+.meta-label {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+/* ─── Flecha ─── */
+.card-arrow {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  color: $primary;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .2s, transform .2s;
+
+  svg { width: 20px; height: 20px; }
+}
+
+/* ─── Estados vacíos / loading ─── */
+.state-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: $text-muted;
+  text-align: center;
+
+  p { margin: 0; font-size: 15px; }
+}
+
+.state-icon {
+  width: 48px;
+  height: 48px;
+  opacity: .5;
+}
+
+.error-icon { color: #dc2626; }
+
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid $primary-light;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 680px) {
+  .page-wrap { padding: 20px 16px 50px; }
+  .page-head h1 { font-size: 22px; }
+  .grid { grid-template-columns: 1fr; }
+}
