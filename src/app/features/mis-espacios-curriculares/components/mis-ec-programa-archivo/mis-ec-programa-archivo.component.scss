@@ -1,0 +1,498 @@
+$primary: #3c78b4;
+$primary-hover: #336aa0;
+$primary-light: #c7d9eb;
+$bg: #f0f5fa;
+$surface: #ffffff;
+$border: #eaeaea;
+$text: #000000;
+$text-muted: #5f6b7a;
+$danger: #c0392b;
+$danger-bg: #fdf0ef;
+$danger-border: #e0b4b0;
+$shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(60,120,180,.07);
+$radius: 14px;
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-wrap {
+  padding: 32px 28px 60px;
+  max-width: 780px;
+  margin: 0 auto;
+  font-family: 'Open Sans', sans-serif;
+  animation: fadeUp .3s both;
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: $text-muted;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+
+  svg { width: 12px; height: 12px; flex-shrink: 0; }
+}
+
+.crumb-link {
+  color: $primary;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: $text;
+}
+
+/* ─── Card ─── */
+.card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 28px;
+  box-shadow: $shadow;
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: $text;
+    margin: 0 0 4px;
+  }
+}
+
+.sub {
+  color: $text-muted;
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+/* ─── Zona de importar ─── */
+.drop-zone {
+  border: 2px dashed $primary-light;
+  background: $bg;
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  margin-bottom: 20px;
+
+  &:hover, &.dragging {
+    border-color: $primary;
+    background: #eaf1f9;
+  }
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.drop-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: $surface;
+  border: 1px solid $border;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  color: $primary;
+  pointer-events: none;
+
+  svg { width: 26px; height: 26px; }
+}
+
+.drop-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: $text;
+  pointer-events: none;
+}
+
+.drop-hint {
+  display: block;
+  color: $text-muted;
+  font-size: 12.5px;
+  margin-top: 6px;
+  pointer-events: none;
+}
+
+.btn-import {
+  margin-top: 16px;
+  background: $primary;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+
+  &:hover { background: $primary-hover; }
+}
+
+/* ─── Archivo seleccionado ─── */
+.file-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: $bg;
+  border: 1px solid $primary-light;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.file-icon {
+  color: $primary;
+  flex-shrink: 0;
+  svg { width: 26px; height: 26px; display: block; }
+}
+
+.file-info { flex: 1; min-width: 0; }
+
+.file-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 12.5px;
+  color: $text-muted;
+  margin-top: 2px;
+}
+
+.file-remove {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+
+  &:hover { color: #dc2626; background: #fee2e2; }
+}
+
+/* ─── Formulario ─── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.field { display: flex; flex-direction: column; }
+.field-full { grid-column: 1 / -1; }
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+  margin-bottom: 6px;
+}
+
+.req { color: $danger; }
+
+/* ─── Campos editables ─── */
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  border: 1px solid $border;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+  color: $text;
+  background: $surface;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+  appearance: auto;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(60,120,180,.15);
+  }
+
+  &::placeholder { color: #aab0ba; }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ─── Campos read-only ─── */
+.field-readonly {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid $border;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: $bg;
+  color: $text-muted;
+
+  svg {
+    width: 15px;
+    height: 15px;
+    color: $primary;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Acciones formulario ─── */
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid $border;
+}
+
+/* ─── Botones compartidos ─── */
+.btn-cancelar {
+  background: $surface;
+  border: 1px solid $border;
+  color: $text;
+  padding: 11px 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+
+  &:hover { background: $bg; }
+}
+
+.btn-guardar {
+  background: $primary;
+  border: none;
+  color: #fff;
+  padding: 11px 24px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+
+  &:hover { background: $primary-hover; }
+}
+
+.btn-danger {
+  background: $surface;
+  border: 1px solid $danger-border;
+  color: $danger;
+  padding: 11px 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+
+  &:hover { background: $danger-bg; }
+}
+
+/* ─── Vista programa cargado ─── */
+.cargado-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.badge-confirmado {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: $primary-light;
+  color: $primary;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Info chips ─── */
+.info-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.chip {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: $text;
+}
+
+.chip-label {
+  color: $text-muted;
+}
+
+/* ─── Visor PDF ─── */
+.visor {
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.visor-bar {
+  background: $bg;
+  border-bottom: 1px solid $border;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.visor-filename {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: $text;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  svg { width: 16px; height: 16px; color: $primary; flex-shrink: 0; }
+}
+
+.btn-descargar {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: $text;
+  font-family: 'Open Sans', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+
+  &:hover { background: $surface; border-color: $primary-light; }
+}
+
+.visor-page-wrap {
+  background: #e9eef4;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.visor-page {
+  background: $surface;
+  width: 100%;
+  max-width: 460px;
+  min-height: 360px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  padding: 38px 42px;
+}
+
+.ph-h {
+  height: 15px;
+  background: #cdd6e1;
+  border-radius: 4px;
+  width: 55%;
+  margin: 0 auto 26px;
+}
+
+.ph-l {
+  height: 9px;
+  background: #e9edf2;
+  border-radius: 4px;
+  margin-bottom: 11px;
+  width: 100%;
+
+  &.ph-l-w9 { width: 92%; }
+  &.ph-l-w7 { width: 74%; }
+  &.ph-l-w5 { width: 55%; }
+}
+
+.ph-sec {
+  height: 11px;
+  background: #d9e0ea;
+  border-radius: 4px;
+  width: 38%;
+  margin: 26px 0 14px;
+}
+
+/* ─── Acciones vista cargado ─── */
+.acciones-cargado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid $border;
+}
+
+.acciones-cargado-der {
+  display: flex;
+  gap: 12px;
+}
+
+/* ─── Loading ─── */
+.state-center {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid $primary-light;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Responsive ─── */
+@media (max-width: 600px) {
+  .page-wrap { padding: 20px 16px 50px; }
+  .card { padding: 20px 18px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .field-full { grid-column: 1; }
+  .acciones { flex-direction: column; }
+  .btn-cancelar, .btn-guardar { width: 100%; text-align: center; }
+  .cargado-head { flex-wrap: wrap; }
+  .acciones-cargado { flex-direction: column; align-items: stretch; }
+  .acciones-cargado-der { flex-direction: column; }
+  .btn-danger { width: 100%; text-align: center; }
+}

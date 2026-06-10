@@ -49,6 +49,7 @@ export class MisEcProgramasComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'archivo']);
   }
 
+
   gestionarEstructurado(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'estructurado']);
   }

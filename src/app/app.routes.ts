@@ -197,6 +197,14 @@ export const routes: Routes = [
             .then(m => m.MisEcProgramasComponent),
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
+      {
+        path: 'mis-espacios-curriculares/:idEC/programas/archivo',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-programa-archivo/mis-ec-programa-archivo.component')
+            .then(m => m.MisEcProgramaArchivoComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
     ],
   },
 ];
