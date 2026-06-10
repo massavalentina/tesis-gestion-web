@@ -1,0 +1,269 @@
+$primary: #3c78b4;
+$primary-light: #c7d9eb;
+$primary-hover: #336aa0;
+$surface: #ffffff;
+$border: #eaeaea;
+$text: #000000;
+$text-muted: #5b6b7d;
+$shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(60,120,180,.07);
+$radius: 16px;
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-wrap {
+  padding: 32px 28px 60px;
+  max-width: 880px;
+  margin: 0 auto;
+  font-family: 'Open Sans', sans-serif;
+  animation: fadeUp .35s both;
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  color: $text-muted;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  svg { width: 13px; height: 13px; flex-shrink: 0; }
+}
+.crumb-link {
+  color: $primary; font-weight: 600; cursor: pointer; text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+.crumb-current { font-weight: 600; color: $text; }
+
+.page-title {
+  font-size: 24px; font-weight: 700; letter-spacing: -.3px; margin: 0 0 4px; color: $text;
+}
+.page-sub {
+  font-size: 14px; color: $text-muted; margin: 0 0 24px;
+}
+
+/* ─── Form sections ─── */
+.form-section {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: $shadow;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px; font-weight: 700; color: $text; margin: 0 0 16px; letter-spacing: -.15px;
+  .section-header & { margin-bottom: 0; }
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.field-full  { width: 100%; margin-bottom: 8px; }
+.field-half  { flex: 1; min-width: 200px; margin-bottom: 8px; }
+.field-small { width: 180px; margin-bottom: 8px; }
+.field-flex  { flex: 1; margin-bottom: 8px; }
+
+/* ─── Drag items ─── */
+.drag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drag-list-nested {
+  gap: 6px;
+}
+
+.drag-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.drag-handle {
+  width: 24px; height: 24px;
+  color: #bbb; cursor: grab; flex-shrink: 0;
+  margin-top: 12px;
+  svg { width: 20px; height: 20px; }
+  &:active { cursor: grabbing; }
+}
+
+.item-number {
+  font-size: 13px; font-weight: 700; color: $text-muted;
+  margin-top: 16px; min-width: 28px; flex-shrink: 0;
+}
+
+.btn-remove {
+  width: 32px; height: 32px;
+  border: none; background: none; cursor: pointer;
+  color: #bbb; flex-shrink: 0; margin-top: 10px;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+  display: grid; place-items: center;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover:not(:disabled) { color: #d32f2f; background: rgba(211,47,47,.08); }
+  &:disabled { opacity: .3; cursor: not-allowed; }
+}
+
+.btn-add {
+  background: none; border: 1px dashed $primary-light;
+  color: $primary; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+  &:hover { background: rgba(60,120,180,.06); border-color: $primary; }
+}
+
+.btn-add-sm {
+  font-size: 12px; padding: 5px 10px;
+}
+
+/* ─── Unidad blocks ─── */
+.unidad-block {
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 4px;
+  background: #fafbfc;
+}
+
+.unidad-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background .15s;
+
+  &:hover { background: rgba(60,120,180,.03); }
+}
+
+.unidad-number {
+  font-size: 14px; font-weight: 700; color: $primary;
+}
+
+.unidad-preview {
+  font-size: 13px; color: $text-muted; flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.expand-icon {
+  width: 20px; height: 20px; flex-shrink: 0; color: $text-muted;
+  transition: transform .2s;
+  svg { width: 20px; height: 20px; }
+  &.expanded { transform: rotate(180deg); }
+}
+
+.unidad-body {
+  padding: 16px 16px 20px;
+  border-top: 1px solid $border;
+}
+
+/* ─── Temas ─── */
+.temas-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid $border;
+}
+
+.temas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.temas-label {
+  font-size: 13px; font-weight: 700; color: $text-muted; text-transform: uppercase; letter-spacing: .3px;
+}
+
+.tema-item {
+  align-items: flex-start;
+}
+
+.tema-fields {
+  display: flex; flex-direction: column; gap: 4px; flex: 1;
+}
+
+/* ─── Actions ─── */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 22px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: background .15s, box-shadow .15s, opacity .15s;
+}
+
+.btn-primary {
+  background: $primary; color: #fff;
+  &:hover:not(:disabled) { background: $primary-hover; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+
+.btn-cancel {
+  background: $surface; color: $text-muted; border: 1px solid $border;
+  &:hover { background: #f5f5f5; }
+}
+
+/* ─── CDK drag placeholder ─── */
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 5px 20px rgba(0,0,0,.15);
+  border-radius: 8px;
+  background: $surface;
+}
+
+/* ─── Loading ─── */
+.state-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 60px 20px; color: $text-muted;
+  p { margin: 0; font-size: 15px; }
+}
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(60,120,180,.2);
+  border-top-color: $primary; border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 680px) {
+  .page-wrap { padding: 20px 16px 50px; }
+  .page-title { font-size: 20px; }
+  .form-row { flex-direction: column; }
+  .field-half { min-width: 100%; }
+  .form-actions { flex-direction: column-reverse; }
+  .btn { width: 100%; justify-content: center; }
+}

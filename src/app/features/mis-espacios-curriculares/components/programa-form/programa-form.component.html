@@ -1,0 +1,187 @@
+<div class="page-wrap">
+
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando...</p>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a (click)="cancelar()" class="crumb-link">Programas</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="crumb-current">{{ modoEdicion ? 'Editar programa' : 'Nuevo programa' }}</span>
+    </nav>
+
+    <h2 class="page-title">{{ modoEdicion ? 'Editar programa' : 'Nuevo programa estructurado' }}</h2>
+    <p class="page-sub" *ngIf="espacio">
+      {{ espacio.nombreMateria }} · {{ formatCurso(espacio.anioNumero, espacio.division) }}
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="programa-form">
+
+      <!-- ═══ Sección 1: Datos generales ═══ -->
+      <section class="form-section">
+        <h3 class="section-title">Datos generales</h3>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Curso</mat-label>
+            <mat-select formControlName="idCurso">
+              <mat-option *ngFor="let ec of espacios" [value]="ec.idCurso">
+                {{ formatCurso(ec.anioNumero, ec.division) }} — {{ ec.nombreMateria }}
+              </mat-option>
+            </mat-select>
+            <mat-error>Seleccioná un curso.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-half">
+            <mat-label>Año lectivo</mat-label>
+            <mat-select formControlName="anioLectivo">
+              <mat-option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</mat-option>
+            </mat-select>
+            <mat-error>Seleccioná un año lectivo.</mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Título del programa</mat-label>
+          <input matInput formControlName="titulo" placeholder="Ej: Programa de Matemática 2026">
+          <mat-error *ngIf="form.get('titulo')?.hasError('required')">El título es obligatorio.</mat-error>
+          <mat-error *ngIf="form.get('titulo')?.hasError('maxlength')">Máximo 300 caracteres.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field-full">
+          <mat-label>Descripción (opcional)</mat-label>
+          <textarea matInput formControlName="descripcion" rows="3" placeholder="Breve descripción del programa..."></textarea>
+          <mat-error *ngIf="form.get('descripcion')?.hasError('maxlength')">Máximo 2000 caracteres.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field-small">
+          <mat-label>Horas cátedra</mat-label>
+          <input matInput type="number" formControlName="horasCatedra" min="1">
+          <mat-error>Mínimo 1 hora cátedra.</mat-error>
+        </mat-form-field>
+      </section>
+
+      <!-- ═══ Sección 2: Objetivos ═══ -->
+      <section class="form-section">
+        <div class="section-header">
+          <h3 class="section-title">Objetivos</h3>
+          <button type="button" class="btn-add" (click)="agregarObjetivo()">+ Agregar objetivo</button>
+        </div>
+
+        <div cdkDropList (cdkDropListDropped)="dropObjetivo($event)" class="drag-list">
+          <div
+            *ngFor="let obj of objetivos.controls; let i = index"
+            cdkDrag
+            class="drag-item"
+          >
+            <div class="drag-handle" cdkDragHandle>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+            <span class="item-number">{{ i + 1 }}.</span>
+            <mat-form-field appearance="outline" class="field-flex" [formGroup]="objetivoGroup(i)">
+              <textarea matInput formControlName="descripcion" rows="2" placeholder="Descripción del objetivo..."></textarea>
+              <mat-error>El objetivo es obligatorio.</mat-error>
+            </mat-form-field>
+            <button type="button" class="btn-remove" (click)="eliminarObjetivo(i)" [disabled]="objetivos.length <= 1" title="Eliminar objetivo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Sección 3: Unidades y Temas ═══ -->
+      <section class="form-section">
+        <div class="section-header">
+          <h3 class="section-title">Unidades y Temas</h3>
+          <button type="button" class="btn-add" (click)="agregarUnidad()">+ Agregar unidad</button>
+        </div>
+
+        <div cdkDropList (cdkDropListDropped)="dropUnidad($event)" class="drag-list">
+          <div
+            *ngFor="let unidad of unidades.controls; let ui = index"
+            cdkDrag
+            class="unidad-block"
+          >
+            <div class="unidad-header" (click)="toggleUnidad(ui)">
+              <div class="drag-handle" cdkDragHandle (click)="$event.stopPropagation()">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+              </div>
+              <span class="unidad-number">Unidad {{ ui + 1 }}</span>
+              <span class="unidad-preview" *ngIf="!isExpanded(ui)">{{ unidad.get('titulo')?.value || '(sin título)' }}</span>
+              <span class="expand-icon" [class.expanded]="isExpanded(ui)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+              <button type="button" class="btn-remove" (click)="eliminarUnidad(ui); $event.stopPropagation()" [disabled]="unidades.length <= 1" title="Eliminar unidad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="unidad-body" *ngIf="isExpanded(ui)" [formGroup]="unidadGroup(ui)">
+              <mat-form-field appearance="outline" class="field-full">
+                <mat-label>Título de la unidad</mat-label>
+                <input matInput formControlName="titulo" placeholder="Ej: Álgebra lineal">
+                <mat-error>El título es obligatorio.</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-full">
+                <mat-label>Descripción (opcional)</mat-label>
+                <textarea matInput formControlName="descripcion" rows="2"></textarea>
+              </mat-form-field>
+
+              <!-- Temas dentro de la unidad -->
+              <div class="temas-section">
+                <div class="temas-header">
+                  <span class="temas-label">Temas</span>
+                  <button type="button" class="btn-add btn-add-sm" (click)="agregarTema(ui)">+ Agregar tema</button>
+                </div>
+
+                <div cdkDropList (cdkDropListDropped)="dropTema(ui, $event)" class="drag-list drag-list-nested">
+                  <div
+                    *ngFor="let tema of getTemas(ui).controls; let ti = index"
+                    cdkDrag
+                    class="drag-item tema-item"
+                    [formGroup]="temaGroup(ui, ti)"
+                  >
+                    <div class="drag-handle" cdkDragHandle>
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </div>
+                    <span class="item-number">{{ ui + 1 }}.{{ ti + 1 }}</span>
+                    <div class="tema-fields">
+                      <mat-form-field appearance="outline" class="field-flex">
+                        <mat-label>Título del tema</mat-label>
+                        <input matInput formControlName="titulo" placeholder="Ej: Vectores en el plano">
+                        <mat-error>El título es obligatorio.</mat-error>
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="field-flex">
+                        <mat-label>Descripción (opcional)</mat-label>
+                        <input matInput formControlName="descripcion">
+                      </mat-form-field>
+                    </div>
+                    <button type="button" class="btn-remove" (click)="eliminarTema(ui, ti)" [disabled]="getTemas(ui).length <= 1" title="Eliminar tema">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Acciones ═══ -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar borrador' }}
+        </button>
+      </div>
+    </form>
+
+  </ng-container>
+</div>

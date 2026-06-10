@@ -1,0 +1,117 @@
+<div class="page-wrap">
+
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && programa">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a (click)="volver()" class="crumb-link">Programas</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="crumb-current">{{ programa.titulo }}</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="detail-header">
+      <div class="detail-title-row">
+        <h2>{{ programa.titulo }}</h2>
+        <span class="badge" [ngClass]="badgeClass()">{{ badgeLabel() }}</span>
+      </div>
+      <p class="detail-sub">
+        {{ programa.nombreMateria }} · {{ formatCurso() }} · {{ programa.nombreDocente }}
+      </p>
+    </div>
+
+    <!-- Acciones -->
+    <div class="action-bar">
+      <ng-container *ngIf="esBorrador">
+        <button class="btn btn-primary" (click)="editar()" [disabled]="procesando">Editar</button>
+        <button class="btn btn-success" (click)="confirmarPrograma()" [disabled]="procesando">Confirmar</button>
+        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+      </ng-container>
+      <ng-container *ngIf="esConfirmado">
+        <button class="btn btn-success" (click)="ponerVigente()" [disabled]="procesando">Poner vigente</button>
+        <button class="btn btn-warn" (click)="darDeBaja()" [disabled]="procesando">Dar de baja</button>
+        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+      </ng-container>
+      <ng-container *ngIf="esVigente">
+        <button class="btn btn-outline-warn" (click)="revertirAConfirmado()" [disabled]="procesando">Revertir a Confirmado</button>
+        <button class="btn btn-warn" (click)="darDeBaja()" [disabled]="procesando">Dar de baja</button>
+      </ng-container>
+      <ng-container *ngIf="esNoVigente">
+        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+      </ng-container>
+    </div>
+
+    <!-- Datos generales -->
+    <section class="section">
+      <h3 class="section-title">Datos generales</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Año lectivo</span>
+          <span class="info-value">{{ programa.anioLectivo }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Horas cátedra</span>
+          <span class="info-value">{{ programa.horasCatedra }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Origen</span>
+          <span class="info-value">{{ programa.origen }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha de creación</span>
+          <span class="info-value">{{ formatFecha(programa.fechaCreacion) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha de vencimiento</span>
+          <span class="info-value">{{ programa.fechaVencimiento }}</span>
+        </div>
+      </div>
+      <div class="info-desc" *ngIf="programa.descripcion">
+        <span class="info-label">Descripción</span>
+        <p>{{ programa.descripcion }}</p>
+      </div>
+    </section>
+
+    <!-- Objetivos -->
+    <section class="section">
+      <h3 class="section-title">Objetivos</h3>
+      <ol class="obj-list">
+        <li *ngFor="let obj of programa.objetivos">{{ obj.descripcion }}</li>
+      </ol>
+    </section>
+
+    <!-- Unidades y Temas -->
+    <section class="section">
+      <h3 class="section-title">Unidades y Temas</h3>
+
+      <div class="unidad-card" *ngFor="let unidad of programa.unidades">
+        <div class="unidad-header">
+          <span class="unidad-number">Unidad {{ unidad.nro }}</span>
+          <span class="unidad-title">{{ unidad.titulo }}</span>
+        </div>
+        <p class="unidad-desc" *ngIf="unidad.descripcion">{{ unidad.descripcion }}</p>
+        <ul class="tema-list">
+          <li *ngFor="let tema of unidad.temas">
+            <span class="tema-number">{{ unidad.nro }}.{{ tema.nro }}</span>
+            <span class="tema-title">{{ tema.titulo }}</span>
+            <span class="tema-desc" *ngIf="tema.descripcion"> — {{ tema.descripcion }}</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+  </ng-container>
+
+  <!-- Error state -->
+  <div class="state-center" *ngIf="!loading && !programa">
+    <p>No se pudo cargar el programa.</p>
+    <button class="btn btn-primary" (click)="volver()">Volver</button>
+  </div>
+</div>
