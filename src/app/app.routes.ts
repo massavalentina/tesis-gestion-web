@@ -190,6 +190,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
       {
+        path: 'mis-espacios-curriculares/:idEC/calificaciones',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones/mis-ec-calificaciones.component')
+            .then(m => m.MisEcCalificacionesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
         path: 'mis-espacios-curriculares/:idEC/programas',
         ...withSectionData('misEspaciosCurriculares'),
         loadComponent: () =>

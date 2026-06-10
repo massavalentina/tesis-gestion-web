@@ -71,9 +71,9 @@
     <div class="section-title">Secciones de la materia</div>
     <div class="tiles">
 
-      <!-- Calificaciones — link placeholder -->
-      <div class="tile is-link">
-        <span class="tile-tag">Próximamente</span>
+      <!-- Calificaciones -->
+      <div class="tile is-active" (click)="navegarCalificaciones()" tabindex="0" (keyup.enter)="navegarCalificaciones()" role="button">
+        <span class="tile-tag">Local</span>
         <div class="tile-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -81,7 +81,7 @@
           </svg>
         </div>
         <h4>Calificaciones</h4>
-        <p>Cargá y consultá las notas. Incluye importación desde PDF de CiDi.</p>
+        <p>Cargá y consultá notas manuales desde una tabla centralizada. La importación queda para una etapa posterior.</p>
       </div>
 
       <!-- Asistencias — funcional -->
