@@ -63,14 +63,14 @@ export class MisEcListComponent implements OnInit {
     return `${anio}.º ${division}`;
   }
 
-  diasEc(ec: MisEcItem): string[] {
-    const days = ec.horarios.map(h => DIA_ES[h.diaSemana] ?? h.diaSemana);
-    return [...new Set(days)];
+  horariosAgrupados(ec: MisEcItem): { dias: string[]; rango: string }[] {
+    return ec.horarios.map(h => ({
+      dias: [DIA_ES[h.diaSemana] ?? h.diaSemana],
+      rango: `${h.horarioEntrada} a ${h.horarioSalida}`,
+    }));
   }
 
-  horaRango(ec: MisEcItem): string {
-    if (!ec.horarios.length) return '';
-    const h = ec.horarios[0];
-    return `${h.horarioEntrada} a ${h.horarioSalida}`;
+  formatCodigoCurso(codigo: string): string {
+    return codigo.replace('-', ' ');
   }
 }

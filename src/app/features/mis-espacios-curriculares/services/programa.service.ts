@@ -32,4 +32,24 @@ export class ProgramaService {
   eliminar(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
+
+  cargarDesdeArchivo(data: {
+    idCurso: string;
+    idEC: string;
+    anioLectivo: number;
+    titulo: string;
+    descripcion?: string;
+    horasCatedra: number;
+    archivo: File;
+  }): Observable<ProgramaDetalle> {
+    const form = new FormData();
+    form.append('idCurso', data.idCurso);
+    form.append('idEC', data.idEC);
+    form.append('anioLectivo', String(data.anioLectivo));
+    form.append('titulo', data.titulo);
+    if (data.descripcion) form.append('descripcion', data.descripcion);
+    form.append('horasCatedra', String(data.horasCatedra));
+    form.append('archivo', data.archivo);
+    return this.http.post<ProgramaDetalle>(`${this.base}/archivo`, form);
+  }
 }

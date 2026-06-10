@@ -55,6 +55,9 @@
         style="display:none"
         (change)="onFileSelected($event)">
 
+      <!-- Validación archivo -->
+      <small class="field-hint" *ngIf="intentoGuardar && !archivoSeleccionado">Seleccioná un archivo PDF antes de continuar.</small>
+
       <!-- Archivo seleccionado -->
       <div class="file-selected" *ngIf="archivoSeleccionado">
         <span class="file-icon">
@@ -85,12 +88,15 @@
           </div>
         </div>
 
-        <!-- Año lectivo (select configurable) -->
+        <!-- Año lectivo (filtrado) -->
         <div class="field">
           <label>Año lectivo <span class="req">*</span></label>
-          <select [(ngModel)]="anioLectivo">
-            <option *ngFor="let year of anioLectivoOpciones" [ngValue]="year">{{ year }}</option>
+          <select [(ngModel)]="anioLectivo" [disabled]="anioLectivoOpcionesDisponibles.length === 0">
+            <option *ngFor="let year of anioLectivoOpcionesDisponibles" [ngValue]="year">{{ year }}</option>
           </select>
+          <small class="field-hint" *ngIf="anioLectivoOpcionesDisponibles.length === 0">
+            Todos los años disponibles ya tienen un programa cargado.
+          </small>
         </div>
 
         <!-- Espacio curricular (read-only) -->
@@ -113,15 +119,17 @@
             min="1"
             placeholder="Ej: 4"
             [(ngModel)]="horasCatedra">
+          <small class="field-hint" *ngIf="intentoGuardar && !horasCatedra">Completá las horas cátedra.</small>
         </div>
 
         <!-- Título -->
         <div class="field field-full">
-          <label>Título</label>
+          <label>Título <span class="req">*</span></label>
           <input
             type="text"
             placeholder="Nombre del programa"
             [(ngModel)]="titulo">
+          <small class="field-hint" *ngIf="intentoGuardar && !titulo.trim()">Completá el título del programa.</small>
         </div>
 
         <!-- Descripción -->
@@ -136,66 +144,143 @@
       </div>
 
       <!-- Acciones -->
+      <p class="error-guardar" *ngIf="errorGuardar">{{ errorGuardar }}</p>
       <div class="acciones">
-        <button class="btn-cancelar" type="button" (click)="cancelar()">Cancelar</button>
-        <button class="btn-guardar" type="button" (click)="guardar()">Guardar programa</button>
+        <button class="btn-cancelar" type="button" (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+        <button class="btn-guardar" type="button" (click)="guardar()"
+          [disabled]="guardando || anioLectivoOpcionesDisponibles.length === 0">
+          {{ guardando ? 'Guardando...' : 'Guardar programa' }}
+        </button>
       </div>
     </div>
 
     <!-- ===== VISTA PROGRAMA CARGADO ===== -->
     <div class="card" *ngIf="vista === 'cargado'">
-      <div class="cargado-head">
-        <h1>Programa cargado</h1>
-        <span class="badge-confirmado">Confirmado</span>
+
+      <!-- Error de carga (modo ver) -->
+      <div class="error-carga" *ngIf="errorCarga">
+        <p>{{ errorCarga }}</p>
+        <button class="btn-cancelar" type="button" (click)="volverAProgramas()">Volver a programas</button>
       </div>
 
-      <!-- Info chips -->
-      <div class="info-strip">
-        <div class="chip"><span class="chip-label">Materia:</span> {{ espacio?.nombreMateria }}</div>
-        <div class="chip"><span class="chip-label">Curso:</span> {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : '—' }}</div>
-        <div class="chip"><span class="chip-label">Año lectivo:</span> {{ anioLectivo }}</div>
-        <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ horasCatedra }}</div>
-      </div>
+      <ng-container *ngIf="!errorCarga && programaCargado">
 
-      <!-- Visor PDF -->
-      <div class="visor">
-        <div class="visor-bar">
-          <span class="visor-filename">
+        <div class="cargado-head">
+          <h1>Programa cargado</h1>
+          <span class="badge" [ngClass]="badgeStateClass(programaCargado.estado)">
+            {{ badgeLabel(programaCargado.estado) }}
+          </span>
+        </div>
+
+        <!-- Info chips -->
+        <div class="info-strip">
+          <div class="chip"><span class="chip-label">Materia:</span> {{ programaCargado.nombreMateria }}</div>
+          <div class="chip"><span class="chip-label">Curso:</span>
+            {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : programaCargado.codigoCurso }}
+          </div>
+          <div class="chip"><span class="chip-label">Año lectivo:</span> {{ programaCargado.anioLectivo }}</div>
+          <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ programaCargado.horasCatedra }}</div>
+        </div>
+
+        <!-- Título y descripción -->
+        <div class="programa-info">
+          <p class="programa-titulo">{{ programaCargado.titulo }}</p>
+          <p class="programa-desc" *ngIf="programaCargado.descripcion">{{ programaCargado.descripcion }}</p>
+        </div>
+
+        <!-- Tarjeta PDF -->
+        <div class="pdf-card" *ngIf="programaCargado.url" (click)="abrirPdf()">
+          <span class="pdf-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="15" y2="17"/>
+              <polyline points="9 9 9 9 9 9"/>
             </svg>
-            {{ archivoNombre || 'programa.pdf' }}
           </span>
-          <button class="btn-descargar" type="button">Descargar</button>
-        </div>
-        <div class="visor-page-wrap">
-          <div class="visor-page">
-            <div class="ph-h"></div>
-            <div class="ph-l ph-l-w9"></div>
-            <div class="ph-l"></div>
-            <div class="ph-l ph-l-w7"></div>
-            <div class="ph-sec"></div>
-            <div class="ph-l"></div>
-            <div class="ph-l ph-l-w9"></div>
-            <div class="ph-l ph-l-w5"></div>
-            <div class="ph-sec"></div>
-            <div class="ph-l ph-l-w9"></div>
-            <div class="ph-l"></div>
-            <div class="ph-l ph-l-w7"></div>
+          <div class="pdf-card-body">
+            <span class="pdf-card-name">{{ programaCargado.titulo }}</span>
+            <span class="pdf-card-hint">PDF · Tocá para ver</span>
+          </div>
+          <div class="pdf-card-actions" (click)="$event.stopPropagation()">
+            <button class="btn-ver-pdf" type="button" (click)="abrirPdf()">
+              Ver PDF
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Acciones cargado -->
-      <div class="acciones-cargado">
-        <button class="btn-cancelar" type="button" (click)="volver()">Volver</button>
-        <div class="acciones-cargado-der">
-          <button class="btn-danger" type="button">Eliminar</button>
-          <button class="btn-guardar" type="button">Poner vigente</button>
+        <!-- Error de acción -->
+        <p class="error-guardar" *ngIf="errorAccion">{{ errorAccion }}</p>
+
+        <!-- Acciones según estado -->
+        <div class="acciones-cargado">
+          <button class="btn-cancelar" type="button" (click)="volverAProgramas()" [disabled]="realizandoAccion">Volver</button>
+
+          <!-- Confirmado + año actual: Poner vigente + Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && esAnioActual()">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+            <button class="btn-guardar" type="button" (click)="ponerVigente()" [disabled]="realizandoAccion">
+              {{ realizandoAccion ? 'Procesando...' : 'Poner vigente' }}
+            </button>
+          </div>
+
+          <!-- Confirmado + año anterior: solo Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && !esAnioActual()">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+          </div>
+
+          <!-- Vigente: sin acciones -->
+
+          <!-- NoVigente: solo Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'NoVigente'">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+          </div>
         </div>
-      </div>
+
+      </ng-container>
     </div>
 
   </ng-container>
+</div>
+
+<!-- ===== MODAL VISOR PDF ===== -->
+<div class="pdf-modal-overlay" *ngIf="pdfModalVisible" (click)="cerrarPdf()">
+  <div class="pdf-modal" (click)="$event.stopPropagation()">
+    <div class="pdf-modal-bar">
+      <span class="pdf-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        {{ programaCargado?.titulo }}
+      </span>
+      <button class="pdf-modal-close" type="button" (click)="cerrarPdf()" aria-label="Cerrar">✕</button>
+    </div>
+    <iframe
+      *ngIf="pdfUrl"
+      [src]="pdfUrl"
+      class="pdf-modal-frame"
+      title="Visor de programa"
+      loading="lazy">
+    </iframe>
+    <div class="pdf-modal-no-url" *ngIf="!pdfUrl">No se pudo cargar el PDF.</div>
+  </div>
+</div>
+
+<!-- ===== MODAL CONFIRMACIÓN ===== -->
+<div class="modal-overlay" *ngIf="modalVisible" (click)="cancelarModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <h3 class="modal-titulo">{{ modalTitulo }}</h3>
+    <p class="modal-mensaje">{{ modalMensaje }}</p>
+    <div class="modal-acciones">
+      <button class="btn-cancelar" type="button" (click)="cancelarModal()">Cancelar</button>
+      <button
+        type="button"
+        [class]="modalEsPeligroso ? 'btn-danger-solid' : 'btn-guardar'"
+        (click)="confirmarAccion()">
+        Confirmar
+      </button>
+    </div>
+  </div>
 </div>

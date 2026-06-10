@@ -85,10 +85,20 @@ export class MisEcProgramasComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'nuevo']);
   }
 
+  cargarDesdeArchivo(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'archivo']);
+  }
+
 
   gestionarEstructurado(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'estructurado']);
+  }
+
   verDetalle(p: ProgramaResumen): void {
-    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', p.idPrograma]);
+    if (p.origen === 'Archivo') {
+      this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'archivo', p.idPrograma]);
+    } else {
+      this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', p.idPrograma]);
+    }
   }
 }

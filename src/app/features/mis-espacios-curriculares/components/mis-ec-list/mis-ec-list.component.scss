@@ -203,14 +203,20 @@ $radius: 16px;
 }
 
 /* ─── Horario dentro de la card ─── */
+.horarios-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid $border;
+}
+
 .horario-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid $border;
 }
 
 .dias {

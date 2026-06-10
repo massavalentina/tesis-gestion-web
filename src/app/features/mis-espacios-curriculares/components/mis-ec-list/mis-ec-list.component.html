@@ -40,7 +40,7 @@
           *ngFor="let curso of cursosFiltro"
           [class.active]="cursoActivo === curso"
           (click)="seleccionarCurso(curso)">
-          {{ curso }}
+          {{ formatCodigoCurso(curso) }}
         </button>
       </div>
       <div class="filter-hint">
@@ -90,16 +90,18 @@
         <h3 class="card-title">{{ ec.nombreMateria }}</h3>
 
         <!-- Horario -->
-        <div class="horario-row" *ngIf="ec.horarios.length > 0">
-          <div class="dias">
-            <span class="day-chip" *ngFor="let dia of diasEc(ec)">{{ dia }}</span>
+        <div class="horarios-wrap" *ngIf="ec.horarios.length > 0">
+          <div class="horario-row" *ngFor="let grupo of horariosAgrupados(ec)">
+            <div class="dias">
+              <span class="day-chip" *ngFor="let dia of grupo.dias">{{ dia }}</span>
+            </div>
+            <span class="hora-texto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {{ grupo.rango }}
+            </span>
           </div>
-          <span class="hora-texto">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            {{ horaRango(ec) }}
-          </span>
         </div>
 
         <!-- Meta: estudiantes + año -->

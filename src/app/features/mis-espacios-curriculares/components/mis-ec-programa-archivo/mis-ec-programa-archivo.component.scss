@@ -259,6 +259,13 @@ textarea {
   }
 }
 
+.error-guardar {
+  color: $danger;
+  font-size: 13px;
+  margin-bottom: 8px;
+  text-align: right;
+}
+
 /* ─── Acciones formulario ─── */
 .acciones {
   display: flex;
@@ -324,15 +331,38 @@ textarea {
   margin-bottom: 18px;
 }
 
-.badge-confirmado {
+.badge {
+  display: inline-block;
   padding: 5px 13px;
   border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
-  background: $primary-light;
-  color: $primary;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.badge-vigente    { background: #e8f5e9; color: #2e7d32; }
+.badge-confirmado { background: #e8eaf6; color: #3949ab; }
+.badge-novigente  { background: #f5f5f5; color: #757575; }
+.badge-borrador   { background: #fff3e0; color: #e65100; }
+
+/* ─── Título y descripción del programa cargado ─── */
+.programa-info {
+  margin-bottom: 18px;
+}
+
+.programa-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text;
+  margin: 0 0 4px;
+}
+
+.programa-desc {
+  font-size: 13.5px;
+  color: $text-muted;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* ─── Info chips ─── */
@@ -356,30 +386,142 @@ textarea {
   color: $text-muted;
 }
 
-/* ─── Visor PDF ─── */
-.visor {
-  border: 1px solid $border;
+/* ─── Tarjeta PDF ─── */
+.pdf-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid $primary-light;
   border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 8px;
+  padding: 14px 16px;
+  background: $bg;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+  margin-bottom: 20px;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(60,120,180,.1);
+  }
 }
 
-.visor-bar {
-  background: $bg;
-  border-bottom: 1px solid $border;
-  padding: 10px 16px;
+.pdf-card-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: rgba(60,120,180,.1);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: $primary;
+
+  svg { width: 22px; height: 22px; }
+}
+
+.pdf-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pdf-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf-card-hint {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.pdf-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-ver-pdf {
+  background: $primary;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+  white-space: nowrap;
+
+  &:hover { background: $primary-hover; }
+}
+
+.btn-descargar-pdf {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: $text;
+  font-family: 'Open Sans', sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
+
+  &:hover { border-color: $primary-light; background: $bg; }
+}
+
+/* ─── Modal visor PDF ─── */
+.pdf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn .15s both;
+}
+
+.pdf-modal {
+  background: $surface;
+  border-radius: 14px;
+  width: 90vw;
+  height: 90vh;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+
+.pdf-modal-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid $border;
+  background: $bg;
+  flex-shrink: 0;
 }
 
-.visor-filename {
+.pdf-modal-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   color: $text;
   min-width: 0;
   overflow: hidden;
@@ -389,64 +531,111 @@ textarea {
   svg { width: 16px; height: 16px; color: $primary; flex-shrink: 0; }
 }
 
-.btn-descargar {
+.pdf-modal-close {
   background: none;
-  border: 1px solid $border;
-  border-radius: 7px;
-  padding: 6px 12px;
-  font-size: 12.5px;
+  border: none;
+  font-size: 18px;
+  color: $text-muted;
   cursor: pointer;
-  color: $text;
-  font-family: 'Open Sans', sans-serif;
-  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
   flex-shrink: 0;
-  transition: background .15s, border-color .15s;
+  transition: color .15s, background .15s;
 
-  &:hover { background: $surface; border-color: $primary-light; }
+  &:hover { color: $text; background: $border; }
 }
 
-.visor-page-wrap {
-  background: #e9eef4;
-  padding: 24px;
+.pdf-modal-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  display: block;
+}
+
+.pdf-modal-no-url {
+  flex: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
+  color: $text-muted;
+  font-size: 14px;
 }
 
-.visor-page {
+/* ─── Modal confirmación ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn .15s both;
+}
+
+.modal-card {
   background: $surface;
+  border-radius: 14px;
+  padding: 28px 28px 24px;
+  max-width: 420px;
   width: 100%;
-  max-width: 460px;
-  min-height: 360px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.08);
-  padding: 38px 42px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.25);
 }
 
-.ph-h {
-  height: 15px;
-  background: #cdd6e1;
-  border-radius: 4px;
-  width: 55%;
-  margin: 0 auto 26px;
+.modal-titulo {
+  font-size: 17px;
+  font-weight: 700;
+  color: $text;
+  margin: 0 0 10px;
 }
 
-.ph-l {
-  height: 9px;
-  background: #e9edf2;
-  border-radius: 4px;
-  margin-bottom: 11px;
-  width: 100%;
-
-  &.ph-l-w9 { width: 92%; }
-  &.ph-l-w7 { width: 74%; }
-  &.ph-l-w5 { width: 55%; }
+.modal-mensaje {
+  font-size: 14px;
+  color: $text-muted;
+  line-height: 1.55;
+  margin: 0 0 24px;
 }
 
-.ph-sec {
-  height: 11px;
-  background: #d9e0ea;
-  border-radius: 4px;
-  width: 38%;
-  margin: 26px 0 14px;
+.modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-danger-solid {
+  background: $danger;
+  border: none;
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s;
+
+  &:hover { background: darken(#c0392b, 8%); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.error-carga {
+  text-align: center;
+  padding: 24px 0;
+  color: $danger;
+
+  p { margin: 0 0 16px; }
+}
+
+.field-hint {
+  font-size: 12px;
+  color: $danger;
+  margin-top: 4px;
 }
 
 /* ─── Acciones vista cargado ─── */
