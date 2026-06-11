@@ -1,0 +1,286 @@
+<div class="page-wrap">
+
+  <!-- Loading -->
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+  </div>
+
+  <ng-container *ngIf="!loading">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a class="crumb-link" (click)="volverAlListado()">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <a class="crumb-link" (click)="volverAMateria()" *ngIf="espacio">
+        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
+      </a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <a class="crumb-link" (click)="volverAProgramas()">Programas</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="crumb-current">Mediante archivo</span>
+    </nav>
+
+    <!-- ===== FORMULARIO ===== -->
+    <div class="card" *ngIf="vista === 'form'">
+      <h1>Cargar programa por archivo</h1>
+      <p class="sub">Subí un PDF ya elaborado y completá los datos del programa.</p>
+
+      <!-- Zona drag & drop -->
+      <div
+        class="drop-zone"
+        [class.dragging]="isDragging"
+        [class.hidden]="archivoSeleccionado"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)">
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p class="drop-title">Arrastrá el PDF acá o importalo</p>
+        <small class="drop-hint">Solo PDF · máximo 50 MB</small>
+        <button class="btn-import" type="button" (click)="abrirSelector(); $event.stopPropagation()">
+          Importar PDF
+        </button>
+      </div>
+
+      <!-- Input oculto -->
+      <input
+        #fileInput
+        type="file"
+        accept="application/pdf"
+        style="display:none"
+        (change)="onFileSelected($event)">
+
+      <!-- Validación archivo -->
+      <small class="field-hint" *ngIf="intentoGuardar && !archivoSeleccionado">Seleccioná un archivo PDF antes de continuar.</small>
+
+      <!-- Archivo seleccionado -->
+      <div class="file-selected" *ngIf="archivoSeleccionado">
+        <span class="file-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </span>
+        <div class="file-info">
+          <div class="file-name">{{ archivoNombre }}</div>
+          <div class="file-size">{{ archivoTamano }}</div>
+        </div>
+        <button class="file-remove" type="button" (click)="quitarArchivo()" aria-label="Quitar archivo">✕</button>
+      </div>
+
+      <!-- Campos -->
+      <div class="form-grid">
+
+        <!-- Curso (read-only) -->
+        <div class="field">
+          <label>Curso</label>
+          <div class="field-readonly">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : '—' }}
+          </div>
+        </div>
+
+        <!-- Año lectivo (filtrado) -->
+        <div class="field">
+          <label>Año lectivo <span class="req">*</span></label>
+          <select [(ngModel)]="anioLectivo" [disabled]="anioLectivoOpcionesDisponibles.length === 0">
+            <option *ngFor="let year of anioLectivoOpcionesDisponibles" [ngValue]="year">{{ year }}</option>
+          </select>
+          <small class="field-hint" *ngIf="anioLectivoOpcionesDisponibles.length === 0">
+            Todos los años disponibles ya tienen un programa cargado.
+          </small>
+        </div>
+
+        <!-- Espacio curricular (read-only) -->
+        <div class="field field-full">
+          <label>Espacio curricular</label>
+          <div class="field-readonly">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            {{ espacio ? espacio.nombreMateria : '—' }}
+          </div>
+        </div>
+
+        <!-- Horas cátedra -->
+        <div class="field">
+          <label>Horas cátedra <span class="req">*</span></label>
+          <input
+            type="number"
+            min="1"
+            placeholder="Ej: 4"
+            [(ngModel)]="horasCatedra">
+          <small class="field-hint" *ngIf="intentoGuardar && !horasCatedra">Completá las horas cátedra.</small>
+        </div>
+
+        <!-- Título -->
+        <div class="field field-full">
+          <label>Título <span class="req">*</span></label>
+          <input
+            type="text"
+            placeholder="Nombre del programa"
+            [(ngModel)]="titulo">
+          <small class="field-hint" *ngIf="intentoGuardar && !titulo.trim()">Completá el título del programa.</small>
+        </div>
+
+        <!-- Descripción -->
+        <div class="field field-full">
+          <label>Descripción</label>
+          <textarea
+            placeholder="Descripción opcional del programa"
+            rows="3"
+            [(ngModel)]="descripcion"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Acciones -->
+      <p class="error-guardar" *ngIf="errorGuardar">{{ errorGuardar }}</p>
+      <div class="acciones">
+        <button class="btn-cancelar" type="button" (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+        <button class="btn-guardar" type="button" (click)="guardar()"
+          [disabled]="guardando || anioLectivoOpcionesDisponibles.length === 0">
+          {{ guardando ? 'Guardando...' : 'Guardar programa' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA PROGRAMA CARGADO ===== -->
+    <div class="card" *ngIf="vista === 'cargado'">
+
+      <!-- Error de carga (modo ver) -->
+      <div class="error-carga" *ngIf="errorCarga">
+        <p>{{ errorCarga }}</p>
+        <button class="btn-cancelar" type="button" (click)="volverAProgramas()">Volver a programas</button>
+      </div>
+
+      <ng-container *ngIf="!errorCarga && programaCargado">
+
+        <div class="cargado-head">
+          <h1>Programa cargado</h1>
+          <span class="badge" [ngClass]="badgeStateClass(programaCargado.estado)">
+            {{ badgeLabel(programaCargado.estado) }}
+          </span>
+        </div>
+
+        <!-- Info chips -->
+        <div class="info-strip">
+          <div class="chip"><span class="chip-label">Materia:</span> {{ programaCargado.nombreMateria }}</div>
+          <div class="chip"><span class="chip-label">Curso:</span>
+            {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : programaCargado.codigoCurso }}
+          </div>
+          <div class="chip"><span class="chip-label">Año lectivo:</span> {{ programaCargado.anioLectivo }}</div>
+          <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ programaCargado.horasCatedra }}</div>
+        </div>
+
+        <!-- Título y descripción -->
+        <div class="programa-info">
+          <p class="programa-titulo">{{ programaCargado.titulo }}</p>
+          <p class="programa-desc" *ngIf="programaCargado.descripcion">{{ programaCargado.descripcion }}</p>
+        </div>
+
+        <!-- Tarjeta PDF -->
+        <div class="pdf-card" *ngIf="programaCargado.url" (click)="abrirPdf()">
+          <span class="pdf-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="13" x2="15" y2="13"/>
+              <line x1="9" y1="17" x2="15" y2="17"/>
+              <polyline points="9 9 9 9 9 9"/>
+            </svg>
+          </span>
+          <div class="pdf-card-body">
+            <span class="pdf-card-name">{{ programaCargado.titulo }}</span>
+            <span class="pdf-card-hint">PDF · Tocá para ver</span>
+          </div>
+          <div class="pdf-card-actions" (click)="$event.stopPropagation()">
+            <button class="btn-ver-pdf" type="button" (click)="abrirPdf()">
+              Ver PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Error de acción -->
+        <p class="error-guardar" *ngIf="errorAccion">{{ errorAccion }}</p>
+
+        <!-- Acciones según estado -->
+        <div class="acciones-cargado">
+          <button class="btn-cancelar" type="button" (click)="volverAProgramas()" [disabled]="realizandoAccion">Volver</button>
+
+          <!-- Confirmado + año actual: Poner vigente + Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && esAnioActual()">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+            <button class="btn-guardar" type="button" (click)="ponerVigente()" [disabled]="realizandoAccion">
+              {{ realizandoAccion ? 'Procesando...' : 'Poner vigente' }}
+            </button>
+          </div>
+
+          <!-- Confirmado + año anterior: solo Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && !esAnioActual()">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+          </div>
+
+          <!-- Vigente: sin acciones -->
+
+          <!-- NoVigente: solo Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'NoVigente'">
+            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+          </div>
+        </div>
+
+      </ng-container>
+    </div>
+
+  </ng-container>
+</div>
+
+<!-- ===== MODAL VISOR PDF ===== -->
+<div class="pdf-modal-overlay" *ngIf="pdfModalVisible" (click)="cerrarPdf()">
+  <div class="pdf-modal" (click)="$event.stopPropagation()">
+    <div class="pdf-modal-bar">
+      <span class="pdf-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        {{ programaCargado?.titulo }}
+      </span>
+      <button class="pdf-modal-close" type="button" (click)="cerrarPdf()" aria-label="Cerrar">✕</button>
+    </div>
+    <iframe
+      *ngIf="pdfUrl"
+      [src]="pdfUrl"
+      class="pdf-modal-frame"
+      title="Visor de programa"
+      loading="lazy">
+    </iframe>
+    <div class="pdf-modal-no-url" *ngIf="!pdfUrl">No se pudo cargar el PDF.</div>
+  </div>
+</div>
+
+<!-- ===== MODAL CONFIRMACIÓN ===== -->
+<div class="modal-overlay" *ngIf="modalVisible" (click)="cancelarModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <h3 class="modal-titulo">{{ modalTitulo }}</h3>
+    <p class="modal-mensaje">{{ modalMensaje }}</p>
+    <div class="modal-acciones">
+      <button class="btn-cancelar" type="button" (click)="cancelarModal()">Cancelar</button>
+      <button
+        type="button"
+        [class]="modalEsPeligroso ? 'btn-danger-solid' : 'btn-guardar'"
+        (click)="confirmarAccion()">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>

@@ -31,7 +31,7 @@
         </p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-outline" disabled title="Próximamente">
+        <button class="btn btn-outline" (click)="cargarDesdeArchivo()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
@@ -70,13 +70,32 @@
           <span class="card-title">{{ vigente.titulo }}</span>
           <span class="badge badge-vigente">Vigente</span>
         </div>
-        <div class="card-meta">
+
+        <!-- Estructurado: muestra unidades y temas -->
+        <div class="card-meta" *ngIf="vigente.origen !== 'Archivo'">
           <span>Año lectivo {{ vigente.anioLectivo }}</span>
           <span class="dot"></span>
           <span>{{ vigente.horasCatedra }} hs cátedra</span>
           <span class="dot"></span>
           <span>{{ vigente.cantidadUnidades }} unidades · {{ vigente.cantidadTemas }} temas · {{ vigente.cantidadObjetivos }} objetivos</span>
         </div>
+
+        <!-- Archivo: solo año y horas, más indicador PDF -->
+        <ng-container *ngIf="vigente.origen === 'Archivo'">
+          <div class="card-meta">
+            <span>Año lectivo {{ vigente.anioLectivo }}</span>
+            <span class="dot"></span>
+            <span>{{ vigente.horasCatedra }} hs cátedra</span>
+          </div>
+          <div class="card-pdf-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Cargado por archivo
+          </div>
+        </ng-container>
+
         <div class="card-footer">
           <span class="card-date">Creado el {{ formatFecha(vigente.fechaCreacion) }} por {{ vigente.nombreDocente }}</span>
         </div>
@@ -99,13 +118,32 @@
             <span class="card-title">{{ p.titulo }}</span>
             <span class="badge" [ngClass]="badgeClass(p.estado)">{{ badgeLabel(p.estado) }}</span>
           </div>
-          <div class="card-meta">
+
+          <!-- Estructurado: muestra unidades y temas -->
+          <div class="card-meta" *ngIf="p.origen !== 'Archivo'">
             <span>Año lectivo {{ p.anioLectivo }}</span>
             <span class="dot"></span>
             <span>{{ p.horasCatedra }} hs cátedra</span>
             <span class="dot"></span>
             <span>{{ p.cantidadUnidades }} unidades · {{ p.cantidadTemas }} temas</span>
           </div>
+
+          <!-- Archivo: solo año y horas, más indicador PDF -->
+          <ng-container *ngIf="p.origen === 'Archivo'">
+            <div class="card-meta">
+              <span>Año lectivo {{ p.anioLectivo }}</span>
+              <span class="dot"></span>
+              <span>{{ p.horasCatedra }} hs cátedra</span>
+            </div>
+            <div class="card-pdf-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              Cargado por archivo
+            </div>
+          </ng-container>
+
           <div class="card-footer">
             <span class="card-date">Creado el {{ formatFecha(p.fechaCreacion) }} por {{ p.nombreDocente }}</span>
           </div>

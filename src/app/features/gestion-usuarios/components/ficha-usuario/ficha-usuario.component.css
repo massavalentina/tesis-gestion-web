@@ -426,7 +426,7 @@
 .tabla td {
   padding: 10px 14px;
   color: #334155;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .col-nombre   { font-weight: 600; color: #0f2f4b; min-width: 140px; }

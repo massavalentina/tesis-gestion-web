@@ -24,6 +24,7 @@ export interface ProgramaDetalle {
   horasCatedra: number;
   estado: string;
   origen: string;
+  url?: string;
   fechaVencimiento: string;
   fechaCreacion: string;
   nombreMateria: string;

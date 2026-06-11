@@ -636,6 +636,13 @@ export class FichaUsuarioComponent implements OnInit {
     return mapa[nombre] ?? 'chip-default';
   }
 
+  formatCodigoCurso(codigo: string): string {
+    const m = codigo.match(/^(\d+)([A-Za-z]+)(?:[- ](\d{4}))?/);
+    if (!m) return codigo;
+    const year = m[3] ? ` - ${m[3]}` : '';
+    return `${m[1]}.º ${m[2].toUpperCase()}${year}`;
+  }
+
   formatFecha(fechaStr: string): string {
     const d = new Date(fechaStr);
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });

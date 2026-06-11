@@ -30,6 +30,7 @@ export interface ECsinDocente {
   codigoCurricula: string;
   codigoCurso: string;
   tieneHistorial: boolean;
+  horarios: HorarioInfo[];
 }
 
 export interface PreceptorCursoActivo {
