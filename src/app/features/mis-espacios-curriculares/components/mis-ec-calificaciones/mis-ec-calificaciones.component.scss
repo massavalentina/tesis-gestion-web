@@ -366,6 +366,11 @@ $success-bg: #ecfdf3;
   font-weight: 700;
 }
 
+.summary-error {
+  color: #b42318;
+  font-weight: 700;
+}
+
 .tabs {
   display: flex;
   align-items: flex-end;
@@ -926,6 +931,11 @@ tbody td {
 .audit-more {
   align-self: flex-start;
   padding: 4px 2px 0;
+
+  &:disabled {
+    opacity: .55;
+    cursor: wait;
+  }
 }
 
 .btn-back {

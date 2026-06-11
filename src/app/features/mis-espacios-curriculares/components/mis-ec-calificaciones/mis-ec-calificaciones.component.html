@@ -11,7 +11,7 @@
       <line x1="12" y1="8" x2="12" y2="12"/>
       <line x1="12" y1="16" x2="12.01" y2="16"/>
     </svg>
-    <p>No se pudieron cargar las calificaciones de esta materia.</p>
+    <p>{{ errorMessage }}</p>
     <button class="btn-back" (click)="volverAlListado()">Volver al listado</button>
   </div>
 
@@ -64,8 +64,8 @@
         <strong>{{ cantidadSinNotas }}</strong>
       </div>
       <div class="context-item">
-        <span class="context-label">Registros locales</span>
-        <strong>{{ cantidadRegistrosLocales }}</strong>
+        <span class="context-label">Notas vigentes</span>
+        <strong>{{ cantidadNotasPersistidas }}</strong>
       </div>
       <div class="context-item">
         <span class="context-label">Vista</span>
@@ -73,13 +73,13 @@
       </div>
     </div>
 
-    <div class="notice" *ngIf="storageWarning">
+    <div class="notice" *ngIf="dataWarning">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <span>{{ storageWarning }}</span>
+      <span>{{ dataWarning }}</span>
     </div>
 
     <div class="notice" *ngIf="auditWarning">
@@ -98,7 +98,7 @@
         <circle cx="12" cy="12" r="10"/>
       </svg>
       <span>
-        Esta version usa evaluaciones placeholder y guarda tanto las notas como la auditoria de forma local por espacio curricular.
+        Esta version ya lee y persiste las notas contra la API de calificaciones. Solo se habilitan para edicion las celdas que tengan exámenes para las instancias evaluativas correspondientes.
       </span>
     </div>
 
@@ -156,6 +156,7 @@
           <span *ngIf="modoEdicion && hayNotasInvalidas">Hay notas invalidas. Solo se permiten enteros de 1 a 10.</span>
           <span *ngIf="!modoEdicion || !hayNotasInvalidas">{{ updatedAtLabel }}</span>
           <span class="summary-success" *ngIf="feedbackGuardado">{{ feedbackGuardado }}</span>
+          <span class="summary-error" *ngIf="saveError">{{ saveError }}</span>
         </div>
       </div>
 
@@ -219,16 +220,24 @@
                   </ng-container>
 
                   <ng-template #editableCell>
-                    <div class="grade-edit" [class.grade-edit--invalid]="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">
-                      <input
-                        type="text"
-                        inputmode="numeric"
-                        maxlength="4"
-                        autocomplete="off"
-                        [ngModel]="getDraftCellValue(estudiante.idEstudiante, evaluacion.numero, tipo)"
-                        (ngModelChange)="onDraftValueChange(estudiante.idEstudiante, evaluacion.numero, tipo, $event)" />
-                      <small *ngIf="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">1 a 10</small>
-                    </div>
+                    <ng-container *ngIf="isSlotEnabled(evaluacion.numero, tipo); else disabledEditableCell">
+                      <div class="grade-edit" [class.grade-edit--invalid]="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">
+                        <input
+                          type="text"
+                          inputmode="numeric"
+                          maxlength="4"
+                          autocomplete="off"
+                          [ngModel]="getDraftCellValue(estudiante.idEstudiante, evaluacion.numero, tipo)"
+                          (ngModelChange)="onDraftValueChange(estudiante.idEstudiante, evaluacion.numero, tipo, $event)" />
+                        <small *ngIf="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">1 a 10</small>
+                      </div>
+                    </ng-container>
+
+                    <ng-template #disabledEditableCell>
+                      <span class="grade-readonly grade-readonly--empty">
+                        {{ getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) }}
+                      </span>
+                    </ng-template>
                   </ng-template>
                 </td>
               </ng-container>
@@ -273,13 +282,13 @@
     <div class="audit-card">
       <div class="audit-head">
         <div>
-          <span class="audit-eyebrow">Auditoria local</span>
+          <span class="audit-eyebrow">Auditoria persistida</span>
           <h3>Registro de cambios sobre calificaciones</h3>
           <p>
-            Cada guardado genera una sesion de actividad. Dentro de cada sesion se listan las notas modificadas y su cambio puntual.
+            Cada guardado confirmado en la base genera una sesion de actividad. Dentro de cada sesion se listan las notas modificadas y su cambio puntual.
           </p>
         </div>
-        <span class="audit-total">{{ totalAuditoria }} cambio{{ totalAuditoria !== 1 ? 's' : '' }}</span>
+        <span class="audit-total">{{ totalAuditSessions }} sesion{{ totalAuditSessions !== 1 ? 'es' : '' }}</span>
       </div>
 
       <div class="audit-empty" *ngIf="auditoria.length === 0">
@@ -337,8 +346,9 @@
           *ngIf="hayMasSesionesAuditoria"
           class="audit-more"
           type="button"
+          [disabled]="auditLoadingMore"
           (click)="showMoreAuditSessions()">
-          Mostrar actividad anterior
+          {{ auditLoadingMore ? 'Cargando actividad...' : 'Mostrar actividad anterior' }}
         </button>
       </div>
     </div>

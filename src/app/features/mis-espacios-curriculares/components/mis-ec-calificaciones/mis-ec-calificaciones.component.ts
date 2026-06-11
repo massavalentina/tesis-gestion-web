@@ -1,27 +1,33 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, map, of, switchMap } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth.service';
-import { EstudianteFicha } from '../../../ficha-alumno/models/estudiante-ficha.model';
-import { FichaAlumnoService } from '../../../ficha-alumno/services/ficha-alumno.service';
 import { MisEcItem } from '../../models/mis-ec.model';
+import {
+  AuditoriaCalificacionSesion as AuditoriaCalificacionSesionApi,
+  AuditoriaCalificacionesResponse,
+  CalificacionVigente,
+  GestionManualEstudiante,
+  GuardarCalificacionCambio,
+  GuardarCalificacionesManualResponse,
+  InstanciaEvaluativaResumen,
+  TipoCalificacion,
+} from '../../models/calificaciones.model';
+import { CalificacionesService } from '../../services/calificaciones.service';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 
-type TipoCalificacion = 'N' | 'R1' | 'R2';
 type FiltroEstado = 'all' | 'without-notes' | 'changed';
 type TabId = 1 | 5;
+type CellValueMap = Record<string, number | null>;
+type DraftParsedValue = number | null | 'invalid';
 
-interface EvaluacionPlaceholder {
+interface EvaluacionSlot {
   numero: number;
   label: string;
-}
-
-interface CalificacionesPersistedState {
-  version: 1;
-  updatedAt: string | null;
-  cells: Record<string, number>;
+  instancia: InstanciaEvaluativaResumen | null;
 }
 
 interface CalificacionesStudentRow {
@@ -46,7 +52,8 @@ interface CalificacionAuditSession {
   id: string;
   timestamp: string;
   docente: string;
-  origen: 'Manual';
+  origen: string;
+  cantidadCambios: number;
   cambios: CalificacionAuditChange[];
 }
 
@@ -58,25 +65,29 @@ interface CalificacionAuditSession {
   styleUrl: './mis-ec-calificaciones.component.scss',
 })
 export class MisEcCalificacionesComponent implements OnInit {
-  private readonly storageVersion = 1 as const;
   readonly tiposCalificacion: readonly TipoCalificacion[] = ['N', 'R1', 'R2'];
   readonly filtros: ReadonlyArray<{ id: FiltroEstado; label: string }> = [
     { id: 'all', label: 'Todos' },
     { id: 'without-notes', label: 'Sin notas' },
     { id: 'changed', label: 'Con cambios' },
   ];
-  readonly evaluaciones: ReadonlyArray<EvaluacionPlaceholder> = Array.from(
-    { length: 8 },
-    (_, index) => ({ numero: index + 1, label: `Eval ${index + 1}` }),
-  );
   readonly pageSizeOptions = [10, 20, 30];
   readonly auditSessionPageSize = 5;
 
   espacio: MisEcItem | null = null;
+  instancias: InstanciaEvaluativaResumen[] = [];
   estudiantes: CalificacionesStudentRow[] = [];
+  evaluaciones: EvaluacionSlot[] = [];
+  evaluacionesVisibles: EvaluacionSlot[] = [];
+  filasFiltradas: CalificacionesStudentRow[] = [];
+  filasPaginadas: CalificacionesStudentRow[] = [];
+
   loading = true;
   error = false;
+  saving = false;
+  auditLoadingMore = false;
   idEC = '';
+  errorMessage = 'No se pudieron cargar las calificaciones de este espacio curricular.';
 
   busqueda = '';
   filtroActivo: FiltroEstado = 'all';
@@ -85,115 +96,56 @@ export class MisEcCalificacionesComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
 
-  storageWarning = '';
+  totalColumnasTabla = 14;
+  totalPaginas = 1;
+  paginaActual = 0;
+  cantidadFiltrada = 0;
+  cantidadSinNotas = 0;
+  cantidadConCambios = 0;
+  cantidadNotasPersistidas = 0;
+  canSave = false;
+  hayNotasInvalidas = false;
+  updatedAtLabel = 'Sin notas persistidas';
+  rangoPaginaLabel = 'Sin resultados';
+
+  dataWarning = '';
   auditWarning = '';
   feedbackGuardado = '';
+  saveError = '';
 
   auditoria: CalificacionAuditSession[] = [];
   expandedAuditSessions: Record<string, boolean> = {};
-  visibleAuditSessionsCount = this.auditSessionPageSize;
+  totalAuditSessions = 0;
+  hasMoreAuditSessions = false;
 
-  private savedState: CalificacionesPersistedState = this.emptyPersistedState();
+  private savedCells: CellValueMap = {};
   private draftCells: Record<string, string> = {};
+  private invalidCellMap: Record<string, boolean> = {};
+  private rowHasAnyValueMap: Record<string, boolean> = {};
+  private rowHasChangesMap: Record<string, boolean> = {};
+  private slotEnabledMap: Record<string, boolean> = {};
+  private lastUpdatedAt: string | null = null;
+  private instanciasByNumero = new Map<number, InstanciaEvaluativaResumen>();
+  private instanciasById = new Map<string, InstanciaEvaluativaResumen>();
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly authService: AuthService,
     private readonly misEcService: MisEspaciosCurricularesService,
-    private readonly fichaAlumnoService: FichaAlumnoService,
+    private readonly calificacionesService: CalificacionesService,
   ) {}
 
   ngOnInit(): void {
     this.idEC = this.route.snapshot.paramMap.get('idEC') ?? '';
+    if (!this.idEC) {
+      this.error = true;
+      this.loading = false;
+      this.errorMessage = 'No se indico un espacio curricular valido para gestionar calificaciones.';
+      return;
+    }
 
-    this.misEcService.getMisEspaciosCurriculares().pipe(
-      map(espacios => espacios.find(espacio => espacio.idEC === this.idEC) ?? null),
-      switchMap(espacio => {
-        if (!espacio) {
-          this.error = true;
-          return of({ espacio: null, estudiantes: [] as EstudianteFicha[] });
-        }
-
-        return this.fichaAlumnoService.getEstudiantesPorCurso(espacio.idCurso).pipe(
-          map(estudiantes => ({ espacio, estudiantes })),
-        );
-      }),
-      finalize(() => {
-        this.loading = false;
-      }),
-    ).subscribe({
-      next: ({ espacio, estudiantes }) => {
-        if (!espacio) return;
-
-        this.espacio = espacio;
-        this.estudiantes = this.buildStudentRows(estudiantes);
-        this.restoreSavedState();
-        this.restoreAuditTrail();
-      },
-      error: () => {
-        this.error = true;
-      },
-    });
-  }
-
-  get evaluacionesVisibles(): ReadonlyArray<EvaluacionPlaceholder> {
-    return this.tabActivo === 1
-      ? this.evaluaciones.slice(0, 4)
-      : this.evaluaciones.slice(4, 8);
-  }
-
-  get totalColumnasTabla(): number {
-    return 2 + (this.evaluacionesVisibles.length * this.tiposCalificacion.length);
-  }
-
-  get filasFiltradas(): CalificacionesStudentRow[] {
-    const texto = this.busqueda.trim().toLowerCase();
-
-    return this.estudiantes.filter(estudiante => {
-      if (texto && !estudiante.searchText.includes(texto)) {
-        return false;
-      }
-
-      switch (this.filtroActivo) {
-        case 'without-notes':
-          return !this.rowHasAnyValue(estudiante.idEstudiante);
-        case 'changed':
-          return this.modoEdicion && this.rowHasChanges(estudiante.idEstudiante);
-        default:
-          return true;
-      }
-    });
-  }
-
-  get totalPaginas(): number {
-    return Math.max(1, Math.ceil(this.filasFiltradas.length / this.pageSize));
-  }
-
-  get paginaActual(): number {
-    return Math.min(this.pageIndex, this.totalPaginas - 1);
-  }
-
-  get filasPaginadas(): CalificacionesStudentRow[] {
-    const start = this.paginaActual * this.pageSize;
-    return this.filasFiltradas.slice(start, start + this.pageSize);
-  }
-
-  get cantidadFiltrada(): number {
-    return this.filasFiltradas.length;
-  }
-
-  get cantidadSinNotas(): number {
-    return this.estudiantes.filter(estudiante => !this.rowHasAnyValue(estudiante.idEstudiante)).length;
-  }
-
-  get cantidadConCambios(): number {
-    if (!this.modoEdicion) return 0;
-    return this.estudiantes.filter(estudiante => this.rowHasChanges(estudiante.idEstudiante)).length;
-  }
-
-  get cantidadRegistrosLocales(): number {
-    return Object.keys(this.savedState.cells).length;
+    this.loadScreen();
   }
 
   get totalAuditoria(): number {
@@ -201,38 +153,11 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   get sesionesAuditoriaVisibles(): CalificacionAuditSession[] {
-    return this.auditoria.slice(0, this.visibleAuditSessionsCount);
+    return this.auditoria;
   }
 
   get hayMasSesionesAuditoria(): boolean {
-    return this.auditoria.length > this.visibleAuditSessionsCount;
-  }
-
-  get canSave(): boolean {
-    return this.modoEdicion && this.hasDraftChanges() && !this.hasInvalidDraftCells();
-  }
-
-  get hayNotasInvalidas(): boolean {
-    return this.hasInvalidDraftCells();
-  }
-
-  get updatedAtLabel(): string {
-    if (!this.savedState.updatedAt) {
-      return 'Sin guardados locales';
-    }
-
-    const updatedAt = new Date(this.savedState.updatedAt);
-    return `Guardado local ${updatedAt.toLocaleString('es-AR')}`;
-  }
-
-  get rangoPaginaLabel(): string {
-    if (this.cantidadFiltrada === 0) {
-      return 'Sin resultados';
-    }
-
-    const start = this.paginaActual * this.pageSize + 1;
-    const end = Math.min(start + this.filasPaginadas.length - 1, this.cantidadFiltrada);
-    return `Mostrando ${start}-${end} de ${this.cantidadFiltrada}`;
+    return this.hasMoreAuditSessions;
   }
 
   get docenteActualLabel(): string {
@@ -267,7 +192,7 @@ export class MisEcCalificacionesComponent implements OnInit {
       return 'Nota quitada';
     }
 
-    return 'Corrección';
+    return 'Correccion';
   }
 
   volverAlListado(): void {
@@ -285,14 +210,17 @@ export class MisEcCalificacionesComponent implements OnInit {
 
     this.filtroActivo = filtro;
     this.pageIndex = 0;
+    this.refreshTableState();
   }
 
   setTab(tab: TabId): void {
     this.tabActivo = tab;
+    this.refreshVisibleEvaluaciones();
   }
 
   onBusquedaChange(): void {
     this.pageIndex = 0;
+    this.refreshTableState();
   }
 
   onPageSizeChange(value: number): void {
@@ -302,16 +230,19 @@ export class MisEcCalificacionesComponent implements OnInit {
 
     this.pageSize = value;
     this.pageIndex = 0;
+    this.refreshTableState();
   }
 
   goToPreviousPage(): void {
     if (this.paginaActual === 0) return;
     this.pageIndex = this.paginaActual - 1;
+    this.refreshTableState();
   }
 
   goToNextPage(): void {
     if (this.paginaActual >= this.totalPaginas - 1) return;
     this.pageIndex = this.paginaActual + 1;
+    this.refreshTableState();
   }
 
   toggleAuditSession(sessionId: string): void {
@@ -323,58 +254,91 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   showMoreAuditSessions(): void {
-    this.visibleAuditSessionsCount += this.auditSessionPageSize;
+    if (this.auditLoadingMore || !this.hasMoreAuditSessions) {
+      return;
+    }
+
+    this.auditLoadingMore = true;
+    this.auditWarning = '';
+
+    this.calificacionesService.getAuditoria(
+      this.idEC,
+      this.auditoria.length,
+      this.auditSessionPageSize,
+    ).pipe(
+      finalize(() => {
+        this.auditLoadingMore = false;
+      }),
+    ).subscribe({
+      next: response => {
+        this.applyAuditResponse(response, true);
+      },
+      error: () => {
+        this.auditWarning = 'No se pudo cargar mas historial de cambios.';
+      },
+    });
   }
 
   activarEdicion(): void {
     this.modoEdicion = true;
     this.feedbackGuardado = '';
-    this.draftCells = this.toDraftCells(this.savedState.cells);
+    this.saveError = '';
+    this.draftCells = this.toDraftCells(this.savedCells);
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
     }
+    this.recomputeDerivedState();
   }
 
   cancelarEdicion(): void {
     this.modoEdicion = false;
     this.feedbackGuardado = '';
+    this.saveError = '';
     this.draftCells = {};
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
     }
+    this.recomputeDerivedState();
   }
 
   guardarCambios(): void {
     if (!this.canSave) return;
 
-    const normalizedCells = this.normalizeDraftCells();
-    const auditSession = this.buildAuditSession(this.savedState.cells, normalizedCells);
-
-    this.savedState = {
-      version: this.storageVersion,
-      updatedAt: new Date().toISOString(),
-      cells: normalizedCells,
-    };
-
-    this.persistState(this.savedState);
-
-    if (auditSession !== null) {
-      this.auditoria = [auditSession, ...this.auditoria];
-      this.expandedAuditSessions = { ...this.expandedAuditSessions, [auditSession.id]: false };
-      this.persistAuditTrail();
+    const cambios = this.buildSavePayload();
+    if (cambios.length === 0) {
+      this.feedbackGuardado = 'No se detectaron cambios para persistir.';
+      this.modoEdicion = false;
+      this.draftCells = {};
+      this.recomputeDerivedState();
+      return;
     }
 
-    this.feedbackGuardado = 'Cambios guardados localmente para este espacio curricular.';
-    this.modoEdicion = false;
-    this.draftCells = {};
-    if (this.filtroActivo === 'changed') {
-      this.filtroActivo = 'all';
-    }
+    this.saving = true;
+    this.feedbackGuardado = '';
+    this.saveError = '';
+    this.canSave = false;
+
+    this.calificacionesService.guardarGestionManual(this.idEC, { cambios }).pipe(
+      finalize(() => {
+        this.saving = false;
+        this.recomputeDerivedState();
+      }),
+    ).subscribe({
+      next: response => {
+        this.applySaveResponse(cambios, response);
+      },
+      error: error => {
+        this.saveError = this.extractErrorMessage(
+          error,
+          'No se pudieron guardar las calificaciones en la base de datos.',
+        );
+      },
+    });
   }
 
   getReadonlyCellLabel(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
-    const savedValue = this.savedState.cells[this.cellKey(idEstudiante, evaluacion, tipo)];
-    return savedValue === undefined ? '-' : String(savedValue);
+    const savedValue = this.getSavedCellValue(idEstudiante, evaluacion, tipo);
+    return savedValue === null ? '-' : String(savedValue);
   }
 
   getDraftCellValue(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
@@ -387,55 +351,30 @@ export class MisEcCalificacionesComponent implements OnInit {
     tipo: TipoCalificacion,
     value: string,
   ): void {
+    if (!this.isSlotEnabled(evaluacion, tipo)) {
+      return;
+    }
+
     this.feedbackGuardado = '';
+    this.saveError = '';
     this.draftCells[this.cellKey(idEstudiante, evaluacion, tipo)] = value.replace(/\s+/g, '');
+    this.recomputeDerivedState();
   }
 
   isCellInvalid(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): boolean {
-    const rawValue = this.getDraftCellValue(idEstudiante, evaluacion, tipo);
-    return this.parseDraftValue(rawValue) === 'invalid';
+    return this.invalidCellMap[this.cellKey(idEstudiante, evaluacion, tipo)] === true;
+  }
+
+  isSlotEnabled(evaluacion: number, tipo: TipoCalificacion): boolean {
+    return this.slotEnabledMap[this.slotKey(evaluacion, tipo)] === true;
   }
 
   rowHasChanges(idEstudiante: string): boolean {
-    for (const evaluacion of this.evaluaciones) {
-      for (const tipo of this.tiposCalificacion) {
-        const key = this.cellKey(idEstudiante, evaluacion.numero, tipo);
-        const saved = this.savedState.cells[key] ?? null;
-        const draft = this.parseDraftValue(this.draftCells[key] ?? '');
-
-        if (draft === 'invalid') {
-          return true;
-        }
-
-        if (draft !== saved) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return this.rowHasChangesMap[idEstudiante] === true;
   }
 
   rowHasAnyValue(idEstudiante: string): boolean {
-    for (const evaluacion of this.evaluaciones) {
-      for (const tipo of this.tiposCalificacion) {
-        const key = this.cellKey(idEstudiante, evaluacion.numero, tipo);
-
-        if (this.modoEdicion) {
-          const parsed = this.parseDraftValue(this.draftCells[key] ?? '');
-          if (parsed !== null) {
-            return true;
-          }
-          continue;
-        }
-
-        if (this.savedState.cells[key] !== undefined) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return this.rowHasAnyValueMap[idEstudiante] === true;
   }
 
   trackByStudentId(_: number, estudiante: CalificacionesStudentRow): string {
@@ -450,81 +389,360 @@ export class MisEcCalificacionesComponent implements OnInit {
     return change.id;
   }
 
-  private hasDraftChanges(): boolean {
-    return this.estudiantes.some(estudiante => this.rowHasChanges(estudiante.idEstudiante));
+  private loadScreen(): void {
+    this.loading = true;
+    this.error = false;
+    this.dataWarning = '';
+    this.auditWarning = '';
+
+    forkJoin({
+      espacio: this.misEcService.getMisEspaciosCurriculares().pipe(
+        map(espacios => espacios.find(espacio => espacio.idEC === this.idEC) ?? null),
+      ),
+      instancias: this.calificacionesService.getInstancias(this.idEC),
+      estudiantes: this.calificacionesService.getEstudiantes(this.idEC),
+      calificaciones: this.calificacionesService.getCalificacionesVigentes(this.idEC),
+      auditoria: this.calificacionesService.getAuditoria(this.idEC, 0, this.auditSessionPageSize).pipe(
+        catchError(() => {
+          this.auditWarning = 'No se pudo cargar la auditoria persistida. Podes trabajar igual con la tabla.';
+          return of<AuditoriaCalificacionesResponse | null>(null);
+        }),
+      ),
+    }).pipe(
+      finalize(() => {
+        this.loading = false;
+      }),
+    ).subscribe({
+      next: ({ espacio, instancias, estudiantes, calificaciones, auditoria }) => {
+        if (!espacio) {
+          this.error = true;
+          this.errorMessage = 'No se encontro el espacio curricular asignado para esta pantalla.';
+          return;
+        }
+
+        this.applyScreenData(espacio, instancias, estudiantes, calificaciones);
+        if (auditoria) {
+          this.applyAuditResponse(auditoria, false);
+        }
+      },
+      error: error => {
+        this.error = true;
+        this.errorMessage = this.extractErrorMessage(
+          error,
+          'No se pudieron cargar las calificaciones de este espacio curricular.',
+        );
+      },
+    });
   }
 
-  private hasInvalidDraftCells(): boolean {
-    return Object.values(this.draftCells).some(rawValue => this.parseDraftValue(rawValue) === 'invalid');
+  private applyScreenData(
+    espacio: MisEcItem,
+    instancias: InstanciaEvaluativaResumen[],
+    estudiantes: GestionManualEstudiante[],
+    calificaciones: CalificacionVigente[],
+  ): void {
+    this.espacio = espacio;
+    this.instancias = [...instancias].sort((a, b) => a.nro - b.nro);
+    this.instanciasByNumero = new Map(this.instancias.map(instancia => [instancia.nro, instancia]));
+    this.instanciasById = new Map(this.instancias.map(instancia => [instancia.idIE, instancia]));
+    this.estudiantes = this.buildStudentRows(estudiantes);
+    this.savedCells = this.buildSavedCells(calificaciones, estudiantes);
+    this.lastUpdatedAt = this.computeLastUpdatedAt(calificaciones);
+    this.rebuildEvaluaciones();
+    this.dataWarning = this.instancias.length === 0
+      ? 'Este espacio curricular no tiene instancias evaluativas cargadas todavia.'
+      : '';
+    this.recomputeDerivedState();
   }
 
-  private normalizeDraftCells(): Record<string, number> {
-    const normalizedCells: Record<string, number> = {};
-
-    Object.entries(this.draftCells).forEach(([key, rawValue]) => {
-      const parsed = this.parseDraftValue(rawValue);
-      if (parsed !== 'invalid' && parsed !== null) {
-        normalizedCells[key] = parsed;
-      }
+  private rebuildEvaluaciones(): void {
+    this.evaluaciones = Array.from({ length: 8 }, (_, index) => {
+      const numero = index + 1;
+      return {
+        numero,
+        label: `Eval ${numero}`,
+        instancia: this.instanciasByNumero.get(numero) ?? null,
+      };
     });
 
-    return normalizedCells;
-  }
-
-  private buildAuditSession(
-    previousCells: Record<string, number>,
-    nextCells: Record<string, number>,
-  ): CalificacionAuditSession | null {
-    const changedKeys = new Set([
-      ...Object.keys(previousCells),
-      ...Object.keys(nextCells),
-    ]);
-
-    const now = new Date().toISOString();
-    const changes: CalificacionAuditChange[] = [];
-
-    changedKeys.forEach(key => {
-      const previousValue = previousCells[key] ?? null;
-      const nextValue = nextCells[key] ?? null;
-
-      if (previousValue === nextValue) {
+    this.slotEnabledMap = {};
+    this.evaluaciones.forEach(evaluacion => {
+      const instancia = evaluacion.instancia;
+      if (!instancia) {
+        this.tiposCalificacion.forEach(tipo => {
+          this.slotEnabledMap[this.slotKey(evaluacion.numero, tipo)] = false;
+        });
         return;
       }
 
-      const [idEstudiante, evaluacionStr, tipo] = key.split('|');
-      const evaluacion = Number(evaluacionStr);
-      const estudiante = this.estudiantes.find(item => item.idEstudiante === idEstudiante);
-
-      if (!estudiante || !Number.isInteger(evaluacion)) {
-        return;
-      }
-
-      changes.push({
-        id: `${key}|${Date.now()}|${changes.length}`,
-        idEstudiante,
-        estudiante: estudiante.nombreCompleto,
-        documento: estudiante.documento,
-        evaluacion: `Eval ${evaluacion}`,
-        tipo: tipo as TipoCalificacion,
-        valorAnterior: previousValue,
-        valorNuevo: nextValue,
-      });
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'N')] = instancia.archivos.notaOriginal !== null;
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R1')] = instancia.archivos.recuperatorio1 !== null;
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R2')] = instancia.archivos.recuperatorio2 !== null;
     });
 
-    if (changes.length === 0) {
-      return null;
+    this.refreshVisibleEvaluaciones();
+  }
+
+  private refreshVisibleEvaluaciones(): void {
+    this.evaluacionesVisibles = this.tabActivo === 1
+      ? this.evaluaciones.slice(0, 4)
+      : this.evaluaciones.slice(4, 8);
+    this.totalColumnasTabla = 2 + (this.evaluacionesVisibles.length * this.tiposCalificacion.length);
+  }
+
+  private recomputeDerivedState(): void {
+    this.recomputeRowState();
+    this.refreshTableState();
+  }
+
+  private recomputeRowState(): void {
+    const invalidCellMap: Record<string, boolean> = {};
+    const rowHasAnyValueMap: Record<string, boolean> = {};
+    const rowHasChangesMap: Record<string, boolean> = {};
+
+    let cantidadSinNotas = 0;
+    let cantidadConCambios = 0;
+    let hasAnyDraftChanges = false;
+    let hayNotasInvalidas = false;
+
+    for (const estudiante of this.estudiantes) {
+      let rowHasAnyValue = false;
+      let rowHasChanges = false;
+
+      for (const evaluacion of this.evaluaciones) {
+        if (!evaluacion.instancia) {
+          continue;
+        }
+
+        for (const tipo of this.tiposCalificacion) {
+          const key = this.cellKey(estudiante.idEstudiante, evaluacion.numero, tipo);
+          const savedValue = this.getSavedCellValue(estudiante.idEstudiante, evaluacion.numero, tipo);
+
+          if (!this.modoEdicion) {
+            if (savedValue !== null) {
+              rowHasAnyValue = true;
+            }
+            continue;
+          }
+
+          const parsedValue = this.parseDraftValue(this.draftCells[key] ?? '');
+          const slotEnabled = this.isSlotEnabled(evaluacion.numero, tipo);
+
+          if (slotEnabled && parsedValue === 'invalid') {
+            invalidCellMap[key] = true;
+            rowHasChanges = true;
+            hayNotasInvalidas = true;
+            continue;
+          }
+
+          if (parsedValue !== null && parsedValue !== 'invalid') {
+            rowHasAnyValue = true;
+          }
+
+          if (slotEnabled && parsedValue !== savedValue) {
+            rowHasChanges = true;
+          }
+        }
+      }
+
+      rowHasAnyValueMap[estudiante.idEstudiante] = rowHasAnyValue;
+      rowHasChangesMap[estudiante.idEstudiante] = rowHasChanges;
+
+      if (!rowHasAnyValue) {
+        cantidadSinNotas += 1;
+      }
+
+      if (this.modoEdicion && rowHasChanges) {
+        cantidadConCambios += 1;
+        hasAnyDraftChanges = true;
+      }
     }
 
-    return {
-      id: `audit-session|${Date.now()}|${changes.length}`,
-      timestamp: now,
-      docente: this.docenteActualLabel,
-      origen: 'Manual',
-      cambios: changes,
-    };
+    this.invalidCellMap = invalidCellMap;
+    this.rowHasAnyValueMap = rowHasAnyValueMap;
+    this.rowHasChangesMap = rowHasChangesMap;
+    this.cantidadSinNotas = cantidadSinNotas;
+    this.cantidadConCambios = cantidadConCambios;
+    this.cantidadNotasPersistidas = Object.values(this.savedCells).filter(value => value !== null).length;
+    this.hayNotasInvalidas = hayNotasInvalidas;
+    this.canSave = this.modoEdicion && !this.saving && hasAnyDraftChanges && !hayNotasInvalidas;
+    this.updatedAtLabel = this.lastUpdatedAt
+      ? `Ultima actualizacion ${new Date(this.lastUpdatedAt).toLocaleString('es-AR')}`
+      : 'Sin notas persistidas';
   }
 
-  private parseDraftValue(rawValue: string): number | null | 'invalid' {
+  private refreshTableState(): void {
+    const texto = this.busqueda.trim().toLowerCase();
+
+    this.filasFiltradas = this.estudiantes.filter(estudiante => {
+      if (texto && !estudiante.searchText.includes(texto)) {
+        return false;
+      }
+
+      switch (this.filtroActivo) {
+        case 'without-notes':
+          return !this.rowHasAnyValue(estudiante.idEstudiante);
+        case 'changed':
+          return this.modoEdicion && this.rowHasChanges(estudiante.idEstudiante);
+        default:
+          return true;
+      }
+    });
+
+    this.cantidadFiltrada = this.filasFiltradas.length;
+    this.totalPaginas = Math.max(1, Math.ceil(this.cantidadFiltrada / this.pageSize));
+    this.paginaActual = Math.min(this.pageIndex, this.totalPaginas - 1);
+    this.pageIndex = this.paginaActual;
+
+    const start = this.paginaActual * this.pageSize;
+    this.filasPaginadas = this.filasFiltradas.slice(start, start + this.pageSize);
+
+    if (this.cantidadFiltrada === 0) {
+      this.rangoPaginaLabel = 'Sin resultados';
+      return;
+    }
+
+    const rangoInicio = this.paginaActual * this.pageSize + 1;
+    const rangoFin = Math.min(rangoInicio + this.filasPaginadas.length - 1, this.cantidadFiltrada);
+    this.rangoPaginaLabel = `Mostrando ${rangoInicio}-${rangoFin} de ${this.cantidadFiltrada}`;
+  }
+
+  private applyAuditResponse(response: AuditoriaCalificacionesResponse, append: boolean): void {
+    const mappedSessions = response.items.map(session => this.mapAuditSession(session));
+
+    if (append) {
+      const existentes = new Set(this.auditoria.map(session => session.id));
+      this.auditoria = [
+        ...this.auditoria,
+        ...mappedSessions.filter(session => !existentes.has(session.id)),
+      ];
+    } else {
+      this.auditoria = mappedSessions;
+    }
+
+    this.expandedAuditSessions = {
+      ...Object.fromEntries(this.auditoria.map(session => [session.id, false])),
+      ...this.expandedAuditSessions,
+    };
+    this.totalAuditSessions = response.totalSesiones;
+    this.hasMoreAuditSessions = response.hasMore;
+  }
+
+  private applySaveResponse(
+    cambios: GuardarCalificacionCambio[],
+    response: GuardarCalificacionesManualResponse,
+  ): void {
+    if (response.cambiosAplicados === 0) {
+      this.feedbackGuardado = 'No se detectaron cambios nuevos para guardar.';
+      this.modoEdicion = false;
+      this.draftCells = {};
+      return;
+    }
+
+    this.applySavedChanges(cambios);
+    this.refreshInstanciaStates(response.instanciasAfectadas);
+    this.lastUpdatedAt = response.sesionAuditoria?.timestamp ?? new Date().toISOString();
+
+    if (response.sesionAuditoria) {
+      const session = this.mapAuditSession(response.sesionAuditoria);
+      const existed = this.auditoria.some(item => item.id === session.id);
+      this.auditoria = [session, ...this.auditoria.filter(item => item.id !== session.id)];
+      this.expandedAuditSessions = { ...this.expandedAuditSessions, [session.id]: false };
+      if (!existed) {
+        this.totalAuditSessions += 1;
+      }
+      this.hasMoreAuditSessions = this.auditoria.length < this.totalAuditSessions;
+    }
+
+    this.feedbackGuardado = response.cambiosAplicados === 1
+      ? 'Se guardo 1 cambio en la base de datos.'
+      : `Se guardaron ${response.cambiosAplicados} cambios en la base de datos.`;
+    this.modoEdicion = false;
+    this.draftCells = {};
+    if (this.filtroActivo === 'changed') {
+      this.filtroActivo = 'all';
+    }
+  }
+
+  private applySavedChanges(cambios: GuardarCalificacionCambio[]): void {
+    const nextCells: CellValueMap = { ...this.savedCells };
+
+    cambios.forEach(cambio => {
+      const evaluacion = this.instanciasById.get(cambio.idIE)?.nro;
+      if (!evaluacion) {
+        return;
+      }
+
+      nextCells[this.cellKey(cambio.idEstudiante, evaluacion, cambio.tipoCalificacion)] = cambio.puntaje;
+    });
+
+    this.savedCells = nextCells;
+  }
+
+  private refreshInstanciaStates(instanciasAfectadas: string[]): void {
+    if (instanciasAfectadas.length === 0) {
+      return;
+    }
+
+    const afectadasSet = new Set(instanciasAfectadas);
+    this.instancias = this.instancias.map(instancia => {
+      if (!afectadasSet.has(instancia.idIE)) {
+        return instancia;
+      }
+
+      const tieneNotas = this.estudiantes.some(estudiante =>
+        this.tiposCalificacion.some(tipo =>
+          this.getSavedCellValue(estudiante.idEstudiante, instancia.nro, tipo) !== null),
+      );
+
+      return {
+        ...instancia,
+        estado: tieneNotas ? 'Evaluada' : 'Pendiente',
+      };
+    });
+
+    this.instanciasByNumero = new Map(this.instancias.map(instancia => [instancia.nro, instancia]));
+    this.instanciasById = new Map(this.instancias.map(instancia => [instancia.idIE, instancia]));
+    this.rebuildEvaluaciones();
+  }
+
+  private buildSavePayload(): GuardarCalificacionCambio[] {
+    const cambios: GuardarCalificacionCambio[] = [];
+
+    for (const estudiante of this.estudiantes) {
+      for (const evaluacion of this.evaluaciones) {
+        if (!evaluacion.instancia) {
+          continue;
+        }
+
+        for (const tipo of this.tiposCalificacion) {
+          if (!this.isSlotEnabled(evaluacion.numero, tipo)) {
+            continue;
+          }
+
+          const draft = this.parseDraftValue(
+            this.draftCells[this.cellKey(estudiante.idEstudiante, evaluacion.numero, tipo)] ?? '',
+          );
+          const saved = this.getSavedCellValue(estudiante.idEstudiante, evaluacion.numero, tipo);
+
+          if (draft === 'invalid' || draft === saved) {
+            continue;
+          }
+
+          cambios.push({
+            idIE: evaluacion.instancia.idIE,
+            idEstudiante: estudiante.idEstudiante,
+            tipoCalificacion: tipo,
+            puntaje: draft,
+          });
+        }
+      }
+    }
+
+    return cambios;
+  }
+
+  private parseDraftValue(rawValue: string): DraftParsedValue {
     const trimmed = rawValue.trim();
     if (!trimmed) return null;
     if (!/^\d+$/.test(trimmed)) return 'invalid';
@@ -541,264 +759,105 @@ export class MisEcCalificacionesComponent implements OnInit {
     return `${idEstudiante}|${evaluacion}|${tipo}`;
   }
 
-  private buildStudentRows(estudiantes: EstudianteFicha[]): CalificacionesStudentRow[] {
-    return [...estudiantes]
-      .sort((a, b) => {
-        const apellidoCompare = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' });
-        if (apellidoCompare !== 0) return apellidoCompare;
-        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
-      })
-      .map(estudiante => {
-        const nombreCompleto = `${estudiante.apellido}, ${estudiante.nombre}`;
-        return {
-          idEstudiante: estudiante.idEstudiante,
-          nombreCompleto,
-          documento: estudiante.documento,
-          searchText: `${nombreCompleto} ${estudiante.documento}`.toLowerCase(),
-        };
-      });
+  private slotKey(evaluacion: number, tipo: TipoCalificacion): string {
+    return `${evaluacion}|${tipo}`;
   }
 
-  private restoreSavedState(): void {
-    const raw = localStorage.getItem(this.storageKey());
-    if (!raw) {
-      this.savedState = this.emptyPersistedState();
-      return;
-    }
+  private getSavedCellValue(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): number | null {
+    return this.getSavedCellValueByKey(this.cellKey(idEstudiante, evaluacion, tipo));
+  }
 
-    try {
-      const parsed = JSON.parse(raw) as Partial<CalificacionesPersistedState>;
-      this.savedState = {
-        version: this.storageVersion,
-        updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : null,
-        cells: this.normalizePersistedCells(parsed.cells),
+  private getSavedCellValueByKey(key: string): number | null {
+    return key in this.savedCells ? this.savedCells[key] : null;
+  }
+
+  private buildStudentRows(estudiantes: GestionManualEstudiante[]): CalificacionesStudentRow[] {
+    return estudiantes.map(estudiante => {
+      const nombreCompleto = `${estudiante.apellido}, ${estudiante.nombre}`;
+      return {
+        idEstudiante: estudiante.idEstudiante,
+        nombreCompleto,
+        documento: estudiante.documento,
+        searchText: `${nombreCompleto} ${estudiante.documento}`.toLowerCase(),
       };
-    } catch {
-      localStorage.removeItem(this.storageKey());
-      this.savedState = this.emptyPersistedState();
-      this.storageWarning = 'Se descartó un guardado local inválido y se reconstruyó la tabla vacía.';
-    }
+    });
   }
 
-  private restoreAuditTrail(): void {
-    const raw = localStorage.getItem(this.auditStorageKey());
-    if (!raw) {
-      this.auditoria = [];
-      this.expandedAuditSessions = {};
-      return;
-    }
+  private buildSavedCells(
+    calificaciones: CalificacionVigente[],
+    estudiantes: GestionManualEstudiante[],
+  ): CellValueMap {
+    const validStudentIds = new Set(estudiantes.map(estudiante => estudiante.idEstudiante));
+    const cells: CellValueMap = {};
 
-    try {
-      const parsed = JSON.parse(raw) as unknown;
-      this.auditoria = this.normalizeAuditEntries(parsed);
-      this.expandedAuditSessions = Object.fromEntries(
-        this.auditoria.map(session => [session.id, false]),
-      );
-    } catch {
-      localStorage.removeItem(this.auditStorageKey());
-      this.auditoria = [];
-      this.expandedAuditSessions = {};
-      this.auditWarning = 'Se descartó un historial local inválido y se reinició el registro de cambios.';
-    }
-  }
+    calificaciones.forEach(calificacion => {
+      const instancia = this.instanciasById.get(calificacion.idIE);
+      if (!instancia || !validStudentIds.has(calificacion.idEstudiante)) {
+        return;
+      }
 
-  private normalizePersistedCells(cells: unknown): Record<string, number> {
-    if (!cells || typeof cells !== 'object') {
-      return {};
-    }
-
-    const validStudentIds = new Set(this.estudiantes.map(estudiante => estudiante.idEstudiante));
-    const normalized: Record<string, number> = {};
-
-    Object.entries(cells as Record<string, unknown>).forEach(([key, value]) => {
-      const [idEstudiante, evaluacionStr, tipo] = key.split('|');
-      const evaluacion = Number(evaluacionStr);
-
-      if (!validStudentIds.has(idEstudiante)) return;
-      if (!Number.isInteger(evaluacion) || evaluacion < 1 || evaluacion > 8) return;
-      if (!this.tiposCalificacion.includes(tipo as TipoCalificacion)) return;
-      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 10) return;
-
-      normalized[key] = value;
+      cells[this.cellKey(calificacion.idEstudiante, instancia.nro, calificacion.tipoCalificacion)] = calificacion.puntaje;
     });
 
-    return normalized;
+    return cells;
   }
 
-  private normalizeAuditEntries(rawEntries: unknown): CalificacionAuditSession[] {
-    if (!Array.isArray(rawEntries)) {
-      return [];
+  private computeLastUpdatedAt(calificaciones: CalificacionVigente[]): string | null {
+    const timestamps = calificaciones
+      .map(calificacion => Date.parse(calificacion.fechaCarga))
+      .filter(timestamp => !Number.isNaN(timestamp));
+
+    if (timestamps.length === 0) {
+      return null;
     }
 
-    const firstEntry = rawEntries[0];
-    const looksLikeSession = !!firstEntry
-      && typeof firstEntry === 'object'
-      && Array.isArray((firstEntry as { cambios?: unknown }).cambios);
+    return new Date(Math.max(...timestamps)).toISOString();
+  }
 
-    if (looksLikeSession) {
-      return rawEntries
-        .map(rawEntry => this.normalizeAuditSession(rawEntry))
-        .filter((entry): entry is CalificacionAuditSession => entry !== null)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    }
+  private toDraftCells(cells: CellValueMap): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(cells).map(([key, value]) => [key, value === null ? '' : String(value)]),
+    );
+  }
 
-    const legacyChanges = rawEntries
-      .map(rawEntry => this.normalizeLegacyAuditChange(rawEntry))
-      .filter((entry): entry is CalificacionAuditChange & { timestamp: string; docente: string; origen: 'Manual' } => entry !== null);
-
-    const grouped = new Map<string, CalificacionAuditSession>();
-
-    legacyChanges.forEach(change => {
-      const sessionKey = `${change.timestamp}|${change.docente}|${change.origen}`;
-      const session = grouped.get(sessionKey);
-      const normalizedChange: CalificacionAuditChange = {
-        id: change.id,
+  private mapAuditSession(session: AuditoriaCalificacionSesionApi): CalificacionAuditSession {
+    return {
+      id: session.idSesionAuditoria,
+      timestamp: session.timestamp,
+      docente: session.docente,
+      origen: session.origen,
+      cantidadCambios: session.cantidadCambios,
+      cambios: session.cambios.map(change => ({
+        id: change.idDetalleAuditoria,
         idEstudiante: change.idEstudiante,
         estudiante: change.estudiante,
         documento: change.documento,
         evaluacion: change.evaluacion,
-        tipo: change.tipo,
+        tipo: change.tipoCalificacion,
         valorAnterior: change.valorAnterior,
         valorNuevo: change.valorNuevo,
-      };
+      })),
+    };
+  }
 
-      if (session) {
-        session.cambios.push(normalizedChange);
-        return;
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) {
+      if (typeof error.error === 'string' && error.error.trim()) {
+        return error.error;
       }
 
-      grouped.set(sessionKey, {
-        id: `audit-session|legacy|${grouped.size + 1}`,
-        timestamp: change.timestamp,
-        docente: change.docente,
-        origen: change.origen,
-        cambios: [normalizedChange],
-      });
-    });
-
-    return Array.from(grouped.values())
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }
-
-  private normalizeAuditSession(rawEntry: unknown): CalificacionAuditSession | null {
-    if (!rawEntry || typeof rawEntry !== 'object') return null;
-
-    const typedEntry = rawEntry as Partial<CalificacionAuditSession>;
-    if (typeof typedEntry.id !== 'string'
-      || typeof typedEntry.timestamp !== 'string'
-      || typeof typedEntry.docente !== 'string'
-      || typedEntry.origen !== 'Manual'
-      || !Array.isArray(typedEntry.cambios)) {
-      return null;
+      if (error.error && typeof error.error === 'object') {
+        const message = (error.error as { message?: unknown }).message;
+        if (typeof message === 'string' && message.trim()) {
+          return message;
+        }
+      }
     }
 
-    const cambios = typedEntry.cambios
-      .map(change => this.normalizeAuditChange(change))
-      .filter((change): change is CalificacionAuditChange => change !== null);
-
-    if (cambios.length === 0) {
-      return null;
+    if (error instanceof Error && error.message.trim()) {
+      return error.message;
     }
 
-    return {
-      id: typedEntry.id,
-      timestamp: typedEntry.timestamp,
-      docente: typedEntry.docente,
-      origen: typedEntry.origen,
-      cambios,
-    };
-  }
-
-  private normalizeAuditChange(rawEntry: unknown): CalificacionAuditChange | null {
-    if (!rawEntry || typeof rawEntry !== 'object') return null;
-
-    const typedEntry = rawEntry as Partial<CalificacionAuditChange>;
-    return typeof typedEntry.id === 'string'
-      && typeof typedEntry.idEstudiante === 'string'
-      && typeof typedEntry.estudiante === 'string'
-      && typeof typedEntry.documento === 'string'
-      && typeof typedEntry.evaluacion === 'string'
-      && this.tiposCalificacion.includes(typedEntry.tipo as TipoCalificacion)
-      && (typedEntry.valorAnterior === null || typeof typedEntry.valorAnterior === 'number')
-      && (typedEntry.valorNuevo === null || typeof typedEntry.valorNuevo === 'number')
-      ? {
-          id: typedEntry.id,
-          idEstudiante: typedEntry.idEstudiante,
-          estudiante: typedEntry.estudiante,
-          documento: typedEntry.documento,
-          evaluacion: typedEntry.evaluacion,
-          tipo: typedEntry.tipo as TipoCalificacion,
-          valorAnterior: typedEntry.valorAnterior ?? null,
-          valorNuevo: typedEntry.valorNuevo ?? null,
-        }
-      : null;
-  }
-
-  private normalizeLegacyAuditChange(
-    rawEntry: unknown,
-  ): (CalificacionAuditChange & { timestamp: string; docente: string; origen: 'Manual' }) | null {
-    if (!rawEntry || typeof rawEntry !== 'object') return null;
-
-    const typedEntry = rawEntry as Partial<CalificacionAuditChange & {
-      timestamp: string;
-      docente: string;
-      origen: 'Manual';
-    }>;
-
-    return typeof typedEntry.id === 'string'
-      && typeof typedEntry.timestamp === 'string'
-      && typeof typedEntry.idEstudiante === 'string'
-      && typeof typedEntry.estudiante === 'string'
-      && typeof typedEntry.documento === 'string'
-      && typeof typedEntry.evaluacion === 'string'
-      && this.tiposCalificacion.includes(typedEntry.tipo as TipoCalificacion)
-      && (typedEntry.valorAnterior === null || typeof typedEntry.valorAnterior === 'number')
-      && (typedEntry.valorNuevo === null || typeof typedEntry.valorNuevo === 'number')
-      && typeof typedEntry.docente === 'string'
-      && typedEntry.origen === 'Manual'
-      ? {
-          id: typedEntry.id,
-          timestamp: typedEntry.timestamp,
-          idEstudiante: typedEntry.idEstudiante,
-          estudiante: typedEntry.estudiante,
-          documento: typedEntry.documento,
-          evaluacion: typedEntry.evaluacion,
-          tipo: typedEntry.tipo as TipoCalificacion,
-          valorAnterior: typedEntry.valorAnterior ?? null,
-          valorNuevo: typedEntry.valorNuevo ?? null,
-          docente: typedEntry.docente,
-          origen: typedEntry.origen,
-        }
-      : null;
-  }
-
-  private persistState(state: CalificacionesPersistedState): void {
-    localStorage.setItem(this.storageKey(), JSON.stringify(state));
-  }
-
-  private persistAuditTrail(): void {
-    localStorage.setItem(this.auditStorageKey(), JSON.stringify(this.auditoria));
-  }
-
-  private toDraftCells(cells: Record<string, number>): Record<string, string> {
-    return Object.fromEntries(
-      Object.entries(cells).map(([key, value]) => [key, String(value)]),
-    );
-  }
-
-  private storageKey(): string {
-    return `calificaciones-manuales:${this.idEC}`;
-  }
-
-  private auditStorageKey(): string {
-    return `calificaciones-manuales-auditoria:${this.idEC}`;
-  }
-
-  private emptyPersistedState(): CalificacionesPersistedState {
-    return {
-      version: this.storageVersion,
-      updatedAt: null,
-      cells: {},
-    };
+    return fallback;
   }
 }
