@@ -259,6 +259,89 @@ $radius: 16px;
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ─── Datos generales (native-field style) ─── */
+.dg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 4px;
+}
+
+.dg-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.dg-full {
+  grid-column: 1 / -1;
+}
+
+.dg-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+  margin-bottom: 6px;
+}
+
+.req { color: #c0392b; }
+
+.dg-grid {
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid $border;
+    border-radius: 9px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'Open Sans', sans-serif;
+    color: $text;
+    background: $surface;
+    transition: border-color .15s, box-shadow .15s;
+    box-sizing: border-box;
+    appearance: auto;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba(60,120,180,.15);
+    }
+
+    &::placeholder { color: #aab0ba; }
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+}
+
+.field-readonly {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid $border;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #f0f5fa;
+  color: $text-muted;
+
+  svg { width: 15px; height: 15px; color: $primary; flex-shrink: 0; }
+}
+
+.dg-error {
+  font-size: 12px;
+  color: #c0392b;
+  margin-top: 4px;
+}
+
+.dg-mat-field {
+  width: 100%;
+}
+
 @media (max-width: 680px) {
   .page-wrap { padding: 20px 16px 50px; }
   .page-title { font-size: 20px; }
@@ -266,4 +349,6 @@ $radius: 16px;
   .field-half { min-width: 100%; }
   .form-actions { flex-direction: column-reverse; }
   .btn { width: 100%; justify-content: center; }
+  .dg-grid { grid-template-columns: 1fr; }
+  .dg-full { grid-column: 1; }
 }

@@ -90,10 +90,12 @@
 
         <!-- Año lectivo (filtrado) -->
         <div class="field">
-          <label>Año lectivo <span class="req">*</span></label>
-          <select [(ngModel)]="anioLectivo" [disabled]="anioLectivoOpcionesDisponibles.length === 0">
-            <option *ngFor="let year of anioLectivoOpcionesDisponibles" [ngValue]="year">{{ year }}</option>
-          </select>
+          <mat-form-field appearance="outline" class="field-mat">
+            <mat-label>Año lectivo</mat-label>
+            <mat-select [(ngModel)]="anioLectivo" [disabled]="anioLectivoOpcionesDisponibles.length === 0">
+              <mat-option *ngFor="let year of anioLectivoOpcionesDisponibles" [value]="year">{{ year }}</mat-option>
+            </mat-select>
+          </mat-form-field>
           <small class="field-hint" *ngIf="anioLectivoOpcionesDisponibles.length === 0">
             Todos los años disponibles ya tienen un programa cargado.
           </small>
@@ -180,6 +182,7 @@
           </div>
           <div class="chip"><span class="chip-label">Año lectivo:</span> {{ programaCargado.anioLectivo }}</div>
           <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ programaCargado.horasCatedra }}</div>
+          <div class="chip"><span class="chip-label">Autor:</span> {{ programaCargado.nombreDocente }}</div>
         </div>
 
         <!-- Título y descripción -->
@@ -217,24 +220,40 @@
         <div class="acciones-cargado">
           <button class="btn-cancelar" type="button" (click)="volverAProgramas()" [disabled]="realizandoAccion">Volver</button>
 
-          <!-- Confirmado + año actual: Poner vigente + Eliminar -->
-          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && esAnioActual()">
-            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
-            <button class="btn-guardar" type="button" (click)="ponerVigente()" [disabled]="realizandoAccion">
-              {{ realizandoAccion ? 'Procesando...' : 'Poner vigente' }}
+          <!-- Confirmado: Establecer como Vigente (año corriente) · Eliminar -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado'">
+            <button *ngIf="esAnioActual()" class="btn-ac btn-ac-green" type="button"
+                    (click)="ponerVigente()" [disabled]="realizandoAccion">
+              Establecer como Vigente
+            </button>
+            <button class="btn-ac btn-ac-red" type="button"
+                    (click)="eliminar()" [disabled]="realizandoAccion">
+              Eliminar
             </button>
           </div>
 
-          <!-- Confirmado + año anterior: solo Eliminar -->
-          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Confirmado' && !esAnioActual()">
-            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+          <!-- Vigente: Establecer como Confirmado · Establecer como No Vigente -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Vigente'">
+            <button class="btn-ac btn-ac-blue" type="button"
+                    (click)="establecerComoConfirmado()" [disabled]="realizandoAccion">
+              Establecer como Confirmado
+            </button>
+            <button class="btn-ac btn-ac-gray" type="button"
+                    (click)="establecerComoNoVigente()" [disabled]="realizandoAccion">
+              Establecer como No Vigente
+            </button>
           </div>
 
-          <!-- Vigente: sin acciones -->
-
-          <!-- NoVigente: solo Eliminar -->
+          <!-- No Vigente: Reestablecer como Confirmado · Eliminar -->
           <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'NoVigente'">
-            <button class="btn-danger" type="button" (click)="eliminar()" [disabled]="realizandoAccion">Eliminar</button>
+            <button class="btn-ac btn-ac-blue" type="button"
+                    (click)="reestablecerComoConfirmado()" [disabled]="realizandoAccion">
+              Reestablecer como Confirmado
+            </button>
+            <button class="btn-ac btn-ac-red" type="button"
+                    (click)="eliminar()" [disabled]="realizandoAccion">
+              Eliminar
+            </button>
           </div>
         </div>
 

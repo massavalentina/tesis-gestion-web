@@ -5,7 +5,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { filter } from 'rxjs/operators';
 import { ProgramaService } from '../../services/programa.service';
-import { ProgramaDetalle } from '../../models/programa.model';
+import { ProgramaDetalle, ProgramaResumen } from '../../models/programa.model';
 import {
   ConfirmarAccionDialogComponent,
   ConfirmarAccionData,
@@ -54,6 +54,7 @@ export class ProgramaDetalleComponent implements OnInit {
   get esConfirmado(): boolean { return this.programa?.estado === 'Confirmado'; }
   get esVigente(): boolean    { return this.programa?.estado === 'Vigente';    }
   get esNoVigente(): boolean  { return this.programa?.estado === 'NoVigente';  }
+  get esAnioActual(): boolean { return this.programa?.anioLectivo === new Date().getFullYear(); }
 
   badgeClass(): string {
     switch (this.programa?.estado) {
@@ -111,44 +112,66 @@ export class ProgramaDetalleComponent implements OnInit {
   }
 
   ponerVigente(): void {
+    this.programaService.getProgramasPorEC(this.idEC).subscribe({
+      next: (programas: ProgramaResumen[]) => {
+        const vigente = programas.find(p => p.estado === 'Vigente');
+        const mensaje = vigente
+          ? `El programa "${vigente.titulo}" del ${vigente.anioLectivo}, creado por ${vigente.nombreDocente} el ${this.formatFecha(vigente.fechaCreacion)}, será reemplazado por el programa seleccionado.`
+          : '¿Confirmás que querés establecer este programa como vigente?';
+        this.abrirDialogo(
+          { titulo: 'Establecer como Vigente', mensaje, textoConfirmar: 'Establecer como Vigente', color: 'primary' },
+          () => this.ejecutarCambioEstado('Vigente', 'Programa establecido como vigente.'),
+        );
+      },
+      error: () => this.abrirDialogo(
+        {
+          titulo: 'Establecer como Vigente',
+          mensaje: '¿Confirmás que querés establecer este programa como vigente?',
+          textoConfirmar: 'Establecer como Vigente',
+          color: 'primary',
+        },
+        () => this.ejecutarCambioEstado('Vigente', 'Programa establecido como vigente.'),
+      ),
+    });
+  }
+
+  establecerComoConfirmado(): void {
     this.abrirDialogo(
       {
-        titulo: 'Poner como vigente',
-        mensaje:
-          'Este programa pasará a estar vigente para el espacio curricular. ' +
-          'Si hay otro programa vigente actualmente, volverá automáticamente a estado Confirmado.',
-        textoConfirmar: 'Poner vigente',
+        titulo: 'Establecer como Confirmado',
+        mensaje: 'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirmás la acción?',
+        textoConfirmar: 'Establecer como Confirmado',
         color: 'primary',
       },
-      () => this.ejecutarCambioEstado('Vigente', 'Programa marcado como vigente.'),
+      () => this.ejecutarCambioEstado('Confirmado', 'Programa establecido como confirmado.'),
     );
   }
 
-  revertirAConfirmado(): void {
+  establecerComoNoVigente(): void {
     this.abrirDialogo(
       {
-        titulo: 'Revertir a Confirmado',
+        titulo: 'Establecer como No Vigente',
         mensaje:
-          'El programa dejará de estar vigente y volverá al estado Confirmado. ' +
-          '¿Confirmás la acción?',
-        textoConfirmar: 'Revertir',
-        color: 'warn',
-      },
-      () => this.ejecutarCambioEstado('Confirmado', 'Programa revertido a Confirmado.'),
-    );
-  }
-
-  darDeBaja(): void {
-    this.abrirDialogo(
-      {
-        titulo: 'Dar de baja',
-        mensaje:
-          'El programa pasará a "No vigente" y se almacenará como información histórica. ' +
+          'El programa pasará a "No vigente" y quedará almacenado como información histórica. ' +
           'Esta acción no se puede deshacer.',
-        textoConfirmar: 'Dar de baja',
+        textoConfirmar: 'Establecer como No Vigente',
         color: 'warn',
       },
-      () => this.ejecutarCambioEstado('NoVigente', 'Programa dado de baja.'),
+      () => this.ejecutarCambioEstado('NoVigente', 'Programa establecido como no vigente.'),
+    );
+  }
+
+  reestablecerComoConfirmado(): void {
+    this.abrirDialogo(
+      {
+        titulo: 'Reestablecer como Confirmado',
+        mensaje:
+          'El programa volverá al estado Confirmado. ' +
+          'Desde ahí podrá establecerse como vigente si corresponde al año corriente. ¿Confirmás la acción?',
+        textoConfirmar: 'Reestablecer como Confirmado',
+        color: 'primary',
+      },
+      () => this.ejecutarCambioEstado('Confirmado', 'Programa reestablecido como confirmado.'),
     );
   }
 
@@ -156,9 +179,7 @@ export class ProgramaDetalleComponent implements OnInit {
     this.abrirDialogo(
       {
         titulo: 'Eliminar programa',
-        mensaje:
-          'El programa se eliminará permanentemente de la base de datos. ' +
-          'Esta acción no tiene vuelta atrás.',
+        mensaje: 'El programa se eliminará permanentemente. Esta acción no tiene vuelta atrás.',
         textoConfirmar: 'Eliminar',
         color: 'warn',
       },

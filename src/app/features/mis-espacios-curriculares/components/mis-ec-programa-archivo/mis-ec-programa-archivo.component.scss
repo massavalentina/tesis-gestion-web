@@ -638,6 +638,44 @@ textarea {
   margin-top: 4px;
 }
 
+.field-mat {
+  width: 100%;
+}
+
+/* ─── Glass action buttons (vista cargado) ─── */
+.btn-ac {
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  font-family: 'Open Sans', sans-serif;
+  transition: background .15s, border-color .15s, opacity .15s;
+
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.btn-ac-blue {
+  background: #e8eaf6; color: #3949ab; border-color: #c5cae9;
+  &:hover:not(:disabled) { background: #c5cae9; }
+}
+
+.btn-ac-green {
+  background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9;
+  &:hover:not(:disabled) { background: #c8e6c9; }
+}
+
+.btn-ac-gray {
+  background: #f5f5f5; color: #616161; border-color: #e0e0e0;
+  &:hover:not(:disabled) { background: #e0e0e0; }
+}
+
+.btn-ac-red {
+  background: #fce4e4; color: #c62828; border-color: #ef9a9a;
+  &:hover:not(:disabled) { background: #efbbbb; }
+}
+
 /* ─── Acciones vista cargado ─── */
 .acciones-cargado {
   display: flex;
@@ -671,6 +709,10 @@ textarea {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 /* ─── Responsive ─── */
 @media (max-width: 600px) {
