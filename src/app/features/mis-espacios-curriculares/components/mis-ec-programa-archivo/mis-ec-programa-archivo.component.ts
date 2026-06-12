@@ -1,8 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -14,7 +12,7 @@ import { ProgramaDetalle, ProgramaResumen } from '../../models/programa.model';
 @Component({
   selector: 'app-mis-ec-programa-archivo',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './mis-ec-programa-archivo.component.html',
   styleUrl: './mis-ec-programa-archivo.component.scss',
 })
