@@ -13,7 +13,7 @@ export const APP_SECTION_VISIBILITY = {
   credencialesQr: 'desktop',
   fichaAlumno: 'all',
   perfil: 'all',
-  misEspaciosCurriculares: 'all',
+  misEspaciosCurriculares: 'desktop',
 } as const satisfies Record<string, PlatformVisibility>;
 
 export type AppSectionId = keyof typeof APP_SECTION_VISIBILITY;
