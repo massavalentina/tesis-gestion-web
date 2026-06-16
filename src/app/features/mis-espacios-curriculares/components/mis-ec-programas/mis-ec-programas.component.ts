@@ -39,8 +39,7 @@ export class MisEcProgramasComponent implements OnInit {
     }).subscribe(({ ecs, programas }) => {
       this.espacio = ecs.find(e => e.idEC === this.idEC) ?? null;
       this.programas = programas;
-      const currentYear = new Date().getFullYear();
-      this.anioFiltro = programas.some(p => p.anioLectivo === currentYear) ? currentYear : null;
+      this.anioFiltro = null;
       this.loading = false;
     });
   }
@@ -59,7 +58,9 @@ export class MisEcProgramasComponent implements OnInit {
   }
 
   get programasAnteriores(): ProgramaResumen[] {
-    return this.programasFiltrados.filter(p => p.estado !== 'Vigente');
+    return this.programasFiltrados
+      .filter(p => p.estado !== 'Vigente')
+      .sort((a, b) => b.anioLectivo - a.anioLectivo);
   }
 
   formatCurso(anio: number, division: string): string {
