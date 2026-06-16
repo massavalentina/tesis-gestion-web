@@ -31,7 +31,7 @@
     <div class="estado-banner estado-bloqueo" *ngIf="arbol.bloqueado">
       <span class="material-icons">lock</span>
       <div>
-        <strong>Planificación no disponible</strong>
+        <strong>{{ arbol.tituloPrograma }}</strong>
         <p>{{ arbol.mensajeBloqueo }}</p>
       </div>
     </div>

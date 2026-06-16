@@ -1,0 +1,595 @@
+:host {
+  display: block;
+  font-family: 'Inter', sans-serif;
+}
+
+// ─── Vars ─────────────────────────────────────────────────────────────────────
+$primary: #1a73e8;
+$primary-dark: #1558b0;
+$success: #34a853;
+$warn: #f9ab00;
+$danger: #d93025;
+$text: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$surface: #ffffff;
+$bg: #f3f4f6;
+$radius: 12px;
+$radius-sm: 8px;
+
+.planif-root {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  position: relative;
+}
+
+// ─── Center states ────────────────────────────────────────────────────────────
+.planif-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  color: $text-muted;
+  font-size: 14px;
+}
+.planif-error { color: $danger; }
+.error-icon { font-size: 40px; opacity: .7; }
+
+// ─── Spinner ──────────────────────────────────────────────────────────────────
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e0e7ff;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+.spinner-sm {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ─── Header / breadcrumb ──────────────────────────────────────────────────────
+.planif-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.btn-back {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: $text-muted;
+  flex-shrink: 0;
+  transition: background .15s;
+  &:hover { background: $bg; }
+  .material-icons { font-size: 20px; }
+}
+.breadcrumb {
+  display: flex; align-items: center; gap: 2px;
+  font-size: 13px; flex-wrap: wrap;
+}
+.bc-item {
+  color: $text-muted;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .15s;
+  &:hover { color: $primary; }
+  &.bc-root { color: $primary; }
+  &.bc-active { color: $text; font-weight: 600; cursor: default; }
+}
+.bc-sep { font-size: 16px; color: $border; }
+
+// ─── Prog card ────────────────────────────────────────────────────────────────
+.prog-card {
+  display: flex;
+  gap: 24px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.prog-card-left { flex: 1 1 220px; }
+.prog-card-right { flex: 1 1 220px; display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+
+.prog-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: $primary;
+  background: #e8f0fe;
+  border-radius: 100px;
+  padding: 2px 10px;
+  display: inline-block;
+  margin-bottom: 8px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.prog-titulo {
+  font-size: 17px; font-weight: 700;
+  color: $text; margin: 0 0 8px;
+  line-height: 1.35;
+}
+.prog-meta {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: $text-muted;
+}
+.prog-meta-icon { font-size: 15px; }
+.prog-estado { margin-top: 4px; }
+
+.avance-wrap { width: 100%; }
+.avance-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.avance-label { font-size: 12px; font-weight: 600; color: $text-muted; text-transform: uppercase; letter-spacing: .5px; }
+.avance-pct { font-size: 22px; font-weight: 800; color: $primary; }
+.progress-bar-bg {
+  height: 8px; background: #e0e7ff;
+  border-radius: 100px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: $primary;
+  border-radius: 100px;
+  transition: width .4s ease;
+}
+.avance-sub { font-size: 12px; color: $text-muted; margin-top: 5px; }
+
+.btn-ver-pdf {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid $primary;
+  color: $primary; border-radius: $radius-sm;
+  padding: 7px 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+  width: fit-content;
+  .material-icons { font-size: 17px; }
+  &:hover { background: #e8f0fe; }
+}
+
+// ─── Árbol ────────────────────────────────────────────────────────────────────
+.arbol-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+.arbol-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 40px 0;
+  color: $text-muted; font-size: 14px; text-align: center;
+  .arbol-empty-icon { font-size: 48px; opacity: .3; }
+}
+
+// ─── Unidad card ──────────────────────────────────────────────────────────────
+.unidad-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  overflow: hidden;
+}
+.unidad-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background .12s;
+  user-select: none;
+  &:hover { background: #fafafa; }
+}
+.unidad-header-left { display: flex; align-items: center; gap: 12px; }
+.unidad-num {
+  font-size: 11px; font-weight: 700; color: $primary;
+  background: #e8f0fe; border-radius: 6px;
+  padding: 3px 8px; letter-spacing: .5px; white-space: nowrap;
+}
+.unidad-info { display: flex; flex-direction: column; gap: 2px; }
+.unidad-titulo { font-size: 14px; font-weight: 700; color: $text; }
+.unidad-sub { font-size: 12px; color: $text-muted; }
+.unidad-header-right { display: flex; align-items: center; gap: 8px; }
+.unidad-chevron {
+  font-size: 20px; color: $text-muted;
+  transition: transform .2s;
+  &.open { transform: rotate(180deg); }
+}
+.unidad-body { border-top: 1px solid $border; }
+
+// ─── Tema ─────────────────────────────────────────────────────────────────────
+.tema-row-wrap { border-bottom: 1px solid $bg; }
+.tema-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 18px 11px 32px;
+  cursor: pointer; transition: background .12s;
+  user-select: none;
+  &:hover { background: #f9fafb; }
+}
+.tema-row-left { display: flex; align-items: center; gap: 10px; }
+.tema-num {
+  font-size: 10px; font-weight: 700; color: $text-muted;
+  background: $bg; border-radius: 4px;
+  padding: 2px 6px; white-space: nowrap;
+}
+.tema-info { display: flex; flex-direction: column; gap: 1px; }
+.tema-titulo { font-size: 13px; font-weight: 600; color: $text; }
+.tema-sub { font-size: 12px; color: $text-muted; }
+.tema-row-right { display: flex; align-items: center; gap: 8px; }
+.tema-chevron {
+  font-size: 18px; color: $text-muted;
+  transition: transform .2s;
+  &.open { transform: rotate(180deg); }
+}
+
+.tema-empty {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 32px;
+  font-size: 13px; color: $text-muted;
+}
+.link-btn {
+  background: none; border: none;
+  color: $primary; font-size: 13px;
+  cursor: pointer; padding: 0;
+  text-decoration: underline;
+  &:hover { opacity: .8; }
+}
+.tema-footer {
+  padding: 8px 18px 12px;
+  display: flex; justify-content: flex-end;
+}
+
+// ─── Clases ───────────────────────────────────────────────────────────────────
+.clases-wrap {
+  padding: 6px 18px 12px 46px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.clase-empty {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: $text-muted;
+  padding: 4px 0;
+}
+.clase-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  background: $bg;
+  border-radius: $radius-sm;
+  transition: background .12s;
+  &:hover { background: #e9ecf0; }
+}
+.clase-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: $border; flex-shrink: 0;
+  transition: background .2s;
+  &.dado { background: $success; }
+}
+.clase-info { flex: 1; min-width: 0; }
+.clase-titulo {
+  font-size: 13px; font-weight: 600; color: $text;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.clase-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;
+}
+.clase-fecha { font-size: 11px; color: $text-muted; display: flex; align-items: center; gap: 3px; }
+.clase-estado-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  border-radius: 100px; padding: 1px 7px;
+  background: #fef3c7; color: #92400e;
+  text-transform: uppercase;
+  &.dado { background: #d1fae5; color: #065f46; }
+}
+.clase-pdf-link {
+  color: $primary; display: flex; align-items: center;
+  text-decoration: none;
+  &:hover { opacity: .8; }
+}
+.clase-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.btn-edit-clase {
+  background: none; border: none; cursor: pointer;
+  color: $text-muted; display: flex; align-items: center;
+  padding: 4px; border-radius: 4px;
+  transition: background .12s, color .12s;
+  .material-icons { font-size: 16px; }
+  &:hover { background: $border; color: $text; }
+}
+
+// ─── Botones árbol ────────────────────────────────────────────────────────────
+.btn-planificar {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: 1px dashed #93c5fd;
+  color: $primary; border-radius: $radius-sm;
+  padding: 5px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; margin-top: 4px; width: fit-content;
+  transition: background .15s;
+  .material-icons { font-size: 15px; }
+  &:hover { background: #eff6ff; }
+}
+.btn-crear-tema {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: none;
+  color: $text-muted; font-size: 12px; font-weight: 600;
+  cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: color .15s, background .15s;
+  .material-icons { font-size: 15px; }
+  &:hover { color: $primary; background: #eff6ff; }
+}
+.btn-crear-unidad {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  border: 2px dashed $border; background: none;
+  border-radius: $radius; color: $text-muted;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  .material-icons { font-size: 18px; }
+  &:hover { border-color: $primary; color: $primary; background: #eff6ff; }
+}
+.btn-crear-unidad-empty {
+  @extend .btn-crear-unidad;
+  border-style: solid; border-color: $primary;
+  color: $primary;
+}
+
+// ─── Estado dot ──────────────────────────────────────────────────────────────
+.estado-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: $border; flex-shrink: 0;
+  transition: background .25s;
+  &.dado { background: $success; }
+  &.sm { width: 9px; height: 9px; }
+}
+
+// ─── Toggle switch ────────────────────────────────────────────────────────────
+.toggle-switch {
+  position: relative; display: inline-flex;
+  align-items: center; cursor: pointer;
+  input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .slider {
+    width: 36px; height: 20px;
+    background: $border; border-radius: 100px;
+    transition: background .2s;
+    &::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+  }
+  input:checked + .slider { background: $success; }
+  input:checked + .slider::after { transform: translateX(16px); }
+  &.sm .slider { width: 28px; height: 16px; }
+  &.sm .slider::after { width: 10px; height: 10px; top: 3px; left: 3px; }
+  &.sm input:checked + .slider::after { transform: translateX(12px); }
+}
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+// ─── Overlay + Drawer ─────────────────────────────────────────────────────────
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 100;
+  animation: fadeIn .2s;
+}
+.drawer {
+  position: fixed;
+  top: 0; right: -440px;
+  width: 420px; max-width: 100vw;
+  height: 100%;
+  background: $surface;
+  z-index: 101;
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,.15);
+  transition: right .25s cubic-bezier(.4,0,.2,1);
+  &.open { right: 0; }
+}
+.drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid $border;
+  h3 { margin: 0; font-size: 16px; font-weight: 700; color: $text; }
+}
+.drawer-close {
+  background: none; border: none; cursor: pointer;
+  color: $text-muted; display: flex; align-items: center;
+  padding: 4px; border-radius: 6px;
+  transition: background .12s;
+  .material-icons { font-size: 20px; }
+  &:hover { background: $bg; }
+}
+.drawer-body {
+  flex: 1; overflow-y: auto;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.drawer-footer {
+  padding: 14px 20px;
+  border-top: 1px solid $border;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.drawer-footer-right { display: flex; gap: 8px; }
+.drawer-ctx {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding-bottom: 4px;
+}
+.ctx-chip {
+  background: #e8f0fe; color: $primary;
+  border-radius: 100px; padding: 3px 10px;
+  font-size: 12px; font-weight: 600;
+}
+.drawer-error {
+  display: flex; align-items: center; gap: 6px;
+  background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: $radius-sm; padding: 10px 12px;
+  font-size: 13px; color: $danger;
+  .material-icons { font-size: 16px; }
+}
+
+// ─── Form fields ──────────────────────────────────────────────────────────────
+.form-field {
+  display: flex; flex-direction: column; gap: 6px;
+  label { font-size: 13px; font-weight: 600; color: $text; }
+  input[type=text], input[type=date], textarea, select {
+    border: 1px solid $border; border-radius: $radius-sm;
+    padding: 9px 12px; font-size: 14px; color: $text;
+    width: 100%; box-sizing: border-box;
+    outline: none; background: $surface;
+    font-family: inherit; resize: vertical;
+    transition: border-color .15s;
+    &:focus { border-color: $primary; }
+  }
+  &.invalid input, &.invalid textarea { border-color: $danger; }
+}
+.form-field-inline {
+  display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 12px; color: $text-muted; font-weight: 600; }
+  input { border: 1px solid $border; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+}
+.fechas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-error { font-size: 12px; color: $danger; }
+.req { color: $danger; }
+
+// ─── Drop zone ────────────────────────────────────────────────────────────────
+.drop-zone {
+  border: 2px dashed $border;
+  border-radius: $radius-sm;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  &.dragging { border-color: $primary; background: #eff6ff; }
+  &:hover { border-color: #93c5fd; }
+}
+.drop-icon { font-size: 32px; color: $text-muted; opacity: .6; }
+.drop-text { font-size: 13px; color: $text-muted; }
+.drop-file-row {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+}
+.drop-file-info { flex: 1; min-width: 0; }
+.drop-file-name { font-size: 13px; font-weight: 600; color: $text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.drop-file-size { font-size: 11px; color: $text-muted; }
+.btn-quitar-archivo {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: $text-muted; display: flex; align-items: center;
+  border-radius: 4px; transition: background .12s;
+  .material-icons { font-size: 16px; }
+  &:hover { background: $border; }
+}
+
+// ─── Botones ──────────────────────────────────────────────────────────────────
+.btn-primary {
+  background: $primary; color: #fff;
+  border: none; border-radius: $radius-sm;
+  padding: 9px 20px; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+  &:hover:not(:disabled) { background: $primary-dark; }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+.btn-secondary {
+  background: $surface; color: $text;
+  border: 1px solid $border; border-radius: $radius-sm;
+  padding: 9px 16px; font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: background .15s;
+  &:hover:not(:disabled) { background: $bg; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+.btn-danger {
+  background: $danger; color: #fff;
+  border: none; border-radius: $radius-sm;
+  padding: 9px 20px; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+  &:hover:not(:disabled) { background: darken($danger, 8%); }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+.btn-eliminar {
+  background: none; border: none; color: $danger;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 6px 8px; border-radius: $radius-sm;
+  transition: background .15s;
+  .material-icons { font-size: 17px; }
+  &:hover { background: #fef2f2; }
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .15s;
+}
+.modal-box {
+  background: $surface;
+  border-radius: $radius;
+  padding: 28px 28px 24px;
+  max-width: 400px; width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  h4 { font-size: 17px; font-weight: 700; color: $text; margin: 8px 0; }
+  p { font-size: 14px; color: $text-muted; line-height: 1.5; margin: 0 0 20px; }
+}
+.modal-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 4px;
+  &.warn { background: #fef3c7; .material-icons { color: $warn; font-size: 28px; } }
+}
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+// ─── PDF Modal ────────────────────────────────────────────────────────────────
+.pdf-overlay { align-items: stretch; padding: 20px; box-sizing: border-box; }
+.pdf-modal-box {
+  background: $surface;
+  border-radius: $radius;
+  flex: 1;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  max-width: 900px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+}
+.pdf-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid $border;
+}
+.pdf-modal-titulo { font-size: 14px; font-weight: 700; color: $text; }
+.pdf-frame { flex: 1; border: none; width: 100%; }
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1f2937; color: #fff;
+  border-radius: 100px; padding: 10px 20px;
+  font-size: 14px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0; transition: opacity .25s, transform .25s;
+  pointer-events: none; z-index: 300; white-space: nowrap;
+  &.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+  &.ok { background: $success; }
+  &.warn { background: $warn; color: $text; }
+  .toast-icon { font-size: 18px; }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@media (max-width: 600px) {
+  .planif-root { padding: 16px 12px 80px; }
+  .prog-card { flex-direction: column; gap: 16px; padding: 16px; }
+  .drawer { width: 100%; }
+  .clases-wrap { padding-left: 28px; }
+  .avance-pct { font-size: 18px; }
+}
