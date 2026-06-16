@@ -1,0 +1,395 @@
+<div class="planif-root">
+
+  <!-- ─── Loading / Error ─── -->
+  <div class="planif-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando planificación…</span>
+  </div>
+
+  <div class="planif-center planif-error" *ngIf="!loading && error">
+    <span class="material-icons error-icon">error_outline</span>
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="volver()">Volver</button>
+  </div>
+
+  <!-- ─── Contenido principal ─── -->
+  <ng-container *ngIf="!loading && !error && arbol">
+
+    <!-- Header con breadcrumb -->
+    <div class="planif-header">
+      <button class="btn-back" (click)="volver()">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <div class="breadcrumb">
+        <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
+        <span class="material-icons bc-sep">chevron_right</span>
+        <span class="bc-item bc-active">Planificación</span>
+      </div>
+    </div>
+
+    <!-- ─── Estado bloqueado (programa por archivo) ─── -->
+    <div class="estado-banner estado-bloqueo" *ngIf="arbol.bloqueado">
+      <span class="material-icons">lock</span>
+      <div>
+        <strong>Planificación no disponible</strong>
+        <p>{{ arbol.mensajeBloqueo }}</p>
+      </div>
+    </div>
+
+    <!-- ─── Estado sin programa ─── -->
+    <div class="estado-banner estado-info" *ngIf="arbol.sinPrograma">
+      <span class="material-icons">info</span>
+      <div>
+        <strong>Sin programa vigente</strong>
+        <p>Este espacio curricular no tiene un programa vigente. Primero cargá el programa desde la sección "Programas".</p>
+      </div>
+    </div>
+
+    <!-- ─── Árbol normal ─── -->
+    <ng-container *ngIf="!arbol.bloqueado && !arbol.sinPrograma">
+
+      <!-- Card resumen del programa -->
+      <div class="prog-card">
+        <div class="prog-card-left">
+          <div class="prog-tag">Programa {{ arbol.anioLectivo }}</div>
+          <h2 class="prog-titulo">{{ arbol.tituloPrograma }}</h2>
+          <div class="prog-meta">
+            <span class="material-icons prog-meta-icon">school</span>
+            {{ arbol.nombreMateria }}
+          </div>
+          <div class="prog-meta prog-estado">
+            <span class="material-icons prog-meta-icon">check_circle</span>
+            {{ arbol.estadoPrograma }}
+          </div>
+          <div class="prog-meta">
+            <span class="material-icons prog-meta-icon">person</span>
+            Diseñado por {{ arbol.nombreDocente }}
+          </div>
+        </div>
+        <div class="prog-card-right">
+          <div class="avance-wrap">
+            <div class="avance-header">
+              <span class="avance-label">Avance del programa</span>
+              <span class="avance-pct">{{ avancePorcentaje }}%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="avancePorcentaje"></div>
+            </div>
+            <div class="avance-sub">{{ arbol.temasCompletos }} / {{ arbol.totalTemas }} temas dados</div>
+          </div>
+          <button class="btn-ver-pdf" *ngIf="arbol.urlPrograma" (click)="abrirPdfPrograma()">
+            <span class="material-icons">picture_as_pdf</span>
+            Ver PDF del programa
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── Árbol ─── -->
+      <div class="arbol-wrap">
+
+        <!-- Unidad vacía -->
+        <div class="arbol-empty" *ngIf="arbol.unidades.length === 0">
+          <span class="material-icons arbol-empty-icon">account_tree</span>
+          <p>Este programa aún no tiene unidades cargadas.</p>
+          <button class="btn-crear-unidad-empty" *ngIf="arbol.permiteCrearItems" (click)="abrirCrearUnidad()">
+            <span class="material-icons">add</span> Crear primera unidad
+          </button>
+        </div>
+
+        <!-- Unidades -->
+        <div class="unidad-card" *ngFor="let unidad of arbol.unidades">
+          <div class="unidad-header" (click)="toggleUnidad(unidad.idBloquePrograma)">
+            <div class="unidad-header-left">
+              <span class="unidad-num">U{{ unidad.nro }}</span>
+              <div class="unidad-info">
+                <span class="unidad-titulo">{{ unidad.titulo }}</span>
+                <span class="unidad-sub">{{ countClasesUnidad(unidad) }}</span>
+              </div>
+            </div>
+            <div class="unidad-header-right">
+              <div class="estado-dot" [class.dado]="unidadEsDada(unidad)" [title]="unidadEsDada(unidad) ? 'Completada' : 'En progreso'"></div>
+              <span class="material-icons unidad-chevron" [class.open]="isUnidadOpen(unidad.idBloquePrograma)">expand_more</span>
+            </div>
+          </div>
+
+          <div class="unidad-body" *ngIf="isUnidadOpen(unidad.idBloquePrograma)">
+
+            <!-- Temas vacíos -->
+            <div class="tema-empty" *ngIf="unidad.temas.length === 0">
+              <span class="material-icons" style="font-size:18px;opacity:.4">topic</span>
+              <span>Sin temas. </span>
+              <button class="link-btn" *ngIf="arbol.permiteCrearItems" (click)="abrirCrearTema(unidad)">Agregá el primero</button>
+            </div>
+
+            <!-- Temas -->
+            <div class="tema-row-wrap" *ngFor="let tema of unidad.temas">
+              <div class="tema-row" (click)="toggleTema(tema.idBloquePrograma)">
+                <div class="tema-row-left">
+                  <span class="tema-num">T{{ tema.nro }}</span>
+                  <div class="tema-info">
+                    <span class="tema-titulo">{{ tema.titulo }}</span>
+                    <span class="tema-sub">{{ countClasesTema(tema) }}</span>
+                  </div>
+                </div>
+                <div class="tema-row-right">
+                  <!-- Toggle manual Dado/Pendiente para el tema -->
+                  <div class="tema-toggle-area" (click)="$event.stopPropagation()">
+                    <span class="tema-estado-lbl" [class.dado]="temaEsDado(tema)">
+                      {{ temaEsDado(tema) ? 'Dado' : 'Pendiente' }}
+                    </span>
+                    <label class="toggle-switch sm">
+                      <input type="checkbox" [checked]="temaEsDado(tema)" (change)="toggleEstadoTema(tema)" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <span class="material-icons tema-chevron" [class.open]="isTemaOpen(tema.idBloquePrograma)">expand_more</span>
+                </div>
+              </div>
+
+              <div class="clases-wrap" *ngIf="isTemaOpen(tema.idBloquePrograma)">
+
+                <!-- Clases vacías -->
+                <div class="clase-empty" *ngIf="tema.clases.length === 0">
+                  <span class="material-icons" style="font-size:16px;opacity:.35">class</span>
+                  <span>Sin clases planificadas.</span>
+                </div>
+
+                <!-- Lista de clases -->
+                <div class="clase-item" [class.dado]="claseEsDada(clase)" *ngFor="let clase of tema.clases">
+                  <div class="clase-dot" [class.dado]="claseEsDada(clase)"></div>
+                  <div class="clase-info">
+                    <span class="clase-titulo">{{ clase.titulo }}</span>
+                    <div class="clase-meta">
+                      <span class="clase-fecha" *ngIf="clase.fechaEstimada">
+                        <span class="material-icons" style="font-size:13px;vertical-align:middle">calendar_today</span>
+                        {{ formatFecha(clase.fechaEstimada) }}
+                        <ng-container *ngIf="clase.fechaDictada"> → {{ formatFecha(clase.fechaDictada) }}</ng-container>
+                      </span>
+                      <span class="clase-estado-badge" [class.dado]="claseEsDada(clase)">
+                        {{ claseEsDada(clase) ? 'Dictada' : 'Pendiente' }}
+                      </span>
+                      <a class="clase-pdf-link" *ngIf="clase.url" [href]="clase.url" target="_blank" (click)="$event.stopPropagation()">
+                        <span class="material-icons" style="font-size:14px">picture_as_pdf</span>
+                      </a>
+                    </div>
+                  </div>
+                  <div class="clase-actions">
+                    <label class="toggle-switch" (click)="$event.stopPropagation()" title="Marcar dictada / pendiente">
+                      <input type="checkbox" [checked]="claseEsDada(clase)" (change)="toggleEstadoClase(clase)" />
+                      <span class="slider"></span>
+                    </label>
+                    <button class="btn-edit-clase" (click)="abrirEditarClase(unidad, tema, clase)">
+                      <span class="material-icons">edit</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Planificar clase -->
+                <button class="btn-planificar" (click)="abrirCrearClase(unidad, tema)">
+                  <span class="material-icons">add</span>
+                  Planificar clase
+                </button>
+              </div>
+            </div>
+
+            <!-- Crear tema (solo para programas por archivo) -->
+            <div class="tema-footer" *ngIf="arbol.permiteCrearItems">
+              <button class="btn-crear-tema" (click)="abrirCrearTema(unidad)">
+                <span class="material-icons">add</span>
+                Agregar tema
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crear unidad (solo para programas por archivo) -->
+        <button class="btn-crear-unidad" *ngIf="arbol.permiteCrearItems && arbol.unidades.length > 0" (click)="abrirCrearUnidad()">
+          <span class="material-icons">add</span>
+          Crear unidad
+        </button>
+      </div>
+
+    </ng-container>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════
+       Drawer CLASE
+  ══════════════════════════════════════════════════════ -->
+  <div class="overlay" *ngIf="drawerClase" (click)="cerrarDrawerClase()"></div>
+  <div class="drawer" [class.open]="drawerClase">
+    <div class="drawer-header">
+      <h3>{{ drawerClaseModo === 'crear' ? 'Planificar clase' : 'Editar clase' }}</h3>
+      <button class="drawer-close" (click)="cerrarDrawerClase()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Contexto: unidad + tema -->
+      <div class="drawer-ctx" *ngIf="drawerClaseUnidad || drawerClaseTema">
+        <span class="ctx-chip ctx-chip-unidad" *ngIf="drawerClaseUnidad">{{ drawerClaseUnidad.titulo }}</span>
+        <span class="material-icons" *ngIf="drawerClaseUnidad && drawerClaseTema" style="font-size:14px;color:#9ca3af">chevron_right</span>
+        <span class="ctx-chip" *ngIf="drawerClaseTema">{{ drawerClaseTema.titulo }}</span>
+      </div>
+      <p class="drawer-ctx-note">La clase queda vinculada a este tema. El avance lo decidís marcando el tema como dado.</p>
+
+      <!-- Título -->
+      <div class="form-field" [class.invalid]="claseTituloInvalido">
+        <label>Título <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="claseTitulo" placeholder="Ej: Introducción a funciones lineales"
+               (input)="claseTituloInvalido = false" />
+        <small *ngIf="claseTituloInvalido" class="field-error">El título es obligatorio.</small>
+      </div>
+
+      <!-- Descripción -->
+      <div class="form-field">
+        <label>Descripción <span class="opt">(opcional)</span></label>
+        <textarea [(ngModel)]="claseDescripcion" rows="3" placeholder="Objetivos, recursos, observaciones…"></textarea>
+      </div>
+
+      <!-- Fecha estimada -->
+      <div class="form-field">
+        <label>Fecha estimada para dictar <span class="opt">(opcional)</span></label>
+        <input type="date" [(ngModel)]="claseFechaDesde" />
+      </div>
+
+      <!-- Estado -->
+      <div class="form-field">
+        <div class="toggle-row">
+          <div>
+            <label style="margin-bottom:2px">Dictada</label>
+            <div style="font-size:12px;color:#6b7280">La clase ya fue dada</div>
+          </div>
+          <label class="toggle-switch sm">
+            <input type="checkbox" [checked]="claseEstado === 'Dado'" (change)="claseEstado = claseEstado === 'Dado' ? 'PendienteDar' : 'Dado'" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Fecha dictada -->
+      <div class="form-field">
+        <label>Fecha dictada <span class="opt">(opcional)</span></label>
+        <input type="date" [(ngModel)]="claseFechaHasta" [disabled]="claseEstado !== 'Dado'" />
+        <small class="field-hint" *ngIf="claseEstado !== 'Dado'">Se puede indicar una vez que la clase esté marcada como dictada.</small>
+      </div>
+
+      <!-- Error -->
+      <div class="drawer-error" *ngIf="errorClase">
+        <span class="material-icons">warning</span>
+        {{ errorClase }}
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="drawer-footer-left">
+        <button class="btn-eliminar" *ngIf="drawerClaseModo === 'editar'" (click)="abrirModalEliminar()">
+          <span class="material-icons">delete</span>
+          Eliminar
+        </button>
+      </div>
+      <div class="drawer-footer-right">
+        <button class="btn-secondary" (click)="cerrarDrawerClase()" [disabled]="guardandoClase">Cancelar</button>
+        <button class="btn-primary" (click)="guardarClase()" [disabled]="guardandoClase">
+          <span *ngIf="guardandoClase" class="spinner-sm"></span>
+          {{ drawerClaseModo === 'crear' ? 'Guardar clase' : 'Actualizar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Drawer ITEM (unidad / tema) — programas Archivo
+  ══════════════════════════════════════════════════════ -->
+  <div class="overlay" *ngIf="drawerItem" (click)="cerrarDrawerItem()"></div>
+  <div class="drawer" [class.open]="drawerItem">
+    <div class="drawer-header">
+      <h3>{{ drawerItemModo === 'unidad' ? 'Nueva unidad' : 'Nuevo tema' }}</h3>
+      <button class="drawer-close" (click)="cerrarDrawerItem()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-ctx" *ngIf="drawerItemModo === 'tema' && drawerItemUnidadCtx">
+        <span class="ctx-chip">{{ drawerItemUnidadCtx.titulo }}</span>
+      </div>
+
+      <div class="form-field" [class.invalid]="itemTituloInvalido">
+        <label>Título <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="itemTitulo"
+               [placeholder]="drawerItemModo === 'unidad' ? 'Ej: Álgebra lineal' : 'Ej: Funciones cuadráticas'"
+               (input)="itemTituloInvalido = false" />
+        <small *ngIf="itemTituloInvalido" class="field-error">El título es obligatorio.</small>
+      </div>
+
+      <div class="form-field">
+        <label>Descripción <span class="opt">(opcional)</span></label>
+        <textarea [(ngModel)]="itemDescripcion" rows="3"
+                  [placeholder]="drawerItemModo === 'unidad' ? 'Objetivos de la unidad…' : 'Detalle del tema…'"></textarea>
+      </div>
+
+      <div class="drawer-error" *ngIf="errorItem">
+        <span class="material-icons">warning</span>
+        {{ errorItem }}
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="drawer-footer-left"></div>
+      <div class="drawer-footer-right">
+        <button class="btn-secondary" (click)="cerrarDrawerItem()" [disabled]="guardandoItem">Cancelar</button>
+        <button class="btn-primary" (click)="guardarItem()" [disabled]="guardandoItem">
+          <span *ngIf="guardandoItem" class="spinner-sm"></span>
+          {{ drawerItemModo === 'unidad' ? 'Crear unidad' : 'Agregar tema' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Modal ELIMINAR clase
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" *ngIf="modalEliminar" (click)="cancelarEliminar()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon warn">
+        <span class="material-icons">delete_forever</span>
+      </div>
+      <h4>¿Eliminar clase?</h4>
+      <p>Esta acción no se puede deshacer. La clase <strong>{{ editandoClase?.titulo }}</strong> se eliminará permanentemente.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelarEliminar()" [disabled]="eliminandoClase">Cancelar</button>
+        <button class="btn-danger" (click)="ejecutarEliminar()" [disabled]="eliminandoClase">
+          <span *ngIf="eliminandoClase" class="spinner-sm"></span>
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Modal PDF (programa)
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay pdf-overlay" *ngIf="pdfModalVisible" (click)="cerrarPdfModal()">
+    <div class="pdf-modal-box" (click)="$event.stopPropagation()">
+      <div class="pdf-modal-header">
+        <span class="pdf-modal-titulo">Programa de {{ arbol?.nombreMateria }}</span>
+        <button class="drawer-close" (click)="cerrarPdfModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <iframe [src]="pdfModalUrl" class="pdf-frame"></iframe>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Toast
+  ══════════════════════════════════════════════════════ -->
+  <div class="toast" [class.visible]="toastVisible" [class.ok]="toastTipo==='ok'" [class.warn]="toastTipo==='warn'">
+    <span class="material-icons toast-icon">
+      {{ toastTipo === 'ok' ? 'check_circle' : toastTipo === 'warn' ? 'warning' : 'info' }}
+    </span>
+    {{ toastMensaje }}
+  </div>
+
+</div>
