@@ -166,7 +166,7 @@
       <ng-container *ngIf="!errorCarga && programaCargado">
 
         <div class="cargado-head">
-          <h1>Programa cargado</h1>
+          <h1>{{ programaCargado.titulo }}</h1>
           <span class="badge" [ngClass]="badgeStateClass(programaCargado.estado)">
             {{ badgeLabel(programaCargado.estado) }}
           </span>
