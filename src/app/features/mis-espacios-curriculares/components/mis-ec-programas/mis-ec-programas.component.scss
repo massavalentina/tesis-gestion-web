@@ -116,6 +116,36 @@ $radius: 16px;
   }
 }
 
+/* ─── Filtro de año ─── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+.filter-select {
+  font-size: 13.5px;
+  font-family: inherit;
+  color: $text;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+
+  &:focus { border-color: $primary; }
+}
+
 /* ─── Section title ─── */
 .section-title {
   font-size: 15px;
@@ -282,11 +312,3 @@ $radius: 16px;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 680px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .header { flex-direction: column; }
-  .header-text h2 { font-size: 20px; }
-  .header-actions { width: 100%; }
-  .btn { flex: 1; justify-content: center; }
-}

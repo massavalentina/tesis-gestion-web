@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
@@ -10,13 +11,14 @@ import { ProgramaResumen } from '../../models/programa.model';
 @Component({
   selector: 'app-mis-ec-programas',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './mis-ec-programas.component.html',
   styleUrl: './mis-ec-programas.component.scss',
 })
 export class MisEcProgramasComponent implements OnInit {
   espacio: MisEcItem | null = null;
   programas: ProgramaResumen[] = [];
+  anioFiltro: number | null = null;
   loading = true;
   error = false;
   idEC = '';
@@ -37,16 +39,27 @@ export class MisEcProgramasComponent implements OnInit {
     }).subscribe(({ ecs, programas }) => {
       this.espacio = ecs.find(e => e.idEC === this.idEC) ?? null;
       this.programas = programas;
+      const currentYear = new Date().getFullYear();
+      this.anioFiltro = programas.some(p => p.anioLectivo === currentYear) ? currentYear : null;
       this.loading = false;
     });
   }
 
+  get aniosDisponibles(): number[] {
+    return [...new Set(this.programas.map(p => p.anioLectivo))].sort((a, b) => b - a);
+  }
+
+  get programasFiltrados(): ProgramaResumen[] {
+    if (this.anioFiltro === null) return this.programas;
+    return this.programas.filter(p => p.anioLectivo === this.anioFiltro);
+  }
+
   get programaVigente(): ProgramaResumen | undefined {
-    return this.programas.find(p => p.estado === 'Vigente');
+    return this.programasFiltrados.find(p => p.estado === 'Vigente');
   }
 
   get programasAnteriores(): ProgramaResumen[] {
-    return this.programas.filter(p => p.estado !== 'Vigente');
+    return this.programasFiltrados.filter(p => p.estado !== 'Vigente');
   }
 
   formatCurso(anio: number, division: string): string {
