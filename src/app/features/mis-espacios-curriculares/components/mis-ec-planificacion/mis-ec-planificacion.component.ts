@@ -42,8 +42,13 @@ export class MisEcPlanificacionComponent implements OnInit {
   claseFechaHasta = '';
   claseTituloInvalido = false;
   claseFechaDictadaInvalida = false;
+  claseFechaDesdeInvalida = false;
+  claseFechaHastaAnioInvalido = false;
   guardandoClase = false;
   errorClase = '';
+
+  readonly fechaMinAnio = `${new Date().getFullYear()}-01-01`;
+  readonly fechaMaxAnio = `${new Date().getFullYear()}-12-31`;
 
   // ─── Drawer: item (unidad / tema) — solo para programas de origen Archivo ──
   drawerItem = false;
@@ -62,6 +67,16 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   // ─── Modal confirmar clase ────────────────────────────────────────────────────
   modalConfirmClase = false;
+
+  // ─── Modal: marcar clase como dictada desde el toggle ────────────────────────
+  modalFechaDictada = false;
+  modalFechaDictadaClase: ClasePlanificacionDto | null = null;
+  modalFechaDictadaTema: TemaArbolDto | null = null;
+  fechaDictadaInput = '';
+  fechaDictadaInputInvalida = false;
+  fechaDictadaInputAnioInvalido = false;
+  marcandoDictada = false;
+  modalConfirmDictada = false;
 
   // ─── Visor PDF (del programa) ─────────────────────────────────────────────
   pdfModalUrl: SafeResourceUrl | null = null;
@@ -190,6 +205,8 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseFechaHasta = clase.fechaDictada ?? '';
     this.claseTituloInvalido = false;
     this.claseFechaDictadaInvalida = false;
+    this.claseFechaDesdeInvalida = false;
+    this.claseFechaHastaAnioInvalido = false;
     this.errorClase = '';
     this.drawerClase = true;
   }
@@ -207,19 +224,20 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseFechaHasta = '';
     this.claseTituloInvalido = false;
     this.claseFechaDictadaInvalida = false;
+    this.claseFechaDesdeInvalida = false;
+    this.claseFechaHastaAnioInvalido = false;
     this.errorClase = '';
   }
 
   guardarClase(): void {
     this.claseTituloInvalido = !this.claseTitulo.trim();
     this.claseFechaDictadaInvalida = this.claseEstado === 'Dado' && !this.claseFechaHasta;
-    if (this.claseTituloInvalido || this.claseFechaDictadaInvalida) return;
+    this.claseFechaDesdeInvalida = !!this.claseFechaDesde && !this.esFechaAnioActual(this.claseFechaDesde);
+    this.claseFechaHastaAnioInvalido = !!this.claseFechaHasta && !this.esFechaAnioActual(this.claseFechaHasta);
+    if (this.claseTituloInvalido || this.claseFechaDictadaInvalida ||
+        this.claseFechaDesdeInvalida || this.claseFechaHastaAnioInvalido) return;
 
-    if (this.drawerClaseModo === 'crear') {
-      this.modalConfirmClase = true;
-      return;
-    }
-    this.ejecutarGuardarClase();
+    this.modalConfirmClase = true;
   }
 
   confirmarGuardarClase(): void {
@@ -271,23 +289,79 @@ export class MisEcPlanificacionComponent implements OnInit {
     }
   }
 
-  // ─── Toggle estado clase (Pendiente ↔ Dictada — solo informativo) ─────────
+  // ─── Toggle estado clase (Pendiente ↔ Dictada) ───────────────────────────────
 
-  toggleEstadoClase(clase: ClasePlanificacionDto): void {
-    const nuevoEstado = clase.estado === 'Dado' ? 'PendienteDar' : 'Dado';
-    const estadoAnterior = clase.estado;
-    clase.estado = nuevoEstado;
+  toggleEstadoClase(tema: TemaArbolDto, clase: ClasePlanificacionDto): void {
+    if (clase.estado !== 'Dado') {
+      // Marcando como dictada → pedir fecha primero
+      this.modalFechaDictadaClase = clase;
+      this.modalFechaDictadaTema = tema;
+      this.fechaDictadaInput = clase.fechaEstimada ?? '';
+      this.fechaDictadaInputInvalida = false;
+      this.fechaDictadaInputAnioInvalido = false;
+      this.modalFechaDictada = true;
+    } else {
+      // Desmarcando → PendienteDar directo
+      const estadoAnterior = clase.estado;
+      clase.estado = 'PendienteDar';
+      this.service.cambiarEstadoClase(clase.idPlanificacion, 'PendienteDar').subscribe({
+        next: () => this.mostrarToast('Clase marcada como pendiente', 'info'),
+        error: () => {
+          clase.estado = estadoAnterior;
+          this.mostrarToast('Error al cambiar el estado', 'warn');
+        },
+      });
+    }
+  }
 
-    this.service.cambiarEstadoClase(clase.idPlanificacion, nuevoEstado).subscribe({
-      next: () => {
-        this.mostrarToast(
-          nuevoEstado === 'Dado' ? 'Clase marcada como dictada' : 'Clase marcada como pendiente',
-          'info',
-        );
+  cancelarFechaDictada(): void {
+    this.modalFechaDictada = false;
+    this.modalFechaDictadaClase = null;
+    this.modalFechaDictadaTema = null;
+    this.fechaDictadaInput = '';
+  }
+
+  avanzarConfirmDictada(): void {
+    this.fechaDictadaInputInvalida = !this.fechaDictadaInput;
+    this.fechaDictadaInputAnioInvalido = !!this.fechaDictadaInput && !this.esFechaAnioActual(this.fechaDictadaInput);
+    if (this.fechaDictadaInputInvalida || this.fechaDictadaInputAnioInvalido) return;
+    this.modalFechaDictada = false;
+    this.modalConfirmDictada = true;
+  }
+
+  cancelarConfirmDictada(): void {
+    this.modalConfirmDictada = false;
+    this.modalFechaDictada = true;
+  }
+
+  ejecutarMarcarDictada(): void {
+    const clase = this.modalFechaDictadaClase;
+    const tema = this.modalFechaDictadaTema;
+    if (!clase || !tema) return;
+
+    this.modalConfirmDictada = false;
+    this.marcandoDictada = true;
+
+    const form = new FormData();
+    form.append('titulo', clase.titulo);
+    if (clase.descripcion) form.append('descripcion', clase.descripcion);
+    form.append('estado', 'Dado');
+    if (clase.fechaEstimada) form.append('fechaDesde', clase.fechaEstimada);
+    form.append('fechaHasta', this.fechaDictadaInput);
+    form.append('mantieneArchivo', 'true');
+
+    this.service.editarClase(clase.idPlanificacion, form).subscribe({
+      next: actualizada => {
+        const idx = tema.clases.findIndex(c => c.idPlanificacion === clase.idPlanificacion);
+        if (idx !== -1) tema.clases[idx] = actualizada;
+        this.marcandoDictada = false;
+        this.modalFechaDictadaClase = null;
+        this.modalFechaDictadaTema = null;
+        this.mostrarToast('Clase marcada como dictada', 'ok');
       },
       error: () => {
-        clase.estado = estadoAnterior;
-        this.mostrarToast('Error al cambiar el estado', 'warn');
+        this.marcandoDictada = false;
+        this.mostrarToast('Error al guardar la clase', 'warn');
       },
     });
   }
@@ -427,6 +501,10 @@ export class MisEcPlanificacionComponent implements OnInit {
     if (!fecha) return '';
     const [y, m, d] = fecha.split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  private esFechaAnioActual(fecha: string): boolean {
+    return parseInt(fecha.split('-')[0], 10) === new Date().getFullYear();
   }
 
   claseEsDada(clase: ClasePlanificacionDto): boolean { return clase.estado === 'Dado'; }

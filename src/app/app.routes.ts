@@ -182,6 +182,22 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
       {
+        path: 'mis-espacios-curriculares/:idEC/planificacion',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('./features/mis-espacios-curriculares/components/mis-ec-planificacion/mis-ec-planificacion.component')
+            .then(m => m.MisEcPlanificacionComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/calendario',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('./features/mis-espacios-curriculares/components/mis-ec-calendario/mis-ec-calendario.component')
+            .then(m => m.MisEcCalendarioComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
         path: 'mis-espacios-curriculares/:idEC',
         ...withSectionData('misEspaciosCurriculares'),
         loadComponent: () =>

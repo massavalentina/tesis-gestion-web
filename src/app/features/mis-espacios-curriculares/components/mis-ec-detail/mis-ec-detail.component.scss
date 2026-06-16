@@ -308,11 +308,3 @@ $radius: 16px;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── Responsive ─── */
-@media (max-width: 680px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .detail-head { flex-wrap: wrap; }
-  .detail-badge { margin-left: 0; }
-  .tiles { grid-template-columns: 1fr; }
-}

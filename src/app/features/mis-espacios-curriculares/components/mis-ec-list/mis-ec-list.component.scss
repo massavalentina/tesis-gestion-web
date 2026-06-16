@@ -315,10 +315,3 @@ $radius: 16px;
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ─── Responsive ─── */
-@media (max-width: 680px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .page-head h1 { font-size: 22px; }
-  .grid { grid-template-columns: 1fr; }
-}

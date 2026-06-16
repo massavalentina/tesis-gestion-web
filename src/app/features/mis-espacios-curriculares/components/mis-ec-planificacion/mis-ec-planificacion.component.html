@@ -183,7 +183,7 @@
                   </div>
                   <div class="clase-actions">
                     <label class="toggle-switch" (click)="$event.stopPropagation()" title="Marcar dictada / pendiente">
-                      <input type="checkbox" [checked]="claseEsDada(clase)" (change)="toggleEstadoClase(clase)" />
+                      <input type="checkbox" [checked]="claseEsDada(clase)" (change)="toggleEstadoClase(tema, clase)" />
                       <span class="slider"></span>
                     </label>
                     <button class="btn-edit-clase" (click)="abrirEditarClase(unidad, tema, clase)">
@@ -256,9 +256,12 @@
         </div>
 
         <!-- Fecha estimada -->
-        <div class="form-field">
+        <div class="form-field" [class.invalid]="claseFechaDesdeInvalida">
           <label>Fecha estimada para dictar <span class="opt">(opcional)</span></label>
-          <input type="date" [(ngModel)]="claseFechaDesde" />
+          <input type="date" [(ngModel)]="claseFechaDesde"
+                 [min]="fechaMinAnio" [max]="fechaMaxAnio"
+                 (change)="claseFechaDesdeInvalida = false" />
+          <small class="field-error" *ngIf="claseFechaDesdeInvalida">La fecha debe ser del año lectivo en curso.</small>
         </div>
 
         <!-- Estado -->
@@ -276,16 +279,18 @@
         </div>
 
         <!-- Fecha dictada -->
-        <div class="form-field" [class.invalid]="claseFechaDictadaInvalida">
+        <div class="form-field" [class.invalid]="claseFechaDictadaInvalida || claseFechaHastaAnioInvalido">
           <label>
             Fecha dictada
             <span class="req" *ngIf="claseEstado === 'Dado'">*</span>
             <span class="opt" *ngIf="claseEstado !== 'Dado'">(opcional)</span>
           </label>
           <input type="date" [(ngModel)]="claseFechaHasta" [disabled]="claseEstado !== 'Dado'"
-                 (change)="claseFechaDictadaInvalida = false" />
+                 [min]="fechaMinAnio" [max]="fechaMaxAnio"
+                 (change)="claseFechaDictadaInvalida = false; claseFechaHastaAnioInvalido = false" />
           <small class="field-hint" *ngIf="claseEstado !== 'Dado'">Se puede indicar una vez que la clase esté marcada como dictada.</small>
           <small class="field-error" *ngIf="claseFechaDictadaInvalida">La fecha de dictado es obligatoria.</small>
+          <small class="field-error" *ngIf="claseFechaHastaAnioInvalido">La fecha debe ser del año lectivo en curso.</small>
         </div>
 
         <!-- Error -->
@@ -363,6 +368,52 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════
+       Modal FECHA DICTADA (desde toggle de tarjeta)
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" *ngIf="modalFechaDictada" style="z-index:210" (click)="cancelarFechaDictada()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon">
+        <span class="material-icons" style="font-size:28px;color:#1a73e8">event_available</span>
+      </div>
+      <h4>Marcar como dictada</h4>
+      <p>Ingresá la fecha en que fue dictada <strong>{{ modalFechaDictadaClase?.titulo }}</strong>.</p>
+      <div class="form-field" style="text-align:left"
+           [class.invalid]="fechaDictadaInputInvalida || fechaDictadaInputAnioInvalido">
+        <label>Fecha dictada <span class="req">*</span></label>
+        <input type="date" [(ngModel)]="fechaDictadaInput"
+               [min]="fechaMinAnio" [max]="fechaMaxAnio"
+               (change)="fechaDictadaInputInvalida = false; fechaDictadaInputAnioInvalido = false" />
+        <small class="field-error" *ngIf="fechaDictadaInputInvalida">La fecha es obligatoria.</small>
+        <small class="field-error" *ngIf="fechaDictadaInputAnioInvalido">La fecha debe ser del año lectivo en curso.</small>
+      </div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-secondary" (click)="cancelarFechaDictada()">Cancelar</button>
+        <button class="btn-primary" (click)="avanzarConfirmDictada()">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Modal CONFIRMAR DICTADA
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" *ngIf="modalConfirmDictada" style="z-index:220" (click)="cancelarConfirmDictada()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon">
+        <span class="material-icons" style="font-size:28px;color:#34a853">check_circle</span>
+      </div>
+      <h4>Confirmar</h4>
+      <p>¿Marcás como dictada <strong>{{ modalFechaDictadaClase?.titulo }}</strong> el {{ formatFecha(fechaDictadaInput) }}?</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelarConfirmDictada()" [disabled]="marcandoDictada">Volver</button>
+        <button class="btn-primary" (click)="ejecutarMarcarDictada()" [disabled]="marcandoDictada">
+          <span *ngIf="marcandoDictada" class="spinner-sm"></span>
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
        Modal CONFIRMAR CLASE
   ══════════════════════════════════════════════════════ -->
   <div class="modal-overlay" *ngIf="modalConfirmClase" style="z-index:210" (click)="modalConfirmClase = false">
@@ -370,8 +421,8 @@
       <div class="modal-icon">
         <span class="material-icons" style="font-size:28px;color:#1a73e8">event_note</span>
       </div>
-      <h4>Confirmar clase</h4>
-      <p>¿Guardás la clase <strong>{{ claseTitulo }}</strong>?</p>
+      <h4>{{ drawerClaseModo === 'crear' ? 'Confirmar clase' : 'Confirmar cambios' }}</h4>
+      <p>{{ drawerClaseModo === 'crear' ? '¿Guardás' : '¿Guardás los cambios de' }} la clase <strong>{{ claseTitulo }}</strong>?</p>
       <div class="modal-actions">
         <button class="btn-secondary" (click)="modalConfirmClase = false" [disabled]="guardandoClase">Cancelar</button>
         <button class="btn-primary" (click)="confirmarGuardarClase()" [disabled]="guardandoClase">Confirmar</button>

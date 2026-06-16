@@ -82,4 +82,12 @@ export class MisEcDetailComponent implements OnInit {
     if (!this.espacio) return;
     this.router.navigate(['/ficha-alumno'], { queryParams: { cursoId: this.espacio.idCurso } });
   }
+
+  navegarPlanificacion(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'planificacion']);
+  }
+
+  navegarCalendario(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calendario']);
+  }
 }

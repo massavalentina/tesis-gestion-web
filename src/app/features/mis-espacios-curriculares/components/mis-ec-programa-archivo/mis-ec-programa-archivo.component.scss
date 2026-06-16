@@ -671,17 +671,3 @@ textarea {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── Responsive ─── */
-@media (max-width: 600px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .card { padding: 20px 18px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .field-full { grid-column: 1; }
-  .acciones { flex-direction: column; }
-  .btn-cancelar, .btn-guardar { width: 100%; text-align: center; }
-  .cargado-head { flex-wrap: wrap; }
-  .acciones-cargado { flex-direction: column; align-items: stretch; }
-  .acciones-cargado-der { flex-direction: column; }
-  .btn-danger { width: 100%; text-align: center; }
-}

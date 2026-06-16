@@ -42,4 +42,8 @@ export class PlanificacionService {
   eliminarClase(idClase: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/clases/${idClase}`);
   }
+
+  patchEstadoBloque(idBloque: string, estado: string): Observable<void> {
+    return this.http.patch<void>(`${this.base}/bloques/${idBloque}/estado`, { estado });
+  }
 }

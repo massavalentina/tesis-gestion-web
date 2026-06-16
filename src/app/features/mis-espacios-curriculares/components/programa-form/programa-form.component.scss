@@ -258,12 +258,3 @@ $radius: 16px;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 680px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .page-title { font-size: 20px; }
-  .form-row { flex-direction: column; }
-  .field-half { min-width: 100%; }
-  .form-actions { flex-direction: column-reverse; }
-  .btn { width: 100%; justify-content: center; }
-}
