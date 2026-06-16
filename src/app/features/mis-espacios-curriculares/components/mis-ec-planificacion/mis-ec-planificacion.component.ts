@@ -41,6 +41,7 @@ export class MisEcPlanificacionComponent implements OnInit {
   claseFechaDesde = '';
   claseFechaHasta = '';
   claseTituloInvalido = false;
+  claseFechaDictadaInvalida = false;
   guardandoClase = false;
   errorClase = '';
 
@@ -58,6 +59,9 @@ export class MisEcPlanificacionComponent implements OnInit {
   // ─── Modal eliminar ──────────────────────────────────────────────────────────
   modalEliminar = false;
   eliminandoClase = false;
+
+  // ─── Modal confirmar clase ────────────────────────────────────────────────────
+  modalConfirmClase = false;
 
   // ─── Visor PDF (del programa) ─────────────────────────────────────────────
   pdfModalUrl: SafeResourceUrl | null = null;
@@ -185,6 +189,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseFechaDesde = clase.fechaEstimada ?? '';
     this.claseFechaHasta = clase.fechaDictada ?? '';
     this.claseTituloInvalido = false;
+    this.claseFechaDictadaInvalida = false;
     this.errorClase = '';
     this.drawerClase = true;
   }
@@ -201,13 +206,28 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseFechaDesde = '';
     this.claseFechaHasta = '';
     this.claseTituloInvalido = false;
+    this.claseFechaDictadaInvalida = false;
     this.errorClase = '';
   }
 
   guardarClase(): void {
     this.claseTituloInvalido = !this.claseTitulo.trim();
-    if (this.claseTituloInvalido) return;
+    this.claseFechaDictadaInvalida = this.claseEstado === 'Dado' && !this.claseFechaHasta;
+    if (this.claseTituloInvalido || this.claseFechaDictadaInvalida) return;
 
+    if (this.drawerClaseModo === 'crear') {
+      this.modalConfirmClase = true;
+      return;
+    }
+    this.ejecutarGuardarClase();
+  }
+
+  confirmarGuardarClase(): void {
+    this.modalConfirmClase = false;
+    this.ejecutarGuardarClase();
+  }
+
+  private ejecutarGuardarClase(): void {
     const form = new FormData();
     form.append('titulo', this.claseTitulo.trim());
     if (this.claseDescripcion.trim()) form.append('descripcion', this.claseDescripcion.trim());

@@ -221,87 +221,94 @@
   </ng-container>
 
   <!-- ══════════════════════════════════════════════════════
-       Drawer CLASE
+       Modal CLASE
   ══════════════════════════════════════════════════════ -->
-  <div class="overlay" *ngIf="drawerClase" (click)="cerrarDrawerClase()"></div>
-  <div class="drawer" [class.open]="drawerClase">
-    <div class="drawer-header">
-      <h3>{{ drawerClaseModo === 'crear' ? 'Planificar clase' : 'Editar clase' }}</h3>
-      <button class="drawer-close" (click)="cerrarDrawerClase()">
-        <span class="material-icons">close</span>
-      </button>
-    </div>
-
-    <div class="drawer-body">
-      <!-- Contexto: unidad + tema -->
-      <div class="drawer-ctx" *ngIf="drawerClaseUnidad || drawerClaseTema">
-        <span class="ctx-chip ctx-chip-unidad" *ngIf="drawerClaseUnidad">{{ drawerClaseUnidad.titulo }}</span>
-        <span class="material-icons" *ngIf="drawerClaseUnidad && drawerClaseTema" style="font-size:14px;color:#9ca3af">chevron_right</span>
-        <span class="ctx-chip" *ngIf="drawerClaseTema">{{ drawerClaseTema.titulo }}</span>
-      </div>
-      <p class="drawer-ctx-note">La clase queda vinculada a este tema. El avance lo decidís marcando el tema como dado.</p>
-
-      <!-- Título -->
-      <div class="form-field" [class.invalid]="claseTituloInvalido">
-        <label>Título <span class="req">*</span></label>
-        <input type="text" [(ngModel)]="claseTitulo" placeholder="Ej: Introducción a funciones lineales"
-               (input)="claseTituloInvalido = false" />
-        <small *ngIf="claseTituloInvalido" class="field-error">El título es obligatorio.</small>
+  <div class="modal-overlay" *ngIf="drawerClase" (click)="cerrarDrawerClase()">
+    <div class="modal-clase" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h3>{{ drawerClaseModo === 'crear' ? 'Planificar clase' : 'Editar clase' }}</h3>
+        <button class="drawer-close" (click)="cerrarDrawerClase()">
+          <span class="material-icons">close</span>
+        </button>
       </div>
 
-      <!-- Descripción -->
-      <div class="form-field">
-        <label>Descripción <span class="opt">(opcional)</span></label>
-        <textarea [(ngModel)]="claseDescripcion" rows="3" placeholder="Objetivos, recursos, observaciones…"></textarea>
-      </div>
+      <div class="drawer-body">
+        <!-- Contexto: unidad + tema -->
+        <div class="drawer-ctx" *ngIf="drawerClaseUnidad || drawerClaseTema">
+          <span class="ctx-chip ctx-chip-unidad" *ngIf="drawerClaseUnidad">{{ drawerClaseUnidad.titulo }}</span>
+          <span class="material-icons" *ngIf="drawerClaseUnidad && drawerClaseTema" style="font-size:14px;color:#9ca3af">chevron_right</span>
+          <span class="ctx-chip" *ngIf="drawerClaseTema">{{ drawerClaseTema.titulo }}</span>
+        </div>
+        <p class="drawer-ctx-note">La clase queda vinculada a este tema. El avance lo decidís marcando el tema como dado.</p>
 
-      <!-- Fecha estimada -->
-      <div class="form-field">
-        <label>Fecha estimada para dictar <span class="opt">(opcional)</span></label>
-        <input type="date" [(ngModel)]="claseFechaDesde" />
-      </div>
+        <!-- Título -->
+        <div class="form-field" [class.invalid]="claseTituloInvalido">
+          <label>Título <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="claseTitulo" placeholder="Ej: Introducción a funciones lineales"
+                 (input)="claseTituloInvalido = false" />
+          <small *ngIf="claseTituloInvalido" class="field-error">El título es obligatorio.</small>
+        </div>
 
-      <!-- Estado -->
-      <div class="form-field">
-        <div class="toggle-row">
-          <div>
-            <label style="margin-bottom:2px">Dictada</label>
-            <div style="font-size:12px;color:#6b7280">La clase ya fue dada</div>
+        <!-- Descripción -->
+        <div class="form-field">
+          <label>Descripción <span class="opt">(opcional)</span></label>
+          <textarea [(ngModel)]="claseDescripcion" rows="3" placeholder="Objetivos, recursos, observaciones…"></textarea>
+        </div>
+
+        <!-- Fecha estimada -->
+        <div class="form-field">
+          <label>Fecha estimada para dictar <span class="opt">(opcional)</span></label>
+          <input type="date" [(ngModel)]="claseFechaDesde" />
+        </div>
+
+        <!-- Estado -->
+        <div class="form-field">
+          <div class="toggle-row">
+            <div>
+              <label style="margin-bottom:2px">Dictada</label>
+              <div style="font-size:12px;color:#6b7280">La clase ya fue dada</div>
+            </div>
+            <label class="toggle-switch sm">
+              <input type="checkbox" [checked]="claseEstado === 'Dado'" (change)="claseEstado = claseEstado === 'Dado' ? 'PendienteDar' : 'Dado'" />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="toggle-switch sm">
-            <input type="checkbox" [checked]="claseEstado === 'Dado'" (change)="claseEstado = claseEstado === 'Dado' ? 'PendienteDar' : 'Dado'" />
-            <span class="slider"></span>
+        </div>
+
+        <!-- Fecha dictada -->
+        <div class="form-field" [class.invalid]="claseFechaDictadaInvalida">
+          <label>
+            Fecha dictada
+            <span class="req" *ngIf="claseEstado === 'Dado'">*</span>
+            <span class="opt" *ngIf="claseEstado !== 'Dado'">(opcional)</span>
           </label>
+          <input type="date" [(ngModel)]="claseFechaHasta" [disabled]="claseEstado !== 'Dado'"
+                 (change)="claseFechaDictadaInvalida = false" />
+          <small class="field-hint" *ngIf="claseEstado !== 'Dado'">Se puede indicar una vez que la clase esté marcada como dictada.</small>
+          <small class="field-error" *ngIf="claseFechaDictadaInvalida">La fecha de dictado es obligatoria.</small>
+        </div>
+
+        <!-- Error -->
+        <div class="drawer-error" *ngIf="errorClase">
+          <span class="material-icons">warning</span>
+          {{ errorClase }}
         </div>
       </div>
 
-      <!-- Fecha dictada -->
-      <div class="form-field">
-        <label>Fecha dictada <span class="opt">(opcional)</span></label>
-        <input type="date" [(ngModel)]="claseFechaHasta" [disabled]="claseEstado !== 'Dado'" />
-        <small class="field-hint" *ngIf="claseEstado !== 'Dado'">Se puede indicar una vez que la clase esté marcada como dictada.</small>
-      </div>
-
-      <!-- Error -->
-      <div class="drawer-error" *ngIf="errorClase">
-        <span class="material-icons">warning</span>
-        {{ errorClase }}
-      </div>
-    </div>
-
-    <div class="drawer-footer">
-      <div class="drawer-footer-left">
-        <button class="btn-eliminar" *ngIf="drawerClaseModo === 'editar'" (click)="abrirModalEliminar()">
-          <span class="material-icons">delete</span>
-          Eliminar
-        </button>
-      </div>
-      <div class="drawer-footer-right">
-        <button class="btn-secondary" (click)="cerrarDrawerClase()" [disabled]="guardandoClase">Cancelar</button>
-        <button class="btn-primary" (click)="guardarClase()" [disabled]="guardandoClase">
-          <span *ngIf="guardandoClase" class="spinner-sm"></span>
-          {{ drawerClaseModo === 'crear' ? 'Guardar clase' : 'Actualizar' }}
-        </button>
+      <div class="drawer-footer">
+        <div class="drawer-footer-left">
+          <button class="btn-eliminar" *ngIf="drawerClaseModo === 'editar'" (click)="abrirModalEliminar()">
+            <span class="material-icons">delete</span>
+            Eliminar
+          </button>
+        </div>
+        <div class="drawer-footer-right">
+          <button class="btn-secondary" (click)="cerrarDrawerClase()" [disabled]="guardandoClase">Cancelar</button>
+          <button class="btn-primary" (click)="guardarClase()" [disabled]="guardandoClase">
+            <span *ngIf="guardandoClase" class="spinner-sm"></span>
+            {{ drawerClaseModo === 'crear' ? 'Guardar clase' : 'Actualizar' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -351,6 +358,23 @@
           <span *ngIf="guardandoItem" class="spinner-sm"></span>
           {{ drawerItemModo === 'unidad' ? 'Crear unidad' : 'Agregar tema' }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       Modal CONFIRMAR CLASE
+  ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" *ngIf="modalConfirmClase" style="z-index:210" (click)="modalConfirmClase = false">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon">
+        <span class="material-icons" style="font-size:28px;color:#1a73e8">event_note</span>
+      </div>
+      <h4>Confirmar clase</h4>
+      <p>¿Guardás la clase <strong>{{ claseTitulo }}</strong>?</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="modalConfirmClase = false" [disabled]="guardandoClase">Cancelar</button>
+        <button class="btn-primary" (click)="confirmarGuardarClase()" [disabled]="guardandoClase">Confirmar</button>
       </div>
     </div>
   </div>

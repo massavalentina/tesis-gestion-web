@@ -582,6 +582,17 @@ $radius-sm: 8px;
   display: flex; align-items: center; justify-content: center;
   animation: fadeIn .15s;
 }
+.modal-clase {
+  background: $surface;
+  border-radius: $radius;
+  width: 520px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  overflow: hidden;
+}
 .modal-box {
   background: $surface;
   border-radius: $radius;
