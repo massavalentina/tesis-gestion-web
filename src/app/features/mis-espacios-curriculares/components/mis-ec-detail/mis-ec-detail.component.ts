@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 import { MisEcItem } from '../../models/mis-ec.model';
@@ -13,7 +13,7 @@ const DIA_ES: Record<string, string> = {
 @Component({
   selector: 'app-mis-ec-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './mis-ec-detail.component.html',
   styleUrl: './mis-ec-detail.component.scss',
 })
@@ -66,6 +66,10 @@ export class MisEcDetailComponent implements OnInit {
 
   navegarProgramas(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas']);
+  }
+
+  navegarCalificaciones(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones']);
   }
 
   navegarAsistencia(): void {

@@ -5,15 +5,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { catchError, of } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { forkJoin, catchError, of, filter } from 'rxjs';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 import { ProgramaService } from '../../services/programa.service';
 import { MisEcItem } from '../../models/mis-ec.model';
-import { CrearProgramaDto } from '../../models/programa.model';
+import { ProgramaResumen, CrearProgramaDto } from '../../models/programa.model';
+import { ConfirmarAccionDialogComponent, ConfirmarAccionData } from '../confirmar-accion-dialog/confirmar-accion-dialog.component';
 
 @Component({
   selector: 'app-programa-form',
@@ -24,10 +24,9 @@ import { CrearProgramaDto } from '../../models/programa.model';
     DragDropModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
-    MatIconModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './programa-form.component.html',
   styleUrl: './programa-form.component.scss',
@@ -50,6 +49,7 @@ export class ProgramaFormComponent implements OnInit {
     private ecService: MisEspaciosCurricularesService,
     private programaService: ProgramaService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -58,15 +58,20 @@ export class ProgramaFormComponent implements OnInit {
     this.modoEdicion = !!this.idPrograma;
 
     const anioActual = new Date().getFullYear();
-    this.aniosDisponibles = [anioActual - 1, anioActual, anioActual + 1, anioActual + 2];
+    const todosLosAnios = Array.from({ length: anioActual - 1950 + 1 }, (_, i) => anioActual - i);
 
     this.initForm(anioActual);
 
-    this.ecService.getMisEspaciosCurriculares().pipe(
-      catchError(() => of([])),
-    ).subscribe(ecs => {
-      this.espacios = ecs;
+    forkJoin({
+      ecs: this.ecService.getMisEspaciosCurriculares().pipe(catchError(() => of([]))),
+      programas: this.programaService.getProgramasPorEC(this.idEC).pipe(catchError(() => of([]))),
+    }).subscribe(({ ecs, programas }) => {
       this.espacio = ecs.find(e => e.idEC === this.idEC) ?? null;
+
+      const aniosOcupados = (programas as ProgramaResumen[])
+        .filter(p => p.estado !== 'NoVigente' && (!this.modoEdicion || p.idPrograma !== this.idPrograma))
+        .map(p => p.anioLectivo);
+      this.aniosDisponibles = todosLosAnios.filter(a => !aniosOcupados.includes(a));
 
       if (this.espacio) {
         this.form.patchValue({
@@ -259,7 +264,6 @@ export class ProgramaFormComponent implements OnInit {
       return;
     }
 
-    // Verificar que cada unidad tenga al menos un tema
     for (let i = 0; i < this.unidades.length; i++) {
       if (this.getTemas(i).length === 0) {
         this.snackBar.open(`La unidad ${i + 1} debe tener al menos un tema.`, 'Cerrar', { duration: 3000 });
@@ -296,6 +300,17 @@ export class ProgramaFormComponent implements OnInit {
       })),
     };
 
+    const titulo = this.modoEdicion ? 'Confirmar edición' : 'Confirmar creación';
+    const mensaje = this.modoEdicion
+      ? `¿Confirmás que querés guardar los cambios en "${val.titulo.trim()}"?`
+      : `¿Confirmás la creación del programa "${val.titulo.trim()}" para el año ${val.anioLectivo}?`;
+
+    this.dialog.open(ConfirmarAccionDialogComponent, {
+      data: { titulo, mensaje, textoConfirmar: this.modoEdicion ? 'Guardar cambios' : 'Crear programa', color: 'primary' } as ConfirmarAccionData,
+    }).afterClosed().pipe(filter(Boolean)).subscribe(() => this.ejecutarGuardar(dto));
+  }
+
+  private ejecutarGuardar(dto: CrearProgramaDto): void {
     this.guardando = true;
 
     const request$ = this.modoEdicion

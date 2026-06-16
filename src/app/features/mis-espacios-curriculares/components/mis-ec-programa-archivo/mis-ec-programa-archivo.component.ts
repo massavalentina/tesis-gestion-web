@@ -7,7 +7,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 import { ProgramaService } from '../../services/programa.service';
 import { MisEcItem } from '../../models/mis-ec.model';
-import { ProgramaDetalle } from '../../models/programa.model';
+import { ProgramaDetalle, ProgramaResumen } from '../../models/programa.model';
 
 @Component({
   selector: 'app-mis-ec-programa-archivo',
@@ -69,7 +69,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
     this.idEC = this.route.snapshot.paramMap.get('idEC') ?? '';
     const idPrograma = this.route.snapshot.paramMap.get('idPrograma');
     const currentYear = new Date().getFullYear();
-    this.anioLectivoOpciones = [currentYear + 1, currentYear, currentYear - 1, currentYear - 2];
+    this.anioLectivoOpciones = Array.from({ length: currentYear - 1950 + 1 }, (_, i) => currentYear - i);
 
     if (idPrograma) {
       this.modoVer = true;
@@ -92,7 +92,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
         programas: this.programaService.getProgramasPorEC(this.idEC).pipe(catchError(() => of([]))),
       }).subscribe(({ ecs, programas }) => {
         this.espacio = ecs.find(e => e.idEC === this.idEC) ?? null;
-        this.aniosOcupados = programas.map(p => p.anioLectivo);
+        this.aniosOcupados = programas.filter(p => p.estado !== 'NoVigente').map(p => p.anioLectivo);
         const disponibles = this.anioLectivoOpciones.filter(y => !this.aniosOcupados.includes(y));
         const preferred = this.espacio?.anioLectivo ?? currentYear;
         this.anioLectivo = disponibles.includes(preferred) ? preferred : (disponibles[0] ?? null);
@@ -261,6 +261,12 @@ export class MisEcProgramaArchivoComponent implements OnInit {
 
   // ─── Acciones sobre el programa ────────────────────────────
 
+  private formatFecha(fecha: string): string {
+    return new Date(fecha).toLocaleDateString('es-AR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+  }
+
   private recargarPrograma(): void {
     if (!this.programaCargado) return;
     this.programaService.getPrograma(this.programaCargado.idPrograma).subscribe({
@@ -273,26 +279,62 @@ export class MisEcProgramaArchivoComponent implements OnInit {
     });
   }
 
-  ponerVigente(): void {
-    this.confirmar(
-      'Poner programa como vigente',
-      '¿Confirmás que querés activar este programa como vigente? Una vez vigente, no podrá cambiar de estado ni ser eliminado.',
-      false,
-      () => this.ejecutarPonerVigente(),
-    );
-  }
-
-  private ejecutarPonerVigente(): void {
+  private ejecutarCambioEstado(estado: string): void {
     if (!this.programaCargado) return;
     this.realizandoAccion = true;
     this.errorAccion = '';
-    this.programaService.cambiarEstado(this.programaCargado.idPrograma, 'Vigente').subscribe({
+    this.programaService.cambiarEstado(this.programaCargado.idPrograma, estado).subscribe({
       next: () => this.recargarPrograma(),
       error: (err) => {
         this.realizandoAccion = false;
         this.errorAccion = typeof err.error === 'string' ? err.error : 'Error al cambiar el estado.';
       },
     });
+  }
+
+  ponerVigente(): void {
+    this.programaService.getProgramasPorEC(this.idEC).subscribe({
+      next: (programas: ProgramaResumen[]) => {
+        const vigente = programas.find(p => p.estado === 'Vigente');
+        const mensaje = vigente
+          ? `El programa "${vigente.titulo}" del ${vigente.anioLectivo}, creado por ${vigente.nombreDocente} el ${this.formatFecha(vigente.fechaCreacion)}, será reemplazado por el programa seleccionado.`
+          : '¿Confirmás que querés establecer este programa como vigente?';
+        this.confirmar('Establecer como Vigente', mensaje, false, () => this.ejecutarCambioEstado('Vigente'));
+      },
+      error: () => this.confirmar(
+        'Establecer como Vigente',
+        '¿Confirmás que querés establecer este programa como vigente?',
+        false,
+        () => this.ejecutarCambioEstado('Vigente'),
+      ),
+    });
+  }
+
+  establecerComoConfirmado(): void {
+    this.confirmar(
+      'Establecer como Confirmado',
+      'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirmás la acción?',
+      false,
+      () => this.ejecutarCambioEstado('Confirmado'),
+    );
+  }
+
+  establecerComoNoVigente(): void {
+    this.confirmar(
+      'Establecer como No Vigente',
+      'El programa pasará a "No vigente" y quedará almacenado como información histórica. Esta acción no se puede deshacer.',
+      true,
+      () => this.ejecutarCambioEstado('NoVigente'),
+    );
+  }
+
+  reestablecerComoConfirmado(): void {
+    this.confirmar(
+      'Reestablecer como Confirmado',
+      'El programa volverá al estado Confirmado. Desde ahí podrá establecerse como vigente si corresponde al año corriente. ¿Confirmás la acción?',
+      false,
+      () => this.ejecutarCambioEstado('Confirmado'),
+    );
   }
 
   eliminar(): void {

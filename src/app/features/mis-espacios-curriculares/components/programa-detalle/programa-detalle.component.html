@@ -29,22 +29,26 @@
 
     <!-- Acciones -->
     <div class="action-bar">
+      <!-- Borrador: Editar · Confirmar · Eliminar -->
       <ng-container *ngIf="esBorrador">
-        <button class="btn btn-primary" (click)="editar()" [disabled]="procesando">Editar</button>
-        <button class="btn btn-success" (click)="confirmarPrograma()" [disabled]="procesando">Confirmar</button>
-        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+        <button class="btn btn-neutral" (click)="editar()" [disabled]="procesando">Editar</button>
+        <button class="btn btn-glass-blue" (click)="confirmarPrograma()" [disabled]="procesando">Confirmar</button>
+        <button class="btn btn-glass-red" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
       </ng-container>
+      <!-- Confirmado: Establecer como Vigente (solo año corriente) · Eliminar -->
       <ng-container *ngIf="esConfirmado">
-        <button class="btn btn-success" (click)="ponerVigente()" [disabled]="procesando">Poner vigente</button>
-        <button class="btn btn-warn" (click)="darDeBaja()" [disabled]="procesando">Dar de baja</button>
-        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+        <button *ngIf="esAnioActual" class="btn btn-glass-green" (click)="ponerVigente()" [disabled]="procesando">Establecer como Vigente</button>
+        <button class="btn btn-glass-red" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
       </ng-container>
+      <!-- Vigente: Establecer como Confirmado · Establecer como No Vigente -->
       <ng-container *ngIf="esVigente">
-        <button class="btn btn-outline-warn" (click)="revertirAConfirmado()" [disabled]="procesando">Revertir a Confirmado</button>
-        <button class="btn btn-warn" (click)="darDeBaja()" [disabled]="procesando">Dar de baja</button>
+        <button class="btn btn-glass-blue" (click)="establecerComoConfirmado()" [disabled]="procesando">Establecer como Confirmado</button>
+        <button class="btn btn-glass-gray" (click)="establecerComoNoVigente()" [disabled]="procesando">Establecer como No Vigente</button>
       </ng-container>
+      <!-- No Vigente: Reestablecer como Confirmado · Eliminar -->
       <ng-container *ngIf="esNoVigente">
-        <button class="btn btn-danger" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
+        <button class="btn btn-glass-blue" (click)="reestablecerComoConfirmado()" [disabled]="procesando">Reestablecer como Confirmado</button>
+        <button class="btn btn-glass-red" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
       </ng-container>
     </div>
 
@@ -75,6 +79,10 @@
         <div class="info-item">
           <span class="info-label">Fecha de vencimiento</span>
           <span class="info-value">{{ programa.fechaVencimiento }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Autor</span>
+          <span class="info-value">{{ programa.nombreDocente }}</span>
         </div>
       </div>
       <div class="info-desc" *ngIf="programa.descripcion">

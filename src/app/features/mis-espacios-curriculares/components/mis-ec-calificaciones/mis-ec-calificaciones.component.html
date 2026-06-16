@@ -1,0 +1,356 @@
+<div class="page-wrap">
+
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando calificaciones…</p>
+  </div>
+
+  <div class="state-center" *ngIf="!loading && error">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon error-icon">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>{{ errorMessage }}</p>
+    <button class="btn-back" (click)="volverAlListado()">Volver al listado</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && espacio">
+    <nav class="breadcrumb">
+      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <a (click)="volverAMateria()" class="crumb-link">
+        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
+      </a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <span class="crumb-current">Calificaciones</span>
+    </nav>
+
+    <div class="detail-head">
+      <div class="detail-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          <polyline points="9 11 12 14 22 4"/>
+        </svg>
+      </div>
+
+      <div class="detail-info">
+        <div class="eyebrow">Gestion manual de calificaciones</div>
+        <h2>{{ espacio.nombreMateria }}</h2>
+        <p>
+          Curso {{ formatCurso(espacio.anioNumero, espacio.division) }} ·
+          Año lectivo {{ espacio.anioLectivo }} ·
+          {{ estudiantes.length }} estudiantes
+        </p>
+      </div>
+
+      <div class="mode-card" [class.mode-card--editing]="modoEdicion">
+        <span class="mode-label">{{ modoEdicion ? 'Edicion activa' : 'Solo consulta' }}</span>
+        <small>{{ updatedAtLabel }}</small>
+      </div>
+    </div>
+
+    <div class="context-grid">
+      <div class="context-item">
+        <span class="context-label">Curso</span>
+        <strong>{{ formatCurso(espacio.anioNumero, espacio.division) }}</strong>
+      </div>
+      <div class="context-item">
+        <span class="context-label">Sin notas</span>
+        <strong>{{ cantidadSinNotas }}</strong>
+      </div>
+      <div class="context-item">
+        <span class="context-label">Notas vigentes</span>
+        <strong>{{ cantidadNotasPersistidas }}</strong>
+      </div>
+      <div class="context-item">
+        <span class="context-label">Vista</span>
+        <strong>{{ tabActivo === 1 ? 'Eval 1 a 4' : 'Eval 5 a 8' }}</strong>
+      </div>
+    </div>
+
+    <div class="notice" *ngIf="dataWarning">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ dataWarning }}</span>
+    </div>
+
+    <div class="notice" *ngIf="auditWarning">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ auditWarning }}</span>
+    </div>
+
+    <div class="notice notice--info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16v-4"/>
+        <path d="M12 8h.01"/>
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      <span>
+        Esta version ya lee y persiste las notas contra la API de calificaciones. Solo se habilitan para edicion las celdas que tengan exámenes para las instancias evaluativas correspondientes.
+      </span>
+    </div>
+
+    <div class="workspace-card">
+      <div class="toolbar">
+        <div class="pill-group">
+          <button
+            *ngFor="let filtro of filtros"
+            class="pill"
+            type="button"
+            [class.active]="filtroActivo === filtro.id"
+            [disabled]="filtro.id === 'changed' && !modoEdicion"
+            (click)="setFiltro(filtro.id)">
+            {{ filtro.label }}
+            <span class="pill-count" *ngIf="filtro.id === 'all'">{{ estudiantes.length }}</span>
+            <span class="pill-count" *ngIf="filtro.id === 'without-notes'">{{ cantidadSinNotas }}</span>
+            <span class="pill-count" *ngIf="filtro.id === 'changed'">{{ cantidadConCambios }}</span>
+          </button>
+        </div>
+
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="busqueda"
+            (ngModelChange)="onBusquedaChange()"
+            placeholder="Buscar por apellido, nombre o DNI" />
+        </label>
+
+        <div class="action-group">
+          <button *ngIf="!modoEdicion" class="action-btn action-btn--secondary" type="button" (click)="activarEdicion()">
+            Editar calificaciones
+          </button>
+
+          <ng-container *ngIf="modoEdicion">
+            <button class="action-btn action-btn--ghost" type="button" (click)="cancelarEdicion()">
+              Cancelar
+            </button>
+            <button class="action-btn action-btn--primary" type="button" [disabled]="!canSave" (click)="guardarCambios()">
+              Guardar cambios
+            </button>
+          </ng-container>
+        </div>
+      </div>
+
+      <div class="summary-strip">
+        <div>
+          <strong>{{ cantidadFiltrada }} de {{ estudiantes.length }} estudiantes visibles</strong>
+          <span>La nomina corresponde al curso oficial del espacio curricular.</span>
+        </div>
+        <div class="summary-meta">
+          <span *ngIf="modoEdicion && hayNotasInvalidas">Hay notas invalidas. Solo se permiten enteros de 1 a 10.</span>
+          <span *ngIf="!modoEdicion || !hayNotasInvalidas">{{ updatedAtLabel }}</span>
+          <span class="summary-success" *ngIf="feedbackGuardado">{{ feedbackGuardado }}</span>
+          <span class="summary-error" *ngIf="saveError">{{ saveError }}</span>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button
+          class="tab"
+          type="button"
+          [class.active]="tabActivo === 1"
+          (click)="setTab(1)">
+          Evaluaciones 1 a 4
+        </button>
+        <button
+          class="tab"
+          type="button"
+          [class.active]="tabActivo === 5"
+          (click)="setTab(5)">
+          Evaluaciones 5 a 8
+        </button>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th class="student-col sticky-col sticky-col--head" rowspan="2">Estudiante</th>
+              <th class="dni-col sticky-col-2 sticky-col--head" rowspan="2">DNI</th>
+              <th class="group-col" *ngFor="let evaluacion of evaluacionesVisibles" colspan="3">
+                {{ evaluacion.label }}
+              </th>
+            </tr>
+            <tr>
+              <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
+                <th class="subhead-col" *ngFor="let tipo of tiposCalificacion">{{ tipo }}</th>
+              </ng-container>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let estudiante of filasPaginadas; trackBy: trackByStudentId">
+              <td class="student-col sticky-col">
+                <div class="student-cell">
+                  <strong>{{ estudiante.nombreCompleto }}</strong>
+                  <div class="student-badges">
+                    <span class="student-badge student-badge--empty" *ngIf="!rowHasAnyValue(estudiante.idEstudiante)">
+                      Sin notas
+                    </span>
+                    <span class="student-badge student-badge--changed" *ngIf="modoEdicion && rowHasChanges(estudiante.idEstudiante)">
+                      Editado
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="dni-col sticky-col-2">{{ estudiante.documento }}</td>
+
+              <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
+                <td *ngFor="let tipo of tiposCalificacion">
+                  <ng-container *ngIf="!modoEdicion; else editableCell">
+                    <span class="grade-readonly" [class.grade-readonly--empty]="getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) === '-'">
+                      {{ getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) }}
+                    </span>
+                  </ng-container>
+
+                  <ng-template #editableCell>
+                    <ng-container *ngIf="isSlotEnabled(evaluacion.numero, tipo); else disabledEditableCell">
+                      <div class="grade-edit" [class.grade-edit--invalid]="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">
+                        <input
+                          type="text"
+                          inputmode="numeric"
+                          maxlength="4"
+                          autocomplete="off"
+                          [ngModel]="getDraftCellValue(estudiante.idEstudiante, evaluacion.numero, tipo)"
+                          (ngModelChange)="onDraftValueChange(estudiante.idEstudiante, evaluacion.numero, tipo, $event)" />
+                        <small *ngIf="isCellInvalid(estudiante.idEstudiante, evaluacion.numero, tipo)">1 a 10</small>
+                      </div>
+                    </ng-container>
+
+                    <ng-template #disabledEditableCell>
+                      <span class="grade-readonly grade-readonly--empty">
+                        {{ getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) }}
+                      </span>
+                    </ng-template>
+                  </ng-template>
+                </td>
+              </ng-container>
+            </tr>
+
+            <tr *ngIf="filasPaginadas.length === 0">
+              <td class="empty-row" [attr.colspan]="totalColumnasTabla">
+                No hay estudiantes que coincidan con la busqueda o el filtro seleccionado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar">
+        <div class="pagination-meta">
+          <strong>{{ rangoPaginaLabel }}</strong>
+          <span>{{ totalPaginas }} pagina{{ totalPaginas !== 1 ? 's' : '' }}</span>
+        </div>
+
+        <div class="pagination-controls">
+          <label class="page-size-field">
+            <span>Filas por pagina</span>
+            <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+              <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+            </select>
+          </label>
+
+          <div class="page-nav">
+            <button class="page-btn" type="button" [disabled]="paginaActual === 0" (click)="goToPreviousPage()">
+              Anterior
+            </button>
+            <span class="page-index">Pagina {{ paginaActual + 1 }} / {{ totalPaginas }}</span>
+            <button class="page-btn" type="button" [disabled]="paginaActual >= totalPaginas - 1" (click)="goToNextPage()">
+              Siguiente
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="audit-card">
+      <div class="audit-head">
+        <div>
+          <span class="audit-eyebrow">Auditoria persistida</span>
+          <h3>Registro de cambios sobre calificaciones</h3>
+          <p>
+            Cada guardado confirmado en la base genera una sesion de actividad. Dentro de cada sesion se listan las notas modificadas y su cambio puntual.
+          </p>
+        </div>
+        <span class="audit-total">{{ totalAuditSessions }} sesion{{ totalAuditSessions !== 1 ? 'es' : '' }}</span>
+      </div>
+
+      <div class="audit-empty" *ngIf="auditoria.length === 0">
+        Todavia no hay cambios guardados para este espacio curricular.
+      </div>
+
+      <div class="audit-feed" *ngIf="auditoria.length > 0">
+        <article class="audit-session" *ngFor="let session of sesionesAuditoriaVisibles; trackBy: trackByAuditSessionId">
+          <button
+            class="audit-session-head"
+            type="button"
+            (click)="toggleAuditSession(session.id)"
+            [attr.aria-expanded]="isAuditSessionExpanded(session.id)">
+            <div class="audit-session-main">
+              <div class="audit-session-topline">
+                <span class="audit-origin">{{ session.origen }}</span>
+                <span class="audit-session-count">{{ session.cambios.length }} cambio{{ session.cambios.length !== 1 ? 's' : '' }}</span>
+              </div>
+              <strong>{{ formatTimestamp(session.timestamp) }}</strong>
+              <span class="audit-session-teacher">{{ session.docente }}</span>
+            </div>
+            <span class="audit-session-toggle-label">
+              {{ isAuditSessionExpanded(session.id) ? 'Ocultar detalle' : 'Ver detalle' }}
+            </span>
+            <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">
+              ▾
+            </span>
+          </button>
+
+          <div class="audit-session-body" *ngIf="isAuditSessionExpanded(session.id)">
+            <div class="audit-change-card" *ngFor="let change of session.cambios; trackBy: trackByAuditChangeId">
+              <div class="audit-change-top">
+                <div>
+                  <strong>{{ change.estudiante }}</strong>
+                  <span>DNI {{ change.documento }}</span>
+                </div>
+                <span class="audit-change-kind">{{ getAuditChangeLabel(change) }}</span>
+              </div>
+
+              <div class="audit-change-meta">
+                <span>{{ change.evaluacion }} · {{ change.tipo }}</span>
+                <span class="audit-change-origin">Carga manual</span>
+              </div>
+
+              <div class="audit-change-delta">
+                <span class="audit-chip audit-chip--before">{{ formatAuditValue(change.valorAnterior) }}</span>
+                <span class="audit-arrow">→</span>
+                <span class="audit-chip audit-chip--after">{{ formatAuditValue(change.valorNuevo) }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <button
+          *ngIf="hayMasSesionesAuditoria"
+          class="audit-more"
+          type="button"
+          [disabled]="auditLoadingMore"
+          (click)="showMoreAuditSessions()">
+          {{ auditLoadingMore ? 'Cargando actividad...' : 'Mostrar actividad anterior' }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</div>

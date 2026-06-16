@@ -27,44 +27,67 @@
       <section class="form-section">
         <h3 class="section-title">Datos generales</h3>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="field-half">
-            <mat-label>Curso</mat-label>
-            <mat-select formControlName="idCurso">
-              <mat-option *ngFor="let ec of espacios" [value]="ec.idCurso">
-                {{ formatCurso(ec.anioNumero, ec.division) }} — {{ ec.nombreMateria }}
-              </mat-option>
-            </mat-select>
-            <mat-error>Seleccioná un curso.</mat-error>
-          </mat-form-field>
+        <div class="dg-grid">
 
-          <mat-form-field appearance="outline" class="field-half">
-            <mat-label>Año lectivo</mat-label>
-            <mat-select formControlName="anioLectivo">
-              <mat-option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</mat-option>
-            </mat-select>
-            <mat-error>Seleccioná un año lectivo.</mat-error>
-          </mat-form-field>
+          <!-- Curso (read-only) -->
+          <div class="dg-field">
+            <label class="dg-label">Curso</label>
+            <div class="field-readonly">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : '—' }}
+            </div>
+          </div>
+
+          <!-- Año lectivo -->
+          <div class="dg-field">
+            <label class="dg-label">Año lectivo <span class="req">*</span></label>
+            <select formControlName="anioLectivo">
+              <option *ngFor="let a of aniosDisponibles" [ngValue]="a">{{ a }}</option>
+            </select>
+            <small class="dg-error" *ngIf="form.get('anioLectivo')?.invalid && form.get('anioLectivo')?.touched">
+              Seleccioná un año lectivo.
+            </small>
+          </div>
+
+          <!-- Espacio curricular (read-only) -->
+          <div class="dg-field dg-full">
+            <label class="dg-label">Espacio curricular</label>
+            <div class="field-readonly">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              {{ espacio?.nombreMateria ?? '—' }}
+            </div>
+          </div>
+
+          <!-- Título -->
+          <div class="dg-field dg-full">
+            <label class="dg-label">Título <span class="req">*</span></label>
+            <input type="text" formControlName="titulo" placeholder="Nombre del programa">
+            <small class="dg-error" *ngIf="form.get('titulo')?.hasError('required') && form.get('titulo')?.touched">El título es obligatorio.</small>
+            <small class="dg-error" *ngIf="form.get('titulo')?.hasError('maxlength') && form.get('titulo')?.touched">Máximo 300 caracteres.</small>
+          </div>
+
+          <!-- Descripción -->
+          <div class="dg-field dg-full">
+            <label class="dg-label">Descripción</label>
+            <textarea formControlName="descripcion" rows="3" placeholder="Descripción opcional del programa"></textarea>
+          </div>
+
+          <!-- Horas cátedra -->
+          <div class="dg-field">
+            <label class="dg-label">Horas cátedra <span class="req">*</span></label>
+            <input type="number" formControlName="horasCatedra" min="1" placeholder="Ej: 4">
+            <small class="dg-error" *ngIf="form.get('horasCatedra')?.invalid && form.get('horasCatedra')?.touched">Mínimo 1 hora cátedra.</small>
+          </div>
+
         </div>
-
-        <mat-form-field appearance="outline" class="field-full">
-          <mat-label>Título del programa</mat-label>
-          <input matInput formControlName="titulo" placeholder="Ej: Programa de Matemática 2026">
-          <mat-error *ngIf="form.get('titulo')?.hasError('required')">El título es obligatorio.</mat-error>
-          <mat-error *ngIf="form.get('titulo')?.hasError('maxlength')">Máximo 300 caracteres.</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="field-full">
-          <mat-label>Descripción (opcional)</mat-label>
-          <textarea matInput formControlName="descripcion" rows="3" placeholder="Breve descripción del programa..."></textarea>
-          <mat-error *ngIf="form.get('descripcion')?.hasError('maxlength')">Máximo 2000 caracteres.</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="field-small">
-          <mat-label>Horas cátedra</mat-label>
-          <input matInput type="number" formControlName="horasCatedra" min="1">
-          <mat-error>Mínimo 1 hora cátedra.</mat-error>
-        </mat-form-field>
       </section>
 
       <!-- ═══ Sección 2: Objetivos ═══ -->
@@ -125,7 +148,7 @@
             <div class="unidad-body" *ngIf="isExpanded(ui)" [formGroup]="unidadGroup(ui)">
               <mat-form-field appearance="outline" class="field-full">
                 <mat-label>Título de la unidad</mat-label>
-                <input matInput formControlName="titulo" placeholder="Ej: Álgebra lineal">
+                <input matInput formControlName="titulo">
                 <mat-error>El título es obligatorio.</mat-error>
               </mat-form-field>
 
@@ -155,7 +178,7 @@
                     <div class="tema-fields">
                       <mat-form-field appearance="outline" class="field-flex">
                         <mat-label>Título del tema</mat-label>
-                        <input matInput formControlName="titulo" placeholder="Ej: Vectores en el plano">
+                        <input matInput formControlName="titulo">
                         <mat-error>El título es obligatorio.</mat-error>
                       </mat-form-field>
                       <mat-form-field appearance="outline" class="field-flex">
