@@ -33,6 +33,10 @@
       <div>
         <strong>{{ arbol.tituloPrograma }}</strong>
         <p>{{ arbol.mensajeBloqueo }}</p>
+        <button class="btn-ir-programas" style="margin-top:10px" (click)="navegarAPrograma()">
+          <span class="material-icons">menu_book</span>
+          Ver programas del espacio
+        </button>
       </div>
     </div>
 
@@ -80,6 +84,10 @@
           <button class="btn-ver-pdf" *ngIf="arbol.urlPrograma" (click)="abrirPdfPrograma()">
             <span class="material-icons">picture_as_pdf</span>
             Ver PDF del programa
+          </button>
+          <button class="btn-ir-programas" (click)="navegarAPrograma()">
+            <span class="material-icons">menu_book</span>
+            Ver programas del espacio
           </button>
         </div>
       </div>

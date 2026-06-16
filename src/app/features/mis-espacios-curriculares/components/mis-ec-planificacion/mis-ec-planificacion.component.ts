@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,8 +19,6 @@ import {
   styleUrl: './mis-ec-planificacion.component.scss',
 })
 export class MisEcPlanificacionComponent implements OnInit {
-  @ViewChild('archivoInput') archivoInput!: ElementRef<HTMLInputElement>;
-
   idEC = '';
   loading = true;
   error = '';
@@ -40,19 +38,13 @@ export class MisEcPlanificacionComponent implements OnInit {
   claseTitulo = '';
   claseDescripcion = '';
   claseEstado = 'PendienteDar';
-  claseCalendario = false;
   claseFechaDesde = '';
   claseFechaHasta = '';
-  claseArchivoFile: File | null = null;
-  claseArchivoNombre = '';
-  claseArchivoTamano = '';
-  claseMantieneArchivo = true;
-  claseIsDragging = false;
   claseTituloInvalido = false;
   guardandoClase = false;
   errorClase = '';
 
-  // ─── Drawer: item (unidad / tema) ───────────────────────────────────────────
+  // ─── Drawer: item (unidad / tema) — solo para programas de origen Archivo ──
   drawerItem = false;
   drawerItemModo: 'unidad' | 'tema' = 'unidad';
   drawerItemUnidadCtx: UnidadArbolDto | null = null;
@@ -67,7 +59,7 @@ export class MisEcPlanificacionComponent implements OnInit {
   modalEliminar = false;
   eliminandoClase = false;
 
-  // ─── Visor PDF ───────────────────────────────────────────────────────────────
+  // ─── Visor PDF (del programa) ─────────────────────────────────────────────
   pdfModalUrl: SafeResourceUrl | null = null;
   pdfModalVisible = false;
 
@@ -98,7 +90,7 @@ export class MisEcPlanificacionComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'No se pudo cargar la planificación. Verificá que el espacio curricular tenga un programa vigente.';
+        this.error = 'No se pudo cargar la planificación. Verificá tu conexión e intentá de nuevo.';
         this.loading = false;
       },
     });
@@ -108,6 +100,17 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
+  }
+
+  navegarAPrograma(): void {
+    const id = this.arbol?.idPrograma;
+    if (id && this.arbol?.origen === 'Archivo') {
+      this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', 'archivo', id]);
+    } else if (id) {
+      this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas', id]);
+    } else {
+      this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas']);
+    }
   }
 
   // ─── Expansión ───────────────────────────────────────────────────────────────
@@ -123,7 +126,7 @@ export class MisEcPlanificacionComponent implements OnInit {
   isUnidadOpen(id: string): boolean { return this.openUnidades.has(id); }
   isTemaOpen(id: string): boolean { return this.openTemas.has(id); }
 
-  // ─── Visor PDF ───────────────────────────────────────────────────────────────
+  // ─── Visor PDF del programa ──────────────────────────────────────────────────
 
   abrirPdfPrograma(): void {
     if (!this.arbol?.urlPrograma) return;
@@ -134,6 +137,29 @@ export class MisEcPlanificacionComponent implements OnInit {
   cerrarPdfModal(): void {
     this.pdfModalVisible = false;
     this.pdfModalUrl = null;
+  }
+
+  // ─── Toggle estado TEMA (manual — decide el avance) ──────────────────────────
+
+  toggleEstadoTema(tema: TemaArbolDto): void {
+    const nuevoEstado = tema.estado === 'Dado' ? 'PendienteDar' : 'Dado';
+    const estadoAnterior = tema.estado;
+    tema.estado = nuevoEstado;
+    this.recalcularAvanceLocal();
+
+    this.service.patchEstadoBloque(tema.idBloquePrograma, nuevoEstado).subscribe({
+      next: () => {
+        const msg = nuevoEstado === 'Dado'
+          ? 'Tema dado: ' + tema.titulo
+          : 'Tema marcado pendiente: ' + tema.titulo;
+        this.mostrarToast(msg, nuevoEstado === 'Dado' ? 'ok' : 'warn');
+      },
+      error: () => {
+        tema.estado = estadoAnterior;
+        this.recalcularAvanceLocal();
+        this.mostrarToast('Error al cambiar el estado del tema', 'warn');
+      },
+    });
   }
 
   // ─── Drawer CLASE ────────────────────────────────────────────────────────────
@@ -156,13 +182,8 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseTitulo = clase.titulo;
     this.claseDescripcion = clase.descripcion ?? '';
     this.claseEstado = clase.estado;
-    this.claseCalendario = !!clase.fechaDesde;
-    this.claseFechaDesde = clase.fechaDesde ?? '';
-    this.claseFechaHasta = clase.fechaHasta ?? '';
-    this.claseArchivoFile = null;
-    this.claseArchivoNombre = clase.url ? this.nombreDeUrl(clase.url) : '';
-    this.claseArchivoTamano = '';
-    this.claseMantieneArchivo = !!clase.url;
+    this.claseFechaDesde = clase.fechaEstimada ?? '';
+    this.claseFechaHasta = clase.fechaDictada ?? '';
     this.claseTituloInvalido = false;
     this.errorClase = '';
     this.drawerClase = true;
@@ -177,46 +198,10 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseTitulo = '';
     this.claseDescripcion = '';
     this.claseEstado = 'PendienteDar';
-    this.claseCalendario = false;
     this.claseFechaDesde = '';
     this.claseFechaHasta = '';
-    this.claseArchivoFile = null;
-    this.claseArchivoNombre = '';
-    this.claseArchivoTamano = '';
-    this.claseMantieneArchivo = true;
-    this.claseIsDragging = false;
     this.claseTituloInvalido = false;
     this.errorClase = '';
-  }
-
-  onClaseFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.length) this.procesarClaseArchivo(input.files[0]);
-  }
-
-  onClaseDragOver(event: DragEvent): void { event.preventDefault(); this.claseIsDragging = true; }
-  onClaseDragLeave(): void { this.claseIsDragging = false; }
-
-  onClaseDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.claseIsDragging = false;
-    const file = event.dataTransfer?.files[0];
-    if (file?.type === 'application/pdf') this.procesarClaseArchivo(file);
-  }
-
-  private procesarClaseArchivo(file: File): void {
-    this.claseArchivoFile = file;
-    this.claseArchivoNombre = file.name;
-    this.claseArchivoTamano = this.formatSize(file.size);
-    this.claseMantieneArchivo = true;
-  }
-
-  quitarClaseArchivo(): void {
-    this.claseArchivoFile = null;
-    this.claseArchivoNombre = '';
-    this.claseArchivoTamano = '';
-    this.claseMantieneArchivo = false;
-    this.archivoInput.nativeElement.value = '';
   }
 
   guardarClase(): void {
@@ -227,11 +212,10 @@ export class MisEcPlanificacionComponent implements OnInit {
     form.append('titulo', this.claseTitulo.trim());
     if (this.claseDescripcion.trim()) form.append('descripcion', this.claseDescripcion.trim());
     form.append('estado', this.claseEstado);
-    if (this.claseCalendario && this.claseFechaDesde) form.append('fechaDesde', this.claseFechaDesde);
-    if (this.claseCalendario && this.claseFechaHasta) form.append('fechaHasta', this.claseFechaHasta);
+    if (this.claseFechaDesde) form.append('fechaDesde', this.claseFechaDesde);
+    if (this.claseEstado === 'Dado' && this.claseFechaHasta) form.append('fechaHasta', this.claseFechaHasta);
     if (this.drawerClaseTema) form.append('idBloqueTema', this.drawerClaseTema.idBloquePrograma);
-    if (this.claseArchivoFile) form.append('archivo', this.claseArchivoFile, this.claseArchivoFile.name);
-    form.append('mantieneArchivo', String(this.claseMantieneArchivo));
+    form.append('mantieneArchivo', 'true');
 
     this.guardandoClase = true;
     this.errorClase = '';
@@ -240,10 +224,9 @@ export class MisEcPlanificacionComponent implements OnInit {
       this.service.crearClase(this.idEC, form).subscribe({
         next: clase => {
           this.drawerClaseTema!.clases.push(clase);
-          this.recalcularAvanceLocal();
           this.cerrarDrawerClase();
           this.guardandoClase = false;
-          this.mostrarToast('Clase planificada · ' + this.labelEstado(clase.estado), 'info');
+          this.mostrarToast('Clase planificada', 'info');
         },
         error: err => {
           this.guardandoClase = false;
@@ -256,7 +239,6 @@ export class MisEcPlanificacionComponent implements OnInit {
           const idx = this.drawerClaseTema!.clases.findIndex(
             c => c.idPlanificacion === this.editandoClase!.idPlanificacion);
           if (idx !== -1) this.drawerClaseTema!.clases[idx] = claseActualizada;
-          this.recalcularAvanceLocal();
           this.cerrarDrawerClase();
           this.guardandoClase = false;
           this.mostrarToast('Clase actualizada', 'info');
@@ -269,25 +251,22 @@ export class MisEcPlanificacionComponent implements OnInit {
     }
   }
 
-  // ─── Toggle estado clase (directo sin drawer) ─────────────────────────────
+  // ─── Toggle estado clase (Pendiente ↔ Dictada — solo informativo) ─────────
 
-  toggleEstadoClase(tema: TemaArbolDto, clase: ClasePlanificacionDto): void {
+  toggleEstadoClase(clase: ClasePlanificacionDto): void {
     const nuevoEstado = clase.estado === 'Dado' ? 'PendienteDar' : 'Dado';
     const estadoAnterior = clase.estado;
-    clase.estado = nuevoEstado; // optimistic update
+    clase.estado = nuevoEstado;
 
     this.service.cambiarEstadoClase(clase.idPlanificacion, nuevoEstado).subscribe({
       next: () => {
-        this.recalcularAvanceLocal();
-        if (nuevoEstado === 'Dado') {
-          const temaCompleto = tema.clases.length > 0 && tema.clases.every(c => c.estado === 'Dado');
-          if (temaCompleto) this.mostrarToast('Tema completado: ' + tema.titulo, 'ok');
-        } else {
-          this.mostrarToast('Tema reabierto: ' + tema.titulo, 'warn');
-        }
+        this.mostrarToast(
+          nuevoEstado === 'Dado' ? 'Clase marcada como dictada' : 'Clase marcada como pendiente',
+          'info',
+        );
       },
       error: () => {
-        clase.estado = estadoAnterior; // revert
+        clase.estado = estadoAnterior;
         this.mostrarToast('Error al cambiar el estado', 'warn');
       },
     });
@@ -311,7 +290,6 @@ export class MisEcPlanificacionComponent implements OnInit {
       next: () => {
         this.drawerClaseTema!.clases = this.drawerClaseTema!.clases.filter(
           c => c.idPlanificacion !== this.editandoClase!.idPlanificacion);
-        this.recalcularAvanceLocal();
         this.cerrarDrawerClase();
         this.eliminandoClase = false;
         this.modalEliminar = false;
@@ -325,7 +303,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     });
   }
 
-  // ─── Drawer ITEM (unidad / tema) ──────────────────────────────────────────
+  // ─── Drawer ITEM (unidad / tema) — programas Archivo ─────────────────────
 
   abrirCrearUnidad(): void {
     this.drawerItemModo = 'unidad';
@@ -393,7 +371,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     }
   }
 
-  // ─── Avance local (optimistic) ────────────────────────────────────────────
+  // ─── Avance local — basado en temas dados (manual), NO en clases ──────────
 
   private recalcularAvanceLocal(): void {
     if (!this.arbol) return;
@@ -401,26 +379,14 @@ export class MisEcPlanificacionComponent implements OnInit {
     const n = temas.length;
     if (n === 0) { this.arbol.avance = 0; this.arbol.totalTemas = 0; this.arbol.temasCompletos = 0; return; }
 
-    let suma = 0;
-    let completos = 0;
-    for (const t of temas) {
-      const total = t.clases.length;
-      const dadas = t.clases.filter(c => c.estado === 'Dado').length;
-      const fraccion = total === 0 ? 0 : dadas / total;
-      const completo = total > 0 && dadas === total;
-      suma += fraccion;
-      if (completo) completos++;
-      t.estado = completo ? 'Dado' : 'PendienteDar';
-    }
-
-    for (const u of this.arbol.unidades) {
-      const todosLosTemasCompletos = u.temas.length > 0 && u.temas.every(t => t.estado === 'Dado');
-      u.estado = todosLosTemasCompletos ? 'Dado' : 'PendienteDar';
-    }
-
-    this.arbol.avance = Math.round(suma / n * 100 * 10) / 10;
+    const completos = temas.filter(t => t.estado === 'Dado').length;
+    this.arbol.avance = Math.round(completos / n * 100 * 10) / 10;
     this.arbol.totalTemas = n;
     this.arbol.temasCompletos = completos;
+
+    for (const u of this.arbol.unidades) {
+      u.estado = u.temas.length > 0 && u.temas.every(t => t.estado === 'Dado') ? 'Dado' : 'PendienteDar';
+    }
   }
 
   // ─── Toast ───────────────────────────────────────────────────────────────────
@@ -443,53 +409,26 @@ export class MisEcPlanificacionComponent implements OnInit {
     return `${d}/${m}/${y}`;
   }
 
-  labelEstado(estado: string): string {
-    return estado === 'Dado' ? 'Dada' : 'Pendiente de dar';
-  }
-
-  claseEsDada(clase: ClasePlanificacionDto): boolean {
-    return clase.estado === 'Dado';
-  }
-
-  temaEsDado(tema: TemaArbolDto): boolean {
-    return tema.estado === 'Dado';
-  }
-
-  unidadEsDada(unidad: UnidadArbolDto): boolean {
-    return unidad.estado === 'Dado';
-  }
+  claseEsDada(clase: ClasePlanificacionDto): boolean { return clase.estado === 'Dado'; }
+  temaEsDado(tema: TemaArbolDto): boolean { return tema.estado === 'Dado'; }
+  unidadEsDada(unidad: UnidadArbolDto): boolean { return unidad.estado === 'Dado'; }
 
   avanceUnidad(unidad: UnidadArbolDto): number {
     const n = unidad.temas.length;
     if (n === 0) return 0;
-    let suma = 0;
-    for (const t of unidad.temas) {
-      const total = t.clases.length;
-      const dadas = t.clases.filter(c => c.estado === 'Dado').length;
-      suma += total === 0 ? 0 : dadas / total;
-    }
-    return Math.round(suma / n * 100);
+    const completos = unidad.temas.filter(t => t.estado === 'Dado').length;
+    return Math.round(completos / n * 100);
   }
 
   countClasesUnidad(unidad: UnidadArbolDto): string {
     const av = this.avanceUnidad(unidad);
     const completos = unidad.temas.filter(t => this.temaEsDado(t)).length;
-    return `${av}% · ${completos}/${unidad.temas.length} temas`;
+    return `${av}% · ${completos}/${unidad.temas.length} temas dados`;
   }
 
   countClasesTema(tema: TemaArbolDto): string {
     const dadas = tema.clases.filter(c => c.estado === 'Dado').length;
     const total = tema.clases.length;
-    return total ? `${dadas}/${total} clases dadas` : 'sin clases';
-  }
-
-  private formatSize(bytes: number): string {
-    if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return Math.round(bytes / 1024) + ' KB';
-  }
-
-  private nombreDeUrl(url: string): string {
-    try { return decodeURIComponent(url.split('/').pop()?.split('?')[0] ?? 'archivo.pdf'); }
-    catch { return 'archivo.pdf'; }
+    return total ? `${dadas}/${total} clases dictadas` : 'sin clases';
   }
 }

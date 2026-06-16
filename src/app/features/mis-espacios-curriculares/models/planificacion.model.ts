@@ -9,6 +9,8 @@ export interface ArbolPlanificacionDto {
   anioLectivo: number;
   estadoPrograma: string;
   urlPrograma?: string;
+  idPrograma?: string;
+  origen?: string;
   avance: number;
   totalTemas: number;
   temasCompletos: number;
