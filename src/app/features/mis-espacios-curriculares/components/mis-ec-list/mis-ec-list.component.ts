@@ -60,7 +60,7 @@ export class MisEcListComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   horariosAgrupados(ec: MisEcItem): { dias: string[]; rango: string }[] {

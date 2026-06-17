@@ -45,7 +45,7 @@ export class MisEcDetailComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   diasUnicos(): string[] {

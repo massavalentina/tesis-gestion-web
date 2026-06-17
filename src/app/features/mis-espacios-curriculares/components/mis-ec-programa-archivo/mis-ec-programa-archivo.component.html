@@ -17,7 +17,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       <a class="crumb-link" (click)="volverAProgramas()">Programas</a>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      <span class="crumb-current">Mediante archivo</span>
+      <span class="crumb-current">{{ programaCargado ? programaCargado.titulo : 'Cargar programa' }}</span>
     </nav>
 
     <!-- ===== FORMULARIO ===== -->
@@ -174,13 +174,16 @@
 
         <!-- Info chips -->
         <div class="info-strip">
-          <div class="chip"><span class="chip-label">Materia:</span> {{ programaCargado.nombreMateria }}</div>
+          <div class="chip"><span class="chip-label">Espacio curricular:</span> {{ programaCargado.nombreMateria }}</div>
           <div class="chip"><span class="chip-label">Curso:</span>
             {{ espacio ? formatCurso(espacio.anioNumero, espacio.division) : programaCargado.codigoCurso }}
           </div>
           <div class="chip"><span class="chip-label">Año lectivo:</span> {{ programaCargado.anioLectivo }}</div>
           <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ programaCargado.horasCatedra }}</div>
+          <div class="chip"><span class="chip-label">Fecha de creación:</span> {{ formatFecha(programaCargado.fechaCreacion) }}</div>
+          <div class="chip"><span class="chip-label">Última modificación:</span> {{ formatFecha(programaCargado.fechaUltimaModificacion) }}</div>
           <div class="chip"><span class="chip-label">Autor:</span> {{ programaCargado.nombreDocente }}</div>
+          <div class="chip"><span class="chip-label">Vencimiento:</span> {{ programaCargado.fechaVencimiento }}</div>
         </div>
 
         <!-- Título y descripción -->
@@ -230,8 +233,8 @@
             </button>
           </div>
 
-          <!-- Vigente: Establecer como Confirmado · Establecer como No Vigente -->
-          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Vigente'">
+          <!-- Vigente: solo admin puede cambiar estado -->
+          <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'Vigente' && esAdmin">
             <button class="btn-ac btn-ac-blue" type="button"
                     (click)="establecerComoConfirmado()" [disabled]="realizandoAccion">
               Establecer como Confirmado
@@ -242,12 +245,8 @@
             </button>
           </div>
 
-          <!-- No Vigente: Reestablecer como Confirmado · Eliminar -->
+          <!-- No Vigente: solo Eliminar -->
           <div class="acciones-cargado-der" *ngIf="programaCargado.estado === 'NoVigente'">
-            <button class="btn-ac btn-ac-blue" type="button"
-                    (click)="reestablecerComoConfirmado()" [disabled]="realizandoAccion">
-              Reestablecer como Confirmado
-            </button>
             <button class="btn-ac btn-ac-red" type="button"
                     (click)="eliminar()" [disabled]="realizandoAccion">
               Eliminar
