@@ -132,6 +132,10 @@
         </label>
 
         <div class="action-group">
+          <button class="action-btn action-btn--secondary" type="button" (click)="navegarImportador()">
+            Importar PDF CiDi
+          </button>
+
           <button *ngIf="!modoEdicion" class="action-btn action-btn--secondary" type="button" (click)="activarEdicion()">
             Editar calificaciones
           </button>

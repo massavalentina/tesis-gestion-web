@@ -203,6 +203,10 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
   }
 
+  navegarImportador(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones', 'importar']);
+  }
+
   setFiltro(filtro: FiltroEstado): void {
     if (filtro === 'changed' && !this.modoEdicion) {
       return;

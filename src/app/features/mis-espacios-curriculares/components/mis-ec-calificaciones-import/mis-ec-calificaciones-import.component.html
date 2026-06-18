@@ -1,0 +1,291 @@
+<div class="page-wrap">
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando importador…</p>
+  </div>
+
+  <div class="state-center" *ngIf="!loading && error">
+    <div class="state-icon">!</div>
+    <p>{{ errorMessage }}</p>
+    <button class="btn secondary" type="button" (click)="volverACalificaciones()">Volver a calificaciones</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && espacio">
+    <nav class="breadcrumb">
+      <a class="crumb-link" (click)="volverACalificaciones()">Gestión de calificaciones</a>
+      <span>/</span>
+      <span class="crumb-current">Importar desde CiDi</span>
+    </nav>
+
+    <div class="detail-head">
+      <div class="detail-info">
+        <div class="eyebrow">Importación asistida de calificaciones</div>
+        <h2>{{ espacio.nombreMateria }}</h2>
+        <p>
+          Curso {{ espacio.anioNumero }}.º {{ espacio.division }} ·
+          Año lectivo {{ espacio.anioLectivo }}
+        </p>
+      </div>
+      <button class="btn secondary" type="button" (click)="volverACalificaciones()">Cerrar</button>
+    </div>
+
+    <div class="wizard-strip">
+      <div class="wizard-step" [class.active]="stageIndex >= 1">1. Carga</div>
+      <div class="wizard-step" [class.active]="stageIndex >= 3">2. Análisis</div>
+      <div class="wizard-step" [class.active]="stageIndex >= 4">3. Revisión</div>
+      <div class="wizard-step" [class.active]="stageIndex >= 5">4. Confirmación</div>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-flow">
+        <div class="hero-node">CiDi</div>
+        <div class="hero-arrow">→</div>
+        <div class="hero-node hero-node--target">Gestor</div>
+      </div>
+      <p>
+        Este importador solo admite el PDF estándar exportado desde CiDi. El sistema analizará
+        únicamente las columnas <strong>Eval 1..8</strong> con <strong>N / R1 / R2</strong>.
+        Las columnas <strong>JIS</strong>, <strong>Colegio</strong> y <strong>Prom. Final</strong>
+        se ignoran en esta versión.
+      </p>
+    </div>
+
+    <div class="feedback" *ngIf="feedback">{{ feedback }}</div>
+    <div class="feedback feedback--error" *ngIf="analyzeError">{{ analyzeError }}</div>
+
+    <section class="card" *ngIf="stage === 'load'">
+      <h3>Carga inicial</h3>
+      <div class="context-grid">
+        <div>
+          <span class="label">Curso</span>
+          <strong>{{ espacio.anioNumero }}.º {{ espacio.division }}</strong>
+        </div>
+        <div>
+          <span class="label">Espacio curricular</span>
+          <strong>{{ espacio.nombreMateria }}</strong>
+        </div>
+        <div>
+          <span class="label">Año lectivo</span>
+          <strong>{{ espacio.anioLectivo }}</strong>
+        </div>
+      </div>
+
+      <label class="upload-box">
+        <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" />
+        <span>{{ selectedFileName || 'Seleccionar el PDF oficial exportado desde CiDi' }}</span>
+      </label>
+
+      <div class="actions">
+        <button class="btn secondary" type="button" (click)="volverACalificaciones()">Cancelar</button>
+        <button class="btn primary" type="button" [disabled]="!selectedFile || actionLoading" (click)="startAnalysis()">
+          {{ actionLoading ? 'Analizando…' : 'Analizar documento' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="stage === 'analysis' && detail">
+      <h3>Resultado del análisis</h3>
+      <div class="metric-grid">
+        <div class="metric">
+          <strong>{{ detail.resumen.estudiantesDetectados }}</strong>
+          <span>Estudiantes detectados</span>
+        </div>
+        <div class="metric">
+          <strong>{{ detail.resumen.evaluacionesDetectadasConNotas }}</strong>
+          <span>Slots con notas</span>
+        </div>
+        <div class="metric">
+          <strong>{{ detail.resumen.conflictosDeNotas }}</strong>
+          <span>Conflictos de notas</span>
+        </div>
+        <div class="metric">
+          <strong>{{ detail.resumen.notasInvalidas }}</strong>
+          <span>Notas inválidas</span>
+        </div>
+      </div>
+
+      <div class="issue-list" *ngIf="detail.bloqueos.length > 0">
+        <div class="issue issue--blocking" *ngFor="let issue of detail.bloqueos">
+          <strong>{{ issue.slotKey || 'Bloqueo' }}</strong>
+          <span>{{ issue.mensaje }}</span>
+        </div>
+      </div>
+      <p *ngIf="detail.bloqueos.length > 0">
+        Corregí estos puntos y volvé a analizar el archivo para continuar con la importación.
+      </p>
+
+      <div class="actions">
+        <button class="btn secondary" type="button" (click)="cancelarImportacion()">Cancelar importación</button>
+        <button class="btn primary" type="button" [disabled]="actionLoading" (click)="reanalizar()">
+          {{ actionLoading ? 'Reanalizando…' : 'Reanalizar' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="card card--wide" *ngIf="stage === 'review' && revision">
+      <div class="card-head">
+        <div>
+          <h3>Revisión y corrección</h3>
+          <p>Corregí estudiantes y notas antes de confirmar la importación.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="reanalizar()">Reanalizar</button>
+          <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="guardarRevision()">Guardar revisión</button>
+          <button class="btn primary" type="button" [disabled]="!canOpenConfirm || actionLoading" (click)="abrirConfirmacion()">Ir a confirmación</button>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric">
+          <strong>{{ revision.resumen.estudiantesSinConflicto }}</strong>
+          <span>Estudiantes sin conflicto</span>
+        </div>
+        <div class="metric">
+          <strong>{{ revision.resumen.estudiantesConConflicto }}</strong>
+          <span>Estudiantes con conflicto</span>
+        </div>
+        <div class="metric">
+          <strong>{{ revision.resumen.notasNuevas }}</strong>
+          <span>Notas nuevas</span>
+        </div>
+        <div class="metric">
+          <strong>{{ revision.resumen.pendientesDeRevision }}</strong>
+          <span>Pendientes de revisión</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="pill-group">
+          <button class="pill" [class.active]="reviewFilter === 'all'" (click)="setFilter('all')" type="button">Todos</button>
+          <button class="pill" [class.active]="reviewFilter === 'clean'" (click)="setFilter('clean')" type="button">Verde</button>
+          <button class="pill" [class.active]="reviewFilter === 'review'" (click)="setFilter('review')" type="button">Amarillo</button>
+          <button class="pill" [class.active]="reviewFilter === 'blocking'" (click)="setFilter('blocking')" type="button">Rojo</button>
+        </div>
+        <input class="search" type="text" [(ngModel)]="reviewSearch" placeholder="Buscar por estudiante o conflicto" />
+      </div>
+
+      <div class="tabs">
+        <button class="tab" [class.active]="reviewTab === 1" type="button" (click)="setTab(1)">Evaluaciones 1 a 4</button>
+        <button class="tab" [class.active]="reviewTab === 5" type="button" (click)="setTab(5)">Evaluaciones 5 a 8</button>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" class="sticky-col">Estado</th>
+              <th rowspan="2" class="sticky-col-2">Estudiante PDF</th>
+              <th rowspan="2">Asociación</th>
+              <th rowspan="2">Omitir</th>
+              <th class="group-head" *ngFor="let slot of stageSlots; trackBy: trackBySlotKey">{{ slot.label }}</th>
+            </tr>
+            <tr>
+              <th *ngFor="let slot of stageSlots; trackBy: trackBySlotKey">{{ slot.tipoCalificacion }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredRows; trackBy: trackByRowId">
+              <td class="sticky-col">
+                <span class="status-chip" [class.status-chip--review]="row.estado === 'review'" [class.status-chip--blocking]="row.estado === 'blocking'">
+                  {{ row.estado }}
+                </span>
+              </td>
+              <td class="sticky-col-2">
+                <strong>{{ row.estudiantePdf }}</strong>
+                <small *ngIf="row.mensaje">{{ row.mensaje }}</small>
+              </td>
+              <td>
+                <select [(ngModel)]="row.estudianteAsociadoId" [disabled]="row.omitida">
+                  <option [ngValue]="null">Sin asociar</option>
+                  <option *ngFor="let option of studentOptions" [ngValue]="option.idEstudiante">
+                    {{ option.label }} · DNI {{ option.documento }}
+                  </option>
+                </select>
+              </td>
+              <td class="omit-col">
+                <input type="checkbox" [(ngModel)]="row.omitida" />
+              </td>
+
+              <td *ngFor="let cell of getRowCells(row)">
+                <div class="cell-card" [class.cell-card--review]="cell.estado === 'review'" [class.cell-card--blocking]="cell.estado === 'blocking'">
+                  <div class="cell-values">
+                    <span>PDF: {{ cell.valorImportadoRaw ?? '—' }}</span>
+                    <span>DB: {{ cell.valorDb ?? '—' }}</span>
+                  </div>
+
+                  <select [(ngModel)]="cell.resolucion" [disabled]="row.omitida">
+                    <option *ngFor="let option of getCellResolutionOptions(cell)" [ngValue]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+
+                  <input
+                    *ngIf="isManualEdit(cell)"
+                    type="number"
+                    min="1"
+                    max="10"
+                    [(ngModel)]="cell.valorFinal"
+                    [disabled]="row.omitida" />
+
+                  <small *ngIf="cell.mensaje">{{ cell.mensaje }}</small>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="filteredRows.length === 0">
+              <td [attr.colspan]="4 + stageSlots.length" class="empty-row">
+                No hay filas que coincidan con el filtro actual.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="stage === 'confirm' && confirmacion">
+      <h3>Confirmación de importación</h3>
+      <div class="metric-grid">
+        <div class="metric">
+          <strong>{{ confirmacion.resumen.estudiantesValidados }}</strong>
+          <span>Estudiantes validados</span>
+        </div>
+        <div class="metric">
+          <strong>{{ confirmacion.resumen.notasNuevas }}</strong>
+          <span>Notas nuevas</span>
+        </div>
+        <div class="metric">
+          <strong>{{ confirmacion.resumen.notasReemplazadas }}</strong>
+          <span>Notas reemplazadas</span>
+        </div>
+        <div class="metric">
+          <strong>{{ confirmacion.resumen.correccionesManuales }}</strong>
+          <span>Correcciones manuales</span>
+        </div>
+      </div>
+
+      <div class="issue-list" *ngIf="confirmacion.bloqueos.length > 0">
+        <div class="issue issue--blocking" *ngFor="let issue of confirmacion.bloqueos">
+          <strong>{{ issue.slotKey || 'Conflicto' }}</strong>
+          <span>{{ issue.mensaje }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" type="button" (click)="stage = 'review'">Volver a revisar</button>
+        <button class="btn primary" type="button" [disabled]="!confirmacion.puedeConfirmar || actionLoading" (click)="confirmarImportacion()">
+          {{ actionLoading ? 'Importando…' : 'Aceptar e importar' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="card card--success" *ngIf="stage === 'success' && success">
+      <div class="success-icon">✓</div>
+      <h3>Importación realizada</h3>
+      <p>Las calificaciones ya fueron impactadas en el sistema.</p>
+      <p *ngIf="success.rutaArchivoFinal">Archivo respaldado en {{ success.rutaArchivoFinal }}</p>
+      <div class="actions">
+        <button class="btn primary" type="button" (click)="volverACalificaciones()">Volver a Gestión de calificaciones</button>
+      </div>
+    </section>
+  </ng-container>
+</div>

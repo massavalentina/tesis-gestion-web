@@ -198,6 +198,22 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
       {
+        path: 'mis-espacios-curriculares/:idEC/calificaciones/importar',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones-import/mis-ec-calificaciones-import.component')
+            .then(m => m.MisEcCalificacionesImportComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/calificaciones/importar/:idImportacion',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones-import/mis-ec-calificaciones-import.component')
+            .then(m => m.MisEcCalificacionesImportComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
         path: 'mis-espacios-curriculares/:idEC/programas',
         ...withSectionData('misEspaciosCurriculares'),
         loadComponent: () =>
