@@ -10,6 +10,8 @@ import {
   ConfirmarAccionDialogComponent,
   ConfirmarAccionData,
 } from '../confirmar-accion-dialog/confirmar-accion-dialog.component';
+import { AuthService } from '../../../auth/services/auth.service';
+import { PdfReporteService, ProgramaEstructuradoData } from '../../../../core/services/pdf-reporte.service';
 
 @Component({
   selector: 'app-programa-detalle',
@@ -31,6 +33,8 @@ export class ProgramaDetalleComponent implements OnInit {
     private programaService: ProgramaService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private authService: AuthService,
+    private pdfService: PdfReporteService,
   ) {}
 
   ngOnInit(): void {
@@ -55,6 +59,7 @@ export class ProgramaDetalleComponent implements OnInit {
   get esVigente(): boolean    { return this.programa?.estado === 'Vigente';    }
   get esNoVigente(): boolean  { return this.programa?.estado === 'NoVigente';  }
   get esAnioActual(): boolean { return this.programa?.anioLectivo === new Date().getFullYear(); }
+  get esAdmin(): boolean      { return this.authService.currentUser?.esAdmin ?? false; }
 
   badgeClass(): string {
     switch (this.programa?.estado) {
@@ -78,7 +83,7 @@ export class ProgramaDetalleComponent implements OnInit {
 
   formatCurso(): string {
     if (!this.programa) return '';
-    return `${this.programa.anioNumero}.º ${this.programa.division}`;
+    return `${this.programa.anioNumero}°${this.programa.division}`;
   }
 
   // ─── Acciones ───
@@ -161,20 +166,6 @@ export class ProgramaDetalleComponent implements OnInit {
     );
   }
 
-  reestablecerComoConfirmado(): void {
-    this.abrirDialogo(
-      {
-        titulo: 'Reestablecer como Confirmado',
-        mensaje:
-          'El programa volverá al estado Confirmado. ' +
-          'Desde ahí podrá establecerse como vigente si corresponde al año corriente. ¿Confirmás la acción?',
-        textoConfirmar: 'Reestablecer como Confirmado',
-        color: 'primary',
-      },
-      () => this.ejecutarCambioEstado('Confirmado', 'Programa reestablecido como confirmado.'),
-    );
-  }
-
   eliminar(): void {
     this.abrirDialogo(
       {
@@ -219,5 +210,31 @@ export class ProgramaDetalleComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas']);
+  }
+
+  irAEspacio(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
+  }
+
+  irAMisEspacios(): void {
+    this.router.navigate(['/mis-espacios-curriculares']);
+  }
+
+  exportarPDF(): void {
+    if (!this.programa) return;
+    void this.pdfService.exportarProgramaEstructurado({
+      nombreMateria:          this.programa.nombreMateria,
+      cursoLabel:             this.formatCurso(),
+      anioLectivo:            this.programa.anioLectivo,
+      nombreDocente:          this.programa.nombreDocente,
+      fechaCreacion:          this.formatFecha(this.programa.fechaCreacion),
+      fechaUltimaModificacion: this.formatFecha(this.programa.fechaUltimaModificacion),
+      fechaVencimiento:       this.programa.fechaVencimiento,
+      descripcion:            this.programa.descripcion,
+      objetivos:              this.programa.objetivos,
+      unidades:               this.programa.unidades,
+    } as ProgramaEstructuradoData).catch(() => {
+      this.snackBar.open('No se pudo exportar el PDF.', 'Cerrar', { duration: 4000 });
+    });
   }
 }

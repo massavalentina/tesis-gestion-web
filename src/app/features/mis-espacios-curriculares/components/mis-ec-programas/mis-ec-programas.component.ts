@@ -64,7 +64,7 @@ export class MisEcProgramasComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   badgeClass(estado: string): string {

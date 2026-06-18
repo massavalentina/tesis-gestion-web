@@ -299,6 +299,24 @@ export interface ParteDiarioData {
   comentarios: ComentarioParte[];
 }
 
+export interface ProgramaEstructuradoData {
+  nombreMateria: string;
+  cursoLabel: string;
+  anioLectivo: number;
+  nombreDocente: string;
+  fechaCreacion: string;
+  fechaUltimaModificacion: string;
+  fechaVencimiento: string;
+  descripcion?: string;
+  objetivos: { nro: number; descripcion: string }[];
+  unidades: {
+    nro: number;
+    titulo: string;
+    descripcion?: string;
+    temas: { nro: number; titulo: string; descripcion?: string }[];
+  }[];
+}
+
 // ─── Servicio ─────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -1266,6 +1284,242 @@ export class PdfReporteService {
   }
 
   // ── Leyendas ──────────────────────────────────────────────────────────────
+
+  // ── Exportar programa estructurado ────────────────────────────────────────
+
+  async exportarProgramaEstructurado(data: ProgramaEstructuradoData): Promise<void> {
+    const logo  = await this.logoPromise;
+    const doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const LEFT  = 18;
+    const W     = pageW - LEFT * 2;
+    const BOTTOM = pageH - 18;
+    const HDR_H  = 22;
+    const Y0     = HDR_H + 5;
+
+    let contentPage = 0;
+    let curY = Y0;
+
+    // ── helpers internos ─────────────────────────────────────────────────────
+
+    const drawHdr = (): void => {
+      if (logo) {
+        try { doc.addImage(logo, 'JPEG', 5, 3, 14, 14); } catch { /* sin logo */ }
+      }
+      doc.setFont('times', 'italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(60, 60, 60);
+      doc.text('Colegio Luis Manuel Robles \u2014 Padre Luis Monti 1859, Ciudad de C\u00f3rdoba.', 22, 9);
+      doc.text(
+        `Programa del Espacio Curricular \u2014 ${data.nombreMateria} ${data.cursoLabel} ${data.anioLectivo}`,
+        22, 15
+      );
+      doc.setDrawColor(...HEADER_BG);
+      doc.setLineWidth(0.5);
+      doc.line(0, HDR_H, pageW, HDR_H);
+      doc.setTextColor(0, 0, 0);
+    };
+
+    const drawPgNum = (n: number): void => {
+      doc.setFont('times', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(String(n), pageW / 2, pageH - 8, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+    };
+
+    const nextPage = (): void => {
+      doc.addPage();
+      contentPage++;
+      drawHdr();
+      drawPgNum(contentPage);
+      curY = Y0;
+    };
+
+    const need = (h: number): void => {
+      if (curY + h > BOTTOM) nextPage();
+    };
+
+    const wrapText = (
+      text: string,
+      indent: number,
+      font: string,
+      size: number,
+      lh = 5.5
+    ): void => {
+      doc.setFont('times', font);
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(text, W - (indent - LEFT)) as string[];
+      for (const ln of lines) {
+        need(lh + 1);
+        doc.text(ln, indent, curY);
+        curY += lh;
+      }
+    };
+
+    const sectionTitle = (title: string): void => {
+      need(16);
+      curY += 3;
+      doc.setFont('times', 'bolditalic');
+      doc.setFontSize(15);
+      doc.setTextColor(0, 0, 0);
+      doc.text(title, LEFT, curY);
+      const tw = doc.getTextWidth(title);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.35);
+      doc.line(LEFT, curY + 1.5, LEFT + tw, curY + 1.5);
+      curY += 9;
+    };
+
+    // ── Portada ──────────────────────────────────────────────────────────────
+
+    const cx = pageW / 2;
+
+    if (logo) {
+      try { doc.addImage(logo, 'JPEG', (pageW - 55) / 2, 38, 55, 55); } catch { /* */ }
+    }
+
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Colegio Luis Manuel Robles', cx, 108, { align: 'center' });
+
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.text('Padre Luis Monti 1859 - Ciudad de C\u00f3rdoba', cx, 116, { align: 'center' });
+
+    doc.setFont('times', 'italic');
+    doc.setFontSize(14);
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${data.nombreMateria} - ${data.cursoLabel}`, cx, 150, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text(`Autor - ${data.nombreDocente}`,                 cx, 185, { align: 'center' });
+    doc.text(`Fecha de Creaci\u00f3n - ${data.fechaCreacion}`, cx, 200, { align: 'center' });
+    doc.text(`A\u00f1o lectivo - ${data.anioLectivo}`,        cx, 215, { align: 'center' });
+
+    // ── Primera página de contenido ──────────────────────────────────────────
+
+    doc.addPage();
+    contentPage = 1;
+    drawHdr();
+    drawPgNum(contentPage);
+    curY = Y0;
+
+    // Metadatos
+    const now = new Date();
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    const fechaImpresion = `${p2(now.getDate())}/${p2(now.getMonth() + 1)}/${now.getFullYear()}`;
+
+    const metaLine = (label: string, value: string): void => {
+      need(7);
+      doc.setFont('times', 'bolditalic');
+      doc.setFontSize(11);
+      const lw = doc.getTextWidth(`${label}: `);
+      doc.text(`${label}: `, LEFT, curY);
+      doc.setFont('times', 'italic');
+      doc.text(value, LEFT + lw, curY);
+      curY += 6;
+    };
+
+    metaLine('Fecha de impresi\u00f3n', fechaImpresion);
+    metaLine('\u00daltima modificaci\u00f3n', data.fechaUltimaModificacion);
+    metaLine('Vencimiento', data.fechaVencimiento);
+    curY += 5;
+
+    // ── Descripción ──────────────────────────────────────────────────────────
+
+    if (data.descripcion) {
+      sectionTitle('Descripci\u00f3n');
+      wrapText(data.descripcion, LEFT, 'normal', 11);
+      curY += 4;
+    }
+
+    // ── Objetivos ────────────────────────────────────────────────────────────
+
+    if (data.objetivos.length > 0) {
+      sectionTitle('Objetivos');
+      doc.setFont('times', 'italic');
+      doc.setFontSize(11);
+      for (const obj of data.objetivos) {
+        const lines = doc.splitTextToSize(`\u2022  ${obj.descripcion}`, W - 4) as string[];
+        for (const ln of lines) {
+          need(6);
+          doc.text(ln, LEFT + 4, curY);
+          curY += 5.5;
+        }
+      }
+      curY += 4;
+    }
+
+    // ── Unidades ─────────────────────────────────────────────────────────────
+
+    if (data.unidades.length > 0) {
+      sectionTitle('Unidades');
+
+      for (const unidad of data.unidades) {
+        // Encabezado de unidad
+        need(14);
+        const uLabel = `Unidad ${unidad.nro} \u2014 ${unidad.titulo}`;
+        doc.setFont('times', 'italic');
+        doc.setFontSize(13);
+        doc.setTextColor(0, 0, 0);
+        const uLines = doc.splitTextToSize(uLabel, W) as string[];
+        doc.text(uLines[0], LEFT, curY);
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(LEFT, curY + 1.5, LEFT + Math.min(doc.getTextWidth(uLines[0]), W), curY + 1.5);
+        curY += 7;
+        for (let i = 1; i < uLines.length; i++) {
+          need(6); doc.text(uLines[i], LEFT, curY); curY += 5.5;
+        }
+
+        // Descripción de unidad
+        if (unidad.descripcion) {
+          wrapText(unidad.descripcion, LEFT + 4, 'normal', 11);
+          curY += 2;
+        }
+
+        // Sub-encabezado "Temas"
+        need(9);
+        doc.setFont('times', 'bold');
+        doc.setFontSize(11);
+        doc.text('Temas', LEFT + 4, curY);
+        const temasW = doc.getTextWidth('Temas');
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(LEFT + 4, curY + 1, LEFT + 4 + temasW, curY + 1);
+        curY += 6.5;
+
+        // Lista de temas
+        for (const tema of unidad.temas) {
+          const numTitle = `\u2022  ${unidad.nro}.${tema.nro}  ${tema.titulo}`;
+          doc.setFont('times', 'bold');
+          doc.setFontSize(11);
+          const ntLines = doc.splitTextToSize(numTitle, W - 6) as string[];
+          for (const ln of ntLines) {
+            need(6); doc.text(ln, LEFT + 6, curY); curY += 5.5;
+          }
+          if (tema.descripcion) {
+            doc.setFont('times', 'normal');
+            const dLines = doc.splitTextToSize(`\u2014 ${tema.descripcion}`, W - 12) as string[];
+            for (const ln of dLines) {
+              need(6); doc.text(ln, LEFT + 12, curY); curY += 5.5;
+            }
+          }
+          curY += 1;
+        }
+        curY += 5;
+      }
+    }
+
+    // ── Guardar ──────────────────────────────────────────────────────────────
+
+    const safe = data.nombreMateria.replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-');
+    doc.save(`programa-${safe}-${data.cursoLabel}-${data.anioLectivo}.pdf`);
+  }
 
   private dibujarLeyenda(doc: jsPDF): void {
     const pageH = doc.internal.pageSize.getHeight();

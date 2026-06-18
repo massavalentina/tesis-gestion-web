@@ -172,7 +172,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   formatTimestamp(timestamp: string): string {
