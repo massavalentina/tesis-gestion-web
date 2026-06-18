@@ -6,6 +6,7 @@ import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/gua
 import { authGuard } from './core/auth/guards/auth.guard';
 import { permisoGuard } from './core/auth/guards/permiso.guard';
 import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
+import { calificacionesCambiosPendientesGuard } from './features/mis-espacios-curriculares/guards/calificaciones-cambios-pendientes.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
 import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { credencialesQrGuard } from './core/auth/guards/credenciales-qr.guard';
@@ -196,6 +197,7 @@ export const routes: Routes = [
           import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones/mis-ec-calificaciones.component')
             .then(m => m.MisEcCalificacionesComponent),
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+        canDeactivate: [calificacionesCambiosPendientesGuard],
       },
       {
         path: 'mis-espacios-curriculares/:idEC/programas',
