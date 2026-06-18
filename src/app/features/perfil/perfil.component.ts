@@ -13,6 +13,8 @@ import { switchMap, map, catchError } from 'rxjs/operators';
 import { AuthService } from '../auth/services/auth.service';
 import { PerfilService, PerfilUsuario } from './services/perfil.service';
 import { GestionUsuariosService } from '../gestion-usuarios/services/gestion-usuarios.service';
+import { AsignacionService } from '../gestion-usuarios/services/asignacion.service';
+import { PreceptorCursoActivo, PreceptorCursoHistorial } from '../gestion-usuarios/models/asignacion.model';
 
 function soloLetrasMin2(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -49,6 +51,11 @@ export class PerfilComponent implements OnInit {
   cargando = signal(true);
   errorCarga = signal('');
 
+  cursoActivos   = signal<PreceptorCursoActivo[]>([]);
+  cursoHistorial = signal<PreceptorCursoHistorial[]>([]);
+  cargandoCursos  = signal(false);
+  mostrarHistorial = signal(false);
+
   formDatos: FormGroup;
   guardandoDatos = false;
   errorDatos: string | null = null;
@@ -60,6 +67,7 @@ export class PerfilComponent implements OnInit {
     private authService: AuthService,
     private perfilService: PerfilService,
     private gestionService: GestionUsuariosService,
+    private asignacionService: AsignacionService,
   ) {
     this.formDatos = this.fb.group({
       nombre:   ['', [Validators.required, soloLetrasMin2()]],
@@ -84,6 +92,19 @@ export class PerfilComponent implements OnInit {
         });
         this.formDatos.disable();
         this.cargando.set(false);
+
+        const esPreceptor = p.roles.some(r => r.toLowerCase() === 'preceptor');
+        if (esPreceptor && p.idPreceptor) {
+          this.cargandoCursos.set(true);
+          this.asignacionService.getCursosPreceptor(p.idPreceptor).subscribe({
+            next: res => {
+              this.cursoActivos.set(this.sortCursos(res.activos));
+              this.cursoHistorial.set(this.sortCursos(res.historial));
+              this.cargandoCursos.set(false);
+            },
+            error: () => this.cargandoCursos.set(false),
+          });
+        }
       },
       error: () => {
         this.errorCarga.set('No se pudo cargar el perfil.');
@@ -93,6 +114,18 @@ export class PerfilComponent implements OnInit {
   }
 
   get p(): PerfilUsuario { return this.perfil()!; }
+
+  get esPreceptor(): boolean {
+    return this.perfil()?.roles.some(r => r.toLowerCase() === 'preceptor') ?? false;
+  }
+
+  toggleHistorial(): void { this.mostrarHistorial.update(v => !v); }
+
+  private sortCursos<T extends { anio: number; division: string }>(cursos: T[]): T[] {
+    return [...cursos].sort((a, b) =>
+      a.anio !== b.anio ? a.anio - b.anio : a.division.localeCompare(b.division, 'es')
+    );
+  }
 
   habilitarEdicion(): void {
     this.editandoDatos = true;

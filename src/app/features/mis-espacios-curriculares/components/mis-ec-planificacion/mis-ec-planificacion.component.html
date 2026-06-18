@@ -108,7 +108,7 @@
         <div class="unidad-card" *ngFor="let unidad of arbol.unidades">
           <div class="unidad-header" (click)="toggleUnidad(unidad.idBloquePrograma)">
             <div class="unidad-header-left">
-              <span class="unidad-num">U{{ unidad.nro }}</span>
+              <span class="unidad-num">Unidad {{ unidad.nro }}</span>
               <div class="unidad-info">
                 <span class="unidad-titulo">{{ unidad.titulo }}</span>
                 <span class="unidad-sub">{{ countClasesUnidad(unidad) }}</span>
@@ -133,7 +133,7 @@
             <div class="tema-row-wrap" *ngFor="let tema of unidad.temas">
               <div class="tema-row" (click)="toggleTema(tema.idBloquePrograma)">
                 <div class="tema-row-left">
-                  <span class="tema-num">T{{ tema.nro }}</span>
+                  <span class="tema-num">Tema {{ tema.nro }}</span>
                   <div class="tema-info">
                     <span class="tema-titulo">{{ tema.titulo }}</span>
                     <span class="tema-sub">{{ countClasesTema(tema) }}</span>
@@ -168,10 +168,15 @@
                   <div class="clase-info">
                     <span class="clase-titulo">{{ clase.titulo }}</span>
                     <div class="clase-meta">
-                      <span class="clase-fecha" *ngIf="clase.fechaEstimada">
-                        <span class="material-icons" style="font-size:13px;vertical-align:middle">calendar_today</span>
+                      <span class="clase-fecha-item" *ngIf="clase.fechaEstimada">
+                        <span class="clase-fecha-lbl">Fecha estimada:</span>
+                        <span class="material-icons clase-cal-icon">event</span>
                         {{ formatFecha(clase.fechaEstimada) }}
-                        <ng-container *ngIf="clase.fechaDictada"> → {{ formatFecha(clase.fechaDictada) }}</ng-container>
+                      </span>
+                      <span class="clase-fecha-item clase-fecha-dictada" *ngIf="clase.fechaDictada">
+                        <span class="clase-fecha-lbl">Fecha dictada:</span>
+                        <span class="material-icons clase-cal-icon">event_available</span>
+                        {{ formatFecha(clase.fechaDictada) }}
                       </span>
                       <span class="clase-estado-badge" [class.dado]="claseEsDada(clase)">
                         {{ claseEsDada(clase) ? 'Dictada' : 'Pendiente' }}

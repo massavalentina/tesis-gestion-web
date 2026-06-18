@@ -137,6 +137,70 @@
         </form>
       </div>
 
+      <!-- Cursos asignados (solo visible para Preceptores) -->
+      <div class="asig-section" *ngIf="esPreceptor">
+        <div class="asig-header">
+          <span class="asig-titulo">Cursos asignados</span>
+        </div>
+
+        <div class="asig-loading" *ngIf="cargandoCursos()">
+          <mat-spinner diameter="24"></mat-spinner>
+        </div>
+
+        <ng-container *ngIf="!cargandoCursos()">
+          <p class="asig-vacio" *ngIf="cursoActivos().length === 0">Sin cursos asignados.</p>
+
+          <div class="tabla-wrapper" *ngIf="cursoActivos().length > 0">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Año</th>
+                  <th>División</th>
+                  <th>Código</th>
+                  <th>Desde</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of cursoActivos()">
+                  <td class="col-anio">{{ c.anio }}°</td>
+                  <td class="col-division">{{ c.division }}</td>
+                  <td class="col-codigo">{{ c.codigoCurso }}</td>
+                  <td class="col-fecha">{{ formatFecha(c.fechaDesde) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <button class="asig-historial-toggle" *ngIf="cursoHistorial().length > 0" (click)="toggleHistorial()">
+            <mat-icon>{{ mostrarHistorial() ? 'expand_less' : 'expand_more' }}</mat-icon>
+            Historial ({{ cursoHistorial().length }})
+          </button>
+
+          <div class="tabla-wrapper tabla-historial" *ngIf="mostrarHistorial() && cursoHistorial().length > 0">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>Año</th>
+                  <th>División</th>
+                  <th>Código</th>
+                  <th>Período</th>
+                  <th>Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of cursoHistorial()">
+                  <td class="col-anio">{{ c.anio }}°</td>
+                  <td class="col-division">{{ c.division }}</td>
+                  <td class="col-codigo">{{ c.codigoCurso }}</td>
+                  <td class="col-periodo">{{ formatFecha(c.fechaDesde) }} → {{ c.fechaHasta ? formatFecha(c.fechaHasta) : '—' }}</td>
+                  <td class="col-motivo">{{ c.motivo || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+      </div>
+
     </div>
 
   </ng-container>

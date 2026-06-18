@@ -183,11 +183,8 @@
           <div class="chip"><span class="chip-label">Autor:</span> {{ programaCargado.nombreDocente }}</div>
         </div>
 
-        <!-- Título y descripción -->
-        <div class="programa-info">
-          <p class="programa-titulo">{{ programaCargado.titulo }}</p>
-          <p class="programa-desc" *ngIf="programaCargado.descripcion">{{ programaCargado.descripcion }}</p>
-        </div>
+        <!-- Descripción (si existe) -->
+        <p class="programa-desc" *ngIf="programaCargado.descripcion">{{ programaCargado.descripcion }}</p>
 
         <!-- Tarjeta PDF -->
         <div class="pdf-card" *ngIf="programaCargado.url" (click)="abrirPdf()">

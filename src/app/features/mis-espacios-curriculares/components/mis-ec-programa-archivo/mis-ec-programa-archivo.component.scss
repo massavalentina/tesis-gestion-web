@@ -329,6 +329,13 @@ textarea {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 18px;
+
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: $text;
+    margin: 0;
+  }
 }
 
 .badge {
@@ -346,22 +353,10 @@ textarea {
 .badge-novigente  { background: #f5f5f5; color: #757575; }
 .badge-borrador   { background: #fff3e0; color: #e65100; }
 
-/* ─── Título y descripción del programa cargado ─── */
-.programa-info {
-  margin-bottom: 18px;
-}
-
-.programa-titulo {
-  font-size: 16px;
-  font-weight: 700;
-  color: $text;
-  margin: 0 0 4px;
-}
-
 .programa-desc {
   font-size: 13.5px;
   color: $text-muted;
-  margin: 0;
+  margin: 0 0 18px;
   line-height: 1.5;
 }
 

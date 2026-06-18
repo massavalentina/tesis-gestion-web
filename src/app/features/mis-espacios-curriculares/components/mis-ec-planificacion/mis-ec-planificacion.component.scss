@@ -184,31 +184,33 @@ $radius-sm: 8px;
 .unidad-card {
   background: $surface;
   border: 1px solid $border;
+  border-left: 4px solid $primary;
   border-radius: $radius;
   overflow: hidden;
   transition: box-shadow .15s;
-  &:hover { box-shadow: 0 1px 3px rgba(16,24,40,.05), 0 1px 10px rgba(16,24,40,.04); }
+  &:hover { box-shadow: 0 2px 8px rgba(16,24,40,.08); }
 }
 .unidad-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 17px 22px;
+  padding: 20px 26px;
   cursor: pointer;
   transition: background .12s;
   user-select: none;
   &:hover { background: #fafafa; }
 }
-.unidad-header-left { display: flex; align-items: center; gap: 14px; }
+.unidad-header-left { display: flex; align-items: center; gap: 18px; }
 .unidad-num {
-  font-size: 12px; font-weight: 700; color: $primary;
-  background: #e8f0fe; border-radius: 6px;
-  padding: 4px 10px; letter-spacing: .5px; white-space: nowrap;
+  font-size: 15px; font-weight: 800; color: $primary;
+  background: #e8f0fe; border-radius: 10px;
+  padding: 8px 18px; letter-spacing: .2px; white-space: nowrap;
+  flex-shrink: 0;
 }
-.unidad-info { display: flex; flex-direction: column; gap: 3px; }
-.unidad-titulo { font-size: 15.5px; font-weight: 700; color: $text; }
-.unidad-sub { font-size: 12.5px; color: $text-muted; }
-.unidad-header-right { display: flex; align-items: center; gap: 10px; }
+.unidad-info { display: flex; flex-direction: column; gap: 4px; }
+.unidad-titulo { font-size: 18px; font-weight: 700; color: $text; }
+.unidad-sub { font-size: 13.5px; color: $text-muted; }
+.unidad-header-right { display: flex; align-items: center; gap: 12px; }
 .unidad-chevron {
-  font-size: 22px; color: $text-muted;
+  font-size: 30px; color: $text-muted;
   transition: transform .2s;
   &.open { transform: rotate(180deg); }
 }
@@ -218,29 +220,30 @@ $radius-sm: 8px;
 .tema-row-wrap { border-bottom: 1px solid $bg; }
 .tema-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 22px 14px 38px;
+  padding: 16px 26px 16px 46px;
   cursor: pointer; transition: background .12s;
   user-select: none;
   &:hover { background: #f9fafb; }
 }
-.tema-row-left { display: flex; align-items: center; gap: 12px; }
+.tema-row-left { display: flex; align-items: center; gap: 14px; }
 .tema-num {
-  font-size: 11px; font-weight: 700; color: $text-muted;
-  background: $bg; border-radius: 4px;
-  padding: 3px 7px; white-space: nowrap;
+  font-size: 13.5px; font-weight: 700; color: $text-muted;
+  background: $bg; border-radius: 8px;
+  padding: 6px 13px; white-space: nowrap; flex-shrink: 0;
+  border: 1px solid $border;
 }
-.tema-info { display: flex; flex-direction: column; gap: 2px; }
-.tema-titulo { font-size: 14.5px; font-weight: 600; color: $text; }
-.tema-sub { font-size: 12.5px; color: $text-muted; }
-.tema-row-right { display: flex; align-items: center; gap: 10px; }
-.tema-toggle-area { display: flex; align-items: center; gap: 8px; }
+.tema-info { display: flex; flex-direction: column; gap: 3px; }
+.tema-titulo { font-size: 16px; font-weight: 600; color: $text; }
+.tema-sub { font-size: 13.5px; color: $text-muted; }
+.tema-row-right { display: flex; align-items: center; gap: 14px; }
+.tema-toggle-area { display: flex; align-items: center; gap: 10px; }
 .tema-estado-lbl {
-  font-size: 12px; font-weight: 700; white-space: nowrap;
+  font-size: 13px; font-weight: 700; white-space: nowrap;
   color: $text-muted;
   &.dado { color: $success; }
 }
 .tema-chevron {
-  font-size: 19px; color: $text-muted;
+  font-size: 26px; color: $text-muted;
   transition: transform .2s;
   &.open { transform: rotate(180deg); }
 }
@@ -264,8 +267,8 @@ $radius-sm: 8px;
 
 // ─── Clases ───────────────────────────────────────────────────────────────────
 .clases-wrap {
-  padding: 8px 22px 14px 50px;
-  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 26px 18px 70px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .clase-empty {
   display: flex; align-items: center; gap: 6px;
@@ -273,8 +276,8 @@ $radius-sm: 8px;
   padding: 4px 0;
 }
 .clase-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 16px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 18px;
   background: $bg;
   border-radius: $radius-sm;
   border-left: 4px solid $border;
@@ -283,21 +286,29 @@ $radius-sm: 8px;
   &.dado { border-left-color: $success; }
 }
 .clase-dot {
-  width: 13px; height: 13px; border-radius: 50%;
+  width: 14px; height: 14px; border-radius: 50%;
   background: $border; flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(0,0,0,.03);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.04);
   transition: background .2s;
-  &.dado { background: $success; box-shadow: 0 0 0 3px rgba(52,168,83,.15); }
+  &.dado { background: $success; box-shadow: 0 0 0 4px rgba(52,168,83,.18); }
 }
 .clase-info { flex: 1; min-width: 0; }
 .clase-titulo {
-  font-size: 14px; font-weight: 600; color: $text;
+  font-size: 15px; font-weight: 600; color: $text;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .clase-meta {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 3px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 5px;
 }
-.clase-fecha { font-size: 12px; color: $text-muted; display: flex; align-items: center; gap: 3px; }
+.clase-fecha-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12.5px; color: $text-muted;
+  &.clase-fecha-dictada { color: darken($success, 10%); }
+}
+.clase-fecha-lbl {
+  font-weight: 600; font-size: 12px;
+}
+.clase-cal-icon { font-size: 14px; }
 .clase-estado-badge {
   font-size: 11px; font-weight: 700; letter-spacing: .5px;
   border-radius: 100px; padding: 2px 9px;
@@ -312,12 +323,12 @@ $radius-sm: 8px;
 }
 .clase-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .btn-edit-clase {
-  background: none; border: none; cursor: pointer;
+  background: none; border: 1px solid $border; cursor: pointer;
   color: $text-muted; display: flex; align-items: center;
-  padding: 4px; border-radius: 4px;
-  transition: background .12s, color .12s;
-  .material-icons { font-size: 16px; }
-  &:hover { background: $border; color: $text; }
+  padding: 7px; border-radius: 8px;
+  transition: background .12s, color .12s, border-color .12s;
+  .material-icons { font-size: 20px; }
+  &:hover { background: $bg; color: $text; border-color: #d1d5db; }
 }
 
 // ─── Botones árbol ────────────────────────────────────────────────────────────
@@ -396,13 +407,13 @@ $radius-sm: 8px;
   align-items: center; cursor: pointer;
   input { position: absolute; opacity: 0; width: 0; height: 0; }
   .slider {
-    width: 36px; height: 20px;
+    width: 42px; height: 24px;
     background: $border; border-radius: 100px;
     transition: background .2s;
     &::after {
       content: '';
       position: absolute;
-      width: 14px; height: 14px;
+      width: 18px; height: 18px;
       background: #fff;
       border-radius: 50%;
       top: 3px; left: 3px;
@@ -411,10 +422,10 @@ $radius-sm: 8px;
     }
   }
   input:checked + .slider { background: $success; }
-  input:checked + .slider::after { transform: translateX(16px); }
-  &.sm .slider { width: 28px; height: 16px; }
-  &.sm .slider::after { width: 10px; height: 10px; top: 3px; left: 3px; }
-  &.sm input:checked + .slider::after { transform: translateX(12px); }
+  input:checked + .slider::after { transform: translateX(18px); }
+  &.sm .slider { width: 34px; height: 20px; }
+  &.sm .slider::after { width: 14px; height: 14px; top: 3px; left: 3px; }
+  &.sm input:checked + .slider::after { transform: translateX(14px); }
 }
 .toggle-row {
   display: flex; align-items: center; justify-content: space-between;
