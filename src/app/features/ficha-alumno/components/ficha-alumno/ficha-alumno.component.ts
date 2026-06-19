@@ -29,6 +29,9 @@ import {
   QrCredentialPreviewMetaItem
 } from '../../../credenciales-qr/components/qr-credential-preview-card.component';
 import { ObjectUrlRegistry } from '../../../../utils/object-url-registry';
+import { LibretaCalificacionesComponent } from '../libreta-calificaciones/libreta-calificaciones.component';
+import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
+import { ReporteAsistenciaService } from '../../../reporte-asistencia/services/reporte-asistencia.service';
 
 function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -107,7 +110,8 @@ interface ModalCredencialQrState {
     MatInputModule,
     FormsModule,
     ReactiveFormsModule,
-    QrCredentialPreviewCardComponent
+    QrCredentialPreviewCardComponent,
+    LibretaCalificacionesComponent,
   ],
   templateUrl: './ficha-alumno.component.html',
   styleUrl: './ficha-alumno.component.css'
@@ -127,6 +131,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   errorEstudiantes = false;
 
   expandedIds = new Set<string>();
+  vistaLibretaIds = new Set<string>();
 
   fichaMap = new Map<string, FichaDetalle>();
   cargandoFichaIds = new Set<string>();
@@ -153,6 +158,8 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private snackBar: MatSnackBar,
+    private pdfService: PdfReporteService,
+    private reporteService: ReporteAsistenciaService,
     authService: AuthService,
   ) {
     this.esDocente         = authService.tieneRol('Docente');
@@ -197,6 +204,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.cargandoFichaIds.clear();
     this.errorFichaIds.clear();
     this.vistaTutoresIds.clear();
+    this.vistaLibretaIds.clear();
     this.enviandoNotificacionCurso = false;
     this.cargarEstudiantes(this.cursoSeleccionado.idCurso, null);
   }
@@ -243,6 +251,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
 
   onClosed(id: string): void {
     this.expandedIds.delete(id);
+    this.vistaLibretaIds.delete(id);
   }
 
   private cargarFicha(idEstudiante: string): void {
@@ -272,11 +281,74 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   }
 
   verTutores(idEstudiante: string): void {
+    this.vistaLibretaIds.delete(idEstudiante);
     this.vistaTutoresIds.add(idEstudiante);
   }
 
   volverResumen(idEstudiante: string): void {
     this.vistaTutoresIds.delete(idEstudiante);
+  }
+
+  verLibreta(idEstudiante: string): void {
+    this.vistaTutoresIds.delete(idEstudiante);
+    this.vistaLibretaIds.add(idEstudiante);
+  }
+
+  cerrarLibreta(idEstudiante: string): void {
+    this.vistaLibretaIds.delete(idEstudiante);
+  }
+
+  exportarLibreta(est: EstudianteFicha): void {
+    const cursoId = this.cursoSeleccionado?.idCurso;
+    if (!cursoId) return;
+
+    this.reporteService.getReporteCurso(cursoId).subscribe({
+      next: (resp) => {
+        const item = resp.estudiantes.find(e => e.idEstudiante === est.idEstudiante);
+        this.pdfService.exportarLibretaCalificaciones({
+          apellido:    est.apellido,
+          nombre:      est.nombre,
+          codigoCurso: this.cursoSeleccionado?.codigo ?? '',
+          anioLectivo: 2026,
+          espacios:    [],
+          asistencia: item ? {
+            presencias:                   item.presencias,
+            inasistencias:                item.inasistencias,
+            ausenciasPuras:               item.ausenciasPuras ?? 0,
+            ancCount:                     item.ausentesNoComputables ?? 0,
+            llegadasTarde:                item.llegadasTarde,
+            ausentePorLLT:                item.ausentePorLLT,
+            retirosAnticipados:           item.retirosAnticipados,
+            retirosExpress:               item.retirosExpress,
+            retirosAnticipadosExtendidos: item.retirosAnticipadosExtendidos,
+            ausentePorRA:                 item.ausentePorRA ?? 0,
+            porcentajeAsistencia:         item.porcentajeAsistencia,
+            teaGeneral:                   item.teaGeneral,
+          } : {
+            presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
+            ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,
+            retirosExpress: 0, retirosAnticipadosExtendidos: 0, ausentePorRA: 0,
+            porcentajeAsistencia: 0, teaGeneral: est.teaGeneral,
+          },
+        });
+      },
+      error: () => {
+        // Fallback con solo los datos disponibles en la ficha
+        this.pdfService.exportarLibretaCalificaciones({
+          apellido:    est.apellido,
+          nombre:      est.nombre,
+          codigoCurso: this.cursoSeleccionado?.codigo ?? '',
+          anioLectivo: 2026,
+          espacios:    [],
+          asistencia: {
+            presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
+            ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,
+            retirosExpress: 0, retirosAnticipadosExtendidos: 0, ausentePorRA: 0,
+            porcentajeAsistencia: 0, teaGeneral: est.teaGeneral,
+          },
+        });
+      },
+    });
   }
 
   getEstado(est: EstudianteFicha): 'tea' | 'rojo' | 'naranja' | 'amarillo' | 'verde' {
@@ -290,7 +362,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   getLabelFaltas(est: EstudianteFicha): string {
     if (est.teaGeneral) return 'TEA';
     const f = est.faltasAcumuladas;
-    return f === 1 ? '1 falta' : `${f} faltas`;
+    return f === 1 ? '1 inasistencia' : `${f} inasistencias`;
   }
 
   verDetalleFaltas(est: EstudianteFicha): void {

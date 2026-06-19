@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { LibretaEspacio } from '../../features/ficha-alumno/models/libreta-calificaciones.model';
 import { ReporteAsistenciaItem } from '../../features/reporte-asistencia/models/reporte-asistencia.model';
 import { DetalleAsistencia } from '../../features/reporte-asistencia/models/detalle-asistencia.model';
 import { ReporteDocenteItem } from '../../features/reporte-asistencia-docente/models/reporte-asistencia-docente.model';
@@ -297,6 +298,29 @@ export interface ParteDiarioData {
   usuarioResponsable: string;
   resumen: ParteDiarioResumen;
   comentarios: ComentarioParte[];
+}
+
+
+export interface LibretaCalificacionesData {
+  apellido: string;
+  nombre: string;
+  codigoCurso: string;
+  anioLectivo: number;
+  espacios: LibretaEspacio[];
+  asistencia?: {
+    presencias: number;
+    inasistencias: number;
+    ausenciasPuras: number;
+    ancCount: number;
+    llegadasTarde: number;
+    ausentePorLLT: number;
+    retirosAnticipados: number;
+    retirosExpress: number;
+    retirosAnticipadosExtendidos: number;
+    ausentePorRA: number;
+    porcentajeAsistencia: number;
+    teaGeneral: boolean;
+  };
 }
 
 export interface ProgramaEstructuradoData {
@@ -1519,6 +1543,437 @@ export class PdfReporteService {
 
     const safe = data.nombreMateria.replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-');
     doc.save(`programa-${safe}-${data.cursoLabel}-${data.anioLectivo}.pdf`);
+  }
+
+  // ── Libreta de calificaciones ─────────────────────────────────────────────
+
+  async exportarLibretaCalificaciones(data: LibretaCalificacionesData): Promise<void> {
+    const logo  = await this.logoPromise;
+    const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();  // 297mm
+    const pageH = doc.internal.pageSize.getHeight(); // 210mm
+    const LEFT  = 10;
+    const RIGHT = 10;
+    const CW    = pageW - LEFT - RIGHT; // 277mm
+
+    const PLACEHOLDER: LibretaEspacio[] = [
+      { idEC: '', nombreMateria: 'Lengua y Literatura',        instancias: [] },
+      { idEC: '', nombreMateria: 'Matemática',                 instancias: [] },
+      { idEC: '', nombreMateria: 'Historia',                   instancias: [] },
+      { idEC: '', nombreMateria: 'Geografía',                  instancias: [] },
+      { idEC: '', nombreMateria: 'Biología',                   instancias: [] },
+      { idEC: '', nombreMateria: 'Inglés',                     instancias: [] },
+      { idEC: '', nombreMateria: 'Educación Física',           instancias: [] },
+      { idEC: '', nombreMateria: 'Educación Tecnológica',      instancias: [] },
+      { idEC: '', nombreMateria: 'Educación Artística',        instancias: [] },
+      { idEC: '', nombreMateria: 'Ciudadanía y Participación', instancias: [] },
+    ];
+    const fuente = data.espacios.length > 0 ? data.espacios : PLACEHOLDER;
+
+    // ── Pre-computar filas ────────────────────────────────────────────────────
+    interface EvalPdf { n: number|null; r1: number|null; r2: number|null; ef: number|null }
+    interface FilaPdf {
+      nombre: string;
+      evals: EvalPdf[];   // 8 entradas
+      nf: number|null;
+      estado: string;
+    }
+
+    const filasPdf: FilaPdf[] = fuente.map(esp => {
+      const evals: EvalPdf[] = Array.from({ length: 8 }, (_, i) => {
+        const inst = esp.instancias.find(x => x.nro === i + 1);
+        if (!inst) return { n: null, r1: null, r2: null, ef: null };
+        const cands = [inst.n, inst.r1, inst.r2].filter((v): v is number => v !== null);
+        return { n: inst.n, r1: inst.r1, r2: inst.r2, ef: cands.length > 0 ? Math.max(...cands) : null };
+      });
+      const efs = evals.map(e => e.ef).filter((v): v is number => v !== null);
+      const nf  = efs.length > 0 ? efs.reduce((a, b) => a + b, 0) / efs.length : null;
+      const alg = efs.some(v => v < 7);
+      let estado: string;
+      if (nf === null)          estado = '-';
+      else if (nf >= 7 && !alg) estado = 'Aprobado';
+      else if (nf >= 7)         estado = 'Desap. por Tema';
+      else                      estado = 'Desaprobado';
+      return { nombre: esp.nombreMateria, evals, nf, estado };
+    });
+
+    const nTxt  = (v: number|null) => v !== null ? String(v) : '-';
+    const nfTxt = (v: number|null) => v !== null ? v.toFixed(2) : '-';
+    const estColor = (e: string): [number,number,number] =>
+      e === 'Aprobado' ? VERDE : e === 'Desaprobado' ? ROJO : e === 'Desap. por Tema' ? NARANJA : GRIS;
+
+    // ── Anchos de columnas ────────────────────────────────────────────────────
+    // materia(55) + 24×sub(6) + NF(16) + Estado(37) = 252... agrando materia
+    // materia(67) + 24×6(144) + NF(18) + Estado(48) = 277 ✓
+    const W_MAT = 67;
+    const W_SUB = 6;    // N / R1 / R2  (24 cols × 6mm = 144mm)
+    const W_NF  = 18;
+    const W_EST = CW - W_MAT - 24 * W_SUB - W_NF; // 48mm
+
+    const titulo    = 'Libreta de Calificaciones';
+    const subtitulo = `${data.apellido}, ${data.nombre}  |  Curso: ${data.codigoCurso}  |  Ciclo ${data.anioLectivo}`;
+
+    // ── Encabezado ────────────────────────────────────────────────────────────
+    let y = drawPageHeader(doc, titulo, subtitulo, logo);
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Alumno: ${data.apellido}, ${data.nombre}`, LEFT, y + 4);
+    doc.text(`Curso: ${data.codigoCurso}  |  Ciclo lectivo: ${data.anioLectivo}`, LEFT, y + 9);
+    doc.text(`Emitido: ${hoy()}`, pageW - RIGHT, y + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    y += 14;
+
+    // ── Cabecera de grupo (fila 1 del header) dibujada a mano ────────────────
+    // jsPDF-autotable no soporta colspan, así que dibujo la fila de agrupación
+    // manualmente antes de la tabla principal.
+    const GRP_H = 6; // altura de la fila de grupo
+    const GRP_Y = y;
+
+    // Fondo azul para toda la franja
+    doc.setFillColor(...HEADER_BG);
+    doc.rect(LEFT, GRP_Y, CW, GRP_H, 'F');
+
+    // "Espacio curricular" centrado en su columna
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Espacio curricular', LEFT + W_MAT / 2, GRP_Y + 4.2, { align: 'center' });
+
+    // Grupos de evaluaciones (Eval 1 ... Eval 8), cada uno abarca 3 subcols
+    const EVAL_LABELS = ['1er Cuatrimestre - Evaluaciones 1 a 4', '2do Cuatrimestre - Evaluaciones 5 a 8'];
+    // Línea divisoria entre cuatrimestres
+    const q1X = LEFT + W_MAT + 12 * W_SUB;
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.6);
+    doc.line(q1X, GRP_Y, q1X, GRP_Y + GRP_H);
+
+    doc.setFontSize(6.5);
+    doc.text(EVAL_LABELS[0], LEFT + W_MAT + (12 * W_SUB) / 2, GRP_Y + 4.2, { align: 'center' });
+    doc.text(EVAL_LABELS[1], q1X + (12 * W_SUB) / 2, GRP_Y + 4.2, { align: 'center' });
+
+    // "NF" y "Estado" en el resto
+    const nfX  = LEFT + W_MAT + 24 * W_SUB;
+    const estX = nfX + W_NF;
+    doc.setFontSize(6);
+    doc.text('NF', nfX + W_NF / 2, GRP_Y + 4.2, { align: 'center' });
+    doc.text('Estado', estX + W_EST / 2, GRP_Y + 4.2, { align: 'center' });
+
+    y += GRP_H;
+
+    // ── Tabla principal (fila 2: subencabezados + body) ───────────────────────
+    // Header: col 0 = espacio, cols 1–24 = subnotas por eval, col 25 = NF, col 26 = Estado
+    const headSub: string[] = [''];
+    for (let e = 0; e < 8; e++) {
+      headSub.push(`E${e + 1}\nN`, `E${e + 1}\nR1`, `E${e + 1}\nR2`);
+    }
+    headSub.push('', ''); // NF y Estado (ya mostrados arriba)
+
+    const body: string[][] = filasPdf.map(fila => {
+      const row: string[] = [fila.nombre];
+      for (let e = 0; e < 8; e++) {
+        row.push(nTxt(fila.evals[e].n), nTxt(fila.evals[e].r1), nTxt(fila.evals[e].r2));
+      }
+      row.push(nfTxt(fila.nf), fila.estado);
+      return row;
+    });
+
+    // columnStyles: col 0 = materia, 1-24 = subcols, 25 = NF, 26 = estado
+    const colStyles: Record<number, object> = {
+      0:  { cellWidth: W_MAT },
+      25: { cellWidth: W_NF,  halign: 'center' },
+      26: { cellWidth: W_EST, halign: 'center' },
+    };
+    for (let i = 1; i <= 24; i++) {
+      colStyles[i] = { cellWidth: W_SUB, halign: 'center', cellPadding: { top: 1, bottom: 1, left: 0, right: 0 } };
+    }
+
+    autoTable(doc, {
+      startY: y,
+      head:   [headSub],
+      body,
+      margin: { left: LEFT, right: RIGHT, top: HEADER_H + 4 },
+      headStyles: {
+        fillColor:   [235, 241, 251],
+        textColor:   HEADER_BG,
+        fontStyle:   'bold',
+        fontSize:    5.5,
+        cellPadding: { top: 2, bottom: 2, left: 1, right: 1 },
+        lineColor:   [200, 215, 235],
+        lineWidth:   0.2,
+      },
+      bodyStyles: {
+        fontSize:    7,
+        cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 },
+        lineColor:   [220, 228, 238],
+        lineWidth:   0.2,
+      },
+      alternateRowStyles: { fillColor: [247, 250, 255] },
+      columnStyles: colStyles,
+      didDrawPage: (hookData) => {
+        if (hookData.pageNumber > 1) {
+          drawPageHeader(doc, titulo, subtitulo, logo);
+          // Redibujar franja de grupos en páginas siguientes
+          const gy = HEADER_H + 2;
+          doc.setFillColor(...HEADER_BG);
+          doc.rect(LEFT, gy, CW, GRP_H, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6);
+          doc.setTextColor(255, 255, 255);
+          doc.text('Espacio curricular', LEFT + W_MAT / 2, gy + 4.2, { align: 'center' });
+          doc.setFontSize(6.5);
+          doc.text(EVAL_LABELS[0], LEFT + W_MAT + (12 * W_SUB) / 2, gy + 4.2, { align: 'center' });
+          doc.text(EVAL_LABELS[1], q1X + (12 * W_SUB) / 2, gy + 4.2, { align: 'center' });
+          doc.setFontSize(6);
+          doc.text('NF', nfX + W_NF / 2, gy + 4.2, { align: 'center' });
+          doc.text('Estado', estX + W_EST / 2, gy + 4.2, { align: 'center' });
+          doc.setDrawColor(255, 255, 255);
+          doc.setLineWidth(0.6);
+          doc.line(q1X, gy, q1X, gy + GRP_H);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+        }
+      },
+      didParseCell: (hookData) => {
+        if (hookData.section === 'head') {
+          // En la fila de sub-encabezados, alternar fondo por grupo de eval
+          const col = hookData.column.index;
+          if (col >= 1 && col <= 24) {
+            const evalIdx = Math.floor((col - 1) / 3); // 0-7
+            if (evalIdx % 2 === 1) {
+              hookData.cell.styles.fillColor = [220, 232, 248];
+            }
+          }
+          return;
+        }
+        if (hookData.section !== 'body') return;
+        const fila = filasPdf[hookData.row.index];
+        if (!fila) return;
+        const col = hookData.column.index;
+
+        if (col === 25) {
+          if (fila.nf !== null) {
+            hookData.cell.styles.textColor = fila.nf >= 7 ? VERDE : ROJO;
+            hookData.cell.styles.fontStyle = 'bold';
+          } else {
+            hookData.cell.styles.textColor = [190, 200, 210];
+          }
+          return;
+        }
+
+        if (col === 26) {
+          hookData.cell.styles.textColor = estColor(fila.estado);
+          hookData.cell.styles.fontStyle = fila.estado !== '–' ? 'bold' : 'normal';
+          return;
+        }
+
+        if (col >= 1 && col <= 24) {
+          const subIdx  = col - 1;
+          const evalIdx = Math.floor(subIdx / 3);
+          const subKind = subIdx % 3;
+          const ev      = fila.evals[evalIdx];
+          const valor   = subKind === 0 ? ev.n : subKind === 1 ? ev.r1 : ev.r2;
+
+          // Fondo alternado por grupo de eval (igual que header)
+          if (evalIdx % 2 === 1) {
+            const base = hookData.row.index % 2 === 0 ? [239, 245, 255] : [226, 236, 252];
+            hookData.cell.styles.fillColor = base as [number, number, number];
+          }
+
+          if (valor === null) {
+            hookData.cell.styles.textColor = [190, 200, 210];
+            return;
+          }
+          hookData.cell.styles.fontStyle = 'bold';
+          if (ev.ef !== null && valor === ev.ef) {
+            hookData.cell.styles.fillColor = [210, 232, 255];
+            hookData.cell.styles.textColor = [21, 101, 192];
+          } else {
+            hookData.cell.styles.textColor = valor < 7 ? ROJO : VERDE;
+          }
+        }
+      },
+    });
+
+    // ── Cards resumen + leyenda ───────────────────────────────────────────────
+    const pdfDoc = doc as PdfWithAutoTable;
+    const afterTable = (pdfDoc.lastAutoTable?.finalY ?? y) + 8;
+
+    const aprob = filasPdf.filter(f => f.estado === 'Aprobado').length;
+    const desap = filasPdf.filter(f => f.estado === 'Desaprobado').length;
+    const tema  = filasPdf.filter(f => f.estado === 'Desap. por Tema').length;
+
+    const needPage = afterTable + 22 > pageH - 14;
+    const cy = needPage
+      ? (doc.addPage(), drawPageHeader(doc, titulo, subtitulo, logo), HEADER_H + 6)
+      : afterTable;
+
+    const cardW = (CW - 4) / 3;
+    ([
+      { label: 'Espacios aprobados',    valor: aprob, color: VERDE   },
+      { label: 'Espacios desaprobados', valor: desap, color: ROJO    },
+      { label: 'Desaprobados por tema', valor: tema,  color: NARANJA },
+    ] as { label: string; valor: number; color: [number,number,number] }[]).forEach((card, i) => {
+      const cx = LEFT + i * (cardW + 2);
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(248, 249, 252);
+      doc.roundedRect(cx, cy, cardW, 16, 2, 2, 'FD');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      doc.text(card.label, cx + cardW / 2, cy + 6, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(...card.color);
+      doc.text(String(card.valor), cx + cardW / 2, cy + 13, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+    });
+
+    // Leyenda al pie
+    const lyY = pageH - 8;
+    doc.setFontSize(6.5);
+    const leyItems: [string, [number,number,number]][] = [
+      ['Aprobado (NF >= 7, sin eval < 7)',      VERDE],
+      ['Desap. por Tema (NF >= 7, alguna < 7)', NARANJA],
+      ['Desaprobado (NF < 7)',                   ROJO],
+      ['Celda azul: mejor nota (N / R1 / R2)',   [21, 101, 192]],
+    ];
+    let lx = LEFT;
+    leyItems.forEach(([label, color]) => {
+      doc.setFillColor(...color);
+      doc.circle(lx + 1.5, lyY - 0.5, 1.5, 'F');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, lx + 4.5, lyY);
+      lx += 65;
+    });
+
+    // ── Página 2: Asistencias ─────────────────────────────────────────────────
+    doc.addPage();
+    const p2titulo = 'Asistencia del Alumno';
+    let p2y = drawPageHeader(doc, p2titulo, subtitulo, logo);
+
+    const a = data.asistencia;
+    const tea = a?.teaGeneral ?? false;
+    const pct = a?.porcentajeAsistencia ?? 0;
+
+    const pctColor = (p: number, t: boolean): [number,number,number] => {
+      if (t)      return GRIS;
+      if (p >= 85) return VERDE;
+      if (p >= 75) return AMARILLO;
+      return ROJO;
+    };
+    const inasColor = (f: number, t: boolean): [number,number,number] => {
+      if (t)       return GRIS;
+      if (f >= 21) return ROJO;
+      if (f >= 15) return NARANJA;
+      if (f >= 10) return AMARILLO;
+      return VERDE;
+    };
+
+    // ── Fila 1: 4 cards grandes ──────────────────────────────────────────────
+    const card4W = (CW - 6) / 4;
+    type CardG = { label: string | string[]; valor: string | number; color: [number,number,number] };
+    p2y += 4;
+    const row1: CardG[] = [
+      { label: 'Presencias',           valor: a?.presencias    ?? 0,                                      color: [0,0,0]  },
+      { label: 'Ausencias',            valor: a?.ausenciasPuras ?? 0,                                     color: [0,0,0]  },
+      { label: ['Ausencia no','computable'], valor: a?.ancCount ?? 0,                                     color: [0,0,0]  },
+      { label: 'Inasistencias',        valor: tea ? 'TEA' : (a?.inasistencias ?? 0), color: inasColor(a?.inasistencias ?? 0, tea) },
+    ];
+    row1.forEach((c, i) => {
+      const cx = LEFT + i * (card4W + 2);
+      doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
+      doc.roundedRect(cx, p2y, card4W, 18, 2, 2, 'FD');
+      doc.setFontSize(6.5); doc.setTextColor(100, 100, 100);
+      if (Array.isArray(c.label)) {
+        doc.text(c.label[0], cx + card4W / 2, p2y + 5,   { align: 'center' });
+        doc.text(c.label[1], cx + card4W / 2, p2y + 8.5, { align: 'center' });
+      } else {
+        doc.text(c.label, cx + card4W / 2, p2y + 6.5, { align: 'center' });
+      }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+      doc.setTextColor(...c.color);
+      doc.text(String(c.valor), cx + card4W / 2, p2y + 15, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+    });
+    p2y += 22;
+
+    // ── Fila 2: 4 cards chicas — llegadas tarde ──────────────────────────────
+    const card4Cw = (CW - 6) / 4;
+    type CardCh = { label: string | string[]; valor: number };
+    const drawCardCh = (c: CardCh, i: number, yBase: number) => {
+      const cx = LEFT + i * (card4Cw + 2);
+      doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
+      doc.roundedRect(cx, yBase, card4Cw, 16, 2, 2, 'FD');
+      doc.setFontSize(6.5); doc.setTextColor(100, 100, 100);
+      if (Array.isArray(c.label)) {
+        doc.text(c.label[0], cx + card4Cw / 2, yBase + 4.5, { align: 'center' });
+        doc.text(c.label[1], cx + card4Cw / 2, yBase + 8,   { align: 'center' });
+      } else {
+        doc.text(c.label, cx + card4Cw / 2, yBase + 6, { align: 'center' });
+      }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+      doc.text(String(c.valor), cx + card4Cw / 2, yBase + 13.5, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+    };
+    const row2: CardCh[] = [
+      { label: ['Ausencia por','llegada tarde'], valor: a?.ausentePorLLT      ?? 0 },
+      { label: 'LLT',                            valor: a?.llegadasTarde       ?? 0 },
+      { label: 'LLTE',                           valor: 0 },
+      { label: 'LLTC',                           valor: 0 },
+    ];
+    row2.forEach((c, i) => drawCardCh(c, i, p2y));
+    p2y += 20;
+
+    // ── Fila 3: 4 cards chicas — retiros ─────────────────────────────────────
+    const row3: CardCh[] = [
+      { label: ['Ausencia por','retiro anticipado'], valor: a?.ausentePorRA                 ?? 0 },
+      { label: 'RE',                                 valor: a?.retirosExpress               ?? 0 },
+      { label: 'RA',                                 valor: a?.retirosAnticipados           ?? 0 },
+      { label: 'RAE',                                valor: a?.retirosAnticipadosExtendidos ?? 0 },
+    ];
+    row3.forEach((c, i) => drawCardCh(c, i, p2y));
+    p2y += 20;
+
+    // ── Card % asistencia ─────────────────────────────────────────────────────
+    const pctW = (CW - 2) / 2;
+    const pctCards: CardG[] = [
+      { label: '% Asistencia', valor: tea ? 'TEA' : `${pct}%`, color: pctColor(pct, tea) },
+      { label: 'Condicion',    valor: tea ? 'TEA' : pct >= 85 ? 'Regular' : pct >= 75 ? 'En riesgo' : 'TEA', color: pctColor(pct, tea) },
+    ];
+    pctCards.forEach((c, i) => {
+      const cx = LEFT + i * (pctW + 2);
+      doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
+      doc.roundedRect(cx, p2y, pctW, 16, 2, 2, 'FD');
+      doc.setFontSize(7); doc.setTextColor(100, 100, 100);
+      doc.text(c.label, cx + pctW / 2, p2y + 6, { align: 'center' });
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+      doc.setTextColor(...c.color);
+      doc.text(String(c.valor), cx + pctW / 2, p2y + 13, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+    });
+    p2y += 6;  // solo para que no quede pegado a la leyenda
+
+    // Leyenda asistencia al pie
+    const p2lyY = pageH - 8;
+    doc.setFontSize(6.5);
+    const p2Ley: [string, [number,number,number]][] = [
+      ['Verde - Regular (>= 85%)',  VERDE],
+      ['Amarillo - En riesgo (75-84%)', AMARILLO],
+      ['Naranja - Riesgo alto (15-20 inasistencias)', NARANJA],
+      ['Rojo - TEA (>= 21 inasistencias)',  ROJO],
+    ];
+    let p2lx = LEFT;
+    p2Ley.forEach(([label, color]) => {
+      doc.setFillColor(...color);
+      doc.circle(p2lx + 1.5, p2lyY - 0.5, 1.5, 'F');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, p2lx + 4.5, p2lyY);
+      p2lx += 65;
+    });
+
+    doc.save(
+      `libreta-${data.apellido}-${data.nombre}-${data.codigoCurso}-${data.anioLectivo}.pdf`
+        .replace(/\s+/g, '-').replace(/,/g, '')
+    );
   }
 
   private dibujarLeyenda(doc: jsPDF): void {

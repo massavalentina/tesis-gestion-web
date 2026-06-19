@@ -1,0 +1,121 @@
+<div class="libreta-view">
+
+  <!-- ── Header ── -->
+  <div class="libreta-header">
+    <button class="btn-volver" (click)="volver.emit()">
+      <mat-icon>chevron_left</mat-icon> Volver
+    </button>
+    <div class="libreta-header-info">
+      <span class="libreta-titulo">LIBRETA DE CALIFICACIONES</span>
+      <span class="libreta-subtitulo">
+        {{ apellido }}, {{ nombre }} — {{ codigoCurso }} · Ciclo {{ anioLectivo }}
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="libreta-tabs-bar">
+    <button class="libreta-tab" [class.tab-active]="tabActual === 0" (click)="tabActual = 0">
+      <mat-icon class="tab-icon">event_note</mat-icon>
+      1° Cuatrimestre · Eval 1–4
+    </button>
+    <button class="libreta-tab" [class.tab-active]="tabActual === 1" (click)="tabActual = 1">
+      <mat-icon class="tab-icon">event_note</mat-icon>
+      2° Cuatrimestre · Eval 5–8
+    </button>
+  </div>
+
+  <!-- ── Tabla ── -->
+  <div class="libreta-tabla-scroll">
+    <table class="libreta-tabla">
+      <thead>
+        <tr>
+          <th class="th-materia" rowspan="2">Espacio curricular</th>
+          <th *ngFor="let i of tabIndices" colspan="3" class="th-eval">
+            Eval {{ i + 1 }}
+          </th>
+          <th rowspan="2" class="th-nf">Nota Final</th>
+          <th rowspan="2" class="th-estado">Estado</th>
+        </tr>
+        <tr>
+          <ng-container *ngFor="let i of tabIndices">
+            <th class="th-sub">N</th>
+            <th class="th-sub">R1</th>
+            <th class="th-sub">R2</th>
+          </ng-container>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let fila of filas" class="fila-espacio">
+
+          <td class="td-materia">{{ fila.espacio.nombreMateria }}</td>
+
+          <ng-container *ngFor="let i of tabIndices">
+            <td [class.td-eval-fail]="isEvFail(fila.evals[i].ef)">
+              <span [class]="notaClase(fila.evals[i].n, fila.evals[i].ef)">
+                {{ notaTexto(fila.evals[i].n) }}
+              </span>
+            </td>
+            <td>
+              <span [class]="notaClase(fila.evals[i].r1, fila.evals[i].ef)">
+                {{ notaTexto(fila.evals[i].r1) }}
+              </span>
+            </td>
+            <td class="td-eval-sep">
+              <span [class]="notaClase(fila.evals[i].r2, fila.evals[i].ef)">
+                {{ notaTexto(fila.evals[i].r2) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <td class="td-nf">
+            <span [class]="nfClase(fila.notaFinal)">{{ nfTexto(fila.notaFinal) }}</span>
+          </td>
+
+          <td class="td-estado">
+            <ng-container [ngSwitch]="fila.estado">
+              <span *ngSwitchCase="'aprob'" class="badge badge-aprob">Aprobado</span>
+              <span *ngSwitchCase="'desap'" class="badge badge-desap">Desaprobado</span>
+              <span *ngSwitchCase="'tema'"  class="badge badge-tema">Desap. por Tema</span>
+              <span *ngSwitchDefault class="nota-dash">–</span>
+            </ng-container>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Resumen ── -->
+  <div class="libreta-resumen">
+    <div class="res-card">
+      <div class="res-label">Espacios aprobados</div>
+      <div class="res-value res-verde">{{ contadores.aprob }}</div>
+    </div>
+    <div class="res-card">
+      <div class="res-label">Espacios desaprobados</div>
+      <div class="res-value res-rojo">{{ contadores.desap }}</div>
+    </div>
+    <div class="res-card">
+      <div class="res-label">Desaprobados por tema</div>
+      <div class="res-value res-naranja">{{ contadores.tema }}</div>
+    </div>
+  </div>
+
+  <!-- ── Leyenda ── -->
+  <div class="libreta-leyenda">
+    <span class="leyenda-item">
+      <span class="leyenda-dot dot-verde"></span>Nota aprobatoria (≥ 7)
+    </span>
+    <span class="leyenda-item">
+      <span class="leyenda-dot dot-rojo"></span>Nota reprobatoria (&lt; 7)
+    </span>
+    <span class="leyenda-item">
+      <span class="leyenda-dot dot-azul"></span>Nota efectiva — mejor entre N, R1 y R2
+    </span>
+    <span class="leyenda-item">
+      <span class="leyenda-sample sample-fail"></span>Fila con alguna nota &lt; 7
+    </span>
+  </div>
+
+</div>
