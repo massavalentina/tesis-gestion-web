@@ -36,7 +36,14 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(npm start *)"
+      "Bash(npm start *)",
+      "Bash(npx playwright *)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "PowerShell(cd \"C:\\\\Users\\\\fhiac\\\\Documents\\\\GitHub\\\\tesis-gestion-web\"; Start-Process -FilePath \"cmd\" -ArgumentList \"/c npm start\" -NoNewWindow; Start-Sleep -Seconds 15; $r = Invoke-WebRequest -Uri \"http://localhost:4200\" -UseBasicParsing -TimeoutSec 10 -ErrorAction SilentlyContinue; $r.StatusCode)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200)"
     ]
   }
 }

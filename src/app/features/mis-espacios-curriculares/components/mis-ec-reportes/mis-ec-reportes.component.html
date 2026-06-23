@@ -1,0 +1,238 @@
+<div class="page-wrap">
+
+  <!-- Loading -->
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando…</p>
+  </div>
+
+  <!-- Error -->
+  <div class="state-center" *ngIf="!loading && error">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon error-icon">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>No se encontró el espacio curricular.</p>
+    <button class="btn-back" (click)="volverAlListado()">Volver al listado</button>
+  </div>
+
+  <!-- Contenido -->
+  <ng-container *ngIf="!loading && !error && espacio">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <a (click)="volverAlDetalle()" class="crumb-link">{{ cursoLabel }}</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <a (click)="volverAlDetalle()" class="crumb-link">{{ espacio.nombreMateria }}</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="crumb-current">Reportes</span>
+    </nav>
+
+    <!-- Encabezado -->
+    <div class="rep-head">
+      <div>
+        <h1>Reporte de Calificaciones</h1>
+        <p>{{ cursoLabel }} · {{ espacio.nombreMateria }} — Ciclo lectivo {{ espacio.anioLectivo }}</p>
+      </div>
+      <span class="fecha-corte">Datos al {{ fechaCorte }}</span>
+    </div>
+
+    <!-- Chip alumnos -->
+    <div class="context" *ngIf="hayDatos">
+      <span class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <b>{{ demoData.alumnos }}</b> alumnos
+      </span>
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="state-center" *ngIf="!hayDatos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
+        <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
+      </svg>
+      <p>Todavía no hay datos de calificaciones para mostrar.</p>
+    </div>
+
+    <!-- Dashboard -->
+    <ng-container *ngIf="hayDatos">
+
+      <!-- Pestañas -->
+      <div class="tabs">
+        <button class="tab" [class.active]="activeTab === 'notas'" (click)="setTab('notas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
+          </svg>
+          Calificaciones
+        </button>
+        <button class="tab" [class.active]="activeTab === 'eval'" (click)="setTab('eval')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="8" y="2" width="8" height="4" rx="1"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="m9 14 2 2 4-4"/>
+          </svg>
+          Evaluaciones
+        </button>
+      </div>
+
+      <!-- ═══ VISTA NOTAS ═══ -->
+      <div *ngIf="activeTab === 'notas'">
+
+        <div class="filterbar">
+          <span class="fl">Instancia evaluativa</span>
+          <select (change)="onFiltroChange($event)">
+            <option value="todas">Todas</option>
+            <option *ngFor="let i of instancias" [value]="i">Instancia {{ i }}</option>
+          </select>
+        </div>
+
+        <div class="kpirow">
+
+          <div class="card">
+            <div class="card-head">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>
+              </span>
+              <span class="clabel">Calificación Promedio</span>
+            </div>
+            <div class="cvalue">{{ kpiPromedio }}</div>
+            <div class="cdesc">Promedio general de todas las calificaciones cargadas</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8L2.2 9.5l6.9-.6z"/></svg>
+              </span>
+              <span class="clabel">Calificación más frecuente</span>
+            </div>
+            <div class="cvalue">{{ kpiModa }}</div>
+            <div class="cdesc">La calificación que más se repite</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18c4-9 14-9 18 0"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+              </span>
+              <span class="clabel">Desviación Estándar</span>
+            </div>
+            <div class="cvalue">{{ kpiDesv }}</div>
+            <div class="cdesc">Dispersión de las calificaciones respecto del promedio</div>
+          </div>
+
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="6" y="10" width="3" height="7"/><rect x="11" y="6" width="3" height="11"/><rect x="16" y="13" width="3" height="4"/></svg>
+            </span>
+            <span class="clabel">Distribución de Calificaciones</span>
+          </div>
+          <div echarts [options]="histOptions" class="echart echart-tall"></div>
+        </div>
+
+      </div>
+
+      <!-- ═══ VISTA EVALUACIONES ═══ -->
+      <div *ngIf="activeTab === 'eval'" class="eval-grid">
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10l8.5 5"/><circle cx="12" cy="12" r="10"/></svg>
+            </span>
+            <span class="clabel">Distribución de Estados</span>
+          </div>
+          <div echarts [options]="optionPie" class="echart"></div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="14" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="10" y2="17"/></svg>
+            </span>
+            <span class="clabel">Porcentajes por Estado</span>
+          </div>
+          <div echarts [options]="optionBarEstado" class="echart"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            </span>
+            <span class="clabel">Alumnos en Riesgo</span>
+          </div>
+          <div class="cvalue">{{ alumnosRiesgo.length }}</div>
+          <div class="cdesc">Con promedio menor a 7 a la fecha de corte</div>
+          <button class="btn-ver" (click)="showModal = true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Ver alumnos
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </span>
+            <span class="clabel">Recuperatorios Realizados</span>
+          </div>
+          <div class="cvalue">{{ demoData.recuperatoriosRealizados }}</div>
+          <div class="cdesc">Instancias R1 y R2 rendidas sobre las {{ demoData.evaluacionesBase }} evaluaciones base</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="13" y="7" width="3" height="10"/></svg>
+            </span>
+            <span class="clabel">Promedio de Recuperatorios</span>
+          </div>
+          <div class="cvalue">{{ demoData.promedioRecuperatorios }}</div>
+          <div class="cdesc">Calificación media de las instancias R1 y R2</div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <span class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="12" height="6" rx="1"/></svg>
+            </span>
+            <span class="clabel">Recuperatorios por Instancia</span>
+          </div>
+          <div echarts [options]="optionBarComp" class="echart"></div>
+        </div>
+
+      </div>
+
+    </ng-container>
+
+  </ng-container>
+</div>
+
+<!-- Modal: Alumnos en riesgo -->
+<div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <span>Alumnos en riesgo</span>
+      <button class="modal-close" (click)="showModal = false">&times;</button>
+    </div>
+    <div class="modal-sub">Con promedio menor a 7 a la fecha de corte</div>
+    <div class="modal-list">
+      <div class="ml-row" *ngFor="let a of alumnosRiesgo">
+        <span>{{ a.nombre }}</span>
+        <b>{{ a.promedio.toFixed(2) }}</b>
+      </div>
+    </div>
+  </div>
+</div>

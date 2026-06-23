@@ -216,6 +216,14 @@ export const routes: Routes = [
         canDeactivate: [calificacionesCambiosPendientesGuard],
       },
       {
+        path: 'mis-espacios-curriculares/:idEC/reportes',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('./features/mis-espacios-curriculares/components/mis-ec-reportes/mis-ec-reportes.component')
+            .then(m => m.MisEcReportesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
         path: 'mis-espacios-curriculares/:idEC/programas',
         ...withSectionData('misEspaciosCurriculares'),
         loadComponent: () =>

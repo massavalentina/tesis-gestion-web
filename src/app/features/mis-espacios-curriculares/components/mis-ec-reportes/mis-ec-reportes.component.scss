@@ -1,0 +1,405 @@
+// ── Variables (mirror prototype palette) ──────────────────────────────────
+$bg:     #f4f6f9;
+$card:   #ffffff;
+$border: #e7ebf1;
+$label:  #64748b;
+$desc:   #94a3b8;
+$value:  #0ea5a4;
+$title:  #1e293b;
+$primary: #3c78b4;
+$primary-light: #c7d9eb;
+$shadow: 0 1px 2px rgba(16,24,40,.04);
+$radius: 14px;
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Page shell ────────────────────────────────────────────────────────────
+.page-wrap {
+  padding: 32px 28px 60px;
+  max-width: 1080px;
+  margin: 0 auto;
+  font-family: 'Inter', 'Open Sans', -apple-system, sans-serif;
+  animation: fadeUp .35s both;
+}
+
+// ── Breadcrumb ────────────────────────────────────────────────────────────
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  color: $label;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+
+  svg { width: 13px; height: 13px; flex-shrink: 0; }
+}
+
+.crumb-link {
+  color: $primary;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: $title;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────
+.rep-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -.2px;
+    color: $title;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: $label;
+  }
+}
+
+.fecha-corte {
+  font-size: 12px;
+  color: $desc;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+// ── Context chip ──────────────────────────────────────────────────────────
+.context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  color: #475569;
+
+  svg { width: 15px; height: 15px; color: $desc; flex-shrink: 0; }
+
+  b { color: $title; font-weight: 700; }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: $label;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  transition: color .15s;
+
+  svg { width: 15px; height: 15px; }
+
+  &:hover { color: #334155; }
+
+  &.active {
+    color: $value;
+    border-bottom-color: $value;
+  }
+}
+
+// ── Filter bar ────────────────────────────────────────────────────────────
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+
+  .fl {
+    font-size: 13px;
+    font-weight: 600;
+    color: $label;
+    white-space: nowrap;
+  }
+
+  select {
+    font-family: inherit;
+    font-size: 13px;
+    color: $title;
+    background-color: #fff;
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 8px 32px 8px 12px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    // SVG chevron via background
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+
+    &:hover { border-color: #cbd5e1; }
+    &:focus  { border-color: $value; }
+  }
+}
+
+// ── KPI row (Notas tab) ───────────────────────────────────────────────────
+.kpirow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+// ── Eval grid (Evaluaciones tab) ──────────────────────────────────────────
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────
+.card {
+  background: $card;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 20px;
+  box-shadow: $shadow;
+}
+
+.chart-card { padding-bottom: 14px; }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  flex-shrink: 0;
+
+  svg { width: 16px; height: 16px; }
+}
+
+.clabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: $label;
+}
+
+.cvalue {
+  font-size: 30px;
+  font-weight: 700;
+  color: $value;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.cdesc {
+  font-size: 12px;
+  color: $desc;
+  line-height: 1.4;
+}
+
+// ── ECharts containers ────────────────────────────────────────────────────
+.echart {
+  width: 100%;
+  height: 210px;
+}
+
+.echart-tall { height: 250px; }
+
+// ── Ver alumnos button ────────────────────────────────────────────────────
+.btn-ver {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $value;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, border-color .15s;
+
+  &:hover {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: $radius;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, .25);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid $border;
+
+  span {
+    font-size: 15px;
+    font-weight: 700;
+    color: $title;
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: $desc;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  font-family: inherit;
+
+  &:hover { color: #475569; }
+}
+
+.modal-sub {
+  padding: 13px 18px 2px;
+  font-size: 12.5px;
+  color: $desc;
+}
+
+.modal-list {
+  padding: 2px 18px 18px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.ml-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 10px 0;
+
+  & + & { border-top: 1px solid #f1f5f9; }
+
+  span { color: #334155; }
+
+  b {
+    color: #e23744;
+    font-weight: 700;
+  }
+}
+
+// ── States ────────────────────────────────────────────────────────────────
+.state-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: $label;
+  text-align: center;
+
+  p { margin: 0; font-size: 15px; }
+}
+
+.state-icon { width: 48px; height: 48px; opacity: .5; }
+.error-icon { color: #dc2626; }
+
+.btn-back {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: $primary;
+  color: #fff;
+  cursor: pointer;
+  transition: background .16s;
+
+  &:hover { background: darken($primary, 8%); }
+}
+
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid $primary-light;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Responsive ────────────────────────────────────────────────────────────
+@media (max-width: 880px) {
+  .kpirow   { grid-template-columns: 1fr 1fr; }
+  .eval-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 540px) {
+  .kpirow { grid-template-columns: 1fr; }
+  .page-wrap { padding: 20px 16px 48px; }
+}
