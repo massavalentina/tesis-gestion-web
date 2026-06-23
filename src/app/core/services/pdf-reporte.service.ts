@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 import { ReporteAsistenciaItem } from '../../features/reporte-asistencia/models/reporte-asistencia.model';
 import { DetalleAsistencia } from '../../features/reporte-asistencia/models/detalle-asistencia.model';
@@ -1560,5 +1561,95 @@ export class PdfReporteService {
       doc.text(label, x + 4.5, y);
       x += 48;
     });
+  }
+
+  // ── Exportar sección del dashboard como imagen en PDF ────────────────────
+
+  async exportarDashboardSeccion(data: {
+    titulo: string;
+    subtitulo: string;
+    elementRef: HTMLElement;
+    nombreArchivo: string;
+  }): Promise<void> {
+    const logo = await this.logoPromise;
+
+    const canvas = await html2canvas(data.elementRef, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#f0f5fa',
+      logging: false,
+      onclone: (clonedDoc: Document, clonedEl: HTMLElement) => {
+        // ECharts renders to <canvas> elements which html2canvas cannot read directly.
+        // Copy each echarts canvas as a data URL image into the cloned DOM.
+        const origCanvases = data.elementRef.querySelectorAll('canvas');
+        const clonedCanvases = clonedEl.querySelectorAll('canvas');
+        origCanvases.forEach((origCanvas, i) => {
+          const clonedCanvas = clonedCanvases[i];
+          if (!clonedCanvas) return;
+          try {
+            const img = clonedDoc.createElement('img');
+            img.src = origCanvas.toDataURL('image/png');
+            img.style.width = origCanvas.style.width || origCanvas.getAttribute('width') + 'px';
+            img.style.height = origCanvas.style.height || origCanvas.getAttribute('height') + 'px';
+            clonedCanvas.parentNode?.replaceChild(img, clonedCanvas);
+          } catch { /* tainted canvas — skip */ }
+        });
+      },
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    const headerY = drawPageHeader(doc, data.titulo, data.subtitulo, logo);
+    const contentY = headerY + 4;
+    const availableH = pageH - contentY - 8;
+    const availableW = pageW - 20;
+
+    const imgAspect = canvas.width / canvas.height;
+    let imgW = availableW;
+    let imgH = imgW / imgAspect;
+
+    if (imgH <= availableH) {
+      // Fits on one page
+      doc.addImage(imgData, 'PNG', 10, contentY, imgW, imgH);
+    } else {
+      // Multi-page: slice the canvas image
+      const totalImgH = imgW / imgAspect;
+      const pxPerMm = canvas.height / totalImgH;
+      let remainingH = totalImgH;
+      let srcY = 0;
+      let isFirstPage = true;
+
+      while (remainingH > 0) {
+        const sliceAvailH = isFirstPage ? availableH : (pageH - 16);
+        const sliceH = Math.min(remainingH, sliceAvailH);
+        const slicePxH = Math.round(sliceH * pxPerMm);
+
+        // Create a sub-canvas for this slice
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = slicePxH;
+        const ctx = sliceCanvas.getContext('2d')!;
+        ctx.drawImage(canvas, 0, srcY, canvas.width, slicePxH, 0, 0, canvas.width, slicePxH);
+
+        const sliceData = sliceCanvas.toDataURL('image/png');
+        const startY = isFirstPage ? contentY : 8;
+        doc.addImage(sliceData, 'PNG', 10, startY, imgW, sliceH);
+
+        srcY += slicePxH;
+        remainingH -= sliceH;
+
+        if (remainingH > 0) {
+          doc.addPage();
+          drawPageHeader(doc, data.titulo, data.subtitulo, logo);
+          isFirstPage = false;
+        }
+      }
+    }
+
+    doc.save(data.nombreArchivo);
   }
 }
