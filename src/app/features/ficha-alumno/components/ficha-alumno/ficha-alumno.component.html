@@ -427,7 +427,7 @@
             [nombre]="est.nombre"
             [codigoCurso]="cursoSeleccionado?.codigo ?? ''"
             [anioLectivo]="2026"
-            [espacios]="[]"
+            [espacios]="getEspaciosDemo(est.documento)"
             (volver)="cerrarLibreta(est.idEstudiante)">
           </app-libreta-calificaciones>
         </div>

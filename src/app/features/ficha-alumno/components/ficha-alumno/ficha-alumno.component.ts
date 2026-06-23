@@ -32,6 +32,8 @@ import { ObjectUrlRegistry } from '../../../../utils/object-url-registry';
 import { LibretaCalificacionesComponent } from '../libreta-calificaciones/libreta-calificaciones.component';
 import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 import { ReporteAsistenciaService } from '../../../reporte-asistencia/services/reporte-asistencia.service';
+import { LibretaEspacio } from '../../models/libreta-calificaciones.model';
+import { ALUMNOS_DEMO, Evaluacion } from '../../demo/calificaciones-demo';
 
 function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -298,9 +300,26 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.vistaLibretaIds.delete(idEstudiante);
   }
 
+  getEspaciosDemo(dni: string): LibretaEspacio[] {
+    const demo = ALUMNOS_DEMO.find(a => a.dni === dni);
+    if (!demo) return [];
+    return demo.calificaciones.map((ec, idx) => ({
+      idEC: `EC-${idx + 1}`,
+      nombreMateria: ec.espacio,
+      instancias: ec.evaluaciones.map((ev: Evaluacion, i: number) => ({
+        nro: i + 1,
+        n:   ev ? ev.n           : null,
+        r1:  ev ? (ev.r1 ?? null) : null,
+        r2:  ev ? (ev.r2 ?? null) : null,
+      })),
+    }));
+  }
+
   exportarLibreta(est: EstudianteFicha): void {
     const cursoId = this.cursoSeleccionado?.idCurso;
     if (!cursoId) return;
+
+    const espacios = this.getEspaciosDemo(est.documento);
 
     this.reporteService.getReporteCurso(cursoId).subscribe({
       next: (resp) => {
@@ -310,7 +329,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
           nombre:      est.nombre,
           codigoCurso: this.cursoSeleccionado?.codigo ?? '',
           anioLectivo: 2026,
-          espacios:    [],
+          espacios,
           asistencia: item ? {
             presencias:                   item.presencias,
             inasistencias:                item.inasistencias,
@@ -333,13 +352,12 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
         });
       },
       error: () => {
-        // Fallback con solo los datos disponibles en la ficha
         this.pdfService.exportarLibretaCalificaciones({
           apellido:    est.apellido,
           nombre:      est.nombre,
           codigoCurso: this.cursoSeleccionado?.codigo ?? '',
           anioLectivo: 2026,
-          espacios:    [],
+          espacios,
           asistencia: {
             presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
             ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,

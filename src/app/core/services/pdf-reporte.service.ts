@@ -1610,7 +1610,7 @@ export class PdfReporteService {
     const W_NF  = 18;
     const W_EST = CW - W_MAT - 24 * W_SUB - W_NF; // 48mm
 
-    const titulo    = 'Libreta de Calificaciones';
+    const titulo    = 'Calificaciones';
     const subtitulo = `${data.apellido}, ${data.nombre}  |  Curso: ${data.codigoCurso}  |  Ciclo ${data.anioLectivo}`;
 
     // ── Encabezado ────────────────────────────────────────────────────────────
@@ -1640,7 +1640,7 @@ export class PdfReporteService {
     doc.text('Espacio curricular', LEFT + W_MAT / 2, GRP_Y + 4.2, { align: 'center' });
 
     // Grupos de evaluaciones (Eval 1 ... Eval 8), cada uno abarca 3 subcols
-    const EVAL_LABELS = ['1er Cuatrimestre - Evaluaciones 1 a 4', '2do Cuatrimestre - Evaluaciones 5 a 8'];
+    const EVAL_LABELS = ['Evaluaciones 1 a 4', 'Evaluaciones 5 a 8'];
     // Línea divisoria entre cuatrimestres
     const q1X = LEFT + W_MAT + 12 * W_SUB;
     doc.setDrawColor(255, 255, 255);
@@ -1655,7 +1655,7 @@ export class PdfReporteService {
     const nfX  = LEFT + W_MAT + 24 * W_SUB;
     const estX = nfX + W_NF;
     doc.setFontSize(6);
-    doc.text('NF', nfX + W_NF / 2, GRP_Y + 4.2, { align: 'center' });
+    doc.text('Nota', nfX + W_NF / 2,GRP_Y + 4.2, { align: 'center' });
     doc.text('Estado', estX + W_EST / 2, GRP_Y + 4.2, { align: 'center' });
 
     y += GRP_H;
@@ -1709,6 +1709,24 @@ export class PdfReporteService {
       },
       alternateRowStyles: { fillColor: [247, 250, 255] },
       columnStyles: colStyles,
+      didDrawCell: (hookData) => {
+        const col = hookData.column.index;
+        const { x, y, height } = hookData.cell;
+        // Borde izquierdo en el inicio de cada grupo de eval (columna N)
+        // col 1 = E1-N, 4 = E2-N, 7 = E3-N, 10 = E4-N, 13 = E5-N, 16 = E6-N, 19 = E7-N, 22 = E8-N
+        if (col >= 1 && col <= 24 && (col - 1) % 3 === 0) {
+          const isMid = col === 13; // separador mayor entre bloques 1-4 y 5-8
+          doc.setDrawColor(isMid ? 40 : 110, isMid ? 40 : 120, isMid ? 40 : 135);
+          doc.setLineWidth(isMid ? 0.8 : 0.45);
+          doc.line(x, y, x, y + height);
+        }
+        // Borde izquierdo de NF
+        if (col === 25) {
+          doc.setDrawColor(60, 70, 80);
+          doc.setLineWidth(0.7);
+          doc.line(x, y, x, y + height);
+        }
+      },
       didDrawPage: (hookData) => {
         if (hookData.pageNumber > 1) {
           drawPageHeader(doc, titulo, subtitulo, logo);
@@ -1724,7 +1742,7 @@ export class PdfReporteService {
           doc.text(EVAL_LABELS[0], LEFT + W_MAT + (12 * W_SUB) / 2, gy + 4.2, { align: 'center' });
           doc.text(EVAL_LABELS[1], q1X + (12 * W_SUB) / 2, gy + 4.2, { align: 'center' });
           doc.setFontSize(6);
-          doc.text('NF', nfX + W_NF / 2, gy + 4.2, { align: 'center' });
+          doc.text('Nota', nfX + W_NF / 2,gy + 4.2, { align: 'center' });
           doc.text('Estado', estX + W_EST / 2, gy + 4.2, { align: 'center' });
           doc.setDrawColor(255, 255, 255);
           doc.setLineWidth(0.6);
@@ -1735,13 +1753,10 @@ export class PdfReporteService {
       },
       didParseCell: (hookData) => {
         if (hookData.section === 'head') {
-          // En la fila de sub-encabezados, alternar fondo por grupo de eval
+          // Sub-encabezados N/R1/R2: segundo bloque de 4 evals con tono más oscuro
           const col = hookData.column.index;
-          if (col >= 1 && col <= 24) {
-            const evalIdx = Math.floor((col - 1) / 3); // 0-7
-            if (evalIdx % 2 === 1) {
-              hookData.cell.styles.fillColor = [220, 232, 248];
-            }
+          if (col >= 13 && col <= 24) {
+            hookData.cell.styles.fillColor = [218, 230, 248];
           }
           return;
         }
@@ -1773,22 +1788,23 @@ export class PdfReporteService {
           const ev      = fila.evals[evalIdx];
           const valor   = subKind === 0 ? ev.n : subKind === 1 ? ev.r1 : ev.r2;
 
-          // Fondo alternado por grupo de eval (igual que header)
-          if (evalIdx % 2 === 1) {
-            const base = hookData.row.index % 2 === 0 ? [239, 245, 255] : [226, 236, 252];
-            hookData.cell.styles.fillColor = base as [number, number, number];
-          }
-
           if (valor === null) {
-            hookData.cell.styles.textColor = [190, 200, 210];
+            hookData.cell.styles.textColor = [210, 218, 228];
             return;
           }
-          hookData.cell.styles.fontStyle = 'bold';
+
           if (ev.ef !== null && valor === ev.ef) {
-            hookData.cell.styles.fillColor = [210, 232, 255];
-            hookData.cell.styles.textColor = [21, 101, 192];
+            if (ev.ef >= 7) {
+              hookData.cell.styles.fillColor = [220, 235, 255];
+              hookData.cell.styles.textColor = [21, 101, 192];
+            } else {
+              hookData.cell.styles.fillColor = [255, 224, 224];
+              hookData.cell.styles.textColor = [198, 40, 40];
+            }
+            hookData.cell.styles.fontStyle = 'bold';
           } else {
-            hookData.cell.styles.textColor = valor < 7 ? ROJO : VERDE;
+            hookData.cell.styles.textColor = [165, 178, 190];
+            hookData.cell.styles.fontStyle = 'normal';
           }
         }
       },
@@ -1809,9 +1825,9 @@ export class PdfReporteService {
 
     const cardW = (CW - 4) / 3;
     ([
-      { label: 'Espacios aprobados',    valor: aprob, color: VERDE   },
-      { label: 'Espacios desaprobados', valor: desap, color: ROJO    },
-      { label: 'Desaprobados por tema', valor: tema,  color: NARANJA },
+      { label: 'Espacios curriculares aprobados',         valor: aprob, color: VERDE   },
+      { label: 'Espacios curriculares desaprobados',      valor: desap, color: ROJO    },
+      { label: 'Espacios curriculares desap. por tema',   valor: tema,  color: NARANJA },
     ] as { label: string; valor: number; color: [number,number,number] }[]).forEach((card, i) => {
       const cx = LEFT + i * (cardW + 2);
       doc.setDrawColor(200, 200, 200);
@@ -1831,10 +1847,10 @@ export class PdfReporteService {
     const lyY = pageH - 8;
     doc.setFontSize(6.5);
     const leyItems: [string, [number,number,number]][] = [
-      ['Aprobado (NF >= 7, sin eval < 7)',      VERDE],
-      ['Desap. por Tema (NF >= 7, alguna < 7)', NARANJA],
-      ['Desaprobado (NF < 7)',                   ROJO],
-      ['Celda azul: mejor nota (N / R1 / R2)',   [21, 101, 192]],
+      ['Celda azul: nota efectiva (la que cuenta)',  [21, 101, 192]],
+      ['Aprobado (NF >= 7)',                         VERDE],
+      ['Desap. por Tema (NF >= 7, alguna ef < 7)',   NARANJA],
+      ['Desaprobado (NF < 7)',                       ROJO],
     ];
     let lx = LEFT;
     leyItems.forEach(([label, color]) => {
@@ -1852,20 +1868,20 @@ export class PdfReporteService {
 
     const a = data.asistencia;
     const tea = a?.teaGeneral ?? false;
-    const pct = a?.porcentajeAsistencia ?? 0;
 
-    const pctColor = (p: number, t: boolean): [number,number,number] => {
-      if (t)      return GRIS;
-      if (p >= 85) return VERDE;
-      if (p >= 75) return AMARILLO;
-      return ROJO;
-    };
     const inasColor = (f: number, t: boolean): [number,number,number] => {
-      if (t)       return GRIS;
-      if (f >= 21) return ROJO;
-      if (f >= 15) return NARANJA;
-      if (f >= 10) return AMARILLO;
+      if (t || f >= 25) return GRIS;
+      if (f >= 21)      return ROJO;
+      if (f >= 15)      return NARANJA;
+      if (f >= 10)      return AMARILLO;
       return VERDE;
+    };
+    const condLabel = (f: number, t: boolean): string => {
+      if (t || f >= 25) return 'TEA';
+      if (f >= 21)      return 'Condicional';
+      if (f >= 15)      return 'En riesgo';
+      if (f >= 10)      return 'En riesgo leve';
+      return 'Regular';
     };
 
     // ── Fila 1: 4 cards grandes ──────────────────────────────────────────────
@@ -1933,33 +1949,27 @@ export class PdfReporteService {
     row3.forEach((c, i) => drawCardCh(c, i, p2y));
     p2y += 20;
 
-    // ── Card % asistencia ─────────────────────────────────────────────────────
-    const pctW = (CW - 2) / 2;
-    const pctCards: CardG[] = [
-      { label: '% Asistencia', valor: tea ? 'TEA' : `${pct}%`, color: pctColor(pct, tea) },
-      { label: 'Condicion',    valor: tea ? 'TEA' : pct >= 85 ? 'Regular' : pct >= 75 ? 'En riesgo' : 'TEA', color: pctColor(pct, tea) },
-    ];
-    pctCards.forEach((c, i) => {
-      const cx = LEFT + i * (pctW + 2);
-      doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
-      doc.roundedRect(cx, p2y, pctW, 16, 2, 2, 'FD');
-      doc.setFontSize(7); doc.setTextColor(100, 100, 100);
-      doc.text(c.label, cx + pctW / 2, p2y + 6, { align: 'center' });
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-      doc.setTextColor(...c.color);
-      doc.text(String(c.valor), cx + pctW / 2, p2y + 13, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-    });
-    p2y += 6;  // solo para que no quede pegado a la leyenda
+    // ── Card Condición ────────────────────────────────────────────────────────
+    const faltas = a?.inasistencias ?? 0;
+    doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
+    doc.roundedRect(LEFT, p2y, CW, 16, 2, 2, 'FD');
+    doc.setFontSize(7); doc.setTextColor(100, 100, 100);
+    doc.text('Condición', LEFT + CW / 2, p2y + 6, { align: 'center' });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.setTextColor(...inasColor(faltas, tea));
+    doc.text(condLabel(faltas, tea), LEFT + CW / 2, p2y + 13, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    p2y += 6;
 
-    // Leyenda asistencia al pie
+    // Leyenda condición al pie
     const p2lyY = pageH - 8;
     doc.setFontSize(6.5);
     const p2Ley: [string, [number,number,number]][] = [
-      ['Verde - Regular (>= 85%)',  VERDE],
-      ['Amarillo - En riesgo (75-84%)', AMARILLO],
-      ['Naranja - Riesgo alto (15-20 inasistencias)', NARANJA],
-      ['Rojo - TEA (>= 21 inasistencias)',  ROJO],
+      ['Verde: Regular (0–9 faltas)',        VERDE],
+      ['Amarillo: En riesgo leve (10–14)',   AMARILLO],
+      ['Naranja: En riesgo (15–20)',          NARANJA],
+      ['Rojo: Condicional (21–24)',           ROJO],
+      ['Gris: TEA (25+ faltas)',              GRIS],
     ];
     let p2lx = LEFT;
     p2Ley.forEach(([label, color]) => {
@@ -1967,7 +1977,7 @@ export class PdfReporteService {
       doc.circle(p2lx + 1.5, p2lyY - 0.5, 1.5, 'F');
       doc.setTextColor(80, 80, 80);
       doc.text(label, p2lx + 4.5, p2lyY);
-      p2lx += 65;
+      p2lx += 52;
     });
 
     doc.save(

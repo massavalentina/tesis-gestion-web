@@ -139,16 +139,16 @@
 
 /* ── Tabla ── */
 .libreta-tabla-scroll {
-  overflow-x: auto;
   border: 1.5px solid #e6eaef;
   border-radius: 10px;
+  overflow: hidden;
 }
 
 .libreta-tabla {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.78rem;
-  min-width: 680px;
+  table-layout: fixed;
 }
 
 /* Encabezados */
@@ -166,29 +166,31 @@
 }
 
 .th-materia {
-  text-align: left !important;
-  min-width: 170px;
-  padding-left: 16px !important;
+  text-align: center !important;
+  width: 22%;
+  border-right: 2px solid #b0bec8;
 }
 
 .th-eval {
-  border-left: 1.5px solid #e0e6ef;
+  border-left: 2px solid #b0bec8;
 }
 
 .th-sub {
   font-size: 0.63rem !important;
   font-weight: 500 !important;
   color: #8a93a0 !important;
-  padding: 5px 3px !important;
+  padding: 5px 2px !important;
+  /* width es automático: (100% - 26% - 8% - 12%) / 12 ≈ 4.5% */
 }
 
 .th-nf {
-  border-left: 1.5px solid #d0d8e6;
-  min-width: 70px;
+  border-left: 1.5px solid #a8b8c8;
+  width: 6%;
 }
 
 .th-estado {
-  min-width: 120px;
+  border-left: 1px solid #c0ccd8;
+  width: 16%;
 }
 
 /* Filas */
@@ -216,43 +218,61 @@
   text-align: left;
   font-weight: 600;
   color: #1a1a2e;
-  padding: 9px 16px;
+  padding: 8px 10px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.76rem;
+  border-right: 2px solid #b8c6d2;
 }
 
-.td-eval-fail {
-  background: #fff5f5;
+.td-eval-start {
+  border-left: 2px solid #b8c6d2;
+  padding-left: 6px;
 }
 
-.td-eval-sep {
-  border-right: 1.5px solid #e8ecf2;
+/* Última sub-col de cada eval (R2): margen derecho para no pisar el borde del grupo siguiente */
+.td-eval-last {
+  padding-right: 7px;
 }
 
 .td-nf {
-  border-left: 1.5px solid #d0d8e6;
+  border-left: 1.5px solid #a8b8c8;
   font-weight: 700;
+}
+
+.td-estado {
+  border-left: 1px solid #c0ccd8;
 }
 
 /* ── Notas ── */
 .nota {
-  font-weight: 600;
+  font-weight: 500;
   display: inline-block;
   min-width: 18px;
 }
 
-.nota-baja  { color: #c62828; }
-.nota-alta  { color: #2e7d32; }
-
+/* Nota efectiva >= 7 */
 .nota-mejor {
-  background: #e8f1fb;
-  border-radius: 4px;
-  padding: 1px 5px;
   color: #1565C0;
+  font-weight: 700;
+}
+
+/* Nota efectiva < 7: tema desaprobado */
+.nota-tema {
+  color: #c62828;
+  font-weight: 700;
+}
+
+/* Notas que no cuentan: discretas */
+.nota-otros {
+  color: #a0aab6;
+  font-weight: 400;
 }
 
 .nota-dash,
 .dash {
-  color: #c5cdd8;
+  color: #dde2e8;
   font-weight: 400;
 }
 
@@ -265,11 +285,14 @@
 /* ── Badges de estado ── */
 .badge {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 3px 7px;
   border-radius: 100px;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badge-aprob { background: #e8f5e9; color: #2e7d32; }
@@ -339,16 +362,6 @@
   flex-shrink: 0;
 }
 
+.dot-azul  { background: #1565C0; }
 .dot-verde { background: #2e7d32; }
 .dot-rojo  { background: #c62828; }
-.dot-azul  { background: #1565C0; }
-
-.leyenda-sample {
-  display: inline-block;
-  width: 22px;
-  height: 9px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.sample-fail { background: #fff5f5; border: 1px solid #ffcdd2; }

@@ -96,10 +96,8 @@ export class LibretaCalificacionesComponent implements OnChanges {
 
   notaClase(valor: number | null, ef: number | null): string {
     if (valor === null) return 'nota-dash';
-    const clases = ['nota'];
-    clases.push(valor < 7 ? 'nota-baja' : 'nota-alta');
-    if (valor === ef) clases.push('nota-mejor');
-    return clases.join(' ');
+    if (valor === ef)   return ef !== null && ef < 7 ? 'nota nota-tema' : 'nota nota-mejor';
+    return 'nota nota-otros';
   }
 
   notaTexto(valor: number | null): string {
