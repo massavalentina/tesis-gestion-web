@@ -39,6 +39,10 @@ export const ASISTENCIA_NAV_ITEMS: AppNavItem[] = [
   navItem('reporteAsistenciaDocente', 'Asistencia por EC', '/reporte-asistencia-docente', undefined, false),
 ];
 
+export const REPORTES_ESTRATEGICOS_NAV_ITEMS: AppNavItem[] = [
+  navItem('reportesEstrategicosAsistencia', 'Asistencia', '/reportes-estrategicos/asistencia'),
+];
+
 export const PROFILE_NAV_ITEM = navItem('perfil', 'Mi perfil', '/perfil', 'account_circle');
 
 export const SECONDARY_NAV_ITEMS: AppNavItem[] = [

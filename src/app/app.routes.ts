@@ -161,6 +161,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
       },
       {
+        path: 'reportes-estrategicos/asistencia',
+        ...withSectionData('reportesEstrategicosAsistencia'),
+        loadComponent: () =>
+          import('./features/reportes-estrategicos/components/dashboard-asistencia/dashboard-asistencia.component')
+            .then(m => m.DashboardAsistenciaComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo'])],
+      },
+      {
         path: 'gestion-usuarios',
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
