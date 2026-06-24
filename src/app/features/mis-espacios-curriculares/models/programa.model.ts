@@ -27,6 +27,7 @@ export interface ProgramaDetalle {
   url?: string;
   fechaVencimiento: string;
   fechaCreacion: string;
+  fechaUltimaModificacion: string;
   nombreMateria: string;
   codigoCurso: string;
   anioNumero: number;

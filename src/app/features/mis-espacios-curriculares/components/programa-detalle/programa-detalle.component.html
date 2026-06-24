@@ -9,22 +9,39 @@
 
     <!-- Breadcrumb -->
     <nav class="breadcrumb">
+      <a (click)="irAMisEspacios()" class="crumb-link">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <a (click)="irAEspacio()" class="crumb-link">{{ programa.nombreMateria }} ({{ formatCurso() }})</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       <a (click)="volver()" class="crumb-link">Programas</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="crumb-current">{{ programa.titulo }}</span>
     </nav>
 
-    <!-- Header -->
-    <div class="detail-header">
+    <!-- Header card: título + chips -->
+    <div class="header-card">
       <div class="detail-title-row">
         <h2>{{ programa.titulo }}</h2>
         <span class="badge" [ngClass]="badgeClass()">{{ badgeLabel() }}</span>
+        <button class="btn-pdf" type="button" (click)="exportarPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exportar PDF
+        </button>
       </div>
-      <p class="detail-sub">
-        {{ programa.nombreMateria }} · {{ formatCurso() }} · {{ programa.nombreDocente }}
-      </p>
+      <div class="info-strip">
+        <div class="chip"><span class="chip-label">Espacio curricular:</span> {{ programa.nombreMateria }}</div>
+        <div class="chip"><span class="chip-label">Curso:</span> {{ formatCurso() }}</div>
+        <div class="chip"><span class="chip-label">Año lectivo:</span> {{ programa.anioLectivo }}</div>
+        <div class="chip"><span class="chip-label">Horas cátedra:</span> {{ programa.horasCatedra }}</div>
+        <div class="chip"><span class="chip-label">Fecha de creación:</span> {{ formatFecha(programa.fechaCreacion) }}</div>
+        <div class="chip"><span class="chip-label">Última modificación:</span> {{ formatFecha(programa.fechaUltimaModificacion) }}</div>
+        <div class="chip"><span class="chip-label">Autor:</span> {{ programa.nombreDocente }}</div>
+        <div class="chip"><span class="chip-label">Vencimiento:</span> {{ programa.fechaVencimiento }}</div>
+      </div>
     </div>
 
     <!-- Acciones -->
@@ -40,14 +57,13 @@
         <button *ngIf="esAnioActual" class="btn btn-glass-green" (click)="ponerVigente()" [disabled]="procesando">Establecer como Vigente</button>
         <button class="btn btn-glass-red" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
       </ng-container>
-      <!-- Vigente: Establecer como Confirmado · Establecer como No Vigente -->
-      <ng-container *ngIf="esVigente">
+      <!-- Vigente: solo admin puede cambiar estado -->
+      <ng-container *ngIf="esVigente && esAdmin">
         <button class="btn btn-glass-blue" (click)="establecerComoConfirmado()" [disabled]="procesando">Establecer como Confirmado</button>
         <button class="btn btn-glass-gray" (click)="establecerComoNoVigente()" [disabled]="procesando">Establecer como No Vigente</button>
       </ng-container>
-      <!-- No Vigente: Reestablecer como Confirmado · Eliminar -->
+      <!-- No Vigente: solo Eliminar -->
       <ng-container *ngIf="esNoVigente">
-        <button class="btn btn-glass-blue" (click)="reestablecerComoConfirmado()" [disabled]="procesando">Reestablecer como Confirmado</button>
         <button class="btn btn-glass-red" (click)="eliminar()" [disabled]="procesando">Eliminar</button>
       </ng-container>
     </div>
@@ -71,6 +87,10 @@
         <div class="info-item">
           <span class="info-label">Fecha de creación</span>
           <span class="info-value">{{ formatFecha(programa.fechaCreacion) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Fecha de última modificación</span>
+          <span class="info-value">{{ formatFecha(programa.fechaUltimaModificacion) }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Fecha de vencimiento</span>
@@ -108,8 +128,9 @@
         <ul class="tema-list">
           <li *ngFor="let tema of unidad.temas">
             <span class="tema-number">{{ unidad.nro }}.{{ tema.nro }}</span>
-            <span class="tema-title">{{ tema.titulo }}</span>
-            <span class="tema-desc" *ngIf="tema.descripcion"> — {{ tema.descripcion }}</span>
+            <span class="tema-content">
+              <span class="tema-title">{{ tema.titulo }}</span><span class="tema-desc" *ngIf="tema.descripcion"> — {{ tema.descripcion }}</span>
+            </span>
           </li>
         </ul>
       </div>

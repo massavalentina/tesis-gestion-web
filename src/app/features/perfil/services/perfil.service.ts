@@ -20,6 +20,7 @@ export interface PerfilUsuario {
   activo: boolean;
   fechaCreacion: string;
   roles: string[];
+  idPreceptor?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

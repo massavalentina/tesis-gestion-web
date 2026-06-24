@@ -91,15 +91,22 @@
       <span>{{ auditWarning }}</span>
     </div>
 
-    <div class="notice notice--info">
+    <div class="notice notice--info" *ngIf="estadoAvisoPendienteConNotas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 16v-4"/>
-        <path d="M12 8h.01"/>
         <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <span>
-        Esta version ya lee y persiste las notas contra la API de calificaciones. Solo se habilitan para edicion las celdas que tengan exámenes para las instancias evaluativas correspondientes.
-      </span>
+      <span>{{ estadoAvisoPendienteConNotas }}</span>
+    </div>
+
+    <div class="notice notice--info" *ngIf="estadoAvisoEvaluadaSinNotas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ estadoAvisoEvaluadaSinNotas }}</span>
     </div>
 
     <div class="workspace-card">

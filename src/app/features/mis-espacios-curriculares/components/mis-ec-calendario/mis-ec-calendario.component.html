@@ -1,0 +1,123 @@
+<div class="cal-root">
+
+  <!-- ─── Loading / Error ─── -->
+  <div class="cal-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando calendario…</span>
+  </div>
+
+  <div class="cal-center cal-error" *ngIf="!loading && error">
+    <span class="material-icons error-icon">error_outline</span>
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="volver()">Volver</button>
+  </div>
+
+  <!-- ─── Contenido principal ─── -->
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- Header con breadcrumb -->
+    <div class="cal-header">
+      <button class="btn-back" (click)="volver()">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <div class="breadcrumb">
+        <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
+        <span class="material-icons bc-sep">chevron_right</span>
+        <span class="bc-item bc-active">Calendario</span>
+      </div>
+    </div>
+
+    <!-- ─── Estado bloqueado (programa por archivo) ─── -->
+    <div class="estado-banner estado-bloqueo" *ngIf="arbol?.bloqueado">
+      <span class="material-icons">lock</span>
+      <div>
+        <strong>Calendario no disponible</strong>
+        <p>{{ arbol?.mensajeBloqueo }}</p>
+      </div>
+    </div>
+
+    <!-- ─── Estado sin programa ─── -->
+    <div class="estado-banner estado-info" *ngIf="arbol?.sinPrograma">
+      <span class="material-icons">info</span>
+      <div>
+        <strong>Sin programa vigente</strong>
+        <p>Este espacio curricular no tiene un programa vigente. Primero cargá el programa desde la sección "Programas".</p>
+      </div>
+    </div>
+
+    <!-- ─── Calendario ─── -->
+    <ng-container *ngIf="arbol && !arbol.bloqueado && !arbol.sinPrograma">
+
+      <div class="cal-toolbar">
+        <h2 class="cal-titulo">{{ nombreMes }} {{ anioActual }}</h2>
+        <div class="cal-nav">
+          <button class="nav-btn" (click)="mesAnterior()" aria-label="Mes anterior">
+            <span class="material-icons">chevron_left</span>
+          </button>
+          <button class="btn-hoy" (click)="irAHoy()">Hoy</button>
+          <button class="nav-btn" (click)="mesSiguiente()" aria-label="Mes siguiente">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="cal-legend">
+        <span class="leg-item"><span class="dot azul"></span> Planificada</span>
+        <span class="leg-item"><span class="dot verde"></span> Dictada</span>
+        <span class="leg-item"><span class="dot rojo"></span> Sin dictar</span>
+      </div>
+
+      <div class="cal-dow-row">
+        <span class="dow-cell" *ngFor="let d of diasSemana">{{ d }}</span>
+      </div>
+
+      <div class="cal-grid">
+        <div
+          class="cal-day"
+          *ngFor="let dia of diasDelMes"
+          [class.fuera-mes]="!dia.enMes"
+          [class.hoy]="esHoy(dia.fecha)"
+          [class.con-eventos]="eventosDelDia(dia.key).length > 0"
+          [class.estado-azul]="colorDominante(dia.key) === 'azul'"
+          [class.estado-verde]="colorDominante(dia.key) === 'verde'"
+          [class.estado-rojo]="colorDominante(dia.key) === 'rojo'"
+          (click)="toggleDia(dia)">
+
+          <div class="day-strip" *ngIf="coloresDelDia(dia.key).length > 1">
+            <span class="strip-seg" [ngClass]="c" *ngFor="let c of coloresDelDia(dia.key)"></span>
+          </div>
+
+          <span class="day-num">{{ dia.fecha.getDate() }}</span>
+
+          <div class="day-badges" *ngIf="eventosDelDia(dia.key).length && eventosDelDia(dia.key).length <= 2">
+            <span class="day-badge" [ngClass]="ev.color" *ngFor="let ev of eventosDelDia(dia.key)">
+              <span class="dot" [ngClass]="ev.color"></span>{{ ev.estadoLabel }}
+            </span>
+          </div>
+
+          <div class="day-dots" *ngIf="eventosDelDia(dia.key).length > 2">
+            <span class="dot" [ngClass]="ev.color" *ngFor="let ev of eventosDelDia(dia.key)"></span>
+          </div>
+
+          <!-- Popover -->
+          <div class="day-popover" *ngIf="diaPopoverKey === dia.key" (click)="$event.stopPropagation()">
+            <div class="popover-item" *ngFor="let ev of eventosDelDia(dia.key)">
+              <span class="dot" [ngClass]="ev.color"></span>
+              <div class="popover-texto">
+                <div class="popover-titulo">{{ ev.clase.titulo }}</div>
+                <div class="popover-fecha" *ngIf="ev.clase.fechaEstimada">
+                  Estimada: {{ formatFecha(ev.clase.fechaEstimada) }}
+                </div>
+                <div class="popover-fecha" *ngIf="ev.clase.fechaDictada">
+                  Dictada: {{ formatFecha(ev.clase.fechaDictada) }}
+                </div>
+                <div class="popover-estado" [ngClass]="ev.color">{{ ev.estadoLabel }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+</div>

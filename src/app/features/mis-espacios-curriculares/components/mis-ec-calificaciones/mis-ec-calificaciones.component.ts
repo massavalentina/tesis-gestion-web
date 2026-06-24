@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, finalize, forkJoin, map, of } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { catchError, finalize, forkJoin, lastValueFrom, map, of } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MisEcItem } from '../../models/mis-ec.model';
 import {
@@ -16,6 +17,11 @@ import {
   InstanciaEvaluativaResumen,
   TipoCalificacion,
 } from '../../models/calificaciones.model';
+import {
+  CalificacionesCambiosPendientesDialogComponent,
+  CalificacionesCambiosPendientesDialogData,
+  CalificacionesCambiosPendientesDialogResult,
+} from '../calificaciones-cambios-pendientes-dialog/calificaciones-cambios-pendientes-dialog.component';
 import { CalificacionesService } from '../../services/calificaciones.service';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 
@@ -60,7 +66,7 @@ interface CalificacionAuditSession {
 @Component({
   selector: 'app-mis-ec-calificaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatDialogModule],
   templateUrl: './mis-ec-calificaciones.component.html',
   styleUrl: './mis-ec-calificaciones.component.scss',
 })
@@ -110,6 +116,8 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   dataWarning = '';
   auditWarning = '';
+  estadoAvisoPendienteConNotas = '';
+  estadoAvisoEvaluadaSinNotas = '';
   feedbackGuardado = '';
   saveError = '';
 
@@ -134,6 +142,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly misEcService: MisEspaciosCurricularesService,
     private readonly calificacionesService: CalificacionesService,
+    private readonly dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -150,6 +159,16 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   get totalAuditoria(): number {
     return this.auditoria.reduce((total, session) => total + session.cambios.length, 0);
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!this.tieneCambiosSinGuardar()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.returnValue = '';
   }
 
   get sesionesAuditoriaVisibles(): CalificacionAuditSession[] {
@@ -172,7 +191,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   formatTimestamp(timestamp: string): string {
@@ -294,7 +313,51 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.recomputeDerivedState();
   }
 
-  cancelarEdicion(): void {
+  async cancelarEdicion(): Promise<void> {
+    if (this.tieneCambiosSinGuardar()) {
+      const puedeSalir = await this.confirmarSalidaConCambios('cancel-edit');
+      if (!puedeSalir) {
+        return;
+      }
+
+      if (!this.modoEdicion) {
+        return;
+      }
+    }
+
+    this.descartarEdicion();
+  }
+
+  async guardarCambios(): Promise<void> {
+    if (!this.canSave) return;
+    await this.persistDraftChanges();
+  }
+
+  tieneCambiosSinGuardar(): boolean {
+    return this.modoEdicion && Object.values(this.rowHasChangesMap).some(hasChanges => hasChanges);
+  }
+
+  async confirmarSalidaConCambios(contexto: 'navigation' | 'cancel-edit'): Promise<boolean> {
+    const dialogResult = await lastValueFrom(
+      this.dialog.open(CalificacionesCambiosPendientesDialogComponent, {
+        width: '420px',
+        disableClose: true,
+        data: this.buildDialogData(contexto),
+      }).afterClosed(),
+    ) as CalificacionesCambiosPendientesDialogResult | undefined;
+
+    if (dialogResult === 'descartar') {
+      return true;
+    }
+
+    if (dialogResult !== 'guardar') {
+      return false;
+    }
+
+    return this.persistDraftChanges();
+  }
+
+  private descartarEdicion(): void {
     this.modoEdicion = false;
     this.feedbackGuardado = '';
     this.saveError = '';
@@ -305,16 +368,12 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.recomputeDerivedState();
   }
 
-  guardarCambios(): void {
-    if (!this.canSave) return;
-
+  private async persistDraftChanges(): Promise<boolean> {
     const cambios = this.buildSavePayload();
     if (cambios.length === 0) {
       this.feedbackGuardado = 'No se detectaron cambios para persistir.';
-      this.modoEdicion = false;
-      this.draftCells = {};
-      this.recomputeDerivedState();
-      return;
+      this.descartarEdicion();
+      return true;
     }
 
     this.saving = true;
@@ -322,22 +381,22 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.saveError = '';
     this.canSave = false;
 
-    this.calificacionesService.guardarGestionManual(this.idEC, { cambios }).pipe(
-      finalize(() => {
-        this.saving = false;
-        this.recomputeDerivedState();
-      }),
-    ).subscribe({
-      next: response => {
-        this.applySaveResponse(cambios, response);
-      },
-      error: error => {
-        this.saveError = this.extractErrorMessage(
-          error,
-          'No se pudieron guardar las calificaciones en la base de datos.',
-        );
-      },
-    });
+    try {
+      const response = await lastValueFrom(
+        this.calificacionesService.guardarGestionManual(this.idEC, { cambios }),
+      );
+      this.applySaveResponse(cambios, response);
+      return true;
+    } catch (error) {
+      this.saveError = this.extractErrorMessage(
+        error,
+        'No se pudieron guardar las calificaciones en la base de datos.',
+      );
+      return false;
+    } finally {
+      this.saving = false;
+      this.recomputeDerivedState();
+    }
   }
 
   getReadonlyCellLabel(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
@@ -497,6 +556,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   private recomputeDerivedState(): void {
     this.recomputeRowState();
     this.refreshTableState();
+    this.recomputeEstadoAvisos();
   }
 
   private recomputeRowState(): void {
@@ -644,8 +704,8 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     this.applySavedChanges(cambios);
-    this.refreshInstanciaStates(response.instanciasAfectadas);
     this.lastUpdatedAt = response.sesionAuditoria?.timestamp ?? new Date().toISOString();
+    this.recomputeDerivedState();
 
     if (response.sesionAuditoria) {
       const session = this.mapAuditSession(response.sesionAuditoria);
@@ -681,33 +741,6 @@ export class MisEcCalificacionesComponent implements OnInit {
     });
 
     this.savedCells = nextCells;
-  }
-
-  private refreshInstanciaStates(instanciasAfectadas: string[]): void {
-    if (instanciasAfectadas.length === 0) {
-      return;
-    }
-
-    const afectadasSet = new Set(instanciasAfectadas);
-    this.instancias = this.instancias.map(instancia => {
-      if (!afectadasSet.has(instancia.idIE)) {
-        return instancia;
-      }
-
-      const tieneNotas = this.estudiantes.some(estudiante =>
-        this.tiposCalificacion.some(tipo =>
-          this.getSavedCellValue(estudiante.idEstudiante, instancia.nro, tipo) !== null),
-      );
-
-      return {
-        ...instancia,
-        estado: tieneNotas ? 'Evaluada' : 'Pendiente',
-      };
-    });
-
-    this.instanciasByNumero = new Map(this.instancias.map(instancia => [instancia.nro, instancia]));
-    this.instanciasById = new Map(this.instancias.map(instancia => [instancia.idIE, instancia]));
-    this.rebuildEvaluaciones();
   }
 
   private buildSavePayload(): GuardarCalificacionCambio[] {
@@ -757,6 +790,29 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     return parsed;
+  }
+
+  private recomputeEstadoAvisos(): void {
+    const pendientesConNotas = this.instancias.filter(instancia =>
+      instancia.estado !== 'Evaluada' && this.instanciaTieneNotas(instancia),
+    ).length;
+    const evaluadasSinNotas = this.instancias.filter(instancia =>
+      instancia.estado === 'Evaluada' && !this.instanciaTieneNotas(instancia),
+    ).length;
+
+    this.estadoAvisoPendienteConNotas = pendientesConNotas > 0
+      ? `Hay ${pendientesConNotas} IE${pendientesConNotas === 1 ? '' : 's'} con notas cargadas pero todavía no marcadas como evaluadas.`
+      : '';
+
+    this.estadoAvisoEvaluadaSinNotas = evaluadasSinNotas > 0
+      ? `Hay ${evaluadasSinNotas} Instancia Evaluativa${evaluadasSinNotas === 1 ? '' : 's'} evaluada${evaluadasSinNotas === 1 ? '' : 's'} pero sin notas asociadas todavía.`
+      : '';
+  }
+
+  private instanciaTieneNotas(instancia: InstanciaEvaluativaResumen): boolean {
+    return this.estudiantes.some(estudiante =>
+      this.tiposCalificacion.some(tipo => this.getSavedCellValue(estudiante.idEstudiante, instancia.nro, tipo) !== null),
+    );
   }
 
   private cellKey(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
@@ -863,5 +919,28 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     return fallback;
+  }
+
+  private buildDialogData(contexto: 'navigation' | 'cancel-edit'): CalificacionesCambiosPendientesDialogData {
+    const permitirGuardar = this.canSave;
+    const mensajeBase = permitirGuardar
+      ? 'Tenés cambios sin guardar. Podés guardarlos o descartarlos.'
+      : 'Tenés cambios sin guardar con notas inválidas. Corregilas o descartá los cambios.';
+
+    if (contexto === 'cancel-edit') {
+      return {
+        titulo: 'Salir de edición',
+        mensaje: `${mensajeBase} Si salís ahora, perderás lo editado.`,
+        textoDescartar: 'Salir sin guardar',
+        permitirGuardar,
+      };
+    }
+
+    return {
+      titulo: 'Salir de la pantalla',
+      mensaje: `${mensajeBase} Si salís ahora, perderás lo editado.`,
+      textoDescartar: 'Descartar cambios',
+      permitirGuardar,
+    };
   }
 }

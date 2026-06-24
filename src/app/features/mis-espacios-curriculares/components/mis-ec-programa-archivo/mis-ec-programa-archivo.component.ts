@@ -8,6 +8,7 @@ import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curr
 import { ProgramaService } from '../../services/programa.service';
 import { MisEcItem } from '../../models/mis-ec.model';
 import { ProgramaDetalle, ProgramaResumen } from '../../models/programa.model';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-mis-ec-programa-archivo',
@@ -63,6 +64,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private sanitizer: DomSanitizer,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -114,6 +116,10 @@ export class MisEcProgramaArchivoComponent implements OnInit {
     return this.programaCargado?.anioLectivo === new Date().getFullYear();
   }
 
+  get esAdmin(): boolean {
+    return this.authService.currentUser?.esAdmin ?? false;
+  }
+
   badgeStateClass(estado: string): string {
     switch (estado) {
       case 'Vigente':    return 'badge-vigente';
@@ -129,7 +135,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
   }
 
   formatCurso(anio: number, division: string): string {
-    return `${anio}.º ${division}`;
+    return `${anio}°${division}`;
   }
 
   // ─── PDF modal ─────────────────────────────────────────────
@@ -261,7 +267,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
 
   // ─── Acciones sobre el programa ────────────────────────────
 
-  private formatFecha(fecha: string): string {
+  formatFecha(fecha: string): string {
     return new Date(fecha).toLocaleDateString('es-AR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
     });
@@ -325,15 +331,6 @@ export class MisEcProgramaArchivoComponent implements OnInit {
       'El programa pasará a "No vigente" y quedará almacenado como información histórica. Esta acción no se puede deshacer.',
       true,
       () => this.ejecutarCambioEstado('NoVigente'),
-    );
-  }
-
-  reestablecerComoConfirmado(): void {
-    this.confirmar(
-      'Reestablecer como Confirmado',
-      'El programa volverá al estado Confirmado. Desde ahí podrá establecerse como vigente si corresponde al año corriente. ¿Confirmás la acción?',
-      false,
-      () => this.ejecutarCambioEstado('Confirmado'),
     );
   }
 

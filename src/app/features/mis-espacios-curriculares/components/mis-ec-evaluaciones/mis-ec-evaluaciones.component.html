@@ -1,0 +1,353 @@
+<div class="page-wrap">
+  <div class="state-center" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando instancias evaluativas…</p>
+  </div>
+
+  <div class="state-center state-center--error" *ngIf="!loading && error">
+    <span class="material-icons error-icon">error_outline</span>
+    <p>{{ error }}</p>
+    <button class="btn-secondary" (click)="volver()">Volver</button>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && gestion">
+    <div class="planif-header">
+      <button class="btn-back" type="button" (click)="volver()">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <div class="breadcrumb">
+        <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
+        <span class="material-icons bc-sep">chevron_right</span>
+        <span class="bc-item bc-active">Evaluaciones</span>
+      </div>
+    </div>
+
+    <div
+      class="estado-banner estado-banner--compact estado-info"
+      *ngIf="gestion.sinPrograma">
+      <span class="material-icons">info</span>
+      <div>
+        <strong>Sin programa vigente</strong>
+        <p>{{ gestion.mensajeTrazabilidad }}</p>
+        <button class="btn-ir-programas btn-ir-programas--compact" *ngIf="gestion.sinPrograma" type="button" (click)="navegarProgramas()">
+          <span class="material-icons">menu_book</span>
+          Ver programas del espacio
+        </button>
+      </div>
+    </div>
+
+    <section class="prog-card">
+      <div class="prog-card-left">
+        <div class="prog-tag">EVALUACIONES {{ gestion.anioLectivo }}</div>
+        <h2 class="prog-titulo">{{ gestion.nombreMateria }}</h2>
+        <div class="prog-meta-stack">
+          <div class="prog-meta">
+            <span class="material-icons prog-meta-icon">{{ gestion.sinPrograma ? 'info' : 'check_circle' }}</span>
+            <span>{{ gestion.sinPrograma ? 'Sin programa vigente' : (gestion.tituloPrograma || 'Programa vigente') }}</span>
+          </div>
+          <div class="prog-meta">
+            <span class="material-icons prog-meta-icon">person</span>
+            <span>Diseñado por {{ gestion.nombreDocente }}</span>
+          </div>
+          <div class="prog-meta">
+            <span class="material-icons prog-meta-icon">class</span>
+            <span>Curso {{ gestion.nombreCurso }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="prog-card-right">
+        <button class="btn-ir-programas" type="button" (click)="irACalificaciones()">
+          <span class="material-icons">table_chart</span>
+          Ir a calificaciones
+        </button>
+        <button class="btn-ver-pdf" type="button" (click)="volver()">
+          <span class="material-icons">arrow_back</span>
+          Volver al espacio
+        </button>
+      </div>
+    </section>
+
+    <div class="banner-inline" *ngIf="bannerVisible" [class.banner-inline--ok]="bannerTipo === 'ok'" [class.banner-inline--warn]="bannerTipo === 'warn'" [class.banner-inline--info]="bannerTipo === 'info'">
+      <span class="material-icons banner-inline-icon">
+        {{ bannerTipo === 'ok' ? 'check_circle' : bannerTipo === 'warn' ? 'warning' : 'info' }}
+      </span>
+      <div class="banner-inline-copy">
+        <strong>{{ bannerTitulo }}</strong>
+        <p>{{ bannerMensaje }}</p>
+      </div>
+      <button class="banner-inline-close" type="button" (click)="cerrarBanner()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <section class="slots-grid">
+      <article class="slot-card slot-card--larger" [class.slot-card--locked]="slotBloqueado()" *ngFor="let slot of gestion.instancias; trackBy: trackBySlot">
+        <div
+          class="slot-head"
+          [class.slot-head--locked]="slotBloqueado()"
+          [title]="slotBloqueado() ? (gestion.mensajeTrazabilidad || 'No se puede abrir esta instancia evaluativa.') : 'Desplegar instancia'"
+          role="button"
+          tabindex="0"
+          (click)="toggleSlot(slot.nro)"
+          (keydown.enter)="toggleSlot(slot.nro)"
+          (keydown.space)="$event.preventDefault(); toggleSlot(slot.nro)"
+          [attr.aria-expanded]="slotExpandido(slot.nro) && !slotBloqueado()">
+          <div>
+            <div class="slot-kicker">Evaluación {{ slot.nro }}</div>
+            <h3>Instancia {{ slot.nro }}</h3>
+            <p *ngIf="subtituloSlot(slot)">{{ subtituloSlot(slot) }}</p>
+          </div>
+          <div class="slot-head-right">
+            <button
+              *ngIf="avisoEstadoSlot(slot)"
+              class="slot-warning"
+              type="button"
+              [class.is-open]="avisoSlotActivo(slot.nro)"
+              [attr.aria-label]="avisoEstadoSlot(slot)"
+              [title]="avisoEstadoSlot(slot)"
+              (mouseenter)="mostrarAvisoSlot(slot.nro)"
+              (mouseleave)="ocultarAvisoSlot(slot.nro)"
+              (focus)="mostrarAvisoSlot(slot.nro)"
+              (blur)="ocultarAvisoSlot(slot.nro)"
+              (click)="alternarAvisoSlot(slot.nro, $event)">
+              <span class="material-icons">priority_high</span>
+              <span class="slot-warning-popover" *ngIf="avisoSlotActivo(slot.nro)">
+                {{ avisoEstadoSlot(slot) }}
+              </span>
+            </button>
+            <div class="slot-state" [class.slot-state--empty]="!slot.existe" [class.slot-state--locked]="slotBloqueado()">
+              {{ estadoSlot(slot) }}
+            </div>
+            <span class="material-icons slot-chevron" [class.open]="slotExpandido(slot.nro)">expand_more</span>
+          </div>
+        </div>
+
+        <div class="slot-body" *ngIf="slotExpandido(slot.nro) && !slotBloqueado()">
+          <div class="archivo-list">
+            <div class="archivo-row" *ngFor="let tipo of tiposCalificacion">
+              <ng-container *ngIf="getArchivo(slot, tipo) as archivo; else archivoVacio">
+                <div class="archivo-item" [class.archivo-item--locked]="!archivo.puedeEditar">
+                  <div class="archivo-tag">
+                    <span>{{ tipo }}</span>
+                  </div>
+                  <div class="archivo-info">
+                    <strong>{{ archivo.titulo }}</strong>
+                    <span>{{ nombreTipoIE(archivo.tipoIE) }} · {{ formatoFecha(archivo.fechaEjecucion) }}</span>
+                    <small>{{ archivo.nombreArchivo }}</small>
+                  </div>
+                  <div class="archivo-actions">
+                    <button class="mini-btn" type="button" *ngIf="archivo.urlArchivo" (click)="abrirPdf(archivo.urlArchivo)">
+                      Ver PDF
+                    </button>
+                    <button class="mini-btn" type="button" (click)="abrirDetalle(slot, tipo, archivo)">Detalle</button>
+                    <div class="action-tip-wrap" [class.is-disabled]="!archivo.puedeEliminar">
+                      <button
+                        class="mini-btn mini-btn--danger"
+                        type="button"
+                        [disabled]="!archivo.puedeEliminar"
+                        (click)="confirmarEliminar(slot, tipo, archivo)">
+                        Eliminar
+                      </button>
+                      <span class="action-tip" *ngIf="!archivo.puedeEliminar">
+                        {{ motivoBloqueoAccion(archivo, 'eliminar') }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #archivoVacio>
+                <div class="archivo-vacio" [class.archivo-vacio--locked]="!puedeCargar(slot, tipo)">
+                  <div class="archivo-tag archivo-tag--ghost">
+                    <span>{{ tipo }}</span>
+                  </div>
+                  <div class="archivo-info">
+                    <span>{{ motivoCarga(slot, tipo) || 'Podés cargar este examen ahora.' }}</span>
+                  </div>
+                  <button
+                    class="mini-btn"
+                    type="button"
+                    [disabled]="!puedeCargar(slot, tipo)"
+                    [title]="puedeCargar(slot, tipo) ? 'Cargar este examen' : (motivoCarga(slot, tipo) || 'Este examen todavía no se puede cargar')"
+                    (click)="abrirCrear(slot, tipo)">
+                    Cargar
+                  </button>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </ng-container>
+
+  <div class="drawer-backdrop" *ngIf="drawerVisible" (click)="cerrarDrawer()">
+    <aside class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-head">
+        <div>
+          <div class="eyebrow">{{ tituloDrawer() }}</div>
+          <h3>IE {{ slotActual?.nro }} · {{ tipoActual }}</h3>
+          <p>{{ subtituloDrawer() }}</p>
+        </div>
+        <button class="drawer-close" type="button" (click)="cerrarDrawer()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="banner-inline banner-inline--warn" *ngIf="formError">
+        <span class="material-icons banner-inline-icon">warning</span>
+        <div class="banner-inline-copy">
+          <strong>No se pudo guardar</strong>
+          <p>{{ formError }}</p>
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <div class="form-field">
+          <label>Título</label>
+          <input type="text" [(ngModel)]="titulo" [readonly]="drawerModo === 'detalle'" placeholder="Ej: Examen integrador unidad 3" />
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Tipo de IE</label>
+            <select [(ngModel)]="tipoIE" [disabled]="drawerModo === 'detalle'">
+              <option *ngFor="let tipo of tiposIE" [value]="tipo">{{ nombreTipoIE(tipo) }}</option>
+            </select>
+          </div>
+
+          <div class="form-field form-field--date">
+            <label>Fecha de ejecución</label>
+            <input
+              type="text"
+              [(ngModel)]="fechaEjecucionInput"
+              [readonly]="drawerModo === 'detalle'"
+              placeholder="dd/mm/aaaa"
+              inputmode="numeric"
+              maxlength="10" />
+            <div class="field-feedback">
+              <small class="field-error" *ngIf="drawerModo !== 'detalle' && errorFechaEjecucion()">{{ errorFechaEjecucion() }}</small>
+              <small class="helper-text">Orden esperado: N, luego R1, luego R2.</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Estado de la IE</label>
+          <select [(ngModel)]="estadoIEActual">
+            <option value="Pendiente">Pendiente</option>
+            <option value="Evaluada">Evaluada</option>
+          </select>
+          <small class="helper-text">
+            {{ drawerModo === 'detalle' ? 'El estado se puede cambiar sin editar el archivo.' : 'Este estado es independiente de las notas cargadas.' }}
+          </small>
+        </div>
+
+        <div class="form-field">
+          <label>Archivo PDF</label>
+          <ng-container *ngIf="drawerModo !== 'detalle'; else archivoSoloLectura">
+            <input type="file" accept="application/pdf" (change)="onArchivoSeleccionado($event)" />
+            <small class="helper-text" *ngIf="archivoNombre">{{ archivoNombre }}</small>
+            <small class="helper-text" *ngIf="drawerModo === 'editar' && !archivoSeleccionado">
+              Si no elegís uno nuevo, se actualiza solo la información del archivo actual.
+            </small>
+          </ng-container>
+          <ng-template #archivoSoloLectura>
+            <div class="archivo-preview">
+              <div>
+                <strong>{{ archivoNombre || 'Sin archivo cargado' }}</strong>
+                <small>Archivo asociado a esta IE.</small>
+              </div>
+              <button class="btn-secondary btn-secondary--compact" type="button" *ngIf="archivoActual?.urlArchivo" (click)="abrirPdf(archivoActual?.urlArchivo)">
+                Ver PDF
+              </button>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="trace-card" *ngIf="gestion?.trazabilidadDisponible; else sinTrazabilidad">
+          <div class="trace-head">
+            <div>
+              <strong>Vinculación al programa</strong>
+              <p>Elegí uno o varios temas. Al marcar una unidad, se seleccionan todos sus temas.</p>
+            </div>
+          </div>
+
+          <div class="unit-tree">
+            <section class="unit-card" *ngFor="let unidad of gestion!.unidades; trackBy: trackByUnidad">
+              <button type="button" class="unit-head" (click)="toggleUnidadExpandida(unidad.idBloquePrograma)">
+                <div>
+                  <strong>Unidad {{ unidad.nro }}</strong>
+                  <p>{{ unidad.titulo }}</p>
+                </div>
+                <div class="unit-head-right">
+                  <label class="check-wrap" (click)="$event.stopPropagation()">
+                    <input
+                      type="checkbox"
+                      [checked]="unidadSeleccionada(unidad.idBloquePrograma)"
+                      [indeterminate]="unidadParcial(unidad.idBloquePrograma)"
+                      [disabled]="drawerModo === 'detalle'"
+                      (change)="toggleUnidad(unidad.idBloquePrograma)" />
+                    <span></span>
+                  </label>
+                  <span class="material-icons unit-chevron" [class.open]="unidadExpandida(unidad.idBloquePrograma)">expand_more</span>
+                </div>
+              </button>
+
+              <div class="theme-list" *ngIf="unidadExpandida(unidad.idBloquePrograma)">
+                <label class="theme-item" *ngFor="let tema of unidad.temas; trackBy: trackByTema">
+                  <input
+                    type="checkbox"
+                    [checked]="temaSeleccionado(tema.idBloquePrograma)"
+                    [disabled]="drawerModo === 'detalle'"
+                    (change)="toggleTema(tema.idBloquePrograma)" />
+                  <span class="theme-copy">
+                    <strong>Tema {{ tema.nro }}</strong>
+                    <small>{{ tema.titulo }}</small>
+                  </span>
+                </label>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <ng-template #sinTrazabilidad>
+          <div class="estado-banner estado-info">
+            <span class="material-icons banner-inline-icon">info</span>
+            <div>
+              <strong>Sin trazabilidad al programa</strong>
+              <p>Podés cargar la IE igual. En este contexto no se registran vínculos a temas o unidades.</p>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn-secondary" type="button" (click)="cerrarDrawer()">
+          {{ drawerModo === 'detalle' ? 'Cerrar' : 'Cancelar' }}
+        </button>
+
+        <ng-container *ngIf="drawerModo === 'detalle'; else accionesEdicion">
+          <div class="action-tip-wrap" [class.is-disabled]="!archivoActual?.puedeEditar">
+            <button class="btn-primary" type="button" [disabled]="!archivoActual?.puedeEditar" (click)="editarDesdeDetalle()">
+              Editar
+            </button>
+            <span class="action-tip" *ngIf="archivoActual && !archivoActual.puedeEditar">
+              {{ motivoBloqueoAccion(archivoActual, 'editar') }}
+            </span>
+          </div>
+          <button class="btn-primary" type="button" [disabled]="guardando || estadoIEActual === estadoIEOriginal" (click)="guardarEstado()">
+            {{ guardando ? 'Guardando...' : 'Guardar estado' }}
+          </button>
+        </ng-container>
+
+        <ng-template #accionesEdicion>
+          <button class="btn-primary" type="button" (click)="guardar()" [disabled]="guardando || !!errorFechaEjecucion()">
+            {{ guardando ? 'Guardando...' : 'Guardar archivo' }}
+          </button>
+        </ng-template>
+      </div>
+    </aside>
+  </div>
+</div>

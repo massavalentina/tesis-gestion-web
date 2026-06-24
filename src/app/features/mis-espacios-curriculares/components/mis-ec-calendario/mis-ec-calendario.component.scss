@@ -1,0 +1,353 @@
+:host {
+  display: block;
+  font-family: 'Inter', sans-serif;
+}
+
+// ─── Vars ─────────────────────────────────────────────────────────────────────
+$primary: #3c78b4;
+$verde: #1f9254;
+$rojo: #b42318;
+$text: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$surface: #ffffff;
+$bg: #f3f4f6;
+$radius: 12px;
+$radius-sm: 8px;
+
+.cal-root {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+  box-sizing: border-box;
+}
+
+// ─── Center states ────────────────────────────────────────────────────────────
+.cal-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  color: $text-muted;
+  font-size: 14px;
+}
+.cal-error { color: $rojo; }
+.error-icon { font-size: 40px; opacity: .7; }
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e0e7ff;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-secondary {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $surface;
+  color: $text;
+  cursor: pointer;
+}
+
+// ─── Header / breadcrumb ──────────────────────────────────────────────────────
+.cal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.btn-back {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: $text-muted;
+  transition: background .15s;
+  &:hover { background: $bg; }
+  .material-icons { font-size: 20px; }
+}
+.breadcrumb {
+  display: flex; align-items: center; gap: 2px;
+  font-size: 13px;
+}
+.bc-item {
+  color: $text-muted;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  &:hover { color: $primary; }
+  &.bc-root { color: $primary; }
+  &.bc-active { color: $text; font-weight: 600; cursor: default; }
+}
+.bc-sep { font-size: 16px; color: $border; }
+
+// ─── Banners de estado ────────────────────────────────────────────────────────
+.estado-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-radius: $radius;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+
+  strong { display: block; margin-bottom: 4px; }
+  p { margin: 0; font-size: 13px; }
+}
+.estado-bloqueo {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+}
+.estado-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a5f;
+}
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cal-titulo {
+  font-size: 19px;
+  font-weight: 700;
+  color: $text;
+  margin: 0;
+  text-transform: capitalize;
+}
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-btn {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: $text;
+  transition: background .15s;
+  &:hover { background: $bg; }
+}
+.btn-hoy {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $surface;
+  color: $text;
+  cursor: pointer;
+  &:hover { background: $bg; }
+}
+
+// ─── Leyenda ──────────────────────────────────────────────────────────────────
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-muted;
+}
+
+.dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &.azul  { background: $primary; }
+  &.verde { background: $verde; }
+  &.rojo  { background: $rojo; }
+}
+
+// ─── Grilla del mes ───────────────────────────────────────────────────────────
+.cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.dow-cell {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: $text-muted;
+  text-align: center;
+  padding-bottom: 6px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 104px;
+  gap: 7px;
+}
+
+.cal-day {
+  position: relative;
+  background: $surface;
+  border: 1px solid $border;
+  border-left: 4px solid transparent;
+  border-radius: $radius-sm;
+  padding: 8px 10px;
+  cursor: default;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+
+  &.fuera-mes {
+    background: #fafafa;
+    .day-num { color: #c2c8d1; }
+  }
+
+  &.hoy {
+    border-color: $primary;
+    border-left-color: $primary;
+    box-shadow: 0 0 0 1px rgba(60,120,180,.25);
+  }
+
+  &.con-eventos {
+    cursor: pointer;
+    &:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  }
+
+  &.estado-azul { background: rgba(60,120,180,.08); border-left-color: $primary; }
+  &.estado-verde { background: rgba(31,146,84,.08); border-left-color: $verde; }
+  &.estado-rojo { background: rgba(180,35,24,.08); border-left-color: $rojo; }
+}
+
+// Franja lateral para días con más de un color (ej: una clase dictada + otra estimada)
+.day-strip {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: $radius-sm 0 0 $radius-sm;
+}
+.strip-seg {
+  flex: 1;
+  &.azul  { background: $primary; }
+  &.verde { background: $verde; }
+  &.rojo  { background: $rojo; }
+}
+
+.day-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+}
+
+.day-badges {
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.day-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.day-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px 3px 7px;
+  border-radius: 100px;
+  white-space: nowrap;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .dot { width: 7px; height: 7px; flex-shrink: 0; }
+
+  &.azul  { background: rgba(60,120,180,.16); color: $primary; }
+  &.verde { background: rgba(31,146,84,.16);  color: $verde; }
+  &.rojo  { background: rgba(180,35,24,.16);  color: $rojo; }
+}
+
+// ─── Popover ──────────────────────────────────────────────────────────────────
+.day-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  padding: 10px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popover-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  .dot { margin-top: 4px; flex-shrink: 0; }
+}
+
+.popover-texto { min-width: 0; }
+
+.popover-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+}
+
+.popover-fecha {
+  font-size: 11.5px;
+  color: $text-muted;
+  margin-top: 2px;
+}
+
+.popover-estado {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 3px;
+
+  &.azul  { color: $primary; }
+  &.verde { color: $verde; }
+  &.rojo  { color: $rojo; }
+}

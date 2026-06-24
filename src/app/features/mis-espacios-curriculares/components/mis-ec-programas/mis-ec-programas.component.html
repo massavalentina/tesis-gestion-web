@@ -25,7 +25,7 @@
     <!-- Encabezado -->
     <div class="header">
       <div class="header-text">
-        <h2>Programas de la materia</h2>
+        <h2>Programas del Espacio</h2>
         <p *ngIf="espacio">
           {{ espacio.nombreMateria }} · {{ formatCurso(espacio.anioNumero, espacio.division) }}
         </p>
@@ -49,6 +49,15 @@
       </div>
     </div>
 
+    <!-- Filtro por año lectivo -->
+    <div class="filter-bar" *ngIf="programas.length > 0">
+      <label class="filter-label">Año lectivo</label>
+      <select class="filter-select" [(ngModel)]="anioFiltro">
+        <option [ngValue]="null">Todos</option>
+        <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">{{ anio }}</option>
+      </select>
+    </div>
+
     <!-- Estado vacío -->
     <div class="empty-state" *ngIf="programas.length === 0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -60,6 +69,15 @@
       </svg>
       <p>No hay programas cargados para este espacio curricular.</p>
       <span class="empty-hint">Creá uno nuevo con el botón de arriba.</span>
+    </div>
+
+    <!-- Sin resultados para el año seleccionado -->
+    <div class="empty-state" *ngIf="programas.length > 0 && programasFiltrados.length === 0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p>Sin programas para {{ anioFiltro }}</p>
+      <span class="empty-hint">Seleccioná otro año o "Todos" para ver todos los programas.</span>
     </div>
 
     <!-- Programa vigente -->

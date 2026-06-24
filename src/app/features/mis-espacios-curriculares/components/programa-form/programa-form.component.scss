@@ -259,6 +259,7 @@ $radius: 16px;
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+
 /* ─── Datos generales (native-field style) ─── */
 .dg-grid {
   display: grid;
@@ -338,13 +339,5 @@ $radius: 16px;
   margin-top: 4px;
 }
 
-@media (max-width: 680px) {
-  .page-wrap { padding: 20px 16px 50px; }
-  .page-title { font-size: 20px; }
-  .form-row { flex-direction: column; }
-  .field-half { min-width: 100%; }
-  .form-actions { flex-direction: column-reverse; }
-  .btn { width: 100%; justify-content: center; }
-  .dg-grid { grid-template-columns: 1fr; }
-  .dg-full { grid-column: 1; }
-}
+
+
