@@ -41,6 +41,7 @@ export const ASISTENCIA_NAV_ITEMS: AppNavItem[] = [
 
 export const REPORTES_ESTRATEGICOS_NAV_ITEMS: AppNavItem[] = [
   navItem('reportesEstrategicosAsistencia', 'Asistencia', '/reportes-estrategicos/asistencia'),
+  navItem('reportesEstrategicosCalificaciones', 'Generales', '/reportes-estrategicos/calificaciones'),
 ];
 
 export const PROFILE_NAV_ITEM = navItem('perfil', 'Mi perfil', '/perfil', 'account_circle');

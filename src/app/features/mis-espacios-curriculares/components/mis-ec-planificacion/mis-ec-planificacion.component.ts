@@ -169,7 +169,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.service.patchEstadoBloque(tema.idBloquePrograma, nuevoEstado).subscribe({
       next: () => {
         const msg = nuevoEstado === 'Dado'
-          ? 'Tema dado: ' + tema.titulo
+          ? 'Tema dictado: ' + tema.titulo
           : 'Tema marcado pendiente: ' + tema.titulo;
         this.mostrarToast(msg, nuevoEstado === 'Dado' ? 'ok' : 'warn');
       },
@@ -521,7 +521,7 @@ export class MisEcPlanificacionComponent implements OnInit {
   countClasesUnidad(unidad: UnidadArbolDto): string {
     const av = this.avanceUnidad(unidad);
     const completos = unidad.temas.filter(t => this.temaEsDado(t)).length;
-    return `${av}% · ${completos}/${unidad.temas.length} temas dados`;
+    return `${av}% · ${completos}/${unidad.temas.length} temas dictados`;
   }
 
   countClasesTema(tema: TemaArbolDto): string {

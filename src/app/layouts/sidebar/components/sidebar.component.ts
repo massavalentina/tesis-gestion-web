@@ -428,6 +428,7 @@ export class SidebarComponent {
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reportesEstrategicosAsistencia':
+      case 'reportesEstrategicosCalificaciones':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
       case 'perfil':
       case 'home':

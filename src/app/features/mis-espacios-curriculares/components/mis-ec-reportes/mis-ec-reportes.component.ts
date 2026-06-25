@@ -3,10 +3,23 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { NgxEchartsDirective } from 'ngx-echarts';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
 import { MisEcItem } from '../../models/mis-ec.model';
+import { ChartFullscreenDialogComponent } from '../../../reportes-estrategicos/components/chart-fullscreen-dialog/chart-fullscreen-dialog.component';
+import { PlanificacionService } from '../../services/planificacion.service';
+import { ArbolPlanificacionDto, UnidadArbolDto } from '../../models/planificacion.model';
 
 const ESPACIO_DEMO = '6°B Teatro';
+
+// Datos de evaluados hardcodeados — solo para 6°B Teatro hasta que haya backend
+const EVAL_TEATRO = {
+  donut: { evaluados: 2, total: 4 },
+  unidades: { 1: { evaluados: 2, totalEval: 2 }, 2: { evaluados: 0, totalEval: 2 } } as Record<number, { evaluados: number; totalEval: number }>,
+};
 
 const COLORS = { aprob: '#1f4e87', recup: '#7ba9d6', desapTema: '#f0a35e', desap: '#e23744' };
 const FONT = 'Inter, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -54,7 +67,7 @@ function estadisticas(hist: number[]): { promedio: number; desvio: number; moda:
 const OPTION_PIE: any = {
   textStyle: { fontFamily: FONT },
   tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-  legend: { bottom: 0, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+  legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
   series: [{
     type: 'pie', radius: ['46%', '72%'], center: ['50%', '44%'],
     avoidLabelOverlap: true,
@@ -73,7 +86,7 @@ const OPTION_PIE: any = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const OPTION_BAR_ESTADO: any = {
   textStyle: { fontFamily: FONT },
-  grid: { left: 0, right: 40, top: 6, bottom: 0, containLabel: true },
+  grid: { left: 12, right: 52, top: 10, bottom: 12, containLabel: true },
   tooltip: { trigger: 'axis', valueFormatter: (v: number | string) => `${v}%` },
   xAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%', color: '#94a3b8' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
   yAxis: { type: 'category', data: ['Aprobados', 'Aprob. con Recup.', 'Desap. por Tema', 'Desaprobados'], inverse: true, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: '#475569', fontSize: 12 } },
@@ -93,10 +106,10 @@ const OPTION_BAR_ESTADO: any = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const OPTION_BAR_COMP: any = {
   textStyle: { fontFamily: FONT },
-  grid: { left: 0, right: 8, top: 28, bottom: 6, containLabel: true },
+  grid: { left: 12, right: 16, top: 32, bottom: 14, containLabel: true },
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   legend: { top: 0, icon: 'circle', itemWidth: 9, itemHeight: 9, itemGap: 14, textStyle: { fontSize: 11, color: '#64748b' } },
-  xAxis: { type: 'category', data: ['1','2','3','4','5','6','7','8'], name: 'Instancia', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontSize: 11 } },
+  xAxis: { type: 'category', data: ['1','2','3','4','5','6','7','8'], axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontSize: 11 } },
   yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
   series: [
     { name: 'R1', type: 'bar', stack: 'rec', barWidth: '55%', itemStyle: { color: COLORS.aprob }, data: [12,10,16,8,13,9,18,17] },
@@ -107,7 +120,14 @@ const OPTION_BAR_COMP: any = {
 @Component({
   selector: 'app-mis-ec-reportes',
   standalone: true,
-  imports: [CommonModule, NgxEchartsDirective],
+  imports: [
+    CommonModule,
+    NgxEchartsDirective,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatDialogModule,
+  ],
   templateUrl: './mis-ec-reportes.component.html',
   styleUrl: './mis-ec-reportes.component.scss',
 })
@@ -118,8 +138,18 @@ export class MisEcReportesComponent implements OnInit {
   espacio: MisEcItem | null = null;
   hayDatos = false;
 
-  activeTab: 'notas' | 'eval' = 'notas';
+  activeTab: 'notas' | 'eval' | 'programa' = 'notas';
   showModal = false;
+
+  // Pestaña Programa
+  arbolPrograma: ArbolPlanificacionDto | null = null;
+  loadingPrograma = false;
+  errorPrograma = '';
+  programaCargado = false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  optionDonutAvance: any = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  optionDonutEval: any = {};
 
   kpiPromedio = '';
   kpiModa = 0;
@@ -136,8 +166,10 @@ export class MisEcReportesComponent implements OnInit {
 
   constructor(
     private service: MisEspaciosCurricularesService,
+    private planificacionService: PlanificacionService,
     private route: ActivatedRoute,
     private router: Router,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -180,7 +212,7 @@ export class MisEcReportesComponent implements OnInit {
     this.kpiDesv = s.desvio.toFixed(2);
     this.histOptions = {
       textStyle: { fontFamily: FONT },
-      grid: { left: 0, right: 8, top: 18, bottom: 0, containLabel: true },
+      grid: { left: 12, right: 16, top: 22, bottom: 12, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
@@ -205,8 +237,114 @@ export class MisEcReportesComponent implements OnInit {
     this.applyHistFilter((event.target as HTMLSelectElement).value);
   }
 
-  setTab(tab: 'notas' | 'eval'): void {
+  setTab(tab: 'notas' | 'eval' | 'programa'): void {
     this.activeTab = tab;
+    if (tab === 'programa' && !this.programaCargado) {
+      this.cargarPrograma();
+    }
+  }
+
+  private cargarPrograma(): void {
+    this.loadingPrograma = true;
+    this.errorPrograma = '';
+    this.planificacionService.getArbol(this.idEC).subscribe({
+      next: arbol => {
+        this.arbolPrograma = arbol;
+        this.loadingPrograma = false;
+        this.programaCargado = true;
+        if (!arbol.sinPrograma && !arbol.bloqueado) {
+          this.buildDonutAvance(arbol);
+          this.buildDonutEval();
+        }
+      },
+      error: () => {
+        this.errorPrograma = 'No se pudo cargar el programa. Verificá tu conexión e intentá de nuevo.';
+        this.loadingPrograma = false;
+      },
+    });
+  }
+
+  private buildDonutAvance(arbol: ArbolPlanificacionDto): void {
+    const dictados = arbol.temasCompletos;
+    const pendientes = arbol.totalTemas - arbol.temasCompletos;
+    const pct = Math.round(arbol.avance);
+    this.optionDonutAvance = {
+      textStyle: { fontFamily: FONT },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+      graphic: [
+        { type: 'text', left: 'center', top: '34%',
+          style: { text: `${pct}%`, fontSize: 22, fontWeight: 700, fill: '#1f4e87', textAlign: 'center' } },
+        { type: 'text', left: 'center', top: '43%',
+          style: { text: `${dictados} / ${arbol.totalTemas} dictados`, fontSize: 11, fill: '#94a3b8', textAlign: 'center' } },
+      ] as any,
+      series: [{
+        type: 'pie', radius: ['58%', '78%'], center: ['50%', '42%'],
+        avoidLabelOverlap: false, label: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        data: [
+          { value: dictados,   name: 'Temas dictados',   itemStyle: { color: '#1f4e87' } },
+          { value: pendientes, name: 'Temas sin dictar', itemStyle: { color: '#e2e8f0' } },
+        ],
+      }],
+    };
+  }
+
+  private buildDonutEval(): void {
+    if (!this.hayDatos) return;
+    const ev = EVAL_TEATRO.donut;
+    const sinEval = ev.total - ev.evaluados;
+    const pct = Math.round(ev.evaluados / ev.total * 100);
+    this.optionDonutEval = {
+      textStyle: { fontFamily: FONT },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+      graphic: [
+        { type: 'text', left: 'center', top: '34%',
+          style: { text: `${pct}%`, fontSize: 22, fontWeight: 700, fill: '#1f4e87', textAlign: 'center' } },
+        { type: 'text', left: 'center', top: '43%',
+          style: { text: `${ev.evaluados} / ${ev.total} evaluados`, fontSize: 11, fill: '#94a3b8', textAlign: 'center' } },
+      ] as any,
+      series: [{
+        type: 'pie', radius: ['58%', '78%'], center: ['50%', '42%'],
+        avoidLabelOverlap: false, label: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        data: [
+          { value: ev.evaluados, name: 'Temas evaluados',   itemStyle: { color: '#1f4e87' } },
+          { value: sinEval,      name: 'Temas sin evaluar', itemStyle: { color: '#7ba9d6' } },
+        ],
+      }],
+    };
+  }
+
+  dictadosUnidad(u: UnidadArbolDto): { dictados: number; total: number } {
+    return { dictados: u.temas.filter(t => t.estado === 'Dado').length, total: u.temas.length };
+  }
+
+  dictadosPct(u: UnidadArbolDto): number {
+    const n = u.temas.length;
+    return n === 0 ? 0 : Math.round(u.temas.filter(t => t.estado === 'Dado').length / n * 100);
+  }
+
+  evalUnidad(u: UnidadArbolDto): { evaluados: number; total: number } {
+    if (!this.hayDatos) return { evaluados: 0, total: 0 };
+    const d = EVAL_TEATRO.unidades[u.nro];
+    return d ? { evaluados: d.evaluados, total: d.totalEval } : { evaluados: 0, total: 0 };
+  }
+
+  evaluadosPct(u: UnidadArbolDto): number {
+    const ev = this.evalUnidad(u);
+    return ev.total === 0 ? 0 : Math.round(ev.evaluados / ev.total * 100);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  abrirFullscreen(options: any, titulo: string): void {
+    this.dialog.open(ChartFullscreenDialogComponent, {
+      data: { options, titulo },
+      width: '92vw',
+      maxWidth: '92vw',
+      height: '88vh',
+    });
   }
 
   volverAlDetalle(): void {

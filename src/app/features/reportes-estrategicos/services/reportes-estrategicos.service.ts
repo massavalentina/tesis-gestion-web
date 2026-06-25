@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { DashboardAsistencia, DashboardFiltros, OpcionCurso, OpcionEC } from '../models/dashboard-asistencia.model';
+import { DashboardCalificaciones } from '../models/dashboard-calificaciones.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportesEstrategicosService {
@@ -31,6 +32,14 @@ export class ReportesEstrategicosService {
   obtenerEspaciosCurriculares(cursoId: string): Observable<OpcionEC[]> {
     return this.http.get<OpcionEC[]>(
       `${this.apiUrl}/api/cursos/${cursoId}/espacios-curriculares`
+    );
+  }
+
+  obtenerDashboardCalificaciones(anioLectivo: number): Observable<DashboardCalificaciones> {
+    const params = new HttpParams().set('anioLectivo', anioLectivo.toString());
+    return this.http.get<DashboardCalificaciones>(
+      `${this.apiUrl}/api/reportes-estrategicos/calificaciones`,
+      { params }
     );
   }
 }

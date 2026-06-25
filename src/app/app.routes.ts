@@ -169,6 +169,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo'])],
       },
       {
+        path: 'reportes-estrategicos/calificaciones',
+        ...withSectionData('reportesEstrategicosCalificaciones'),
+        loadComponent: () =>
+          import('./features/reportes-estrategicos/components/dashboard-calificaciones/dashboard-calificaciones.component')
+            .then(m => m.DashboardCalificacionesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo'])],
+      },
+      {
         path: 'gestion-usuarios',
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')

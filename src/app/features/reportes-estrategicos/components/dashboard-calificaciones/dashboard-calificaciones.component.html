@@ -1,0 +1,213 @@
+<div class="dashboard-container">
+
+  <!-- ── Filtro año lectivo ──────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+    <mat-form-field appearance="outline" class="filtro-field filtro-anio">
+      <mat-label>Año lectivo</mat-label>
+      <mat-select [(ngModel)]="anioLectivo" (ngModelChange)="cargar()">
+        <mat-option [value]="2025">2025</mat-option>
+        <mat-option [value]="2026">2026</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- ── Spinner ──────────────────────────────────────────────────────────────── -->
+  <div class="spinner-container" *ngIf="cargando">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <!-- ── Contenido ────────────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && dashboard">
+
+    <!-- ═══ KPIs ════════════════════════════════════════════════════════════════ -->
+    <div class="kpi-grid kpi-grid--5">
+
+      <!-- Avance en Programas -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Promedio ponderado del avance de todos los programas estructurados vigentes. Los cargados por PDF no se incluyen."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#0284c718;color:#0284c7">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <span class="kpi-value" style="color:#0284c7">{{ avanceTexto }}</span>
+        <span class="kpi-label">Avance en Programas</span>
+      </div>
+
+      <!-- Calificación Promedio General -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Promedio general de todas las calificaciones del colegio a la fecha de corte."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#0284c718;color:#0284c7">
+          <mat-icon>grade</mat-icon>
+        </div>
+        <span class="kpi-value" style="color:#0284c7">{{ promedioTexto }}</span>
+        <span class="kpi-label">Calificación Promedio General</span>
+      </div>
+
+      <!-- Calificación más frecuente -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="La calificación que más se repite en toda la institución."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#0284c718;color:#0284c7">
+          <mat-icon>bar_chart</mat-icon>
+        </div>
+        <span class="kpi-value" style="color:#0284c7">{{ dashboard.calificacionMasFrecuente }}</span>
+        <span class="kpi-label">Calificación más frecuente</span>
+      </div>
+
+      <!-- Desviación Estándar -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Qué tan dispersas están las calificaciones respecto del promedio."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#0284c718;color:#0284c7">
+          <mat-icon>show_chart</mat-icon>
+        </div>
+        <span class="kpi-value" style="color:#0284c7">{{ desviacionTexto }}</span>
+        <span class="kpi-label">Desviación Estándar</span>
+      </div>
+
+      <!-- Exámenes Realizados -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Total de instancias evaluativas rendidas en el colegio."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#0284c718;color:#0284c7">
+          <mat-icon>assignment_turned_in</mat-icon>
+        </div>
+        <span class="kpi-value" style="color:#0284c7">{{ dashboard.examenesRealizados }}</span>
+        <span class="kpi-label">Exámenes Realizados</span>
+      </div>
+
+    </div>
+
+    <!-- ═══ Recuperatorios ═══════════════════════════════════════════════════════ -->
+    <div class="chart-card chart-card--recup">
+      <div class="chart-header">
+        <h3>Recuperatorios en Exámenes</h3>
+        <div class="chart-header-actions">
+          <button mat-icon-button
+            matTooltip="Distribución de los exámenes según cuántos recuperatorios necesitaron."
+            matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+            <mat-icon>info_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="recup-grid">
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeSinRecuperatorio | number:'1.0-1' }}%</span>
+          <span class="recup-label">Exámenes sin recuperatorio</span>
+        </div>
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeConRecuperatorio1 | number:'1.0-1' }}%</span>
+          <span class="recup-label">Con 1 recuperatorio</span>
+        </div>
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeConRecuperatorio2 | number:'1.0-1' }}%</span>
+          <span class="recup-label">Con 2 recuperatorios</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Gráficos fila 1 ══════════════════════════════════════════════════════ -->
+    <div class="charts-row charts-row--2">
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Espacios Curriculares con Mayor Desaprobación</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Espacios curriculares con más exámenes desaprobados."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button
+              (click)="abrirFullscreen(chartMayorDesap, 'Top 5 Espacios Curriculares con Mayor Desaprobación')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-body chart-bar" echarts [options]="chartMayorDesap"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Espacios Curriculares con Mejor Promedio</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Espacios con el promedio de calificaciones más alto."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button
+              (click)="abrirFullscreen(chartMejorPromedio, 'Top 5 Espacios Curriculares con Mejor Promedio')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-body chart-bar" echarts [options]="chartMejorPromedio"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Gráficos fila 2 ══════════════════════════════════════════════════════ -->
+    <div class="charts-row charts-row--2">
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Cursos con Mayor Tasa de Desaprobación</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Cursos con mayor porcentaje de exámenes desaprobados."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button
+              (click)="abrirFullscreen(chartTasaCurso, 'Top 5 Cursos con Mayor Tasa de Desaprobación')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-body chart-bar" echarts [options]="chartTasaCurso"></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Distribución de Estados</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Cómo se reparten los estados Aprobado / Desaprobado / Desaprobado por Tema."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button
+              (click)="abrirFullscreen(chartEstados, 'Distribución de Estados')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-body chart-pie" echarts [options]="chartEstados"></div>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+</div>
