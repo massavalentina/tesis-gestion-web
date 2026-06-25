@@ -116,6 +116,8 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   dataWarning = '';
   auditWarning = '';
+  estadoAvisoPendienteConNotas = '';
+  estadoAvisoEvaluadaSinNotas = '';
   feedbackGuardado = '';
   saveError = '';
 
@@ -550,6 +552,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   private recomputeDerivedState(): void {
     this.recomputeRowState();
     this.refreshTableState();
+    this.recomputeEstadoAvisos();
   }
 
   private recomputeRowState(): void {
@@ -697,8 +700,8 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     this.applySavedChanges(cambios);
-    this.refreshInstanciaStates(response.instanciasAfectadas);
     this.lastUpdatedAt = response.sesionAuditoria?.timestamp ?? new Date().toISOString();
+    this.recomputeDerivedState();
 
     if (response.sesionAuditoria) {
       const session = this.mapAuditSession(response.sesionAuditoria);
@@ -734,33 +737,6 @@ export class MisEcCalificacionesComponent implements OnInit {
     });
 
     this.savedCells = nextCells;
-  }
-
-  private refreshInstanciaStates(instanciasAfectadas: string[]): void {
-    if (instanciasAfectadas.length === 0) {
-      return;
-    }
-
-    const afectadasSet = new Set(instanciasAfectadas);
-    this.instancias = this.instancias.map(instancia => {
-      if (!afectadasSet.has(instancia.idIE)) {
-        return instancia;
-      }
-
-      const tieneNotas = this.estudiantes.some(estudiante =>
-        this.tiposCalificacion.some(tipo =>
-          this.getSavedCellValue(estudiante.idEstudiante, instancia.nro, tipo) !== null),
-      );
-
-      return {
-        ...instancia,
-        estado: tieneNotas ? 'Evaluada' : 'Pendiente',
-      };
-    });
-
-    this.instanciasByNumero = new Map(this.instancias.map(instancia => [instancia.nro, instancia]));
-    this.instanciasById = new Map(this.instancias.map(instancia => [instancia.idIE, instancia]));
-    this.rebuildEvaluaciones();
   }
 
   private buildSavePayload(): GuardarCalificacionCambio[] {
@@ -810,6 +786,29 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     return parsed;
+  }
+
+  private recomputeEstadoAvisos(): void {
+    const pendientesConNotas = this.instancias.filter(instancia =>
+      instancia.estado !== 'Evaluada' && this.instanciaTieneNotas(instancia),
+    ).length;
+    const evaluadasSinNotas = this.instancias.filter(instancia =>
+      instancia.estado === 'Evaluada' && !this.instanciaTieneNotas(instancia),
+    ).length;
+
+    this.estadoAvisoPendienteConNotas = pendientesConNotas > 0
+      ? `Hay ${pendientesConNotas} IE${pendientesConNotas === 1 ? '' : 's'} con notas cargadas pero todavía no marcadas como evaluadas.`
+      : '';
+
+    this.estadoAvisoEvaluadaSinNotas = evaluadasSinNotas > 0
+      ? `Hay ${evaluadasSinNotas} Instancia Evaluativa${evaluadasSinNotas === 1 ? '' : 's'} evaluada${evaluadasSinNotas === 1 ? '' : 's'} pero sin notas asociadas todavía.`
+      : '';
+  }
+
+  private instanciaTieneNotas(instancia: InstanciaEvaluativaResumen): boolean {
+    return this.estudiantes.some(estudiante =>
+      this.tiposCalificacion.some(tipo => this.getSavedCellValue(estudiante.idEstudiante, instancia.nro, tipo) !== null),
+    );
   }
 
   private cellKey(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
