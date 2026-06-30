@@ -161,6 +161,22 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
       },
       {
+        path: 'reportes-estrategicos/asistencia',
+        ...withSectionData('reportesEstrategicosAsistencia'),
+        loadComponent: () =>
+          import('./features/reportes-estrategicos/components/dashboard-asistencia/dashboard-asistencia.component')
+            .then(m => m.DashboardAsistenciaComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo'])],
+      },
+      {
+        path: 'reportes-estrategicos/calificaciones',
+        ...withSectionData('reportesEstrategicosCalificaciones'),
+        loadComponent: () =>
+          import('./features/reportes-estrategicos/components/dashboard-calificaciones/dashboard-calificaciones.component')
+            .then(m => m.DashboardCalificacionesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo'])],
+      },
+      {
         path: 'gestion-usuarios',
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
@@ -214,6 +230,22 @@ export const routes: Routes = [
             .then(m => m.MisEcCalificacionesComponent),
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
         canDeactivate: [calificacionesCambiosPendientesGuard],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/reportes',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('./features/mis-espacios-curriculares/components/mis-ec-reportes/mis-ec-reportes.component')
+            .then(m => m.MisEcReportesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/evaluaciones',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('./features/mis-espacios-curriculares/components/mis-ec-evaluaciones/mis-ec-evaluaciones.component')
+            .then(m => m.MisEcEvaluacionesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
       {
         path: 'mis-espacios-curriculares/:idEC/programas',

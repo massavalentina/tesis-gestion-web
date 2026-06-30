@@ -72,6 +72,10 @@ export class MisEcDetailComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones']);
   }
 
+  navegarEvaluaciones(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'evaluaciones']);
+  }
+
   navegarAsistencia(): void {
     if (!this.espacio) return;
     this.router.navigate(['/reporte-asistencia-docente'], {
@@ -93,5 +97,9 @@ export class MisEcDetailComponent implements OnInit {
 
   navegarCalendario(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calendario']);
+  }
+
+  navegarReportes(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'reportes']);
   }
 }

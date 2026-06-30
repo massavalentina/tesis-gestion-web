@@ -104,8 +104,8 @@ export class AuthService {
 
     if (payload.exp * 1000 <= Date.now()) {
       localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-      this._currentUser$.next(null);
+      // Refresh token se conserva — el interceptor lo usará al primer 401
+      this._currentUser$.next(payload);
       return;
     }
 

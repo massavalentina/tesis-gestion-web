@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideEchartsCore } from 'ngx-echarts';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideNativeDateAdapter(),
     provideAnimations(),
+    provideEchartsCore({ echarts: () => import('echarts') }),
     {
       provide: APP_INITIALIZER,
       useFactory: (authService: AuthService) => () => authService.initFromStorage(),

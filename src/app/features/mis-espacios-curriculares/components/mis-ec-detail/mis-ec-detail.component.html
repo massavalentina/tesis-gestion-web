@@ -49,8 +49,7 @@
     <div class="tiles">
 
       <!-- Calificaciones -->
-      <div class="tile is-link">
-        <span class="tile-tag">Próximamente</span>
+      <div class="tile is-active" (click)="navegarCalificaciones()" tabindex="0" (keyup.enter)="navegarCalificaciones()" role="button">
         <div class="tile-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -88,8 +87,7 @@
       </div>
 
       <!-- Evaluaciones — link placeholder -->
-      <div class="tile is-link">
-        <span class="tile-tag">Próximamente</span>
+      <div class="tile is-active" (click)="navegarEvaluaciones()" tabindex="0" (keyup.enter)="navegarEvaluaciones()" role="button">
         <div class="tile-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -141,6 +139,17 @@
         </div>
         <h4>Calendario</h4>
         <p>Visualizá las clases planificadas del mes en un calendario mensual.</p>
+      </div>
+
+      <!-- Reportes — funcional -->
+      <div class="tile is-active" (click)="navegarReportes()" tabindex="0" (keyup.enter)="navegarReportes()" role="button">
+        <div class="tile-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
+          </svg>
+        </div>
+        <h4>Reportes</h4>
+        <p>Dashboard de calificaciones: promedios, distribución, estados y alumnos en riesgo.</p>
       </div>
 
     </div>

@@ -1,0 +1,231 @@
+<div class="dashboard-container">
+
+  <!-- ── Filtros ──────────────────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+    <mat-form-field appearance="outline" class="filtro-field filtro-anio">
+      <mat-label>Año lectivo</mat-label>
+      <mat-select [(ngModel)]="anioLectivo" (ngModelChange)="onAnioChange()">
+        <mat-option [value]="2025">2025</mat-option>
+        <mat-option [value]="2026">2026</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-field filtro-rango">
+      <mat-label>Período</mat-label>
+      <mat-date-range-input [rangePicker]="rangePicker" [min]="minDatePeriodo" [max]="maxDatePeriodo">
+        <input matStartDate [(ngModel)]="fechaDesde" placeholder="Desde">
+        <input matEndDate [(ngModel)]="fechaHasta" placeholder="Hasta">
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #rangePicker></mat-date-range-picker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-field filtro-curso">
+      <mat-label>Curso</mat-label>
+      <mat-select [(ngModel)]="cursoId" (ngModelChange)="onCursoChange()">
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-field filtro-ec" *ngIf="espacios.length > 0">
+      <mat-label>Espacio Curricular</mat-label>
+      <mat-select [(ngModel)]="ecId">
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let ec of espacios" [value]="ec.idEC">{{ ec.nombre }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filtros-actions">
+      <button mat-flat-button color="primary" (click)="aplicarFiltros()" [disabled]="cargando">
+        <mat-icon>filter_list</mat-icon> Aplicar
+      </button>
+      <button mat-stroked-button (click)="limpiarFiltros()" [disabled]="cargando">
+        <mat-icon>clear</mat-icon> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Spinner ──────────────────────────────────────────────────────────────── -->
+  <div class="spinner-container" *ngIf="cargando">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <!-- ── Contenido ────────────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!cargando && dashboard">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SECCIÓN: GENERAL                                                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div #seccionGeneral>
+      <div class="section-title-row">
+        <h2 class="section-title">Indicadores Estratégicos de Asistencia - General</h2>
+        <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdfGeneral()" [disabled]="exportandoPdfGeneral">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ exportandoPdfGeneral ? 'Exportando...' : 'Exportar PDF' }}
+        </button>
+      </div>
+
+      <!-- Cards General (5 cards en fila) -->
+      <div class="kpi-grid kpi-grid--5">
+        <div class="kpi-card" *ngFor="let kpi of cardsGeneral">
+          <button class="kpi-info-btn" [matTooltip]="kpi.tooltip" matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+            <mat-icon>info_outline</mat-icon>
+          </button>
+          <div class="kpi-icon-circle" [style.background]="kpi.color + '18'" [style.color]="kpi.color">
+            <mat-icon>{{ kpi.icon }}</mat-icon>
+          </div>
+          <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:'1.0-1' }}{{ kpi.suffix }}</span>
+          <span class="kpi-label">{{ kpi.label }}</span>
+        </div>
+      </div>
+
+      <!-- Gráficos General: Barras inasistencias + Torta distribución -->
+      <div class="charts-row charts-row--2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Promedio de Inasistencias por Curso</h3>
+            <div class="chart-header-actions">
+              <button mat-icon-button (click)="toggleOrdenInasistencias()">
+                <mat-icon>{{ ordenInasistenciasAsc ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              </button>
+              <button mat-icon-button (click)="abrirFullscreen(chartInasistenciasCurso, 'Promedio de Inasistencias por Curso')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="chart-body chart-bar" echarts [options]="chartInasistenciasCurso"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Distribución Porcentual de Inasistencias</h3>
+            <div class="chart-header-actions">
+              <button mat-icon-button
+                      matTooltip="Se distribuye en porcentajes la cantidad total de inasistencias, en base a si fueron por ausencias, llegadas tarde o retiros anticipados."
+                      matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              <button mat-icon-button (click)="abrirFullscreen(chartDistribucion, 'Distribución Porcentual de Inasistencias')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="chart-body chart-pie" echarts [options]="chartDistribucion"></div>
+        </div>
+      </div>
+
+      <!-- Gráfico Tendencia + Distribución Subtipos -->
+      <div class="charts-row charts-row--tendencia">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Evolución de la Tendencia de Inasistencia por Curso</h3>
+            <div class="chart-header-actions">
+              <mat-form-field appearance="outline" class="filtro-field filtro-tendencia">
+                <mat-label>Cursos</mat-label>
+                <mat-select multiple [(ngModel)]="cursosTendencia" (ngModelChange)="onCursosTendenciaChange()">
+                  <mat-option value="__todos__">Todos</mat-option>
+                  <mat-option *ngFor="let t of opcionesCursosTendencia" [value]="t">{{ t }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-icon-button (click)="abrirFullscreen(chartTendencia, 'Evolución de la Tendencia de Inasistencia por Curso')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="chart-body chart-line" echarts [options]="chartTendencia"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Distribución Porcentual</h3>
+            <div class="chart-header-actions">
+              <button mat-icon-button
+                      matTooltip="Se distribuye en porcentajes la cantidad de llegadas tarde o retiros anticipados según su tipo."
+                      matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              <button mat-icon-button (click)="abrirFullscreen(chartSubtipos, 'Distribución Porcentual')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="subtipos-selector">
+            <mat-form-field appearance="outline" class="filtro-field filtro-subtipo">
+              <mat-select [(ngModel)]="modoSubtipos" (ngModelChange)="onModoSubtiposChange()">
+                <mat-option value="llegadasTarde">Llegadas Tarde</mat-option>
+                <mat-option value="retiros">Retiros Anticipados</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="chart-body chart-pie" echarts [options]="chartSubtipos"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SECCIÓN: ESPACIOS CURRICULARES                                         -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div #seccionEC>
+      <div class="section-title-row">
+        <h2 class="section-title section-title--ec">Indicadores Estratégicos de Asistencia - Espacios Curriculares</h2>
+        <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdfEC()" [disabled]="exportandoPdfEC">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ exportandoPdfEC ? 'Exportando...' : 'Exportar PDF' }}
+        </button>
+      </div>
+
+      <div class="ec-section">
+        <!-- Cards EC (2 cards apiladas a la izquierda) -->
+        <div class="ec-cards">
+          <div class="kpi-card kpi-card--ec" *ngFor="let kpi of cardsEC">
+            <button class="kpi-info-btn" [matTooltip]="kpi.tooltip" matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <div class="kpi-icon-circle" [style.background]="kpi.color + '18'" [style.color]="kpi.color">
+              <mat-icon>{{ kpi.icon }}</mat-icon>
+            </div>
+            <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:'1.0-1' }}{{ kpi.suffix }}</span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+          </div>
+        </div>
+
+        <!-- Gráfico barras EC -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Porcentaje de Asistencia por Espacio Curricular</h3>
+            <div class="chart-header-actions">
+              <button mat-icon-button (click)="toggleOrdenEC()">
+                <mat-icon>{{ ordenECAsc ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              </button>
+              <button mat-icon-button (click)="abrirFullscreen(chartAsistenciaEC, '% Asistencia por Espacio Curricular')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="chart-body chart-bar-ec" echarts [options]="chartAsistenciaEC"></div>
+        </div>
+
+        <!-- Gráfico torta EC: Distribución de inasistencias -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Distribución de Inasistencias por EC</h3>
+            <div class="chart-header-actions">
+              <button mat-icon-button
+                      matTooltip="Las inasistencias a un espacio curricular se pueden dar por ausencias, llegadas tarde o retiros anticipados. Este gráfico lo desglosa porcentualmente."
+                      matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+              <button mat-icon-button (click)="abrirFullscreen(chartDistribucionEC, 'Distribución de Inasistencias por EC')" matTooltip="Pantalla completa">
+                <mat-icon>fullscreen</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="chart-body chart-pie-ec" echarts [options]="chartDistribucionEC"></div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

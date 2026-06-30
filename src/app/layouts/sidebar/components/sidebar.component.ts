@@ -12,6 +12,7 @@ import {
   AppNavItem,
   ASISTENCIA_NAV_ITEMS,
   HOME_NAV_ITEM,
+  REPORTES_ESTRATEGICOS_NAV_ITEMS,
   SECONDARY_NAV_ITEMS,
 } from '../../../core/navigation/app-navigation.config';
 import { UiPlatformService } from '../../../core/services/ui-platform.service';
@@ -115,6 +116,29 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>{{ item.label }}</span>
         </a>
 
+        <!-- Reportes Estratégicos (padre desplegable) — solo Equipo Directivo/Admin -->
+        <ng-container *ngIf="puedeVerReportesEstrategicos">
+          <button class="item parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleReportes()">
+            <mat-icon>insights</mat-icon>
+            <span>Reportes Estratégicos</span>
+            <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
+          </button>
+
+          <div class="submenu" *ngIf="reportesOpen" @expandCollapse>
+            <a class="subitem"
+               *ngFor="let item of visibleReportesItems; trackBy: trackByRoute"
+               matRipple
+               [routerLink]="item.route"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: item.exact }">
+              {{ item.label }}
+            </a>
+          </div>
+        </ng-container>
+
         <!-- Cuentas (padre desplegable) — solo Secretario/Admin -->
         <ng-container *ngIf="puedeGestionarUsuarios">
           <button class="item parent"
@@ -214,6 +238,30 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>{{ item.label }}</span>
         </a>
 
+        <!-- Reportes Estratégicos — solo Equipo Directivo/Admin (mobile) -->
+        <ng-container *ngIf="puedeVerReportesEstrategicos">
+          <button class="item parent"
+                  type="button"
+                  matRipple
+                  (click)="toggleReportes()">
+            <mat-icon>insights</mat-icon>
+            <span>Reportes Estratégicos</span>
+            <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
+          </button>
+
+          <div class="submenu" *ngIf="reportesOpen" @expandCollapse>
+            <a class="subitem"
+               *ngFor="let item of visibleReportesItems; trackBy: trackByRoute"
+               matRipple
+               [routerLink]="item.route"
+               routerLinkActive="is-active-sub"
+               [routerLinkActiveOptions]="{ exact: item.exact }"
+               (click)="closeMobile()">
+              {{ item.label }}
+            </a>
+          </div>
+        </ng-container>
+
         <!-- Cuentas — solo Secretario/Admin -->
         <ng-container *ngIf="puedeGestionarUsuarios">
           <button class="item parent"
@@ -253,13 +301,16 @@ export class SidebarComponent {
   isMobile = false;
   open = false;
   asistenciaOpen = false;
+  reportesOpen = false;
   cuentasOpen = false;
   scannerActivo = false;
   visibleAsistenciaItems: AppNavItem[] = [];
   visibleDesktopSecondaryItems: AppNavItem[] = [];
   visibleMobileSecondaryItems: AppNavItem[] = [];
+  visibleReportesItems: AppNavItem[] = [];
 
   readonly puedeGestionarUsuarios: boolean;
+  readonly puedeVerReportesEstrategicos: boolean;
   private readonly esAdmin: boolean;
   private readonly usuarioEsPreceptorDelegado: boolean;
 
@@ -273,6 +324,7 @@ export class SidebarComponent {
     this.usuarioEsPreceptorDelegado = !!usuario?.esPreceptorDelegado;
 
     this.puedeGestionarUsuarios = authService.tieneRol('Secretario') || this.esAdmin;
+    this.puedeVerReportesEstrategicos = authService.tieneRol('Equipo Directivo') || this.esAdmin;
     this.uiPlatformService.isMobile$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
@@ -295,16 +347,34 @@ export class SidebarComponent {
 
   toggleAsistencia() {
     this.asistenciaOpen = !this.asistenciaOpen;
-    if (this.asistenciaOpen) this.cuentasOpen = false;
+    if (this.asistenciaOpen) {
+      this.cuentasOpen = false;
+      this.reportesOpen = false;
+    }
   }
 
   closeAsistencia() {
     this.asistenciaOpen = false;
   }
 
+  toggleReportes() {
+    this.reportesOpen = !this.reportesOpen;
+    if (this.reportesOpen) {
+      this.asistenciaOpen = false;
+      this.cuentasOpen = false;
+    }
+  }
+
+  closeReportes() {
+    this.reportesOpen = false;
+  }
+
   toggleCuentas() {
     this.cuentasOpen = !this.cuentasOpen;
-    if (this.cuentasOpen) this.asistenciaOpen = false;
+    if (this.cuentasOpen) {
+      this.asistenciaOpen = false;
+      this.reportesOpen = false;
+    }
   }
 
   closeCuentas() {
@@ -325,6 +395,7 @@ export class SidebarComponent {
     const visibleSecondaryItems = SECONDARY_NAV_ITEMS.filter(item => this.canShowNavItem(item));
     this.visibleDesktopSecondaryItems = visibleSecondaryItems.filter(item => item.sectionId !== 'perfil');
     this.visibleMobileSecondaryItems = visibleSecondaryItems;
+    this.visibleReportesItems = REPORTES_ESTRATEGICOS_NAV_ITEMS.filter(item => this.canShowNavItem(item));
   }
 
   private canShowNavItem(item: AppNavItem): boolean {
@@ -356,6 +427,9 @@ export class SidebarComponent {
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
+      case 'reportesEstrategicosAsistencia':
+      case 'reportesEstrategicosCalificaciones':
+        return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
       case 'perfil':
       case 'home':
         return true;
