@@ -44,6 +44,33 @@ $muted: #64748b;
   }
 }
 
+// ── Toggle Turno ─────────────────────────────────────────────────────────────
+
+.pd-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 8px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+
+  &:hover:not(:disabled) { color: #1e293b; }
+  &--active { color: #1e40af; border-bottom-color: #1e40af; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
 // ── Filtros ──────────────────────────────────────────────────────────────────
 
 .filtros-bar {

@@ -54,8 +54,9 @@ export interface DashboardFiltros {
   anioLectivo: number;
   desde?: string;
   hasta?: string;
-  cursoId?: string;
+  cursoIds?: string[];
   ecId?: string;
+  turno?: 'GENERAL' | 'TARDE';
 }
 
 export interface OpcionCurso {

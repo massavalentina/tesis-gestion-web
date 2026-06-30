@@ -318,6 +318,15 @@ export interface ProgramaEstructuradoData {
   }[];
 }
 
+export interface DashboardPdfData {
+  titulo: string;
+  subtitulo: string;
+  nombreArchivo: string;
+  filtrosAplicados: string;
+  kpis: { label: string; valor: string }[];
+  charts: { titulo: string; dataUrl: string }[];
+}
+
 // ─── Servicio ─────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -1564,6 +1573,87 @@ export class PdfReporteService {
   }
 
   // ── Exportar sección del dashboard como imagen en PDF ────────────────────
+
+  async exportarDashboardGeneralPdf(data: DashboardPdfData): Promise<void> {
+    const logo = await this.logoPromise;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth(); // 297
+    const pageH = doc.internal.pageSize.getHeight(); // 210
+
+    const contentY = drawPageHeader(doc, data.titulo, data.subtitulo, logo);
+
+    // Filtros + fecha emisión
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(data.filtrosAplicados, 14, contentY + 4);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, contentY + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    const bodyY = contentY + 10; // Y donde empieza el contenido real
+    const bodyH = pageH - bodyY - 6; // altura disponible
+
+    // ── Layout: columna izquierda (KPI cards) + columna derecha (charts 2x2) ──
+    const leftW  = 52;                       // ancho columna cards
+    const gap    = 5;
+    const rightX = 14 + leftW + gap;        // x inicio charts = 71
+    const rightW = pageW - rightX - 10;     // ancho área charts ≈ 216
+
+    // KPI cards — apiladas verticalmente
+    const cardH    = data.kpis.length > 0 ? Math.min(bodyH / data.kpis.length - 3, 32) : 32;
+    const cardGap  = (bodyH - cardH * data.kpis.length) / Math.max(data.kpis.length - 1, 1);
+    data.kpis.forEach((kpi, i) => {
+      const cy = bodyY + i * (cardH + Math.min(cardGap, 4));
+      doc.setFillColor(240, 245, 250);
+      doc.roundedRect(14, cy, leftW, cardH, 3, 3, 'F');
+      doc.setDrawColor(200, 215, 235);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, cy, leftW, cardH, 3, 3, 'S');
+
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...HEADER_BG);
+      doc.text(kpi.valor, 14 + leftW / 2, cy + cardH * 0.45, { align: 'center' });
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      const labelLines = doc.splitTextToSize(kpi.label, leftW - 4) as string[];
+      doc.text(labelLines, 14 + leftW / 2, cy + cardH * 0.72, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // Charts 2×2 en columna derecha
+    const chartCols = 2;
+    const chartRows = Math.ceil(data.charts.length / chartCols);
+    const chartGapH = 6;
+    const chartTitleH = 7;
+    const chartW = (rightW - (chartCols - 1) * 4) / chartCols;
+    const chartH = (bodyH - chartRows * chartTitleH - (chartRows - 1) * chartGapH) / chartRows;
+
+    data.charts.forEach((ch, i) => {
+      const col = i % chartCols;
+      const row = Math.floor(i / chartCols);
+      const cx  = rightX + col * (chartW + 4);
+      const cy  = bodyY + row * (chartH + chartTitleH + chartGapH);
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(ch.titulo, cx + chartW / 2, cy + 5, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+
+      // Borde sutil del chart
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy + chartTitleH, chartW, chartH, 2, 2, 'S');
+
+      try {
+        doc.addImage(ch.dataUrl, 'PNG', cx + 0.5, cy + chartTitleH + 0.5, chartW - 1, chartH - 1);
+      } catch { /* skip if dataUrl empty */ }
+    });
+
+    doc.save(data.nombreArchivo);
+  }
 
   async exportarDashboardSeccion(data: {
     titulo: string;

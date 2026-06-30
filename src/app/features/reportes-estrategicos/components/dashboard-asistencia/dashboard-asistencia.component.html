@@ -22,8 +22,7 @@
 
     <mat-form-field appearance="outline" class="filtro-field filtro-curso">
       <mat-label>Curso</mat-label>
-      <mat-select [(ngModel)]="cursoId" (ngModelChange)="onCursoChange()">
-        <mat-option value="">Todos</mat-option>
+      <mat-select multiple [(ngModel)]="cursoIds" (ngModelChange)="onCursoChange()">
         <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
       </mat-select>
     </mat-form-field>
@@ -46,6 +45,12 @@
     </div>
   </div>
 
+  <!-- ── Toggle Turno ─────────────────────────────────────────────────────────── -->
+  <div class="pd-tabs">
+    <button class="tab-btn" [class.tab-btn--active]="turno === 'GENERAL'" (click)="setTurno('GENERAL')" [disabled]="cargando">General</button>
+    <button class="tab-btn" [class.tab-btn--active]="turno === 'TARDE'" (click)="setTurno('TARDE')" [disabled]="cargando">Tarde</button>
+  </div>
+
   <!-- ── Spinner ──────────────────────────────────────────────────────────────── -->
   <div class="spinner-container" *ngIf="cargando">
     <mat-spinner diameter="48"></mat-spinner>
@@ -57,7 +62,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- SECCIÓN: GENERAL                                                       -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <div #seccionGeneral>
+    <div>
       <div class="section-title-row">
         <h2 class="section-title">Indicadores Estratégicos de Asistencia - General</h2>
         <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdfGeneral()" [disabled]="exportandoPdfGeneral">
@@ -94,7 +99,7 @@
               </button>
             </div>
           </div>
-          <div class="chart-body chart-bar" echarts [options]="chartInasistenciasCurso"></div>
+          <div class="chart-body chart-bar" echarts [options]="chartInasistenciasCurso" (chartInit)="onChartInit('inasistenciasCurso', $event)"></div>
         </div>
 
         <div class="chart-card">
@@ -111,7 +116,7 @@
               </button>
             </div>
           </div>
-          <div class="chart-body chart-pie" echarts [options]="chartDistribucion"></div>
+          <div class="chart-body chart-pie" echarts [options]="chartDistribucion" (chartInit)="onChartInit('distribucion', $event)"></div>
         </div>
       </div>
 
@@ -119,7 +124,7 @@
       <div class="charts-row charts-row--tendencia">
         <div class="chart-card">
           <div class="chart-header">
-            <h3>Evolución de la Tendencia de Inasistencia por Curso</h3>
+            <h3>Evolución de Tendencia de Inasistencia</h3>
             <div class="chart-header-actions">
               <mat-form-field appearance="outline" class="filtro-field filtro-tendencia">
                 <mat-label>Cursos</mat-label>
@@ -128,12 +133,12 @@
                   <mat-option *ngFor="let t of opcionesCursosTendencia" [value]="t">{{ t }}</mat-option>
                 </mat-select>
               </mat-form-field>
-              <button mat-icon-button (click)="abrirFullscreen(chartTendencia, 'Evolución de la Tendencia de Inasistencia por Curso')" matTooltip="Pantalla completa">
+              <button mat-icon-button (click)="abrirFullscreen(chartTendencia, 'Evolución de Tendencia de Inasistencia')" matTooltip="Pantalla completa">
                 <mat-icon>fullscreen</mat-icon>
               </button>
             </div>
           </div>
-          <div class="chart-body chart-line" echarts [options]="chartTendencia"></div>
+          <div class="chart-body chart-line" echarts [options]="chartTendencia" (chartInit)="onChartInit('tendencia', $event)"></div>
         </div>
 
         <div class="chart-card">
@@ -158,7 +163,7 @@
               </mat-select>
             </mat-form-field>
           </div>
-          <div class="chart-body chart-pie" echarts [options]="chartSubtipos"></div>
+          <div class="chart-body chart-pie" echarts [options]="chartSubtipos" (chartInit)="onChartInit('subtipos', $event)"></div>
         </div>
       </div>
     </div>
@@ -166,7 +171,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- SECCIÓN: ESPACIOS CURRICULARES                                         -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <div #seccionEC>
+    <div>
       <div class="section-title-row">
         <h2 class="section-title section-title--ec">Indicadores Estratégicos de Asistencia - Espacios Curriculares</h2>
         <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdfEC()" [disabled]="exportandoPdfEC">
@@ -203,7 +208,7 @@
               </button>
             </div>
           </div>
-          <div class="chart-body chart-bar-ec" echarts [options]="chartAsistenciaEC"></div>
+          <div class="chart-body chart-bar-ec" echarts [options]="chartAsistenciaEC" (chartInit)="onChartInit('asistenciaEC', $event)"></div>
         </div>
 
         <!-- Gráfico torta EC: Distribución de inasistencias -->
@@ -221,7 +226,7 @@
               </button>
             </div>
           </div>
-          <div class="chart-body chart-pie-ec" echarts [options]="chartDistribucionEC"></div>
+          <div class="chart-body chart-pie-ec" echarts [options]="chartDistribucionEC" (chartInit)="onChartInit('distribucionEC', $event)"></div>
         </div>
       </div>
     </div>

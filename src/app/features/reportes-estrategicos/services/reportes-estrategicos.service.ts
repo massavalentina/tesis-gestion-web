@@ -15,8 +15,11 @@ export class ReportesEstrategicosService {
     let params = new HttpParams().set('anioLectivo', filtros.anioLectivo.toString());
     if (filtros.desde) params = params.set('desde', filtros.desde);
     if (filtros.hasta) params = params.set('hasta', filtros.hasta);
-    if (filtros.cursoId) params = params.set('cursoId', filtros.cursoId);
+    if (filtros.cursoIds?.length) {
+      filtros.cursoIds.forEach(id => params = params.append('cursoId', id));
+    }
     if (filtros.ecId) params = params.set('ecId', filtros.ecId);
+    if (filtros.turno === 'TARDE') params = params.set('turno', 'TARDE');
 
     return this.http.get<DashboardAsistencia>(
       `${this.apiUrl}/api/reportes-estrategicos/asistencia`,

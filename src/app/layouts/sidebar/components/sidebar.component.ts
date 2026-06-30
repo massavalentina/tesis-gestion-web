@@ -238,8 +238,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>{{ item.label }}</span>
         </a>
 
-        <!-- Reportes Estratégicos — solo Equipo Directivo/Admin (mobile) -->
-        <ng-container *ngIf="puedeVerReportesEstrategicos">
+        <!-- Reportes Estratégicos — solo Equipo Directivo/Admin (mobile — oculto) -->
+        <ng-container *ngIf="puedeVerReportesEstrategicos && !isMobile">
           <button class="item parent"
                   type="button"
                   matRipple
@@ -425,6 +425,12 @@ export class SidebarComponent {
           || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
       case 'fichaAlumno':
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
+      case 'calendario':
+        return this.esAdmin
+          || this.authService.tieneRol('Equipo Directivo')
+          || this.authService.tieneRol('Secretario')
+          || this.authService.tieneRol('Docente')
+          || this.authService.tieneRol('Preceptor');
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reportesEstrategicosAsistencia':
