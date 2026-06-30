@@ -23,6 +23,7 @@
     <mat-form-field appearance="outline" class="filtro-field filtro-curso">
       <mat-label>Curso</mat-label>
       <mat-select multiple [(ngModel)]="cursoIds" (ngModelChange)="onCursoChange()">
+        <mat-option value="__todos__">Todos</mat-option>
         <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
       </mat-select>
     </mat-form-field>
@@ -80,7 +81,7 @@
           <div class="kpi-icon-circle" [style.background]="kpi.color + '18'" [style.color]="kpi.color">
             <mat-icon>{{ kpi.icon }}</mat-icon>
           </div>
-          <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:'1.0-1' }}{{ kpi.suffix }}</span>
+          <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:(kpi.format || '1.0-1') }}{{ kpi.suffix }}</span>
           <span class="kpi-label">{{ kpi.label }}</span>
         </div>
       </div>
@@ -143,14 +144,14 @@
 
         <div class="chart-card">
           <div class="chart-header">
-            <h3>Distribución Porcentual</h3>
+            <h3>{{ tituloSubtipos }}</h3>
             <div class="chart-header-actions">
               <button mat-icon-button
                       matTooltip="Se distribuye en porcentajes la cantidad de llegadas tarde o retiros anticipados según su tipo."
                       matTooltipPosition="above" matTooltipClass="kpi-tooltip">
                 <mat-icon>info_outline</mat-icon>
               </button>
-              <button mat-icon-button (click)="abrirFullscreen(chartSubtipos, 'Distribución Porcentual')" matTooltip="Pantalla completa">
+              <button mat-icon-button (click)="abrirFullscreen(chartSubtipos, tituloSubtipos)" matTooltip="Pantalla completa">
                 <mat-icon>fullscreen</mat-icon>
               </button>
             </div>
@@ -190,7 +191,7 @@
             <div class="kpi-icon-circle" [style.background]="kpi.color + '18'" [style.color]="kpi.color">
               <mat-icon>{{ kpi.icon }}</mat-icon>
             </div>
-            <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:'1.0-1' }}{{ kpi.suffix }}</span>
+            <span class="kpi-value" [style.color]="kpi.color">{{ val(kpi.key) | number:(kpi.format || '1.0-1') }}{{ kpi.suffix }}</span>
             <span class="kpi-label">{{ kpi.label }}</span>
           </div>
         </div>

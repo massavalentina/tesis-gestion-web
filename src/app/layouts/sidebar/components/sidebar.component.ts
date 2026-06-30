@@ -122,7 +122,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                   type="button"
                   matRipple
                   (click)="toggleReportes()">
-            <mat-icon>insights</mat-icon>
+            <mat-icon>analytics</mat-icon>
             <span>Reportes Estratégicos</span>
             <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
           </button>
@@ -244,7 +244,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                   type="button"
                   matRipple
                   (click)="toggleReportes()">
-            <mat-icon>insights</mat-icon>
+            <mat-icon>analytics</mat-icon>
             <span>Reportes Estratégicos</span>
             <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
           </button>
@@ -425,12 +425,6 @@ export class SidebarComponent {
           || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
       case 'fichaAlumno':
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
-      case 'calendario':
-        return this.esAdmin
-          || this.authService.tieneRol('Equipo Directivo')
-          || this.authService.tieneRol('Secretario')
-          || this.authService.tieneRol('Docente')
-          || this.authService.tieneRol('Preceptor');
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reportesEstrategicosAsistencia':
