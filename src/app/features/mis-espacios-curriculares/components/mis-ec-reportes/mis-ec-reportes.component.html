@@ -49,45 +49,42 @@
       </div>
     </div>
 
-    <!-- Estado vacío -->
-    <div class="state-center" *ngIf="!hayDatos">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
-        <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
-      </svg>
-      <p>Todavía no hay datos de calificaciones para mostrar.</p>
+    <!-- Pestañas -->
+    <div class="tabs">
+      <button class="tab" [class.active]="activeTab === 'notas'" (click)="setTab('notas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
+        </svg>
+        Calificaciones
+      </button>
+      <button class="tab" [class.active]="activeTab === 'eval'" (click)="setTab('eval')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="8" y="2" width="8" height="4" rx="1"/>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <path d="m9 14 2 2 4-4"/>
+        </svg>
+        Evaluaciones
+      </button>
+      <button class="tab" [class.active]="activeTab === 'programa'" (click)="setTab('programa')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        Programa
+      </button>
     </div>
-
-    <!-- Dashboard -->
-    <ng-container *ngIf="hayDatos">
-
-      <!-- Pestañas -->
-      <div class="tabs">
-        <button class="tab" [class.active]="activeTab === 'notas'" (click)="setTab('notas')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
-          </svg>
-          Calificaciones
-        </button>
-        <button class="tab" [class.active]="activeTab === 'eval'" (click)="setTab('eval')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="8" y="2" width="8" height="4" rx="1"/>
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-            <path d="m9 14 2 2 4-4"/>
-          </svg>
-          Evaluaciones
-        </button>
-        <button class="tab" [class.active]="activeTab === 'programa'" (click)="setTab('programa')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
-          Programa
-        </button>
-      </div>
 
       <!-- ═══ VISTA NOTAS ═══ -->
       <div *ngIf="activeTab === 'notas'">
 
+        <div class="state-center" *ngIf="!hayDatos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
+            <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
+          </svg>
+          <p>Todavía no hay datos de calificaciones para mostrar.</p>
+        </div>
+
+        <ng-container *ngIf="hayDatos">
         <div class="filterbar">
           <span class="fl">Instancia evaluativa</span>
           <select (change)="onFiltroChange($event)">
@@ -159,11 +156,23 @@
           </div>
           <div echarts [options]="histOptions" class="chart-body chart-hist"></div>
         </div>
+        </ng-container>
 
       </div>
 
       <!-- ═══ VISTA EVALUACIONES ═══ -->
-      <div *ngIf="activeTab === 'eval'" class="eval-grid">
+      <div *ngIf="activeTab === 'eval'">
+
+        <div class="state-center" *ngIf="!hayDatos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
+            <rect x="8" y="2" width="8" height="4" rx="1"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="m9 14 2 2 4-4"/>
+          </svg>
+          <p>Todavía no hay datos de evaluaciones para mostrar.</p>
+        </div>
+
+        <div *ngIf="hayDatos" class="eval-grid">
 
         <!-- Distribución de Estados (torta) -->
         <div class="chart-card">
@@ -274,6 +283,7 @@
           <div echarts [options]="optionBarComp" class="chart-body chart-eval-comp"></div>
         </div>
 
+        </div><!-- /hayDatos eval-grid -->
       </div>
 
       <!-- ═══ VISTA PROGRAMA ═══ -->
@@ -335,13 +345,13 @@
               <div echarts [options]="optionDonutAvance" class="chart-body chart-donut"></div>
             </div>
 
-            <!-- Evaluado del programa (hardcodeado para Teatro) -->
+            <!-- Evaluado del programa (datos reales de evaluaciones tomadas) -->
             <div class="chart-card">
               <div class="chart-header">
                 <h3>Evaluado del programa</h3>
-                <div class="chart-header-actions" *ngIf="hayDatos">
+                <div class="chart-header-actions" *ngIf="gestionCargada">
                   <button class="kpi-info-btn kpi-info-btn--inline"
-                          matTooltip="Porcentaje de temas con al menos una evaluación rendida"
+                          matTooltip="Porcentaje de temas con al menos una evaluación tomada"
                           matTooltipPosition="above" matTooltipClass="kpi-tooltip">
                     <mat-icon>info_outline</mat-icon>
                   </button>
@@ -352,10 +362,10 @@
                   </button>
                 </div>
               </div>
-              <div echarts [options]="optionDonutEval" class="chart-body chart-donut" *ngIf="hayDatos"></div>
-              <div class="prog-pronto" *ngIf="!hayDatos">
+              <div echarts [options]="optionDonutEval" class="chart-body chart-donut" *ngIf="gestionCargada"></div>
+              <div class="prog-pronto" *ngIf="!gestionCargada">
                 <mat-icon>schedule</mat-icon>
-                <p>Próximamente disponible</p>
+                <p>Cargando…</p>
               </div>
             </div>
 
@@ -380,7 +390,7 @@
                       </div>
                       <span class="prog-metric-count">{{ dictadosUnidad(u).dictados }}/{{ dictadosUnidad(u).total }}</span>
                     </div>
-                    <div class="prog-metric" *ngIf="hayDatos">
+                    <div class="prog-metric" *ngIf="gestionCargada">
                       <span class="prog-metric-label">Evaluados</span>
                       <div class="prog-metric-bar">
                         <div class="prog-metric-fill prog-metric-fill--blue"
@@ -396,8 +406,6 @@
 
         </ng-container>
       </div>
-
-    </ng-container>
 
   </ng-container>
 </div>

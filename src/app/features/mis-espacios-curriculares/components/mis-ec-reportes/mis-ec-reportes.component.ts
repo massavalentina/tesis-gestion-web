@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, forkJoin, of, switchMap } from 'rxjs';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,14 +12,9 @@ import { MisEcItem } from '../../models/mis-ec.model';
 import { ChartFullscreenDialogComponent } from '../../../reportes-estrategicos/components/chart-fullscreen-dialog/chart-fullscreen-dialog.component';
 import { PlanificacionService } from '../../services/planificacion.service';
 import { ArbolPlanificacionDto, UnidadArbolDto } from '../../models/planificacion.model';
+import { EvaluacionesService } from '../../services/evaluaciones.service';
 
 const ESPACIO_DEMO = '6°B Teatro';
-
-// Datos de evaluados hardcodeados — solo para 6°B Teatro hasta que haya backend
-const EVAL_TEATRO = {
-  donut: { evaluados: 2, total: 4 },
-  unidades: { 1: { evaluados: 2, totalEval: 2 }, 2: { evaluados: 0, totalEval: 2 } } as Record<number, { evaluados: number; totalEval: number }>,
-};
 
 const COLORS = { aprob: '#1f4e87', recup: '#7ba9d6', desapTema: '#f0a35e', desap: '#e23744' };
 const FONT = 'Inter, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -150,6 +145,9 @@ export class MisEcReportesComponent implements OnInit {
   optionDonutAvance: any = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   optionDonutEval: any = {};
+  evaluadosIdSet = new Set<string>();
+  gestionCargada = false;
+  private evalPorUnidadId = new Map<string, { evaluados: number; total: number }>();
 
   kpiPromedio = '';
   kpiModa = 0;
@@ -167,6 +165,7 @@ export class MisEcReportesComponent implements OnInit {
   constructor(
     private service: MisEspaciosCurricularesService,
     private planificacionService: PlanificacionService,
+    private evaluacionesService: EvaluacionesService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
@@ -247,20 +246,55 @@ export class MisEcReportesComponent implements OnInit {
   private cargarPrograma(): void {
     this.loadingPrograma = true;
     this.errorPrograma = '';
-    this.planificacionService.getArbol(this.idEC).subscribe({
-      next: arbol => {
+
+    this.planificacionService.getArbol(this.idEC).pipe(
+      switchMap(arbol => {
         this.arbolPrograma = arbol;
-        this.loadingPrograma = false;
         this.programaCargado = true;
+        this.loadingPrograma = false;
+
         if (!arbol.sinPrograma && !arbol.bloqueado) {
           this.buildDonutAvance(arbol);
-          this.buildDonutEval();
         }
-      },
-      error: () => {
+
+        return this.evaluacionesService.getGestion(this.idEC).pipe(
+          catchError(() => of(null)),
+        );
+      }),
+      catchError(() => {
         this.errorPrograma = 'No se pudo cargar el programa. Verificá tu conexión e intentá de nuevo.';
         this.loadingPrograma = false;
-      },
+        return of(null);
+      }),
+    ).subscribe(gestion => {
+      const evaluados = new Set<string>();
+
+      if (gestion) {
+        for (const inst of gestion.instancias) {
+          if (inst.estado === 'Evaluada') {
+            for (const a of [inst.notaOriginal, inst.recuperatorio1, inst.recuperatorio2]) {
+              if (a) a.idBloquesTema.forEach(id => evaluados.add(id));
+            }
+          }
+        }
+      }
+
+      this.evaluadosIdSet = evaluados;
+
+      const evalMap = new Map<string, { evaluados: number; total: number }>();
+      if (gestion) {
+        for (const gu of gestion.unidades) {
+          const total = gu.temas.length;
+          const ev = gu.temas.filter(t => evaluados.has(t.idBloquePrograma)).length;
+          evalMap.set(gu.idUnidad, { evaluados: ev, total });
+        }
+      }
+      this.evalPorUnidadId = evalMap;
+      this.gestionCargada = true;
+
+      if (this.arbolPrograma && !this.arbolPrograma.sinPrograma && !this.arbolPrograma.bloqueado) {
+        this.buildDonutEval();
+      }
     });
   }
 
@@ -291,10 +325,13 @@ export class MisEcReportesComponent implements OnInit {
   }
 
   private buildDonutEval(): void {
-    if (!this.hayDatos) return;
-    const ev = EVAL_TEATRO.donut;
-    const sinEval = ev.total - ev.evaluados;
-    const pct = Math.round(ev.evaluados / ev.total * 100);
+    let total = 0, evaluados = 0;
+    for (const v of this.evalPorUnidadId.values()) {
+      total += v.total;
+      evaluados += v.evaluados;
+    }
+    const sinEval = total - evaluados;
+    const pct = total === 0 ? 0 : Math.round(evaluados / total * 100);
     this.optionDonutEval = {
       textStyle: { fontFamily: FONT },
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
@@ -303,15 +340,15 @@ export class MisEcReportesComponent implements OnInit {
         { type: 'text', left: 'center', top: '34%',
           style: { text: `${pct}%`, fontSize: 22, fontWeight: 700, fill: '#1f4e87', textAlign: 'center' } },
         { type: 'text', left: 'center', top: '43%',
-          style: { text: `${ev.evaluados} / ${ev.total} evaluados`, fontSize: 11, fill: '#94a3b8', textAlign: 'center' } },
+          style: { text: `${evaluados} / ${total} evaluados`, fontSize: 11, fill: '#94a3b8', textAlign: 'center' } },
       ] as any,
       series: [{
         type: 'pie', radius: ['58%', '78%'], center: ['50%', '42%'],
         avoidLabelOverlap: false, label: { show: false },
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
         data: [
-          { value: ev.evaluados, name: 'Temas evaluados',   itemStyle: { color: '#1f4e87' } },
-          { value: sinEval,      name: 'Temas sin evaluar', itemStyle: { color: '#7ba9d6' } },
+          { value: evaluados, name: 'Temas evaluados',   itemStyle: { color: '#1f4e87' } },
+          { value: sinEval,   name: 'Temas sin evaluar', itemStyle: { color: '#7ba9d6' } },
         ],
       }],
     };
@@ -327,9 +364,7 @@ export class MisEcReportesComponent implements OnInit {
   }
 
   evalUnidad(u: UnidadArbolDto): { evaluados: number; total: number } {
-    if (!this.hayDatos) return { evaluados: 0, total: 0 };
-    const d = EVAL_TEATRO.unidades[u.nro];
-    return d ? { evaluados: d.evaluados, total: d.totalEval } : { evaluados: 0, total: 0 };
+    return this.evalPorUnidadId.get(u.idUnidad) ?? { evaluados: 0, total: 0 };
   }
 
   evaluadosPct(u: UnidadArbolDto): number {

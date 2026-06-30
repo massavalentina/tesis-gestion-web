@@ -5,5 +5,12 @@ import { AuthService } from '../../../features/auth/services/auth.service';
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  return authService.estaLogueado() ? true : router.createUrlTree(['/login']);
+
+  if (authService.estaLogueado()) return true;
+
+  // Access token expirado pero hay refresh token: dejar pasar.
+  // El interceptor renovará la sesión en el primer 401.
+  if (authService.obtenerRefreshToken()) return true;
+
+  return router.createUrlTree(['/login']);
 };
