@@ -342,6 +342,17 @@ export interface ProgramaEstructuradoData {
   }[];
 }
 
+export interface DashboardPdfData {
+  titulo: string;
+  subtitulo: string;
+  nombreArchivo: string;
+  filtrosAplicados: string;
+  kpis: { label: string; valor: string }[];
+  charts: { titulo: string; dataUrl: string; /** source width/height ratio */ aspectRatio?: number }[];
+  /** 'general' = cards top + 2x2 charts | 'ec' = cards top + centered charts */
+  layout?: 'general' | 'ec';
+}
+
 // ─── Servicio ─────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -2029,6 +2040,209 @@ export class PdfReporteService {
   }
 
   // ── Exportar sección del dashboard como imagen en PDF ────────────────────
+
+  async exportarDashboardGeneralPdf(data: DashboardPdfData): Promise<void> {
+    const logo = await this.logoPromise;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth(); // 297
+    const pageH = doc.internal.pageSize.getHeight(); // 210
+
+    const contentY = drawPageHeader(doc, data.titulo, data.subtitulo, logo);
+
+    // Filtros + fecha emisión
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(data.filtrosAplicados, 14, contentY + 4);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, contentY + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    const bodyY = contentY + 10;
+    const bodyH = pageH - bodyY - 6;
+    const layout = data.layout ?? 'general';
+
+    if (layout === 'ec') {
+      this.drawDashboardEC(doc, data, bodyY, bodyH, pageW, pageH);
+    } else {
+      this.drawDashboardGeneral(doc, data, bodyY, bodyH, pageW, pageH);
+    }
+
+    doc.save(data.nombreArchivo);
+  }
+
+  // ── Layout General: fila de cards arriba + charts 2×2 abajo ──────────────
+  private drawDashboardGeneral(
+    doc: jsPDF, data: DashboardPdfData,
+    bodyY: number, bodyH: number, pageW: number, _pageH: number,
+  ): void {
+    const margin = 14;
+    const contentW = pageW - margin * 2; // ≈ 269
+
+    // ── KPI cards en una fila horizontal arriba ──
+    const cardRowH = 22;
+    const cardCount = data.kpis.length || 1;
+    const cardGap = 4;
+    const totalGaps = (cardCount - 1) * cardGap;
+    const cardW = (contentW - totalGaps) / cardCount;
+
+    data.kpis.forEach((kpi, i) => {
+      const cx = margin + i * (cardW + cardGap);
+      const cy = bodyY;
+
+      doc.setFillColor(240, 245, 250);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'F');
+      doc.setDrawColor(200, 215, 235);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'S');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...HEADER_BG);
+      doc.text(kpi.valor, cx + cardW / 2, cy + 9, { align: 'center' });
+
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      const labelLines = doc.splitTextToSize(kpi.label, cardW - 4) as string[];
+      doc.text(labelLines, cx + cardW / 2, cy + 15, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // ── Charts 2×2 debajo de las cards ──
+    const chartsY = bodyY + cardRowH + 5;
+    const chartsH = bodyH - cardRowH - 5;
+
+    const chartCols = 2;
+    const chartRows = Math.ceil(data.charts.length / chartCols);
+    const chartGapH = 5;
+    const chartGapW = 5;
+    const chartTitleH = 6;
+    const chartW = (contentW - (chartCols - 1) * chartGapW) / chartCols;
+    const chartH = (chartsH - chartRows * chartTitleH - (chartRows - 1) * chartGapH) / chartRows;
+
+    data.charts.forEach((ch, i) => {
+      const col = i % chartCols;
+      const row = Math.floor(i / chartCols);
+      const cx = margin + col * (chartW + chartGapW);
+      const cy = chartsY + row * (chartH + chartTitleH + chartGapH);
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(ch.titulo, cx + chartW / 2, cy + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy + chartTitleH, chartW, chartH, 2, 2, 'S');
+
+      // Fit image preserving aspect ratio within cell
+      const cellW = chartW - 1;
+      const cellH = chartH - 1;
+      const ar = ch.aspectRatio ?? (cellW / cellH);
+      let imgW = cellW;
+      let imgH = imgW / ar;
+      if (imgH > cellH) {
+        imgH = cellH;
+        imgW = imgH * ar;
+      }
+      const imgX = cx + 0.5 + (cellW - imgW) / 2;
+      const imgY = cy + chartTitleH + 0.5 + (cellH - imgH) / 2;
+
+      try {
+        doc.addImage(ch.dataUrl, 'PNG', imgX, imgY, imgW, imgH);
+      } catch { /* skip if dataUrl empty */ }
+    });
+  }
+
+  // ── Layout EC: cards en fila arriba + charts centrados abajo ──────────────
+  private drawDashboardEC(
+    doc: jsPDF, data: DashboardPdfData,
+    bodyY: number, bodyH: number, pageW: number, _pageH: number,
+  ): void {
+    const margin = 14;
+    const contentW = pageW - margin * 2;
+
+    // ── KPI cards centradas en fila ──
+    const cardRowH = 22;
+    const cardCount = data.kpis.length || 1;
+    const cardGap = 6;
+    const cardW = 55;
+    const totalCardsW = cardCount * cardW + (cardCount - 1) * cardGap;
+    const cardsStartX = margin + (contentW - totalCardsW) / 2;
+
+    data.kpis.forEach((kpi, i) => {
+      const cx = cardsStartX + i * (cardW + cardGap);
+      const cy = bodyY;
+
+      doc.setFillColor(240, 245, 250);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'F');
+      doc.setDrawColor(200, 215, 235);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'S');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...HEADER_BG);
+      doc.text(kpi.valor, cx + cardW / 2, cy + 9, { align: 'center' });
+
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      const labelLines = doc.splitTextToSize(kpi.label, cardW - 4) as string[];
+      doc.text(labelLines, cx + cardW / 2, cy + 15, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // ── Charts centrados en la página ──
+    const chartsY = bodyY + cardRowH + 6;
+    const chartsH = bodyH - cardRowH - 6;
+
+    const chartCount = data.charts.length;
+    const chartGapW = 8;
+    // Limitar el tamaño de cada chart para que no se estire
+    const maxChartW = 120;
+    const maxChartH = chartsH - 6;
+    const chartW = Math.min(maxChartW, (contentW - (chartCount - 1) * chartGapW) / chartCount);
+    const chartH = Math.min(maxChartH, chartW * 0.85); // mantener proporciones
+    const chartTitleH = 6;
+
+    const totalW = chartCount * chartW + (chartCount - 1) * chartGapW;
+    const startX = margin + (contentW - totalW) / 2;
+    // Centrar verticalmente en el espacio disponible
+    const startY = chartsY + (chartsH - chartH - chartTitleH) / 2;
+
+    data.charts.forEach((ch, i) => {
+      const cx = startX + i * (chartW + chartGapW);
+      const cy = startY;
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(ch.titulo, cx + chartW / 2, cy + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy + chartTitleH, chartW, chartH, 2, 2, 'S');
+
+      // Fit image preserving aspect ratio
+      const cellW = chartW - 1;
+      const cellH = chartH - 1;
+      const ar = ch.aspectRatio ?? (cellW / cellH);
+      let imgW = cellW;
+      let imgH = imgW / ar;
+      if (imgH > cellH) {
+        imgH = cellH;
+        imgW = imgH * ar;
+      }
+      const imgX = cx + 0.5 + (cellW - imgW) / 2;
+      const imgY = cy + chartTitleH + 0.5 + (cellH - imgH) / 2;
+
+      try {
+        doc.addImage(ch.dataUrl, 'PNG', imgX, imgY, imgW, imgH);
+      } catch { /* skip if dataUrl empty */ }
+    });
+  }
 
   async exportarDashboardSeccion(data: {
     titulo: string;
