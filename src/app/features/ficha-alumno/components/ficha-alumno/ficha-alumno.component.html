@@ -159,11 +159,12 @@
                 </button>
               </div>
 
+              <ng-container *ngIf="!esDocente && !esEquipoDirectivo && !esSecretario">
               <!-- Separador interno -->
               <div class="col-sep"></div>
 
-              <!-- Badges: Docente no puede ver credenciales QR -->
-              <div class="info-row" *ngIf="!esDocente">
+              <!-- Credencial QR: solo visible para roles distintos de Docente, Equipo Directivo y Secretario -->
+              <div class="info-row">
                 <span class="info-label">Credencial QR personal</span>
                 <span class="credencial-badge" [class]="getCredencialClass(est.idEstudiante)">
                   {{ getCredencialLabel(est.idEstudiante) }}
@@ -174,6 +175,7 @@
                   <mat-icon>qr_code_2</mat-icon>
                 </button>
               </div>
+              </ng-container>
             </div>
 
             <!-- Divisor vertical -->
@@ -259,7 +261,7 @@
           </div><!-- /ficha-grid -->
 
           <!-- ── HISTORIAL ACADÉMICO ── -->
-          <div class="historial-academico">
+          <div class="historial-academico" *ngIf="!esDocente">
 
             <div class="hist-head">
               <span class="hist-title">Historial académico</span>
