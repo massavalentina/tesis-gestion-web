@@ -60,6 +60,7 @@ interface CalificacionAuditSession {
   docente: string;
   origen: string;
   cantidadCambios: number;
+  rutaArchivoImportacion: string | null;
   cambios: CalificacionAuditChange[];
 }
 
@@ -220,6 +221,10 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   volverAMateria(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
+  }
+
+  navegarImportador(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones', 'importar']);
   }
 
   setFiltro(filtro: FiltroEstado): void {
@@ -883,6 +888,7 @@ export class MisEcCalificacionesComponent implements OnInit {
       docente: session.docente,
       origen: session.origen,
       cantidadCambios: session.cantidadCambios,
+      rutaArchivoImportacion: session.rutaArchivoImportacion,
       cambios: session.cambios.map(change => ({
         id: change.idDetalleAuditoria,
         idEstudiante: change.idEstudiante,
@@ -894,6 +900,10 @@ export class MisEcCalificacionesComponent implements OnInit {
         valorNuevo: change.valorNuevo,
       })),
     };
+  }
+
+  hasImportPdf(session: CalificacionAuditSession): boolean {
+    return session.origen === 'Importacion' && !!session.rutaArchivoImportacion;
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {

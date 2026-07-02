@@ -80,6 +80,7 @@ export interface AuditoriaCalificacionSesion {
   docente: string;
   origen: string;
   cantidadCambios: number;
+  rutaArchivoImportacion: string | null;
   cambios: AuditoriaCalificacionDetalle[];
 }
 

@@ -796,8 +796,18 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         if (esManana) {
           fila.modificadoManana = false;
           // SA limpia el turno: dejar la fila como "sin definir" inmediatamente
-          if (eraSA) { fila.tipoManianaId = null; fila.guardado = false; }
-          else        { fila.guardado = true; }
+          if (eraSA) {
+            fila.tipoManianaId        = null;
+            fila.tipoLlegadaManianaId = null;
+            fila.guardado             = false;
+          } else {
+            fila.guardado = true;
+            // Sincronizar tipoLlegadaManianaId: tipos de retiro no sobreescriben la llegada
+            const codigo = this.todosTipos.find(t => t.id === tipoId)?.codigo.toUpperCase() ?? '';
+            if (!['RA', 'RAE', 'RE'].includes(codigo)) {
+              fila.tipoLlegadaManianaId = tipoId;
+            }
+          }
         } else {
           fila.modificadoTarde = false;
           if (eraSA) { fila.tipoTardeId = null; fila.guardado = false; }
@@ -828,6 +838,15 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           if (f.tipoManianaId || f.tipoTardeId) {
             const mananaSA = this.esSinDefinir(f.tipoManianaId) && f.tipoManianaId !== null;
             const tardeSA  = this.esSinDefinir(f.tipoTardeId)   && f.tipoTardeId   !== null;
+            // Sincronizar tipoLlegadaManianaId antes de limpiar tipoManianaId
+            if (mananaSA) {
+              f.tipoLlegadaManianaId = null;
+            } else if (f.tipoManianaId) {
+              const codigoM = this.todosTipos.find(t => t.id === f.tipoManianaId)?.codigo.toUpperCase() ?? '';
+              if (!['RA', 'RAE', 'RE'].includes(codigoM)) {
+                f.tipoLlegadaManianaId = f.tipoManianaId;
+              }
+            }
             if (mananaSA) f.tipoManianaId = null;
             if (tardeSA)  f.tipoTardeId   = null;
             f.guardado         = !mananaSA && !tardeSA;

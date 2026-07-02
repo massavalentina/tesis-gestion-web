@@ -16,6 +16,7 @@ export const APP_SECTION_VISIBILITY = {
   misEspaciosCurriculares: 'desktop',
   reportesEstrategicosAsistencia: 'desktop',
   reportesEstrategicosCalificaciones: 'desktop',
+  reporteRetiros: 'all',
 } as const satisfies Record<string, PlatformVisibility>;
 
 export type AppSectionId = keyof typeof APP_SECTION_VISIBILITY;

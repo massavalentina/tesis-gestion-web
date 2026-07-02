@@ -35,6 +35,7 @@ export const ASISTENCIA_NAV_ITEMS: AppNavItem[] = [
   navItem('qrScanner', 'Escáner QR', '/attendance/scan', 'qr_code_scanner'),
   navItem('asistenciaManual', 'Asistencia Manual', '/asistencia-manual-curso', 'fact_check'),
   navItem('parteDiario', 'Parte Diario', '/parte-diario-digital', 'today'),
+  navItem('reporteRetiros', 'Listado de Retiros', '/reporte-retiros', 'assignment_return'),
   navItem('reporteAsistencia', 'Asistencia General', '/reporte-asistencia', 'bar_chart', false),
   navItem('reporteAsistenciaDocente', 'Asistencia por EC', '/reporte-asistencia-docente', 'school', false),
 ];
