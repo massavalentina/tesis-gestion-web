@@ -48,8 +48,11 @@
         </p>
       </div>
 
-      <div class="mode-card" [class.mode-card--editing]="modoEdicion">
-        <span class="mode-label">{{ modoEdicion ? 'Edicion activa' : 'Solo consulta' }}</span>
+      <div
+        class="mode-card"
+        [class.mode-card--editing]="modoEdicion"
+        [class.mode-card--report]="modoReporte">
+        <span class="mode-label">{{ modeLabel }}</span>
         <small>{{ updatedAtLabel }}</small>
       </div>
     </div>
@@ -139,11 +142,26 @@
         </label>
 
         <div class="action-group">
+          <button class="action-btn action-btn--ghost" type="button" [class.action-btn--selected]="!modoReporte" (click)="volverAVistaNormal()">
+            Vista normal
+          </button>
+          <button class="action-btn action-btn--ghost" type="button" [class.action-btn--selected]="modoReporte" (click)="activarReporte()">
+            Vista reporte
+          </button>
           <button class="action-btn action-btn--secondary" type="button" (click)="navegarImportador()">
             Importar PDF CiDi
           </button>
 
-          <button *ngIf="!modoEdicion" class="action-btn action-btn--secondary" type="button" (click)="activarEdicion()">
+          <button
+            *ngIf="modoReporte"
+            class="action-btn action-btn--primary"
+            type="button"
+            [disabled]="exportingPdf || estudiantes.length === 0"
+            (click)="exportarReportePdf()">
+            {{ exportingPdf ? 'Exportando...' : 'Exportar PDF' }}
+          </button>
+
+          <button *ngIf="!modoEdicion && !modoReporte" class="action-btn action-btn--secondary" type="button" (click)="activarEdicion()">
             Editar calificaciones
           </button>
 
@@ -158,16 +176,19 @@
         </div>
       </div>
 
-      <div class="summary-strip">
+      <div class="summary-strip" [class.summary-strip--report]="modoReporte">
         <div>
           <strong>{{ cantidadFiltrada }} de {{ estudiantes.length }} estudiantes visibles</strong>
-          <span>La nomina corresponde al curso oficial del espacio curricular.</span>
+          <span *ngIf="!modoReporte">La nomina corresponde al curso oficial del espacio curricular.</span>
+          <span *ngIf="modoReporte">El reporte calcula promedios y porcentajes sobre toda la nomina del curso.</span>
         </div>
         <div class="summary-meta">
           <span *ngIf="modoEdicion && hayNotasInvalidas">Hay notas invalidas. Solo se permiten enteros de 1 a 10.</span>
-          <span *ngIf="!modoEdicion || !hayNotasInvalidas">{{ updatedAtLabel }}</span>
+          <span *ngIf="(!modoEdicion || !hayNotasInvalidas) && !modoReporte">{{ updatedAtLabel }}</span>
+          <span *ngIf="modoReporte">La tabla sigue paginada, pero los totales son globales.</span>
           <span class="summary-success" *ngIf="feedbackGuardado">{{ feedbackGuardado }}</span>
           <span class="summary-error" *ngIf="saveError">{{ saveError }}</span>
+          <span class="summary-error" *ngIf="reportActionError">{{ reportActionError }}</span>
         </div>
       </div>
 
@@ -188,8 +209,8 @@
         </button>
       </div>
 
-      <div class="table-shell">
-        <table>
+      <div class="table-shell" [class.table-shell--report]="modoReporte">
+        <table [class.report-table]="modoReporte">
           <thead>
             <tr>
               <th class="student-col sticky-col sticky-col--head" rowspan="2">Estudiante</th>
@@ -197,6 +218,8 @@
               <th class="group-col" *ngFor="let evaluacion of evaluacionesVisibles" colspan="3">
                 {{ evaluacion.label }}
               </th>
+              <th *ngIf="modoReporte" class="report-extra-col report-extra-col--head" rowspan="2">Nota final</th>
+              <th *ngIf="modoReporte" class="report-state-col report-extra-col--head" rowspan="2">Estado</th>
             </tr>
             <tr>
               <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
@@ -206,10 +229,22 @@
           </thead>
 
           <tbody>
-            <tr *ngFor="let estudiante of filasPaginadas; trackBy: trackByStudentId">
+            <tr
+              *ngFor="let estudiante of filasPaginadas; trackBy: trackByStudentId"
+              (mouseenter)="modoReporte && onReportStudentHover(estudiante.idEstudiante)"
+              (mouseleave)="modoReporte && onReportStudentHover(null)">
               <td class="student-col sticky-col">
                 <div class="student-cell">
-                  <strong>{{ estudiante.nombreCompleto }}</strong>
+                  <div class="student-cell-head">
+                    <strong>{{ estudiante.nombreCompleto }}</strong>
+                    <span
+                      *ngIf="modoReporte"
+                      class="report-student-dot"
+                      [style.backgroundColor]="getReportStudentColor(estudiante.idEstudiante)"
+                      [attr.title]="estudiante.nombreCompleto"
+                      [attr.aria-label]="estudiante.nombreCompleto">
+                    </span>
+                  </div>
                   <div class="student-badges">
                     <span class="student-badge student-badge--empty" *ngIf="!rowHasAnyValue(estudiante.idEstudiante)">
                       Sin notas
@@ -223,7 +258,7 @@
               <td class="dni-col sticky-col-2">{{ estudiante.documento }}</td>
 
               <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
-                <td *ngFor="let tipo of tiposCalificacion">
+                <td *ngFor="let tipo of tiposCalificacion" [ngClass]="getReportCellClasses(estudiante.idEstudiante, evaluacion.numero)">
                   <ng-container *ngIf="!modoEdicion; else editableCell">
                     <span class="grade-readonly" [class.grade-readonly--empty]="getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) === '-'">
                       {{ getReadonlyCellLabel(estudiante.idEstudiante, evaluacion.numero, tipo) }}
@@ -252,6 +287,15 @@
                   </ng-template>
                 </td>
               </ng-container>
+
+              <td *ngIf="modoReporte" class="report-final-cell">
+                <span class="report-final-value">{{ getReportFinalLabel(estudiante.idEstudiante) }}</span>
+              </td>
+              <td *ngIf="modoReporte" class="report-state-cell">
+                <span [ngClass]="getReportEstadoClasses(estudiante.idEstudiante)">
+                  {{ getReportEstadoLabel(estudiante.idEstudiante) }}
+                </span>
+              </td>
             </tr>
 
             <tr *ngIf="filasPaginadas.length === 0">
@@ -259,8 +303,58 @@
                 No hay estudiantes que coincidan con la busqueda o el filtro seleccionado.
               </td>
             </tr>
+
+            <ng-container *ngIf="modoReporte">
+              <tr class="report-summary-row report-summary-row--average">
+                <td class="report-summary-label" colspan="2">Promedio General</td>
+                <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
+                  <td class="report-summary-value" colspan="3">
+                    {{ getReportSummaryEvaluationValue('average', evaluacion.numero) }}
+                  </td>
+                </ng-container>
+                <td class="report-summary-value report-summary-value--final">{{ getReportSummaryFinalValue('average') }}</td>
+                <td class="report-summary-spacer">—</td>
+              </tr>
+
+              <tr class="report-summary-row report-summary-row--recovery">
+                <td class="report-summary-label" colspan="2">% Recuperatorios</td>
+                <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
+                  <td class="report-summary-value" colspan="3">
+                    {{ getReportSummaryEvaluationValue('recoveries', evaluacion.numero) }}
+                  </td>
+                </ng-container>
+                <td class="report-summary-value report-summary-value--final">{{ getReportSummaryFinalValue('recoveries') }}</td>
+                <td class="report-summary-spacer">—</td>
+              </tr>
+
+              <tr class="report-summary-row report-summary-row--passing">
+                <td class="report-summary-label" colspan="2">% Notas >= 7</td>
+                <ng-container *ngFor="let evaluacion of evaluacionesVisibles">
+                  <td class="report-summary-value" colspan="3">
+                    {{ getReportSummaryEvaluationValue('passing', evaluacion.numero) }}
+                  </td>
+                </ng-container>
+                <td class="report-summary-value report-summary-value--final">{{ getReportSummaryFinalValue('passing') }}</td>
+                <td class="report-summary-spacer">—</td>
+              </tr>
+            </ng-container>
           </tbody>
         </table>
+      </div>
+
+      <div class="report-legend" *ngIf="modoReporte">
+        <div class="report-legend-row">
+          <div class="report-legend-item" *ngFor="let item of reportLegendPrimaryItems">
+            <span class="report-legend-swatch" [ngClass]="'report-legend-swatch--' + item.key"></span>
+            <span>{{ item.label }}</span>
+          </div>
+        </div>
+        <div class="report-legend-row report-legend-row--secondary">
+          <div class="report-legend-item" *ngFor="let item of reportLegendSecondaryItems">
+            <span class="report-legend-swatch" [ngClass]="'report-legend-swatch--' + item.key"></span>
+            <span>{{ item.label }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="pagination-bar">
@@ -288,6 +382,21 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="report-chart-card" *ngIf="modoReporte">
+      <div class="report-chart-head">
+        <div>
+          <span class="report-chart-eyebrow">Variacion de calificaciones</span>
+          <h3>Distribucion de notas por IE</h3>
+          <p>{{ reportVariationSubtitle }}</p>
+        </div>
+        <div class="report-chart-note">
+          Banda de promedio
+          <strong>± 1 desviacion estandar</strong>
+        </div>
+      </div>
+      <div class="report-chart-body" echarts [options]="reportVariationOptions" (chartInit)="onReportChartInit($event)"></div>
     </div>
 
     <div class="audit-card">
@@ -339,43 +448,37 @@
               <span class="audit-session-toggle-label">
                 {{ isAuditSessionExpanded(session.id) ? 'Ocultar detalle' : 'Ver detalle' }}
               </span>
-              <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">
-                ▾
-              </span>
+              <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">⌄</span>
             </button>
           </div>
 
           <div class="audit-session-body" *ngIf="isAuditSessionExpanded(session.id)">
-            <div class="audit-change-card" *ngFor="let change of session.cambios; trackBy: trackByAuditChangeId">
+            <article class="audit-change-card" *ngFor="let change of session.cambios; trackBy: trackByAuditChangeId">
               <div class="audit-change-top">
-                <div>
-                  <strong>{{ change.estudiante }}</strong>
-                  <span>DNI {{ change.documento }}</span>
-                </div>
-                <span class="audit-change-kind">{{ getAuditChangeLabel(change) }}</span>
+                <strong>{{ change.estudiante }}</strong>
+                <span>{{ change.documento }}</span>
               </div>
-
               <div class="audit-change-meta">
                 <span>{{ change.evaluacion }} · {{ change.tipo }}</span>
-                <span class="audit-change-origin">Carga manual</span>
+                <span>{{ getAuditChangeLabel(change) }}</span>
               </div>
-
-              <div class="audit-change-delta">
-                <span class="audit-chip audit-chip--before">{{ formatAuditValue(change.valorAnterior) }}</span>
-                <span class="audit-arrow">→</span>
-                <span class="audit-chip audit-chip--after">{{ formatAuditValue(change.valorNuevo) }}</span>
+              <div class="audit-change-values">
+                <span>{{ formatAuditValue(change.valorAnterior) }}</span>
+                <span>→</span>
+                <strong>{{ formatAuditValue(change.valorNuevo) }}</strong>
               </div>
-            </div>
+            </article>
           </div>
         </article>
+      </div>
 
+      <div class="audit-footer" *ngIf="hayMasSesionesAuditoria">
         <button
-          *ngIf="hayMasSesionesAuditoria"
-          class="audit-more"
+          class="action-btn action-btn--ghost"
           type="button"
           [disabled]="auditLoadingMore"
           (click)="showMoreAuditSessions()">
-          {{ auditLoadingMore ? 'Cargando actividad...' : 'Mostrar actividad anterior' }}
+          {{ auditLoadingMore ? 'Cargando...' : 'Ver mas sesiones' }}
         </button>
       </div>
     </div>
