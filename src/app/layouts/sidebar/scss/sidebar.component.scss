@@ -8,6 +8,7 @@
   border-radius: 22px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 /* Quitar subrayado */
@@ -112,6 +113,7 @@
 
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   z-index: 1101;
+  overflow-y: auto;
 
 }
 
@@ -143,6 +145,13 @@ nav {
 
   mat-icon {
     font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

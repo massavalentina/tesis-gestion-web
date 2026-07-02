@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgIf, NgFor, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatSelectModule } from '@angular/material/select';
@@ -40,7 +40,7 @@ import {
   OpcionEC,
 } from '../../models/dashboard-asistencia.model';
 import { ChartFullscreenDialogComponent } from '../chart-fullscreen-dialog/chart-fullscreen-dialog.component';
-import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
+import { PdfReporteService, DashboardPdfData } from '../../../../core/services/pdf-reporte.service';
 
 class DdMmYyyyAdapter extends NativeDateAdapter {
   override format(date: Date, displayFormat: object): string {
@@ -92,6 +92,8 @@ interface KpiCard {
   color: string;
   suffix: string;
   tooltip: string;
+  /** Angular DecimalPipe format string. Default: '1.0-1' */
+  format?: string;
 }
 
 const CARDS_GENERAL: KpiCard[] = [
@@ -103,14 +105,14 @@ const CARDS_GENERAL: KpiCard[] = [
     tooltip: 'Porcentaje de llegadas tarde (LLT, LLTE, LLTC) sobre el total de presencias.' },
   { key: 'porcentajeRetirosAnticipados', label: 'Retiros Anticipados', icon: 'exit_to_app', color: C.primary, suffix: ' %',
     tooltip: 'Porcentaje de retiros anticipados (RA, RAE, RE en cualquier turno) sobre el total de presencias.' },
-  { key: 'alumnosTeaGeneral', label: 'Alumnos en TEA General', icon: 'warning', color: C.primary, suffix: '',
+  { key: 'alumnosTeaGeneral', label: 'Alumnos en TEA General', icon: 'warning', color: C.primary, suffix: '', format: '1.0-0',
     tooltip: 'Cantidad de alumnos en Trayectoria Escolar Asistida por tener 25 o más inasistencias.' },
 ];
 
 const CARDS_EC: KpiCard[] = [
   { key: 'porcentajeAsistenciaPorEC', label: 'Asistencia', icon: 'menu_book', color: C.primary, suffix: ' %',
     tooltip: 'El porcentaje general de asistencia por espacios curriculares se calcula en base al promedio de porcentajes de asistencia de cada EC.' },
-  { key: 'alumnosTeaPorEspacio', label: 'Alumnos en TEA', icon: 'warning', color: C.primary, suffix: '',
+  { key: 'alumnosTeaPorEspacio', label: 'Alumnos en TEA', icon: 'warning', color: C.primary, suffix: '', format: '1.0-0',
     tooltip: 'Representa la cantidad de alumnos en condición de Trayectoria Escolar Asistida por estar con menos del 75% de asistencia al Espacio Curricular.' },
 ];
 
@@ -135,8 +137,9 @@ export class DashboardAsistenciaComponent implements OnInit {
   anioLectivo = new Date().getFullYear();
   fechaDesde: Date | null = null;
   fechaHasta: Date | null = null;
-  cursoId = '';
+  cursoIds: string[] = [];
   ecId = '';
+  turno: 'GENERAL' | 'TARDE' = 'GENERAL';
 
   get minDatePeriodo(): Date { return new Date(this.anioLectivo, 0, 1); }
   get maxDatePeriodo(): Date { return new Date(this.anioLectivo, 11, 31); }
@@ -162,11 +165,12 @@ export class DashboardAsistenciaComponent implements OnInit {
   cursosTendencia: string[] = [];
   opcionesCursosTendencia: string[] = [];
 
+  // ECharts instances para exportación PDF
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  chartInstances: Record<string, any> = {};
+
   readonly cardsGeneral = CARDS_GENERAL;
   readonly cardsEC = CARDS_EC;
-
-  @ViewChild('seccionGeneral') seccionGeneral!: ElementRef;
-  @ViewChild('seccionEC') seccionEC!: ElementRef;
 
   exportandoPdfGeneral = false;
   exportandoPdfEC = false;
@@ -194,10 +198,27 @@ export class DashboardAsistenciaComponent implements OnInit {
   }
 
   onCursoChange(): void {
+    // Lógica de "Todos"
+    const tieneTodos = this.cursoIds.includes('__todos__');
+    const soloIds = this.cursoIds.filter(v => v !== '__todos__');
+    const todosLosIds = this.cursos.map(c => c.id);
+
+    if (tieneTodos && soloIds.length < todosLosIds.length) {
+      this.cursoIds = ['__todos__', ...todosLosIds];
+    } else if (!tieneTodos && soloIds.length === todosLosIds.length) {
+      this.cursoIds = [];
+    } else if (soloIds.length === todosLosIds.length) {
+      this.cursoIds = ['__todos__', ...soloIds];
+    } else {
+      this.cursoIds = soloIds;
+    }
+
     this.ecId = '';
     this.espacios = [];
-    if (this.cursoId) {
-      this.reportesService.obtenerEspaciosCurriculares(this.cursoId).subscribe({
+    // Solo cargar ECs si hay exactamente un curso real seleccionado
+    const cursosReales = this.cursoIds.filter(v => v !== '__todos__');
+    if (cursosReales.length === 1) {
+      this.reportesService.obtenerEspaciosCurriculares(cursosReales[0]).subscribe({
         next: (ecs) => this.espacios = ecs,
       });
     }
@@ -205,24 +226,28 @@ export class DashboardAsistenciaComponent implements OnInit {
 
   aplicarFiltros(): void {
     this.cargando = true;
+    const cursosReales = this.cursoIds.filter(v => v !== '__todos__');
     const filtros: DashboardFiltros = {
       anioLectivo: this.anioLectivo,
       desde: this.fechaDesde ? this.fmtDate(this.fechaDesde) : undefined,
       hasta: this.fechaHasta ? this.fmtDate(this.fechaHasta) : undefined,
-      cursoId: this.cursoId || undefined,
+      cursoIds: cursosReales.length > 0 ? cursosReales : undefined,
       ecId: this.ecId || undefined,
+      turno: this.turno,
     };
     this.reportesService.obtenerDashboardAsistencia(filtros).subscribe({
       next: (data) => {
         this.dashboard = data;
         // Poblar opciones de cursos para tendencia
         this.opcionesCursosTendencia = data.tendenciaMensual.map(t => t.curso);
-        // Sincronizar: si hay filtro de curso global, seleccionar solo ese
-        if (this.cursoId) {
-          const cursoLabel = this.opcionesCursosTendencia.find(c =>
-            this.cursos.some(cur => cur.id === this.cursoId && cur.label === c)
+        // Sincronizar: si hay filtro de cursos global, pre-seleccionar esos en tendencia
+        if (this.cursoIds.length > 0) {
+          const labelsSeleccionados = this.opcionesCursosTendencia.filter(label =>
+            this.cursos.some(c => this.cursoIds.includes(c.id) && c.label === label)
           );
-          this.cursosTendencia = cursoLabel ? [cursoLabel] : [...this.opcionesCursosTendencia];
+          this.cursosTendencia = labelsSeleccionados.length > 0
+            ? labelsSeleccionados
+            : [...this.opcionesCursosTendencia];
         } else {
           this.cursosTendencia = [];
         }
@@ -233,14 +258,25 @@ export class DashboardAsistenciaComponent implements OnInit {
     });
   }
 
+  setTurno(t: 'GENERAL' | 'TARDE'): void {
+    this.turno = t;
+    this.aplicarFiltros();
+  }
+
   limpiarFiltros(): void {
     this.anioLectivo = new Date().getFullYear();
     this.fechaDesde = null;
     this.fechaHasta = null;
-    this.cursoId = '';
+    this.cursoIds = [];
     this.ecId = '';
     this.espacios = [];
+    this.turno = 'GENERAL';
     this.aplicarFiltros();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChartInit(key: string, instance: any): void {
+    this.chartInstances[key] = instance;
   }
 
   val(key: string): number {
@@ -259,6 +295,10 @@ export class DashboardAsistenciaComponent implements OnInit {
   }
 
   // ── Chart builders ──────────────────────────────────────────────────────────
+
+  get tituloSubtipos(): string {
+    return 'Distribución Porcentual por Tipo';
+  }
 
   onModoSubtiposChange(): void {
     this.buildChartSubtipos();
@@ -353,7 +393,14 @@ export class DashboardAsistenciaComponent implements OnInit {
         type: 'bar',
         data: barData,
         barMaxWidth: 22,
-        label: { show: false },
+        label: {
+          show: true,
+          position: 'right',
+          fontSize: 11,
+          fontWeight: 600,
+          color: C.dark,
+          formatter: (p: any) => p.value?.toFixed(1),
+        },
         emphasis: {
           label: {
             show: true,
@@ -384,7 +431,7 @@ export class DashboardAsistenciaComponent implements OnInit {
       },
       series: [{
         type: 'pie',
-        radius: ['45%', '72%'],
+        radius: ['42%', '68%'],
         center: ['50%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 3 },
@@ -394,7 +441,10 @@ export class DashboardAsistenciaComponent implements OnInit {
           fontSize: 13,
           fontWeight: 600,
           color: C.dark,
+          distanceToLabelLine: 4,
+          minMargin: 8,
         },
+        labelLine: { length: 16, length2: 12 },
         data: [
           { value: dist.ausentes, name: 'Ausentes', itemStyle: { color: '#1b3a5c' } },
           { value: dist.llegadasTarde, name: 'Llegadas Tarde', itemStyle: { color: '#4a97cc' } },
@@ -520,7 +570,7 @@ export class DashboardAsistenciaComponent implements OnInit {
       },
       series: [{
         type: 'pie',
-        radius: ['45%', '72%'],
+        radius: ['42%', '68%'],
         center: ['50%', '42%'],
         avoidLabelOverlap: true,
         itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 3 },
@@ -530,7 +580,10 @@ export class DashboardAsistenciaComponent implements OnInit {
           fontSize: 13,
           fontWeight: 600,
           color: C.dark,
+          distanceToLabelLine: 4,
+          minMargin: 8,
         },
+        labelLine: { length: 16, length2: 12 },
         data: items.map((it, i) => ({ ...it, itemStyle: { color: colors[i] } })),
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.15)' },
@@ -615,7 +668,14 @@ export class DashboardAsistenciaComponent implements OnInit {
         type: 'bar',
         data: barData,
         barMaxWidth: 22,
-        label: { show: false },
+        label: {
+          show: true,
+          position: 'right',
+          fontSize: 11,
+          fontWeight: 600,
+          color: C.dark,
+          formatter: '{c}%',
+        },
         emphasis: {
           label: {
             show: true,
@@ -647,7 +707,7 @@ export class DashboardAsistenciaComponent implements OnInit {
       },
       series: [{
         type: 'pie',
-        radius: ['45%', '72%'],
+        radius: ['42%', '68%'],
         center: ['50%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 3 },
@@ -657,7 +717,10 @@ export class DashboardAsistenciaComponent implements OnInit {
           fontSize: 13,
           fontWeight: 600,
           color: C.dark,
+          distanceToLabelLine: 4,
+          minMargin: 8,
         },
+        labelLine: { length: 16, length2: 12 },
         data: [
           { value: dist.ausencias, name: 'Ausencias', itemStyle: { color: '#1b3a5c' } },
           { value: dist.llegadasTarde, name: 'Llegadas Tarde', itemStyle: { color: '#4a97cc' } },
@@ -681,6 +744,75 @@ export class DashboardAsistenciaComponent implements OnInit {
     };
   }
 
+  // ── Helpers de exportación ─────────────────────────────────────────────────
+
+  /** Tamaños fijos de renderización (px) para que los charts siempre tengan las mismas proporciones en el PDF */
+  private readonly EXPORT_SIZES: Record<string, { w: number; h: number }> = {
+    inasistenciasCurso: { w: 800, h: 400 },
+    distribucion:       { w: 500, h: 500 },
+    tendencia:          { w: 800, h: 400 },
+    subtipos:           { w: 500, h: 500 },
+    asistenciaEC:       { w: 800, h: 400 },
+    distribucionEC:     { w: 500, h: 500 },
+  };
+
+  private readonly PDF_BAR_VISIBLE = 12;
+  /** Altura por barra (px) que replica el espaciado visual de la web */
+  private readonly BAR_SLOT_PX = 36;
+
+  private captureChart(key: string): { dataUrl: string; aspectRatio: number } | null {
+    const inst = this.chartInstances[key];
+    if (!inst) return null;
+
+    const baseSize = this.EXPORT_SIZES[key] ?? { w: 600, h: 400 };
+    const origW = inst.getWidth();
+    const origH = inst.getHeight();
+
+    const option = inst.getOption() as any;
+    const hasDataZoom = Array.isArray(option?.dataZoom) && option.dataZoom.length > 0;
+    const numBars: number = (option?.series?.[0]?.data as unknown[])?.length ?? 0;
+
+    let pdfStart = 0;
+    let pdfEnd = Math.min(numBars - 1, this.PDF_BAR_VISIBLE - 1);
+    let origDzStart = 0;
+    let origDzEnd = 5;
+
+    if (hasDataZoom && numBars > 0) {
+      const dz = option.dataZoom[0];
+
+      // Leer estado actual del dataZoom (puede ser absoluto o porcentual tras scroll del usuario)
+      origDzStart = dz.startValue !== undefined
+        ? Math.round(dz.startValue)
+        : Math.round(((dz.start ?? 0) / 100) * (numBars - 1));
+      origDzEnd = dz.endValue !== undefined
+        ? Math.round(dz.endValue)
+        : Math.round(((dz.end ?? 100) / 100) * (numBars - 1));
+
+      // PDF: 12 barras terminando en el endValue actual; si faltan "hacia abajo" compensar "hacia arriba"
+      pdfStart = Math.max(0, origDzEnd - this.PDF_BAR_VISIBLE + 1);
+      pdfEnd   = Math.min(numBars - 1, pdfStart + this.PDF_BAR_VISIBLE - 1);
+    }
+
+    // Altura fija para exactamente PDF_BAR_VISIBLE barras
+    const exportH = hasDataZoom ? this.PDF_BAR_VISIBLE * this.BAR_SLOT_PX : baseSize.h;
+
+    inst.resize({ width: baseSize.w, height: exportH });
+
+    if (hasDataZoom) {
+      inst.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue: pdfStart, endValue: pdfEnd });
+    }
+
+    const dataUrl = inst.getDataURL({ type: 'png', pixelRatio: 3 });
+
+    // Restaurar estado original del dataZoom y tamaño
+    if (hasDataZoom) {
+      inst.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue: origDzStart, endValue: origDzEnd });
+    }
+    inst.resize({ width: origW, height: origH });
+
+    return { dataUrl, aspectRatio: baseSize.w / exportH };
+  }
+
   abrirFullscreen(options: EChartsOption, titulo: string): void {
     this.dialog.open(ChartFullscreenDialogComponent, {
       data: { options, titulo },
@@ -691,31 +823,95 @@ export class DashboardAsistenciaComponent implements OnInit {
   }
 
   async exportarPdfGeneral(): Promise<void> {
+    if (!this.dashboard) return;
     this.exportandoPdfGeneral = true;
     try {
-      await this.pdfService.exportarDashboardSeccion({
-        titulo: 'Dashboard Estratégico - General',
+      const charts: { titulo: string; dataUrl: string; aspectRatio?: number }[] = [];
+      const chartKeys: { key: string; titulo: string }[] = [
+        { key: 'inasistenciasCurso', titulo: 'Promedio de Inasistencias por Curso' },
+        { key: 'distribucion', titulo: 'Distribución Porcentual de Inasistencias' },
+        { key: 'tendencia', titulo: 'Evolución de Tendencia de Inasistencia' },
+        { key: 'subtipos', titulo: this.tituloSubtipos },
+      ];
+      for (const ck of chartKeys) {
+        const result = this.captureChart(ck.key);
+        if (result) {
+          charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+        }
+      }
+
+      const turnoLabel = this.turno === 'TARDE' ? ' (Turno Tarde)' : '';
+      const data: DashboardPdfData = {
+        titulo: `Dashboard Estratégico - General${turnoLabel}`,
         subtitulo: `Año lectivo: ${this.anioLectivo}`,
-        elementRef: this.seccionGeneral.nativeElement,
         nombreArchivo: `dashboard-general-${this.anioLectivo}.pdf`,
-      });
+        filtrosAplicados: this.buildFiltrosTexto(),
+        kpis: this.cardsGeneral.map(kpi => ({
+          label: kpi.label,
+          valor: `${kpi.format === '1.0-0' ? Math.round(this.val(kpi.key)) : this.val(kpi.key).toFixed(1)}${kpi.suffix}`,
+        })),
+        charts,
+      };
+      await this.pdfService.exportarDashboardGeneralPdf(data);
     } finally {
       this.exportandoPdfGeneral = false;
     }
   }
 
   async exportarPdfEC(): Promise<void> {
+    if (!this.dashboard) return;
     this.exportandoPdfEC = true;
     try {
-      await this.pdfService.exportarDashboardSeccion({
+      const charts: { titulo: string; dataUrl: string; aspectRatio?: number }[] = [];
+      const chartKeys: { key: string; titulo: string }[] = [
+        { key: 'asistenciaEC', titulo: 'Porcentaje de Asistencia por Espacio Curricular' },
+        { key: 'distribucionEC', titulo: 'Distribución de Inasistencias por EC' },
+      ];
+      for (const ck of chartKeys) {
+        const result = this.captureChart(ck.key);
+        if (result) {
+          charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+        }
+      }
+
+      const data: DashboardPdfData = {
         titulo: 'Dashboard Estratégico - Espacios Curriculares',
         subtitulo: `Año lectivo: ${this.anioLectivo}`,
-        elementRef: this.seccionEC.nativeElement,
         nombreArchivo: `dashboard-ec-${this.anioLectivo}.pdf`,
-      });
+        filtrosAplicados: this.buildFiltrosTexto(),
+        layout: 'ec',
+        kpis: this.cardsEC.map(kpi => ({
+          label: kpi.label,
+          valor: `${kpi.format === '1.0-0' ? Math.round(this.val(kpi.key)) : this.val(kpi.key).toFixed(1)}${kpi.suffix}`,
+        })),
+        charts,
+      };
+      await this.pdfService.exportarDashboardGeneralPdf(data);
     } finally {
       this.exportandoPdfEC = false;
     }
+  }
+
+  private buildFiltrosTexto(): string {
+    const partes: string[] = [];
+    if (this.fechaDesde || this.fechaHasta) {
+      const desde = this.fechaDesde ? this.fmtDateDisplay(this.fechaDesde) : '—';
+      const hasta = this.fechaHasta ? this.fmtDateDisplay(this.fechaHasta) : '—';
+      partes.push(`Período: ${desde} al ${hasta}`);
+    }
+    const cursosRealesPdf = this.cursoIds.filter(v => v !== '__todos__');
+    if (cursosRealesPdf.length > 0) {
+      const labels = this.cursos
+        .filter(c => cursosRealesPdf.includes(c.id))
+        .map(c => c.label);
+      if (labels.length > 0) partes.push(`Cursos: ${labels.join(', ')}`);
+    }
+    if (this.turno === 'TARDE') partes.push('Turno: Tarde');
+    return partes.length > 0 ? partes.join(' · ') : 'Sin filtros adicionales';
+  }
+
+  private fmtDateDisplay(d: Date): string {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }
 
   private fmtDate(d: Date): string {

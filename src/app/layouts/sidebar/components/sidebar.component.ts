@@ -122,7 +122,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                   type="button"
                   matRipple
                   (click)="toggleReportes()">
-            <mat-icon>insights</mat-icon>
+            <mat-icon>analytics</mat-icon>
             <span>Reportes Estratégicos</span>
             <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
           </button>
@@ -238,13 +238,13 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           <span>{{ item.label }}</span>
         </a>
 
-        <!-- Reportes Estratégicos — solo Equipo Directivo/Admin (mobile) -->
-        <ng-container *ngIf="puedeVerReportesEstrategicos">
+        <!-- Reportes Estratégicos — solo Equipo Directivo/Admin (mobile — oculto) -->
+        <ng-container *ngIf="puedeVerReportesEstrategicos && !isMobile">
           <button class="item parent"
                   type="button"
                   matRipple
                   (click)="toggleReportes()">
-            <mat-icon>insights</mat-icon>
+            <mat-icon>analytics</mat-icon>
             <span>Reportes Estratégicos</span>
             <mat-icon class="chevron" [class.open]="reportesOpen">expand_more</mat-icon>
           </button>
@@ -427,6 +427,11 @@ export class SidebarComponent {
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
+      case 'reporteRetiros':
+        return this.esAdmin
+          || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW')
+          || this.authService.tieneRol('Equipo Directivo')
+          || this.authService.tieneRol('Secretario');
       case 'reportesEstrategicosAsistencia':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
       case 'perfil':

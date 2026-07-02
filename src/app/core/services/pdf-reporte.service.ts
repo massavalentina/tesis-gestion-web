@@ -12,6 +12,7 @@ import { ComentarioParte } from '../../features/parte-diario-digital/models/come
 import { TurnoParte } from '../../features/parte-diario-digital/models/turno-parte.model';
 import { HorarioClase } from '../../features/parte-diario-digital/models/horario-clase.model';
 import { EstudianteParte } from '../../features/parte-diario-digital/models/estudiante-parte.model';
+import { RetiroReporteItem } from '../../features/reporte-retiros/models/retiro-reporte-item.model';
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
 const VERDE    = [46, 125, 50]    as [number, number, number];
@@ -316,6 +317,24 @@ export interface ProgramaEstructuradoData {
     descripcion?: string;
     temas: { nro: number; titulo: string; descripcion?: string }[];
   }[];
+}
+
+export interface ReporteRetirosData {
+  cursoLabel: string;
+  fechaDesde: string | null;
+  fechaHasta: string | null;
+  retiros: RetiroReporteItem[];
+}
+
+export interface DashboardPdfData {
+  titulo: string;
+  subtitulo: string;
+  nombreArchivo: string;
+  filtrosAplicados: string;
+  kpis: { label: string; valor: string }[];
+  charts: { titulo: string; dataUrl: string; /** source width/height ratio */ aspectRatio?: number }[];
+  /** 'general' = cards top + 2x2 charts | 'ec' = cards top + centered charts */
+  layout?: 'general' | 'ec';
 }
 
 // ─── Servicio ─────────────────────────────────────────────────────────────────
@@ -1565,6 +1584,209 @@ export class PdfReporteService {
 
   // ── Exportar sección del dashboard como imagen en PDF ────────────────────
 
+  async exportarDashboardGeneralPdf(data: DashboardPdfData): Promise<void> {
+    const logo = await this.logoPromise;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth(); // 297
+    const pageH = doc.internal.pageSize.getHeight(); // 210
+
+    const contentY = drawPageHeader(doc, data.titulo, data.subtitulo, logo);
+
+    // Filtros + fecha emisión
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(data.filtrosAplicados, 14, contentY + 4);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, contentY + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    const bodyY = contentY + 10;
+    const bodyH = pageH - bodyY - 6;
+    const layout = data.layout ?? 'general';
+
+    if (layout === 'ec') {
+      this.drawDashboardEC(doc, data, bodyY, bodyH, pageW, pageH);
+    } else {
+      this.drawDashboardGeneral(doc, data, bodyY, bodyH, pageW, pageH);
+    }
+
+    doc.save(data.nombreArchivo);
+  }
+
+  // ── Layout General: fila de cards arriba + charts 2×2 abajo ──────────────
+  private drawDashboardGeneral(
+    doc: jsPDF, data: DashboardPdfData,
+    bodyY: number, bodyH: number, pageW: number, _pageH: number,
+  ): void {
+    const margin = 14;
+    const contentW = pageW - margin * 2; // ≈ 269
+
+    // ── KPI cards en una fila horizontal arriba ──
+    const cardRowH = 22;
+    const cardCount = data.kpis.length || 1;
+    const cardGap = 4;
+    const totalGaps = (cardCount - 1) * cardGap;
+    const cardW = (contentW - totalGaps) / cardCount;
+
+    data.kpis.forEach((kpi, i) => {
+      const cx = margin + i * (cardW + cardGap);
+      const cy = bodyY;
+
+      doc.setFillColor(240, 245, 250);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'F');
+      doc.setDrawColor(200, 215, 235);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'S');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...HEADER_BG);
+      doc.text(kpi.valor, cx + cardW / 2, cy + 9, { align: 'center' });
+
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      const labelLines = doc.splitTextToSize(kpi.label, cardW - 4) as string[];
+      doc.text(labelLines, cx + cardW / 2, cy + 15, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // ── Charts 2×2 debajo de las cards ──
+    const chartsY = bodyY + cardRowH + 5;
+    const chartsH = bodyH - cardRowH - 5;
+
+    const chartCols = 2;
+    const chartRows = Math.ceil(data.charts.length / chartCols);
+    const chartGapH = 5;
+    const chartGapW = 5;
+    const chartTitleH = 6;
+    const chartW = (contentW - (chartCols - 1) * chartGapW) / chartCols;
+    const chartH = (chartsH - chartRows * chartTitleH - (chartRows - 1) * chartGapH) / chartRows;
+
+    data.charts.forEach((ch, i) => {
+      const col = i % chartCols;
+      const row = Math.floor(i / chartCols);
+      const cx = margin + col * (chartW + chartGapW);
+      const cy = chartsY + row * (chartH + chartTitleH + chartGapH);
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(ch.titulo, cx + chartW / 2, cy + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy + chartTitleH, chartW, chartH, 2, 2, 'S');
+
+      // Fit image preserving aspect ratio within cell
+      const cellW = chartW - 1;
+      const cellH = chartH - 1;
+      const ar = ch.aspectRatio ?? (cellW / cellH);
+      let imgW = cellW;
+      let imgH = imgW / ar;
+      if (imgH > cellH) {
+        imgH = cellH;
+        imgW = imgH * ar;
+      }
+      const imgX = cx + 0.5 + (cellW - imgW) / 2;
+      const imgY = cy + chartTitleH + 0.5 + (cellH - imgH) / 2;
+
+      try {
+        doc.addImage(ch.dataUrl, 'PNG', imgX, imgY, imgW, imgH);
+      } catch { /* skip if dataUrl empty */ }
+    });
+  }
+
+  // ── Layout EC: cards en fila arriba + charts centrados abajo ──────────────
+  private drawDashboardEC(
+    doc: jsPDF, data: DashboardPdfData,
+    bodyY: number, bodyH: number, pageW: number, _pageH: number,
+  ): void {
+    const margin = 14;
+    const contentW = pageW - margin * 2;
+
+    // ── KPI cards centradas en fila ──
+    const cardRowH = 22;
+    const cardCount = data.kpis.length || 1;
+    const cardGap = 6;
+    const cardW = 55;
+    const totalCardsW = cardCount * cardW + (cardCount - 1) * cardGap;
+    const cardsStartX = margin + (contentW - totalCardsW) / 2;
+
+    data.kpis.forEach((kpi, i) => {
+      const cx = cardsStartX + i * (cardW + cardGap);
+      const cy = bodyY;
+
+      doc.setFillColor(240, 245, 250);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'F');
+      doc.setDrawColor(200, 215, 235);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy, cardW, cardRowH, 2, 2, 'S');
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...HEADER_BG);
+      doc.text(kpi.valor, cx + cardW / 2, cy + 9, { align: 'center' });
+
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      const labelLines = doc.splitTextToSize(kpi.label, cardW - 4) as string[];
+      doc.text(labelLines, cx + cardW / 2, cy + 15, { align: 'center' });
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // ── Charts centrados en la página ──
+    const chartsY = bodyY + cardRowH + 6;
+    const chartsH = bodyH - cardRowH - 6;
+
+    const chartCount = data.charts.length;
+    const chartGapW = 8;
+    // Limitar el tamaño de cada chart para que no se estire
+    const maxChartW = 120;
+    const maxChartH = chartsH - 6;
+    const chartW = Math.min(maxChartW, (contentW - (chartCount - 1) * chartGapW) / chartCount);
+    const chartH = Math.min(maxChartH, chartW * 0.85); // mantener proporciones
+    const chartTitleH = 6;
+
+    const totalW = chartCount * chartW + (chartCount - 1) * chartGapW;
+    const startX = margin + (contentW - totalW) / 2;
+    // Centrar verticalmente en el espacio disponible
+    const startY = chartsY + (chartsH - chartH - chartTitleH) / 2;
+
+    data.charts.forEach((ch, i) => {
+      const cx = startX + i * (chartW + chartGapW);
+      const cy = startY;
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text(ch.titulo, cx + chartW / 2, cy + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(cx, cy + chartTitleH, chartW, chartH, 2, 2, 'S');
+
+      // Fit image preserving aspect ratio
+      const cellW = chartW - 1;
+      const cellH = chartH - 1;
+      const ar = ch.aspectRatio ?? (cellW / cellH);
+      let imgW = cellW;
+      let imgH = imgW / ar;
+      if (imgH > cellH) {
+        imgH = cellH;
+        imgW = imgH * ar;
+      }
+      const imgX = cx + 0.5 + (cellW - imgW) / 2;
+      const imgY = cy + chartTitleH + 0.5 + (cellH - imgH) / 2;
+
+      try {
+        doc.addImage(ch.dataUrl, 'PNG', imgX, imgY, imgW, imgH);
+      } catch { /* skip if dataUrl empty */ }
+    });
+  }
+
   async exportarDashboardSeccion(data: {
     titulo: string;
     subtitulo: string;
@@ -1651,5 +1873,130 @@ export class PdfReporteService {
     }
 
     doc.save(data.nombreArchivo);
+  }
+
+  // ── Reporte de retiros anticipados ─────────────────────────────────────────
+
+  async exportarReporteRetiros(data: ReporteRetirosData): Promise<void> {
+    const logo  = await this.logoPromise;
+    const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }) as PdfWithAutoTable;
+    const pageW = doc.internal.pageSize.getWidth();
+
+    const titulo    = 'Listado de Retiros Anticipados';
+    const subtitulo = data.cursoLabel === 'Todos los cursos'
+      ? 'Todos los cursos'
+      : `Curso: ${data.cursoLabel}`;
+
+    let y = drawPageHeader(doc, titulo, subtitulo, logo);
+
+    // Metadata
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, y + 4);
+    doc.text(`Total retiros: ${data.retiros.length}`, 14, y + 9);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, y + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    y += 16;
+
+    const estadoLabel = (etiqueta: string | null): string => {
+      switch (etiqueta) {
+        case 'ConReingreso':     return 'Con Reingreso';
+        case 'Reingresado':      return 'Reingresado';
+        case 'ReingresoVencido': return 'Reingreso Vencido';
+        default:                 return 'Sin Reingreso';
+      }
+    };
+
+    const estadoColor = (etiqueta: string | null): [number, number, number] => {
+      switch (etiqueta) {
+        case 'Reingresado':      return VERDE;
+        case 'ReingresoVencido': return ROJO;
+        case 'ConReingreso':     return AMARILLO;
+        default:                 return GRIS;
+      }
+    };
+
+    const responsableDetalle = (item: RetiroReporteItem): string => {
+      const partes: string[] = [];
+      if (item.apellidoResponsable && item.nombreResponsable) {
+        let nombre = `${item.apellidoResponsable}, ${item.nombreResponsable}`;
+        if (item.idTutor) nombre += ' (Tutor)';
+        partes.push(nombre);
+      }
+      if (item.dniResponsable)      partes.push(`DNI: ${item.dniResponsable}`);
+      if (item.relacionResponsable) partes.push(`Relación: ${item.relacionResponsable}`);
+      if (item.telefonoResponsable) partes.push(`Tel: ${item.telefonoResponsable}`);
+      if (item.correoResponsable)   partes.push(`Email: ${item.correoResponsable}`);
+      return partes.length > 0 ? partes.join('\n') : '—';
+    };
+
+    autoTable(doc, {
+      startY: y,
+      margin: { top: HEADER_H + 2, left: 8, right: 8 },
+      head: [['Estudiante', 'DNI', 'Curso', 'Fecha', 'Turno', 'Tipo', 'Estado', 'Salida', 'Reingr. Est.', 'Reingr. Eft.', 'Responsable', 'Preceptor', 'Motivo']],
+      body: data.retiros.map(item => [
+        `${item.apellido}, ${item.nombre}`,
+        item.documento,
+        item.curso,
+        formatFecha(item.fecha),
+        item.turno === 'MANANA' ? 'Mañana' : 'Tarde',
+        item.tipoRetiro ?? '—',
+        estadoLabel(item.etiquetaEstado),
+        item.horarioRetiro,
+        item.horarioLimiteReingreso ?? '—',
+        item.horarioReingreso ?? '—',
+        responsableDetalle(item),
+        item.nombrePreceptor ?? '—',
+        item.motivo ?? '—',
+      ]),
+      headStyles: {
+        fillColor: HEADER_BG,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize:  7,
+        halign:    'center',
+      },
+      bodyStyles:          { fontSize: 7 },
+      alternateRowStyles:  { fillColor: [245, 248, 255] },
+      columnStyles: {
+        0:  { cellWidth: 34 },                          // Estudiante
+        1:  { cellWidth: 18, halign: 'center' },        // DNI
+        2:  { cellWidth: 12, halign: 'center' },        // Curso
+        3:  { cellWidth: 18, halign: 'center' },        // Fecha
+        4:  { cellWidth: 14, halign: 'center' },        // Turno
+        5:  { cellWidth: 12, halign: 'center' },        // Tipo
+        6:  { cellWidth: 24, halign: 'center' },        // Estado
+        7:  { cellWidth: 14, halign: 'center' },        // Salida
+        8:  { cellWidth: 18, halign: 'center' },        // Reingr Est
+        9:  { cellWidth: 18, halign: 'center' },        // Reingr Eft
+        10: { cellWidth: 40 },                          // Responsable
+        11: { cellWidth: 20 },                          // Preceptor
+        12: { cellWidth: 'auto' },                      // Motivo (ocupa todo el espacio restante)
+      },
+      didDrawPage: (hookData) => {
+        if (hookData.pageNumber > 1) {
+          drawPageHeader(doc, titulo, subtitulo, logo);
+          doc.setFontSize(7);
+          doc.setTextColor(80, 80, 80);
+          doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, HEADER_H + 2);
+          doc.text(`Emitido: ${hoy()}`, pageW - 14, HEADER_H + 2, { align: 'right' });
+          doc.setTextColor(0, 0, 0);
+        }
+      },
+      didParseCell: (hookData) => {
+        // Colorear celda Estado (índice 6)
+        if (hookData.section === 'body' && hookData.column.index === 6) {
+          const item = data.retiros[hookData.row.index];
+          if (item) {
+            const [r, g, b] = estadoColor(item.etiquetaEstado);
+            hookData.cell.styles.textColor = [r, g, b];
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+    });
+
+    doc.save(`reporte-retiros-${data.cursoLabel.replace(/\s+/g, '-')}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 }
