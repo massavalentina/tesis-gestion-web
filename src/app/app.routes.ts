@@ -183,6 +183,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard([], ['Secretario'])],
       },
       {
+        path: 'calendario',
+        ...withSectionData('calendario'),
+        loadComponent: () =>
+          import('./features/calendario/components/calendario/calendario.component')
+            .then(m => m.CalendarioComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Equipo Directivo', 'Secretario', 'Docente', 'Preceptor'])],
+      },
+      {
         path: 'mis-espacios-curriculares',
         ...withSectionData('misEspaciosCurriculares'),
         loadComponent: () =>

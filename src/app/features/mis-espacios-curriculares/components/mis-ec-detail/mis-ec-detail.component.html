@@ -127,8 +127,7 @@
       </div>
 
       <!-- Calendario -->
-      <div class="tile is-link">
-        <span class="tile-tag">Próximamente</span>
+      <div class="tile is-active" (click)="navegarCalendario()" tabindex="0" (keyup.enter)="navegarCalendario()" role="button">
         <div class="tile-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -138,7 +137,7 @@
           </svg>
         </div>
         <h4>Calendario</h4>
-        <p>Visualizá las clases planificadas del mes en un calendario mensual.</p>
+        <p>Visualizá el calendario institucional del curso.</p>
       </div>
 
     </div>

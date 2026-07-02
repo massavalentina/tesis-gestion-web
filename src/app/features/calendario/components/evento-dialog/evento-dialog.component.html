@@ -1,0 +1,161 @@
+<h2 mat-dialog-title>{{ tituloDialog }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="evento-form">
+
+    <!-- Título -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Título</mat-label>
+      <input matInput formControlName="titulo" maxlength="300">
+      <mat-error *ngIf="form.get('titulo')!.hasError('required')">El título es obligatorio</mat-error>
+    </mat-form-field>
+
+    <!-- Descripción -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput formControlName="descripcion" rows="3" maxlength="2000"></textarea>
+    </mat-form-field>
+
+    <!-- Tipo de evento -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Tipo de evento</mat-label>
+      <mat-select formControlName="tipoEvento">
+        <mat-option *ngFor="let t of tiposEvento" [value]="t.id">{{ t.label }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('tipoEvento')!.hasError('required')">Seleccione un tipo</mat-error>
+    </mat-form-field>
+
+    <!-- Fechas -->
+    <div class="fecha-row">
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio">
+        <mat-datepicker-toggle matIconSuffix [for]="dpInicio"></mat-datepicker-toggle>
+        <mat-datepicker #dpInicio></mat-datepicker>
+        <mat-error *ngIf="form.get('fechaInicio')!.hasError('required')">Obligatorio</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha fin</mat-label>
+        <input matInput [matDatepicker]="dpFin" formControlName="fechaFin">
+        <mat-datepicker-toggle matIconSuffix [for]="dpFin"></mat-datepicker-toggle>
+        <mat-datepicker #dpFin></mat-datepicker>
+        <mat-error *ngIf="form.get('fechaFin')!.hasError('required')">Obligatorio</mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Error fecha fin < inicio -->
+    <div class="form-error" *ngIf="form.hasError('fechaFinAnterior') && (form.get('fechaFin')!.touched || form.get('fechaInicio')!.touched)">
+      <mat-icon class="form-error-icon">error</mat-icon>
+      La fecha de fin debe ser igual o posterior a la fecha de inicio.
+    </div>
+
+    <!-- Toggles -->
+    <div class="toggles-row">
+      <mat-slide-toggle formControlName="contabilizaAsistencia"
+                        [disabled]="contabilizaDeshabilitado">
+        Contabiliza asistencia
+      </mat-slide-toggle>
+
+      <mat-slide-toggle formControlName="cambioActividad"
+                        [disabled]="cambioActividadDeshabilitado">
+        Cambio de actividad
+      </mat-slide-toggle>
+    </div>
+
+    <!-- Comentario cambio de actividad -->
+    <mat-form-field appearance="outline" class="full-width" *ngIf="mostrarComentarioCambio">
+      <mat-label>Comentario del cambio de actividad</mat-label>
+      <textarea matInput formControlName="comentarioCambioActividad" rows="2" maxlength="2000"></textarea>
+      <mat-error *ngIf="form.get('comentarioCambioActividad')!.hasError('required')">
+        Obligatorio cuando hay cambio de actividad
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Cursos -->
+    <mat-form-field appearance="outline" class="full-width" *ngIf="mostrarCursos">
+      <mat-label>Curso/s (vacío = todos)</mat-label>
+      <mat-select formControlName="cursoIds" multiple>
+        <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+  </form>
+
+  <!-- Auditoría del evento (modo detalle) -->
+  <div class="audit-section" *ngIf="modo === 'detalle'">
+    <button class="audit-toggle" type="button" (click)="toggleAuditoria()">
+      <mat-icon>{{ auditoriaAbierta ? 'expand_less' : 'expand_more' }}</mat-icon>
+      Historial del evento
+    </button>
+
+    <div class="audit-panel" *ngIf="auditoriaAbierta">
+      <div *ngIf="cargandoAuditoria" class="audit-loading">
+        <div class="spinner-sm"></div>
+      </div>
+
+      <div *ngIf="!cargandoAuditoria && auditoria.length === 0" class="audit-empty">
+        Sin registros de auditoría.
+      </div>
+
+      <div *ngIf="!cargandoAuditoria && auditoria.length > 0" class="audit-list">
+        <div class="audit-item" *ngFor="let a of auditoria">
+          <div class="audit-header">
+            <span class="audit-fecha">{{ formatFechaHora(a.fechaRegistro) }}</span>
+            <span class="audit-usuario">{{ a.nombreUsuario }} {{ a.apellidoUsuario }}</span>
+            <span class="audit-op"
+                  [class.op-creacion]="a.tipoOperacion === 'Creación'"
+                  [class.op-modificacion]="a.tipoOperacion === 'Modificación'"
+                  [class.op-eliminacion]="a.tipoOperacion === 'Eliminación'">
+              {{ a.tipoOperacion }}
+            </span>
+          </div>
+          <div class="audit-detalle" *ngIf="parsearDetalle(a).length > 0">
+            <div class="audit-linea" *ngFor="let linea of parsearDetalle(a)">{{ linea }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <!-- Modo detalle -->
+  <ng-container *ngIf="modo === 'detalle'">
+    <!-- Confirmación de eliminación -->
+    <ng-container *ngIf="confirmarEliminacion">
+      <span class="confirm-msg">¿Eliminar este evento?</span>
+      <button mat-button (click)="cancelarEliminacion()">No</button>
+      <button mat-flat-button color="warn"
+              [disabled]="eliminando"
+              (click)="eliminar()">
+        {{ eliminando ? 'Eliminando...' : 'Sí, eliminar' }}
+      </button>
+    </ng-container>
+
+    <!-- Acciones normales -->
+    <ng-container *ngIf="!confirmarEliminacion">
+      <button mat-button (click)="cancelar()">Cerrar</button>
+      <button mat-stroked-button color="warn"
+              *ngIf="data.puedeEditar"
+              (click)="eliminar()">
+        Eliminar
+      </button>
+      <button mat-flat-button color="primary"
+              *ngIf="data.puedeEditar"
+              (click)="pasarAEditar()">
+        Editar
+      </button>
+    </ng-container>
+  </ng-container>
+
+  <!-- Modo crear / editar -->
+  <ng-container *ngIf="modo !== 'detalle'">
+    <button mat-button (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary"
+            [disabled]="guardando"
+            (click)="guardar()">
+      {{ guardando ? 'Guardando...' : (modo === 'editar' ? 'Guardar' : 'Crear') }}
+    </button>
+  </ng-container>
+</mat-dialog-actions>

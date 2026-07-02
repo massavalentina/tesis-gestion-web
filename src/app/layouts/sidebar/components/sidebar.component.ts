@@ -429,6 +429,12 @@ export class SidebarComponent {
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reportesEstrategicosAsistencia':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
+      case 'calendario':
+        return this.esAdmin
+          || this.authService.tieneRol('Equipo Directivo')
+          || this.authService.tieneRol('Secretario')
+          || this.authService.tieneRol('Docente')
+          || this.authService.tieneRol('Preceptor');
       case 'perfil':
       case 'home':
         return true;

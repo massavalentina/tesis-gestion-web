@@ -96,6 +96,9 @@ export class MisEcDetailComponent implements OnInit {
   }
 
   navegarCalendario(): void {
-    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calendario']);
+    if (!this.espacio) return;
+    this.router.navigate(['/calendario'], {
+      queryParams: { cursoId: this.espacio.idCurso },
+    });
   }
 }

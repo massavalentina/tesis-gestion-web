@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,6 +19,7 @@ import {
   CursoSeleccion,
   DiaCalendario,
   COLORES_TIPO_EVENTO,
+  LABEL_TIPO_EVENTO,
 } from '../../models/calendario.model';
 import { EventoDialogComponent } from '../evento-dialog/evento-dialog.component';
 
@@ -69,12 +71,15 @@ export class CalendarioComponent implements OnInit {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
+  private cursoIdInicial: string | null = null;
+
   constructor(
     private calendarioService: CalendarioService,
     private authService: AuthService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private elementRef: ElementRef<HTMLElement>,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -83,6 +88,9 @@ export class CalendarioComponent implements OnInit {
     this.puedeGestionarEventos = esAdmin
       || this.authService.tieneRol('Equipo Directivo')
       || this.authService.tieneRol('Secretario');
+
+    // Pre-seleccionar curso si viene por query param (ej: desde mis-espacios-curriculares)
+    this.cursoIdInicial = this.route.snapshot.queryParamMap.get('cursoId');
 
     this.cargarDatos();
   }
@@ -100,6 +108,13 @@ export class CalendarioComponent implements OnInit {
         this.eventos = eventos;
         this.tiposEvento = tipos;
         this.cursos = cursos;
+
+        // Aplicar filtro inicial por curso (query param)
+        if (this.cursoIdInicial && cursos.some(c => c.id === this.cursoIdInicial)) {
+          this.cursosSeleccionados = [this.cursoIdInicial];
+          this.cursoIdInicial = null; // solo la primera vez
+        }
+
         this.loading = false;
       },
       error: () => {
@@ -113,6 +128,9 @@ export class CalendarioComponent implements OnInit {
     this.cursosSeleccionados = [];
     this.auditoriaGeneral = [];
     this.historialAbierto = false;
+    // Navegar al mismo mes en el año seleccionado
+    this.mesActual = new Date(this.anioLectivo, this.mesActual.getMonth(), 1);
+    this.diaPopoverKey = null;
     this.cargarDatos();
   }
 
@@ -148,7 +166,10 @@ export class CalendarioComponent implements OnInit {
   }
 
   get eventosFiltrados(): EventoInstitucional[] {
-    if (this.cursosSeleccionados.length === 0) return this.eventos;
+    if (this.cursosSeleccionados.length === 0) {
+      // Sin filtro de curso: solo eventos institucionales (sin cursos asignados)
+      return this.eventos.filter(e => e.cursos.length === 0);
+    }
     return this.eventos.filter(e => {
       if (e.cursos.length === 0) return true;
       return e.cursos.some(c => this.cursosSeleccionados.includes(c.idCurso));
@@ -204,6 +225,25 @@ export class CalendarioComponent implements OnInit {
 
   tiposUnicos(eventos: EventoInstitucional[]): number[] {
     return [...new Set(eventos.map(e => e.tipoEvento))];
+  }
+
+  /** Eventos tipo chip (1-4) para mostrar como tag en la celda */
+  eventosChip(eventos: EventoInstitucional[]): EventoInstitucional[] {
+    return eventos.filter(e => e.tipoEvento <= 4);
+  }
+
+  /** Eventos tipo período (5-6) para mostrar solo dot */
+  eventosDot(eventos: EventoInstitucional[]): EventoInstitucional[] {
+    return eventos.filter(e => e.tipoEvento >= 5);
+  }
+
+  /** Etiqueta del chip: título + curso si aplica */
+  chipLabel(ev: EventoInstitucional): string {
+    if (ev.cursos.length > 0) {
+      const cursosStr = ev.cursos.map(c => c.label).join(', ');
+      return `${ev.titulo} (${cursosStr})`;
+    }
+    return ev.titulo;
   }
 
   // ─── Helpers de fecha ──────────────────────────────────────────────────────────
@@ -273,6 +313,7 @@ export class CalendarioComponent implements OnInit {
     this.calendarioService.obtenerAuditoriaGeneral(this.anioLectivo).subscribe({
       next: data => {
         this.auditoriaGeneral = data;
+        this.agruparAuditoriaPorDia();
         this.cargandoHistorial = false;
       },
       error: () => {
@@ -288,5 +329,90 @@ export class CalendarioComponent implements OnInit {
     const hora = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
     return `${dia}/${mes} ${hora}:${min}`;
+  }
+
+  formatHora(iso: string): string {
+    const d = new Date(iso);
+    const hora = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${hora}:${min}`;
+  }
+
+  // ─── Agrupación de auditoría por día ─────────────────────────────────────────
+
+  auditoriaPorDia: { fecha: string; label: string; items: AuditoriaEvento[]; abierto: boolean }[] = [];
+
+  private agruparAuditoriaPorDia(): void {
+    const mapa = new Map<string, AuditoriaEvento[]>();
+    for (const a of this.auditoriaGeneral) {
+      const d = new Date(a.fechaRegistro);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!mapa.has(key)) mapa.set(key, []);
+      mapa.get(key)!.push(a);
+    }
+    this.auditoriaPorDia = Array.from(mapa.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, items]) => {
+        const [y, m, d] = key.split('-');
+        return { fecha: key, label: `${d}/${m}/${y}`, items, abierto: false };
+      });
+  }
+
+  toggleDiaAuditoria(grupo: { abierto: boolean }): void {
+    grupo.abierto = !grupo.abierto;
+  }
+
+  // ─── Parseo de auditoría ─────────────────────────────────────────────────────
+
+  private readonly labelTipo = LABEL_TIPO_EVENTO;
+
+  parsearDetalle(a: AuditoriaEvento): string[] {
+    if (a.tipoOperacion === 'Creación' && a.valoresNuevos) {
+      return this.formatearCampos(JSON.parse(a.valoresNuevos));
+    }
+    if (a.tipoOperacion === 'Eliminación' && a.valoresAnteriores) {
+      return this.formatearCampos(JSON.parse(a.valoresAnteriores));
+    }
+    if (a.tipoOperacion === 'Modificación' && a.valoresAnteriores && a.valoresNuevos) {
+      return this.formatearDiferencias(JSON.parse(a.valoresAnteriores), JSON.parse(a.valoresNuevos));
+    }
+    return [];
+  }
+
+  private formatearCampos(obj: Record<string, unknown>): string[] {
+    return Object.entries(obj).map(([k, v]) => `${this.labelCampo(k)}: ${this.formatearValor(k, v)}`);
+  }
+
+  private formatearDiferencias(antes: Record<string, unknown>, despues: Record<string, unknown>): string[] {
+    const lineas: string[] = [];
+    for (const key of Object.keys(despues)) {
+      if (JSON.stringify(antes[key]) !== JSON.stringify(despues[key])) {
+        lineas.push(`${this.labelCampo(key)}: ${this.formatearValor(key, antes[key])} → ${this.formatearValor(key, despues[key])}`);
+      }
+    }
+    return lineas;
+  }
+
+  private labelCampo(key: string): string {
+    const map: Record<string, string> = {
+      Titulo: 'Título', Descripcion: 'Descripción', TipoEvento: 'Tipo',
+      FechaInicio: 'Fecha inicio', FechaFin: 'Fecha fin',
+      ContabilizaAsistencia: 'Contabiliza asistencia', CambioActividad: 'Cambio de actividad',
+      ComentarioCambioActividad: 'Comentario cambio', CursoIds: 'Cursos',
+    };
+    return map[key] ?? key;
+  }
+
+  private formatearValor(key: string, val: unknown): string {
+    if (val === null || val === undefined) return '—';
+    if (key === 'TipoEvento') return this.labelTipo[val as number] ?? String(val);
+    if (key === 'FechaInicio' || key === 'FechaFin') return this.formatFecha(val as string);
+    if (key === 'ContabilizaAsistencia' || key === 'CambioActividad') return val ? 'Sí' : 'No';
+    if (key === 'CursoIds') {
+      const ids = val as string[];
+      if (!ids || ids.length === 0) return 'Todos';
+      return ids.map(id => this.cursos.find(c => c.id === id)?.label ?? id).join(', ');
+    }
+    return String(val);
   }
 }

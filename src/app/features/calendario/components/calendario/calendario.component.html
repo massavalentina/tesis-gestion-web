@@ -1,0 +1,205 @@
+<div class="cal-root">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="cal-center">
+    <div class="spinner"></div>
+    <span>Cargando calendario...</span>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && error" class="cal-center cal-error">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <span>{{ error }}</span>
+    <button class="btn-secondary" (click)="cargarDatos()">Reintentar</button>
+  </div>
+
+  <!-- Contenido -->
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- Título de la página -->
+    <div class="page-heading">
+      <div class="heading-left">
+        <div class="heading-icon"><mat-icon>calendar_month</mat-icon></div>
+        <h1 class="page-title">Calendario Institucional</h1>
+      </div>
+    </div>
+
+    <!-- Barra superior: filtros + botón nuevo -->
+    <div class="cal-top-bar">
+      <div class="cal-filtros">
+        <mat-form-field appearance="outline" class="filtro-anio">
+          <mat-label>Año lectivo</mat-label>
+          <mat-select [(ngModel)]="anioLectivo" (selectionChange)="onAnioChange()">
+            <mat-option *ngFor="let a of [anioLectivo - 1, anioLectivo, anioLectivo + 1]" [value]="a">
+              {{ a }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-curso" *ngIf="cursos.length > 0">
+          <mat-label>Filtrar por curso</mat-label>
+          <mat-select [(ngModel)]="cursosSeleccionados" multiple>
+            <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <button *ngIf="puedeGestionarEventos"
+              mat-flat-button
+              color="primary"
+              class="btn-nuevo"
+              (click)="abrirCrearEvento()">
+        <mat-icon>add</mat-icon>
+        Nuevo evento
+      </button>
+    </div>
+
+    <!-- Toolbar mes -->
+    <div class="cal-toolbar">
+      <h2 class="cal-titulo">{{ nombreMes }} {{ anioMes }}</h2>
+      <div class="cal-nav">
+        <button class="nav-btn" (click)="mesAnterior()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button class="btn-hoy" (click)="irAHoy()">Hoy</button>
+        <button class="nav-btn" (click)="mesSiguiente()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Leyenda de colores -->
+    <div class="cal-legend">
+      <span class="leg-item" *ngFor="let t of tiposEvento">
+        <span class="leg-dot" [style.background]="colores[t.id]?.border"></span>
+        {{ t.label }}
+      </span>
+    </div>
+
+    <!-- Cabecera días -->
+    <div class="cal-dow-row">
+      <span class="dow-cell" *ngFor="let d of diasSemana">{{ d }}</span>
+    </div>
+
+    <!-- Grilla -->
+    <div class="cal-grid">
+      <div class="cal-day"
+           *ngFor="let dia of diasDelMes"
+           [class.fuera-mes]="!dia.enMes"
+           [class.hoy]="esHoy(dia.fecha)"
+           [class.con-eventos]="dia.eventos.length > 0"
+           (click)="toggleDia(dia)">
+
+        <!-- Franja lateral multi-tipo -->
+        <div class="day-strip" *ngIf="tiposUnicos(dia.eventos).length > 1">
+          <span class="strip-seg"
+                *ngFor="let tipo of tiposUnicos(dia.eventos)"
+                [style.background]="colorEvento(tipo).border">
+          </span>
+        </div>
+
+        <!-- Franja lateral mono-tipo -->
+        <ng-container *ngIf="tiposUnicos(dia.eventos).length === 1">
+          <div class="day-single-strip"
+               [style.background]="colorEvento(dia.eventos[0].tipoEvento).border">
+          </div>
+        </ng-container>
+
+        <!-- Número del día -->
+        <span class="day-num">{{ dia.fecha.getDate() }}</span>
+
+        <!-- Dots de período (tipos 5-6) -->
+        <div class="day-period-dots" *ngIf="eventosDot(dia.eventos).length > 0">
+          <span class="dot-mini"
+                *ngFor="let ev of eventosDot(dia.eventos)"
+                [style.background]="colorEvento(ev.tipoEvento).border">
+          </span>
+        </div>
+
+        <!-- Chips de evento (tipos 1-4, máx 2) -->
+        <div class="day-badges" *ngIf="eventosChip(dia.eventos).length > 0 && eventosChip(dia.eventos).length <= 2">
+          <span class="evento-chip"
+                *ngFor="let ev of eventosChip(dia.eventos)"
+                [style.background]="colorEvento(ev.tipoEvento).bg"
+                [style.color]="colorEvento(ev.tipoEvento).text"
+                [style.border-color]="colorEvento(ev.tipoEvento).border">
+            {{ chipLabel(ev) }}
+          </span>
+        </div>
+
+        <!-- Dots para 3+ eventos de tipo 1-4 -->
+        <div class="day-dots" *ngIf="eventosChip(dia.eventos).length > 2">
+          <span class="dot-mini"
+                *ngFor="let ev of eventosChip(dia.eventos)"
+                [style.background]="colorEvento(ev.tipoEvento).border">
+          </span>
+        </div>
+
+        <!-- Popover -->
+        <div class="day-popover"
+             *ngIf="diaPopoverKey === dia.key"
+             (click)="$event.stopPropagation()">
+          <div class="popover-item"
+               *ngFor="let ev of dia.eventos"
+               (click)="abrirDetalleEvento(ev)">
+            <span class="pop-dot" [style.background]="colorEvento(ev.tipoEvento).border"></span>
+            <div class="popover-texto">
+              <div class="popover-titulo">{{ ev.titulo }}</div>
+              <div class="popover-meta">{{ ev.tipoEventoLabel }}</div>
+              <div class="popover-meta">{{ formatFecha(ev.fechaInicio) }} — {{ formatFecha(ev.fechaFin) }}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Historial de cambios (solo equipo directivo / secretario) -->
+    <div class="audit-section" *ngIf="puedeGestionarEventos">
+      <button class="audit-toggle" (click)="toggleHistorial()">
+        <mat-icon>{{ historialAbierto ? 'expand_less' : 'expand_more' }}</mat-icon>
+        Historial de cambios
+      </button>
+
+      <div class="audit-panel" *ngIf="historialAbierto">
+        <div *ngIf="cargandoHistorial" class="cal-center" style="min-height: 80px;">
+          <div class="spinner"></div>
+        </div>
+
+        <div *ngIf="!cargandoHistorial && auditoriaPorDia.length === 0" class="audit-empty">
+          No hay registros de auditoría para este año.
+        </div>
+
+        <!-- Agrupado por día -->
+        <div class="audit-days" *ngIf="!cargandoHistorial && auditoriaPorDia.length > 0">
+          <div class="audit-day-group" *ngFor="let grupo of auditoriaPorDia">
+            <button class="audit-day-toggle" (click)="toggleDiaAuditoria(grupo)">
+              <mat-icon>{{ grupo.abierto ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <span class="audit-day-label">{{ grupo.label }}</span>
+              <span class="audit-day-count">{{ grupo.items.length }} {{ grupo.items.length === 1 ? 'cambio' : 'cambios' }}</span>
+            </button>
+
+            <div class="audit-list" *ngIf="grupo.abierto">
+              <div class="audit-item" *ngFor="let a of grupo.items">
+                <div class="audit-header">
+                  <span class="audit-fecha">{{ formatHora(a.fechaRegistro) }}</span>
+                  <span class="audit-usuario">{{ a.nombreUsuario }} {{ a.apellidoUsuario }}</span>
+                  <span class="audit-op"
+                        [class.op-creacion]="a.tipoOperacion === 'Creación'"
+                        [class.op-modificacion]="a.tipoOperacion === 'Modificación'"
+                        [class.op-eliminacion]="a.tipoOperacion === 'Eliminación'">
+                    {{ a.tipoOperacion }}
+                  </span>
+                </div>
+                <div class="audit-detalle" *ngIf="parsearDetalle(a).length > 0">
+                  <div class="audit-linea" *ngFor="let linea of parsearDetalle(a)">{{ linea }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>
