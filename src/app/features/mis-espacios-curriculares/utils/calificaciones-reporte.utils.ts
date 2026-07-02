@@ -1,4 +1,8 @@
-import { TipoCalificacion } from '../models/calificaciones.model';
+import {
+  ArchivoIEResumen,
+  InstanciaEvaluativaResumen,
+  TipoCalificacion,
+} from '../models/calificaciones.model';
 
 export type ReporteEstadoFinal = 'aprobado' | 'desaprobado' | 'desaprobado_tema';
 
@@ -49,6 +53,30 @@ export interface ReporteVariacionCalificacionesGlobal {
   bandaSuperiorPorEvaluacion: Record<number, number | null>;
 }
 
+export interface ReporteVariacionTemporalPunto {
+  evaluacionNumero: number;
+  fecha: string;
+  fechaTimestamp: number;
+  valor: number;
+  tipoOrigen: TipoCalificacion;
+  etiqueta: string;
+}
+
+export interface ReporteVariacionTemporalSerie {
+  idEstudiante: string;
+  puntos: ReporteVariacionTemporalPunto[];
+}
+
+export interface ReporteVariacionTemporalGlobal {
+  seriesByStudentId: Record<string, ReporteVariacionTemporalSerie>;
+  promedioPorEvaluacion: Record<number, number | null>;
+  desviacionPorEvaluacion: Record<number, number | null>;
+  bandaInferiorPorEvaluacion: Record<number, number | null>;
+  bandaSuperiorPorEvaluacion: Record<number, number | null>;
+  fechaPorEvaluacion: Record<number, string | null>;
+  fechaTimestampPorEvaluacion: Record<number, number | null>;
+}
+
 interface ReporteStudentLike {
   idEstudiante: string;
 }
@@ -80,6 +108,28 @@ function standardDeviation(values: number[]): number | null {
   const mean = values.reduce((total, value) => total + value, 0) / values.length;
   const variance = values.reduce((total, value) => total + ((value - mean) ** 2), 0) / values.length;
   return roundTo(Math.sqrt(variance), 2);
+}
+
+function getArchivoPorTipo(archivos: InstanciaEvaluativaResumen['archivos'], tipo: TipoCalificacion): ArchivoIEResumen | null {
+  switch (tipo) {
+    case 'N':
+      return archivos.notaOriginal ?? null;
+    case 'R1':
+      return archivos.recuperatorio1 ?? null;
+    case 'R2':
+      return archivos.recuperatorio2 ?? null;
+    default:
+      return null;
+  }
+}
+
+function getTimestamp(fecha: string | null): number | null {
+  if (!fecha) {
+    return null;
+  }
+
+  const timestamp = Date.parse(fecha);
+  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 export function buildCalificacionesReport(
@@ -276,5 +326,113 @@ export function buildCalificacionesVariacionReport(
     desviacionPorEvaluacion,
     bandaInferiorPorEvaluacion,
     bandaSuperiorPorEvaluacion,
+  };
+}
+
+export function buildCalificacionesVariacionTemporalReport(
+  estudiantes: ReporteStudentLike[],
+  instancias: InstanciaEvaluativaResumen[],
+  getSavedCellValue: (idEstudiante: string, idIE: string, tipo: TipoCalificacion) => number | null,
+): ReporteVariacionTemporalGlobal {
+  const seriesByStudentId: Record<string, ReporteVariacionTemporalSerie> = {};
+  const promedioPorEvaluacion: Record<number, number | null> = {};
+  const desviacionPorEvaluacion: Record<number, number | null> = {};
+  const bandaInferiorPorEvaluacion: Record<number, number | null> = {};
+  const bandaSuperiorPorEvaluacion: Record<number, number | null> = {};
+  const fechaPorEvaluacion: Record<number, string | null> = {};
+  const fechaTimestampPorEvaluacion: Record<number, number | null> = {};
+
+  const tiposOrdenados: readonly TipoCalificacion[] = ['N', 'R1', 'R2'];
+
+  for (const estudiante of estudiantes) {
+    const puntos: ReporteVariacionTemporalPunto[] = [];
+
+    for (const instancia of instancias) {
+      const notas = tiposOrdenados
+        .map(tipo => {
+          const archivo = getArchivoPorTipo(instancia.archivos, tipo);
+          const puntaje = archivo ? getSavedCellValue(estudiante.idEstudiante, instancia.idIE, tipo) : null;
+          return {
+            tipo,
+            archivo,
+            puntaje,
+          };
+        })
+        .filter(item => item.archivo !== null && item.puntaje !== null);
+
+      if (notas.length === 0) {
+        continue;
+      }
+
+      const mejor = notas.reduce((current, candidate) => {
+        if (candidate.puntaje! > current.puntaje!) {
+          return candidate;
+        }
+        return current;
+      });
+
+      const fecha = mejor.archivo?.fechaEjecucion ?? instancia.archivos.notaOriginal?.fechaEjecucion
+        ?? instancia.archivos.recuperatorio1?.fechaEjecucion
+        ?? instancia.archivos.recuperatorio2?.fechaEjecucion
+        ?? null;
+      const timestamp = getTimestamp(fecha);
+      if (!fecha || timestamp === null) {
+        continue;
+      }
+
+      puntos.push({
+        evaluacionNumero: instancia.nro,
+        fecha,
+        fechaTimestamp: timestamp,
+        valor: mejor.puntaje!,
+        tipoOrigen: mejor.tipo,
+        etiqueta: `IE ${instancia.nro} / ${mejor.tipo}`,
+      });
+    }
+
+    seriesByStudentId[estudiante.idEstudiante] = {
+      idEstudiante: estudiante.idEstudiante,
+      puntos: puntos.sort((a, b) => a.fechaTimestamp - b.fechaTimestamp),
+    };
+  }
+
+  for (const instancia of instancias) {
+    const puntos = estudiantes
+      .map(estudiante => {
+        const serie = seriesByStudentId[estudiante.idEstudiante];
+        return serie?.puntos.find(p => p.evaluacionNumero === instancia.nro) ?? null;
+      })
+      .filter((item): item is ReporteVariacionTemporalPunto => !!item);
+    const valores = puntos.map(item => item.valor);
+    const promedio = average(valores);
+    const desvio = standardDeviation(valores);
+    const fechaBase = instancia.archivos.notaOriginal?.fechaEjecucion
+      ?? instancia.archivos.recuperatorio1?.fechaEjecucion
+      ?? instancia.archivos.recuperatorio2?.fechaEjecucion
+      ?? null;
+
+    promedioPorEvaluacion[instancia.nro] = promedio;
+    desviacionPorEvaluacion[instancia.nro] = desvio;
+    fechaPorEvaluacion[instancia.nro] = fechaBase;
+    fechaTimestampPorEvaluacion[instancia.nro] = getTimestamp(fechaBase);
+
+    if (promedio === null || desvio === null) {
+      bandaInferiorPorEvaluacion[instancia.nro] = null;
+      bandaSuperiorPorEvaluacion[instancia.nro] = null;
+      continue;
+    }
+
+    bandaInferiorPorEvaluacion[instancia.nro] = roundTo(Math.max(0, promedio - desvio), 2);
+    bandaSuperiorPorEvaluacion[instancia.nro] = roundTo(Math.min(10, promedio + desvio), 2);
+  }
+
+  return {
+    seriesByStudentId,
+    promedioPorEvaluacion,
+    desviacionPorEvaluacion,
+    bandaInferiorPorEvaluacion,
+    bandaSuperiorPorEvaluacion,
+    fechaPorEvaluacion,
+    fechaTimestampPorEvaluacion,
   };
 }

@@ -1,0 +1,138 @@
+<div class="reporte-container" [class.embedded-view]="embedded">
+  <div class="topbar" *ngIf="!embedded">
+    <button mat-button class="btn-volver" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a ficha
+    </button>
+    <button mat-stroked-button class="btn-export" disabled matTooltip="Exportación PDF en preparación">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Exportar PDF
+    </button>
+  </div>
+
+  <div class="selector-card" *ngIf="!cargandoEspacios && !error">
+    <div class="selector-body">
+      <span class="selector-label">Espacio curricular</span>
+      <mat-select [(ngModel)]="espacioSeleccionadoId" (ngModelChange)="onEspacioChange()" placeholder="Elegí un espacio">
+        <mat-option *ngFor="let espacio of espacios" [value]="espacio.idEC">{{ espacio.nombre }}</mat-option>
+      </mat-select>
+    </div>
+    <mat-spinner *ngIf="cargandoReporte" diameter="18"></mat-spinner>
+  </div>
+
+  <div class="estado-center" *ngIf="cargandoFicha || cargandoEspacios">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="estado-center error" *ngIf="error || errorReporte">
+    <mat-icon>error_outline</mat-icon>
+    <span>No se pudo cargar el reporte de calificaciones.</span>
+  </div>
+
+  <div class="estado-center muted" *ngIf="!error && !cargandoReporte && espacios.length === 0">
+    <mat-icon>school</mat-icon>
+    <span>No hay espacios curriculares para este curso.</span>
+  </div>
+
+  <ng-container *ngIf="!error && !cargandoReporte && reporte && reportStudent">
+    <div class="report-card">
+      <div class="report-card-head" [class.embedded-head]="embedded">
+        <div *ngIf="!embedded">
+          <span class="report-eyebrow">CALIFICACIONES POR IE</span>
+          <h2>{{ nombreCompleto }}</h2>
+          <p>DNI {{ documento }}</p>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn" [class.active]="tabActivo === 1" (click)="onTabChange(1)">Evaluaciones 1 a 4</button>
+          <button class="tab-btn" [class.active]="tabActivo === 2" (click)="onTabChange(2)">Evaluaciones 5 a 8</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="sticky-left">Estudiante</th>
+              <th rowspan="2" class="dni-col">DNI</th>
+              <th *ngFor="let numero of evaluacionesTab" colspan="3">IE {{ numero }}</th>
+              <th rowspan="2" class="nota-col">Nota final</th>
+              <th rowspan="2" class="estado-col">Estado</th>
+            </tr>
+            <tr>
+              <ng-container *ngFor="let numero of evaluacionesTab">
+                <th>N</th>
+                <th>R1</th>
+                <th>R2</th>
+              </ng-container>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="student-row">
+              <td class="sticky-left student-name">{{ nombreCompleto }}</td>
+              <td class="dni-col">{{ documento }}</td>
+              <ng-container *ngFor="let numero of evaluacionesTab">
+                <ng-container *ngIf="getEvaluationRow(numero) as evalRow; else emptyEval">
+                  <td [class.cell-warn]="!evalRow.apruebaTema" [class.cell-recovery]="evalRow.usoRecuperatorio">{{ evalRow.n === null ? '—' : evalRow.n }}</td>
+                  <td [class.cell-warn]="!evalRow.apruebaTema" [class.cell-recovery]="evalRow.usoRecuperatorio">{{ evalRow.r1 === null ? '—' : evalRow.r1 }}</td>
+                  <td [class.cell-warn]="!evalRow.apruebaTema" [class.cell-recovery]="evalRow.usoRecuperatorio">{{ evalRow.r2 === null ? '—' : evalRow.r2 }}</td>
+                </ng-container>
+                <ng-template #emptyEval>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                </ng-template>
+              </ng-container>
+              <td class="nota-final"><span class="nota-badge">{{ formatGrade(reportStudent.notaFinal) }}</span></td>
+              <td class="estado-final">
+                <span class="estado-badge" [ngClass]="estadoClase">{{ estadoLabel }}</span>
+              </td>
+            </tr>
+
+            <tr class="summary-row promedio">
+              <td class="summary-label" colspan="2">Promedio General</td>
+              <ng-container *ngFor="let numero of evaluacionesTab">
+                <td colspan="3">{{ getPromedioEvaluacion(numero) }}</td>
+              </ng-container>
+              <td>{{ formatGrade(reporte.summary.promedioFinal) }}</td>
+              <td>—</td>
+            </tr>
+            <tr class="summary-row recovery">
+              <td class="summary-label" colspan="2">% Recuperatorios</td>
+              <ng-container *ngFor="let numero of evaluacionesTab">
+                <td colspan="3">{{ getRecuperatorioEvaluacion(numero) }}</td>
+              </ng-container>
+              <td>{{ formatPercentage(reporte.summary.porcentajeRecuperatoriosFinal) }}</td>
+              <td>—</td>
+            </tr>
+            <tr class="summary-row passing">
+              <td class="summary-label" colspan="2">% Notas &gt;= 7</td>
+              <ng-container *ngFor="let numero of evaluacionesTab">
+                <td colspan="3">{{ getAprobadasEvaluacion(numero) }}</td>
+              </ng-container>
+              <td>{{ formatPercentage(reporte.summary.porcentajeAprobadosFinal) }}</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="swatch swatch-green"></i>Aprobado</span>
+        <span class="legend-item"><i class="swatch swatch-red"></i>Desaprobado</span>
+        <span class="legend-item"><i class="swatch swatch-rose"></i>Desaprobado por tema</span>
+        <span class="legend-item"><i class="swatch swatch-gray"></i>Evaluación con recuperatorio</span>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="report-card-head chart-head">
+        <div>
+          <span class="report-eyebrow">VARIACIÓN DE CALIFICACIONES</span>
+          <br/>
+        </div>
+        <div class="chart-note">Banda de promedio ± desviación estándar</div>
+      </div>
+      <div class="chart-body" echarts [options]="reporteChartOptions" (chartInit)="onChartInit($event)"></div>
+    </div>
+  </ng-container>
+</div>
