@@ -91,6 +91,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW', 'PARTE_DIARIO_R'], ['Docente', 'Equipo Directivo'])],
       },
       {
+        path: 'reporte-retiros',
+        ...withSectionData('reporteRetiros'),
+        loadComponent: () =>
+          import('../app/features/reporte-retiros/components/reporte-retiros/reporte-retiros.component')
+            .then(m => m.ReporteRetirosComponent),
+        canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW'], ['Equipo Directivo', 'Secretario'])],
+      },
+      {
         path: 'attendance/scan',
         ...withSectionData('qrScanner'),
         component: PaginaEscanerAsistencia,

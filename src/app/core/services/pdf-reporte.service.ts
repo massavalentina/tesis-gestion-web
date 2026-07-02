@@ -12,6 +12,7 @@ import { ComentarioParte } from '../../features/parte-diario-digital/models/come
 import { TurnoParte } from '../../features/parte-diario-digital/models/turno-parte.model';
 import { HorarioClase } from '../../features/parte-diario-digital/models/horario-clase.model';
 import { EstudianteParte } from '../../features/parte-diario-digital/models/estudiante-parte.model';
+import { RetiroReporteItem } from '../../features/reporte-retiros/models/retiro-reporte-item.model';
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
 const VERDE    = [46, 125, 50]    as [number, number, number];
@@ -316,6 +317,13 @@ export interface ProgramaEstructuradoData {
     descripcion?: string;
     temas: { nro: number; titulo: string; descripcion?: string }[];
   }[];
+}
+
+export interface ReporteRetirosData {
+  cursoLabel: string;
+  fechaDesde: string | null;
+  fechaHasta: string | null;
+  retiros: RetiroReporteItem[];
 }
 
 export interface DashboardPdfData {
@@ -1865,5 +1873,130 @@ export class PdfReporteService {
     }
 
     doc.save(data.nombreArchivo);
+  }
+
+  // ── Reporte de retiros anticipados ─────────────────────────────────────────
+
+  async exportarReporteRetiros(data: ReporteRetirosData): Promise<void> {
+    const logo  = await this.logoPromise;
+    const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }) as PdfWithAutoTable;
+    const pageW = doc.internal.pageSize.getWidth();
+
+    const titulo    = 'Listado de Retiros Anticipados';
+    const subtitulo = data.cursoLabel === 'Todos los cursos'
+      ? 'Todos los cursos'
+      : `Curso: ${data.cursoLabel}`;
+
+    let y = drawPageHeader(doc, titulo, subtitulo, logo);
+
+    // Metadata
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, y + 4);
+    doc.text(`Total retiros: ${data.retiros.length}`, 14, y + 9);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, y + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    y += 16;
+
+    const estadoLabel = (etiqueta: string | null): string => {
+      switch (etiqueta) {
+        case 'ConReingreso':     return 'Con Reingreso';
+        case 'Reingresado':      return 'Reingresado';
+        case 'ReingresoVencido': return 'Reingreso Vencido';
+        default:                 return 'Sin Reingreso';
+      }
+    };
+
+    const estadoColor = (etiqueta: string | null): [number, number, number] => {
+      switch (etiqueta) {
+        case 'Reingresado':      return VERDE;
+        case 'ReingresoVencido': return ROJO;
+        case 'ConReingreso':     return AMARILLO;
+        default:                 return GRIS;
+      }
+    };
+
+    const responsableDetalle = (item: RetiroReporteItem): string => {
+      const partes: string[] = [];
+      if (item.apellidoResponsable && item.nombreResponsable) {
+        let nombre = `${item.apellidoResponsable}, ${item.nombreResponsable}`;
+        if (item.idTutor) nombre += ' (Tutor)';
+        partes.push(nombre);
+      }
+      if (item.dniResponsable)      partes.push(`DNI: ${item.dniResponsable}`);
+      if (item.relacionResponsable) partes.push(`Relación: ${item.relacionResponsable}`);
+      if (item.telefonoResponsable) partes.push(`Tel: ${item.telefonoResponsable}`);
+      if (item.correoResponsable)   partes.push(`Email: ${item.correoResponsable}`);
+      return partes.length > 0 ? partes.join('\n') : '—';
+    };
+
+    autoTable(doc, {
+      startY: y,
+      margin: { top: HEADER_H + 2, left: 8, right: 8 },
+      head: [['Estudiante', 'DNI', 'Curso', 'Fecha', 'Turno', 'Tipo', 'Estado', 'Salida', 'Reingr. Est.', 'Reingr. Eft.', 'Responsable', 'Preceptor', 'Motivo']],
+      body: data.retiros.map(item => [
+        `${item.apellido}, ${item.nombre}`,
+        item.documento,
+        item.curso,
+        formatFecha(item.fecha),
+        item.turno === 'MANANA' ? 'Mañana' : 'Tarde',
+        item.tipoRetiro ?? '—',
+        estadoLabel(item.etiquetaEstado),
+        item.horarioRetiro,
+        item.horarioLimiteReingreso ?? '—',
+        item.horarioReingreso ?? '—',
+        responsableDetalle(item),
+        item.nombrePreceptor ?? '—',
+        item.motivo ?? '—',
+      ]),
+      headStyles: {
+        fillColor: HEADER_BG,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize:  7,
+        halign:    'center',
+      },
+      bodyStyles:          { fontSize: 7 },
+      alternateRowStyles:  { fillColor: [245, 248, 255] },
+      columnStyles: {
+        0:  { cellWidth: 34 },                          // Estudiante
+        1:  { cellWidth: 18, halign: 'center' },        // DNI
+        2:  { cellWidth: 12, halign: 'center' },        // Curso
+        3:  { cellWidth: 18, halign: 'center' },        // Fecha
+        4:  { cellWidth: 14, halign: 'center' },        // Turno
+        5:  { cellWidth: 12, halign: 'center' },        // Tipo
+        6:  { cellWidth: 24, halign: 'center' },        // Estado
+        7:  { cellWidth: 14, halign: 'center' },        // Salida
+        8:  { cellWidth: 18, halign: 'center' },        // Reingr Est
+        9:  { cellWidth: 18, halign: 'center' },        // Reingr Eft
+        10: { cellWidth: 40 },                          // Responsable
+        11: { cellWidth: 20 },                          // Preceptor
+        12: { cellWidth: 'auto' },                      // Motivo (ocupa todo el espacio restante)
+      },
+      didDrawPage: (hookData) => {
+        if (hookData.pageNumber > 1) {
+          drawPageHeader(doc, titulo, subtitulo, logo);
+          doc.setFontSize(7);
+          doc.setTextColor(80, 80, 80);
+          doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, HEADER_H + 2);
+          doc.text(`Emitido: ${hoy()}`, pageW - 14, HEADER_H + 2, { align: 'right' });
+          doc.setTextColor(0, 0, 0);
+        }
+      },
+      didParseCell: (hookData) => {
+        // Colorear celda Estado (índice 6)
+        if (hookData.section === 'body' && hookData.column.index === 6) {
+          const item = data.retiros[hookData.row.index];
+          if (item) {
+            const [r, g, b] = estadoColor(item.etiquetaEstado);
+            hookData.cell.styles.textColor = [r, g, b];
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+    });
+
+    doc.save(`reporte-retiros-${data.cursoLabel.replace(/\s+/g, '-')}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 }
