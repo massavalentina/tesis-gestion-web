@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Prototipo v4 - Importación de notas</title>
+<style>
+:root{
+--bg:#eef2f7;--card:#fff;--text:#111827;--muted:#6b7280;--border:#d8dee9;--primary:#2563eb;--primarySoft:#eaf1ff;
+--ok:#15803d;--okBg:#eaf7ee;--okB:#b7e3c4;--warn:#b45309;--warnBg:#fff7e6;--warnB:#f2c879;
+--danger:#b91c1c;--dangerBg:#fdecec;--dangerB:#f4a3a3;--orange:#ea580c;--orangeBg:#fff1e8;--orangeB:#fdba74;
+--gray:#f3f4f6;--shadow:0 24px 70px rgba(15,23,42,.20)
+}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#111827,#25314a);color:var(--text);min-height:100vh}
+.homeWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}.home{width:min(980px,94vw);background:#fff;border-radius:28px;padding:34px;box-shadow:var(--shadow)}h1,h2,h3{margin-top:0}p{color:var(--muted)}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}.step{border:1px solid var(--border);border-radius:18px;padding:18px;background:#f8fafc}.step small{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--primarySoft);color:var(--primary);font-weight:900;margin-bottom:10px}.step strong{display:block;margin-bottom:6px}.step span{font-size:13px;color:var(--muted)}
+.btn{border:1px solid var(--border);background:#fff;color:var(--text);height:40px;padding:0 16px;border-radius:12px;font-weight:800;cursor:pointer}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}.btn:disabled{cursor:not-allowed;color:#6b7280;background:#e5e7eb;border-color:#d1d5db}.actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:22px}
+.backdrop{position:fixed;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;padding:22px;z-index:10}.backdrop.open{display:flex}.modal{width:min(640px,94vw);background:#fff;border-radius:26px;box-shadow:var(--shadow);overflow:hidden}.modal.large{width:min(1580px,98vw);height:min(930px,96vh)}.mh{padding:22px 26px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.mh small{display:block;color:#9ca3af;font-weight:900;text-transform:uppercase;letter-spacing:.08em;font-size:11px;margin-bottom:6px}.mh h2{margin:0;font-size:23px}.mh p{margin:6px 0 0;font-size:13px}.mb{padding:22px 26px}.modal.large .mb{height:calc(100% - 160px);padding:16px 20px 0;overflow:hidden}.mf{padding:16px 26px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#fbfcfe}
+.field{margin-bottom:16px}label{display:block;font-size:12px;font-weight:900;color:#374151;margin-bottom:7px}select,input{height:40px;border:1px solid var(--border);border-radius:12px;padding:0 12px;font-size:14px;background:#fff;color:var(--text)}.field select,.field input{width:100%}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.upload{border:2px dashed #b7c9ff;border-radius:18px;padding:26px;text-align:center;background:#f8fbff;margin-top:8px}.upload .icon{font-size:32px;color:var(--primary);line-height:1;margin-bottom:8px}.hint{background:var(--primarySoft);color:#1d4ed8;border:1px solid #bdd2ff;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:650;margin-top:14px}
+.spinner{width:58px;height:58px;border-radius:50%;border:6px solid #dbe7ff;border-top-color:var(--primary);animation:spin .9s linear infinite;margin:6px auto 10px}@keyframes spin{to{transform:rotate(360deg)}}.checklist{display:grid;gap:14px;margin-top:18px}.checkitem{display:flex;align-items:center;gap:12px;color:#374151;font-weight:750;opacity:.25;transform:translateY(6px);transition:.35s ease}.checkitem.done{opacity:1;transform:translateY(0)}.check{width:22px;height:22px;border-radius:50%;border:1px solid #d1d5db;display:grid;place-items:center;font-size:12px;color:#9ca3af;background:#fff;font-weight:900}.checkitem.done .check{background:var(--okBg);border-color:var(--okB);color:var(--ok)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric{border:1px solid var(--border);border-radius:16px;background:#fff;padding:15px}.metric strong{display:block;font-size:28px;margin-bottom:4px}.metric span{font-size:12px;color:var(--muted);font-weight:800}.alert{display:flex;gap:10px;padding:14px;border-radius:15px;margin-top:16px;font-size:13px;font-weight:650}.alert.warn{background:var(--warnBg);border:1px solid var(--warnB);color:#92400e}.alert.ok{background:var(--okBg);border:1px solid var(--okB);color:var(--ok)}
+.toolbar{display:grid;grid-template-columns:auto auto auto minmax(420px,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}.chip{border:1px solid var(--border);background:#fff;color:#374151;border-radius:999px;padding:8px 14px;font-weight:900;font-size:12px;cursor:pointer;white-space:nowrap}.chip.active{background:var(--primarySoft);color:var(--primary);border-color:#bdd2ff}.chip.conflict{background:var(--dangerBg);border-color:var(--dangerB);color:var(--danger)}.chip.clean{background:var(--okBg);border-color:var(--okB);color:var(--ok)}.search{width:100%;min-width:420px}
+.tabs{
+  display:flex;
+  align-items:flex-end;
+  gap:0;
+  margin:0;
+  padding:8px 0 0 8px;
+  height:48px;
+  background:linear-gradient(#eeeeee,#cfcfcf);
+  border:1px solid #aeb4be;
+  border-bottom:none;
+  border-radius:8px 8px 0 0;
+}
+.tab{
+  height:40px;
+  min-width:155px;
+  padding:0 18px;
+  border:1px solid #aeb4be;
+  border-bottom:1px solid #aeb4be;
+  border-radius:7px 7px 0 0;
+  background:linear-gradient(#f7f7f7,#dedede);
+  color:#374151;
+  font-weight:800;
+  cursor:pointer;
+  margin-right:3px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+.tab.active{
+  background:#ffffff;
+  color:#111827;
+  border-bottom-color:#ffffff;
+  position:relative;
+  z-index:3;
+  height:43px;
+  margin-bottom:-1px;
+}.summaryStrip{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px}.summaryStrip strong{font-size:13px}.summaryStrip span{font-size:12px;color:var(--muted)}
+.tableWrap{background:#fff;border:1px solid #aeb4be;border-radius:0 0 10px 10px;overflow:auto;height:590px;position:relative}table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:12px}th{position:sticky;top:0;background:#f8fafc;color:#111827;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:8px 6px;text-align:left;font-size:10px;z-index:2}th.group{text-align:center}td{border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;padding:7px 6px;background:#fff;vertical-align:middle}tr:nth-child(even) td{background:#fbfcfe}.colV{width:62px}.colStudent{width:195px}.colAssoc{width:250px}.colGrade{width:76px}
+.rowStatus{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;font-size:20px;font-weight:900;cursor:help;margin:auto}.rowStatus.ok{background:var(--okBg);color:var(--ok);border:1px solid var(--okB)}.rowStatus.warn{background:var(--warnBg);color:var(--warn);border:1px solid var(--warnB)}.rowStatus.danger{background:var(--dangerBg);color:var(--danger);border:1px solid var(--dangerB)}.rowStatus.orange{background:var(--orangeBg);color:var(--orange);border:1px solid var(--orangeB)}
+.studentCombo{width:100%;height:30px;font-size:11px;border-radius:8px;padding:0 8px}.studentCombo.candidate{background:var(--warnBg);border-color:var(--warnB);color:#7c2d12}.studentCombo.missing{background:var(--dangerBg);border-color:var(--dangerB);color:var(--danger)}.studentHelp{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.studentHelp.warn{color:var(--warn);font-weight:800}.studentHelp.danger{color:var(--danger);font-weight:800}
+.gradeControl{display:flex;align-items:center;gap:4px}.grade{width:46px;height:30px;border-radius:8px;border:1px solid var(--border);text-align:center;font-weight:900;background:#fff;font-size:12px}.grade.new{background:var(--okBg);border-color:var(--okB)}.grade.existing{background:var(--gray)}.grade.conflict{background:var(--orangeBg);border-color:var(--orangeB);color:var(--orange)}.grade.invalid{background:var(--dangerBg);border-color:var(--dangerB);color:var(--danger)}.grade.review{background:var(--warnBg);border-color:var(--warnB);color:var(--warn)}.gradeAction{width:24px;height:30px;border:1px solid var(--border);border-radius:8px;background:white;font-size:12px;cursor:pointer}.gradeAction.has{background:var(--warnBg);border-color:var(--warnB);color:var(--warn);font-weight:900}.gradeAction.undone{background:#e5e7eb;color:#374151}
+.footerStatus{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px;font-weight:800;font-size:13px}.menu{display:none;position:fixed;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);border-radius:12px;padding:8px;width:220px;z-index:9999}.menu.open{display:block}.menu button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:9px 10px;border-radius:8px;font-weight:750;cursor:pointer}.menu button:hover{background:#f3f4f6}.menu .danger{color:var(--danger)}.menu .success{color:var(--ok)}
+.floatTip{position:fixed;z-index:99999;max-width:380px;background:#111827;color:#fff;border-radius:13px;padding:12px 14px;box-shadow:0 12px 35px rgba(0,0,0,.30);font-size:12px;line-height:1.45;display:none;pointer-events:none}.floatTip b{display:block;margin-bottom:5px}.floatTip ul{margin:6px 0 0;padding-left:18px}.successIcon{width:58px;height:58px;border-radius:50%;background:var(--okBg);border:1px solid var(--okB);color:var(--ok);display:grid;place-items:center;font-size:32px;font-weight:900;margin:0 auto 14px}.testZone{display:flex;gap:8px;align-items:center}.testLabel{color:var(--danger);font-size:11px;font-weight:900;white-space:nowrap}
+@media(max-width:1100px){.flow,.grid2,.metrics{grid-template-columns:1fr}.modal.large{height:96vh}.toolbar{grid-template-columns:1fr}.search{min-width:0}}
+</style>
+</head>
+<body>
+<div class="homeWrap">
+ <div class="home">
+  <h1>Importación asistida de calificaciones</h1>
+  <p>Prototipo v8: validaciones mockeadas consistentes entre icono de fila y celdas, tabs estilo solapa, marcas de edición manual, confirmación final y 42 estudiantes.</p>
+  <div class="flow">
+   <div class="step"><small>1</small><strong>Carga PDF</strong><span>Contexto académico y archivo.</span></div>
+   <div class="step"><small>2</small><strong>Análisis</strong><span>Validación progresiva.</span></div>
+   <div class="step"><small>3</small><strong>Resumen</strong><span>Observaciones previas.</span></div>
+   <div class="step"><small>4</small><strong>Tabla editable</strong><span>Corrección y aceptación directa.</span></div>
+  </div>
+  <div class="actions"><button class="btn primary" onclick="openStage('load')">Iniciar prototipo</button></div>
+ </div>
+</div>
+
+<div class="backdrop" id="modalBackdrop">
+ <div class="modal" id="stageModal">
+  <div class="mh"><div><small id="stepLabel"></small><h2 id="modalTitle"></h2><p id="modalDesc"></p></div></div>
+  <div class="mb" id="modalBody"></div>
+  <div class="mf" id="modalFooter"></div>
+ </div>
+</div>
+<div id="noteMenu" class="menu">
+ <button onclick="chooseCandidate('pdf')">Usar valor del PDF</button>
+ <button onclick="chooseCandidate('system')">Usar valor del sistema</button>
+ <button onclick="chooseCandidate('manual')">Mantener edición manual</button>
+ <button class="danger" onclick="undoNote()">Omitir esta nota en esta importación</button>
+ <button class="success" onclick="restoreNote()">Restaurar nota omitida</button>
+</div>
+<div id="floatTip" class="floatTip"></div>
+<datalist id="studentList"></datalist>
+
+<script>
+const students = ["ANTONELLI, EVANGELINA", "ARABEL MANZANELLI, ORIANA", "ARCE BELLIDO, MORENA NATALI", "ARGUELLO ZARAGOZA, SANTINO", "BARONETTO, MALENA LUZ", "BONARDO, FRANCO", "BOUCHER, ROSINA", "CARA, ALMA VALENTINA SOLEDAD", "CARNEVALE LOPEZ, SOFIA ALEJANDRA", "CEBALLOS AVILA, SANTINO", "CERVELLERA, BAUTISTA", "CIMA, MARIA CATALINA", "DIALE, MARIA CELESTE", "GARCIA, MARCO JOAQUIN", "GARZON NONES, VALENTINA LUCIA", "GUILLOT BARRIENTOS, MARILUZ", "GUTIERREZ ACUÑA, VALENTINA", "GUZMAN SANCHEZ, CANDELA ROCÍO", "IMBESI, FRANCO GABRIEL", "MARTI PITTAVINO, NOAH BAUTISTA", "MARTINEZ, ROCIO NAYELI", "MARTINEZ SIBILLA, VALENTIN ANTONIO", "MASSI VITALE, SOL HELENA", "MIRANDA, THIAGO SANTINO", "MOTTOLA, MARTINA ABRIL", "MOYA, VICTORIA", "MOYANO, MATEO TOMAS", "NIETO, ARIANA CECILIA", "OLIVERA, SIRO ANDRES", "PALACIO, MATIAS MIGUEL", "PERAZZO, MORENA", "PERRETTA, SANTIAGO MARTIN", "PONCE, LUCIANA MILAGROS", "SEGURA, SOFIA JIMENA", "TULLIO BLANCO, MARTINA CATALINA", "ZAFFIRI, ORNELLA", "ALVAREZ, JULIETA", "BRITOS, MATEO", "CABRERA, SOFIA", "FERREYRA, LUCIANO", "RAMIREZ, CANDELA", "VILLARREAL, TOMAS"];
+let currentStage='load', currentGradeControl=null, currentTab=1, currentFilter='all';
+
+const stages={
+ load:{label:'1. Carga del documento',title:'Importar calificaciones desde CiDi',desc:'Seleccioná el contexto académico y cargá el PDF exportado. Todavía no se guarda ninguna nota.',large:false,body:()=>`
+  <div class="grid2"><div class="field"><label>Curso</label><select><option>4° Año B · Turno Mañana</option></select></div><div class="field"><label>Espacio curricular</label><select><option>Educación Artística - Artes Visuales</option></select></div></div>
+  <div class="field"><label>Ciclo lectivo</label><select><option>2025</option></select></div>
+  <div class="upload"><div class="icon">⇧</div><strong>libreta_secundaria202510231629457692.pdf</strong><p style="margin:8px 0 0;color:var(--muted)">Formato admitido: PDF · 42 estudiantes detectables.</p></div>
+  <div class="hint">Subir el PDF no impacta calificaciones. Primero se genera una revisión editable.</div>`,footer:()=>`<button class="btn" onclick="closeStage()">Cancelar</button><button class="btn primary" onclick="openStage('analysis')">Analizar documento</button>`},
+ analysis:{label:'2. Análisis del documento',title:'Analizando documento…',desc:'Validando estructura del archivo antes de mostrar resultados.',large:false,body:()=>`
+  <div class="spinner"></div><div class="checklist">
+  <div class="checkitem" id="c1"><span class="check">✓</span> Validando formato del PDF</div>
+  <div class="checkitem" id="c2"><span class="check">✓</span> Leyendo encabezado académico</div>
+  <div class="checkitem" id="c3"><span class="check">✓</span> Detectando 42 estudiantes</div>
+  <div class="checkitem" id="c4"><span class="check">✓</span> Detectando 8 evaluaciones y notas</div>
+  <div class="checkitem" id="c5"><span class="check">✓</span> Comparando contra datos existentes</div></div>`,footer:()=>`<button class="btn" onclick="openStage('load')">Volver</button><button id="analysisNext" class="btn primary" disabled onclick="openStage('summary')">Ver resultado</button>`},
+ summary:{label:'3. Resultado del análisis',title:'Análisis finalizado con observaciones',desc:'El documento pudo analizarse, pero hay datos que requieren revisión antes de importar.',large:false,body:()=>`
+  <div class="metrics"><div class="metric"><strong>42</strong><span>Estudiantes detectados</span></div><div class="metric"><strong style="color:var(--ok)">37</strong><span>Sin conflicto</span></div><div class="metric"><strong style="color:var(--danger)">5</strong><span>Con conflicto</span></div><div class="metric"><strong>8</strong><span>Evaluaciones</span></div><div class="metric"><strong style="color:var(--ok)">116</strong><span>Notas nuevas</span></div><div class="metric"><strong>24</strong><span>Notas existentes</span></div><div class="metric"><strong style="color:var(--orange)">2</strong><span>Conflictos de nota</span></div><div class="metric"><strong style="color:var(--danger)">1</strong><span>Nota inválida</span></div></div>
+  <div class="alert warn"><strong>Importante:</strong><span>Los estudiantes se muestran en un combo editable. Se puede elegir cualquier alumno del curso, aunque haya candidatos sugeridos.</span></div>`,footer:()=>`<button class="btn" onclick="openStage('load')">Volver</button><button class="btn primary" onclick="openStage('review')">Revisar tabla</button>`},
+ review:{label:'4. Revisión y corrección',title:'Revisión de calificaciones importadas',desc:'Corregí los conflictos directamente en la tabla. Cuando todas las filas queden con check, se habilita la importación.',large:true,body:()=>renderReview(),footer:()=>`<button class="btn" onclick="openStage('summary')">Volver al paso anterior</button><button class="btn" onclick="closeStage()">Cancelar</button><button id="continueImportBtn" class="btn primary" disabled onclick="openStage('confirmImport')">Seguir con importación</button>`},
+ confirmImport:{label:'5. Confirmación de importación',title:'Confirmar importación de calificaciones',desc:'Revisá el resumen final antes de impactar las notas en Gestión de calificaciones.',large:false,body:()=>`
+  <div class="metrics"><div class="metric"><strong style="color:var(--ok)">42</strong><span>Estudiantes validados</span></div><div class="metric"><strong style="color:var(--ok)">116</strong><span>Notas nuevas</span></div><div class="metric"><strong>24</strong><span>Notas existentes mantenidas</span></div><div class="metric"><strong style="color:#4338ca">6</strong><span>Correcciones manuales</span></div></div>
+  <div class="alert warn"><strong>Antes de continuar:</strong><span>Las notas editadas manualmente, asociaciones cambiadas y notas omitidas quedarán registradas en el historial de importación.</span></div>
+  <div class="alert ok"><strong>Sin conflictos pendientes:</strong><span>La importación puede aplicarse en la sección Gestión de calificaciones.</span></div>`,footer:()=>`<button class="btn" onclick="openStage('review')">Volver a revisar</button><button class="btn primary" onclick="startImportLoading()">Aceptar e importar</button>`},
+ importing:{label:'Importando calificaciones',title:'Guardando importación…',desc:'Impactando las calificaciones revisadas en Gestión de calificaciones.',large:false,body:()=>`<div class="spinner"></div><div style="text-align:center;color:var(--muted);font-weight:700">Registrando notas, resoluciones y auditoría de importación.</div>`,footer:()=>`<button class="btn primary" disabled>Procesando…</button>`},
+ success:{label:'Importación realizada',title:'La importación se realizó correctamente',desc:'Las calificaciones ya fueron impactadas en el sistema.',large:false,body:()=>`<div style="text-align:center;padding:12px 0 8px"><div class="successIcon">✓</div><h3>Notas importadas</h3><p>Podés visualizar los resultados desde la sección de <strong>Gestión de calificaciones</strong>.</p></div>`,footer:()=>`<button class="btn" onclick="closeStage()">Cerrar</button><button class="btn primary" onclick="closeStage()">Ir a Gestión de calificaciones</button>`}
+};
+
+function openStage(stage){
+ currentStage=stage;
+ const cfg=stages[stage], modal=document.getElementById('stageModal');
+ modal.className='modal'+(cfg.large?' large':'');
+ stepLabel.innerText=cfg.label; modalTitle.innerText=cfg.title; modalDesc.innerText=cfg.desc;
+ modalBody.innerHTML=cfg.body(); modalFooter.innerHTML=cfg.footer();
+ modalBackdrop.classList.add('open');
+ if(stage==='analysis')startAnalysisAnimation();
+ if(stage==='review'){populateStudentList(); renderRows(); bindTooltips(); updateCounts();}
+}
+function closeStage(){modalBackdrop.classList.remove('open')}
+function startAnalysisAnimation(){['c1','c2','c3','c4','c5'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('done'),450+i*470));setTimeout(()=>{const n=document.getElementById('analysisNext');if(n)n.disabled=false},2900)}
+
+function populateStudentList(){studentList.innerHTML=students.map(s=>`<option value="${s}"></option>`).join('')}
+function studentCombo(value,type,help){return `<input class="studentCombo ${type||''}" list="studentList" value="${value}" oninput="studentChanged(this)"><div class="studentHelp ${type==='missing'?'danger':type==='candidate'?'warn':''}">${help||'Podés escribir o elegir cualquier estudiante del curso'}</div>`}
+function grade(value,cls='',has=false){return `<div class="gradeControl"><input class="grade ${cls}" value="${value}" oninput="manualGradeChanged(this)"><button class="gradeAction ${has?'has':''}" onclick="openNoteMenu(event)">⌄</button></div>`}
+function icon(type,tip){const cls=type==='clean'?'ok':type, sym=type==='clean'?'✓':'!';return `<div class="rowStatus ${cls}" data-tip="${encodeURIComponent(tip)}">${sym}</div>`}
+function evalCols(start){let out='';for(let e=start;e<start+4;e++)out+=`<th class="group" colspan="3">Eval ${e}</th>`;return out}
+function evalSubHeaders(){let out='';for(let e=0;e<4;e++)out+='<th class="colGrade">N</th><th class="colGrade">R1</th><th class="colGrade">R2</th>';return out}
+function rowGrades(i, tab, kind){
+  let out='';
+  const conflictByRow={
+    11:{cls:'conflict', val:'2', has:true},
+    16:{cls:'review', val:'4', has:true},
+    20:{cls:'conflict', val:'9', has:true},
+    26:{cls:'invalid', val:'11', has:true},
+    31:{cls:'review', val:'10', has:true}
+  };
+  for(let c=0;c<12;c++){
+    let val='', cls='', has=false;
+
+    // Valores base limpios: nunca generan conflicto si la fila está marcada como "Sin conflicto".
+    if(c%3===0){
+      val=String(((i+c+tab)%10)+1);
+      cls='new';
+    }
+
+    // Algunas notas ya existentes, siempre válidas.
+    if(i%6===0 && c===3){
+      val='6';
+      cls='existing';
+    }
+
+    // Conflictos mockeados explícitos. Solo existen en filas cuyo rowData también marca conflicto.
+    if(tab===1 && c===0 && conflictByRow[i]){
+      val=conflictByRow[i].val;
+      cls=conflictByRow[i].cls;
+      has=conflictByRow[i].has;
+    }
+
+    out+=`<td>${grade(val,cls,has)}</td>`;
+  }
+  return out;
+}
+function rowData(i){let name=students[i];let kind='clean', sev='clean', tip='<b>Sin conflictos</b>La fila está lista para importar.', comboType='', comboValue=name, help='Podés escribir o elegir cualquier estudiante del curso';if(i===16){kind='conflict';sev='warn';comboType='candidate';tip='<b>Conflictos de revisión</b><ul><li>Coincidencia por nombre normalizado.</li><li>Nota E1 N con baja confianza.</li></ul>';help='Candidato sugerido, pero podés elegir cualquier estudiante'}if(i===20){kind='conflict';sev='danger';comboType='candidate';comboValue='MARTINEZ, ROCIO';tip='<b>Conflictos bloqueantes</b><ul><li>Alumno ambiguo: 2 candidatos.</li><li>Nota E1 N con conflicto de valor.</li></ul>';help='Hay candidatos sugeridos; también podés buscar otro'}if(i===31){kind='conflict';sev='danger';comboType='missing';comboValue='';tip='<b>Conflicto bloqueante</b><ul><li>Estudiante no asociado a la base.</li><li>Seleccioná o escribí un alumno del curso.</li></ul>';help='Sin selección: elegí o escribí cualquier estudiante'}if(i===11){kind='conflict';sev='orange';tip='<b>Conflicto de nota</b><ul><li>E1 N: sistema 6 / PDF 2.</li><li>Seleccioná candidato, editá o deshacé.</li></ul>'}if(i===26){kind='conflict';sev='danger';tip='<b>Conflicto bloqueante</b><ul><li>Nota inválida: E1 N = 11.</li><li>Debe estar entre 1 y 10 o deshacerse.</li></ul>'}return {name,kind,sev,tip,comboType,comboValue,help}}
+function renderRows(){const body=document.getElementById('rowsBody');if(!body)return;let html='';for(let i=0;i<42;i++){const r=rowData(i);html+=`<tr data-kind="${r.kind}" data-index="${i}" data-severity="${r.sev}"><td>${icon(r.sev,r.tip)}</td><td><strong>${r.name}</strong></td><td>${studentCombo(r.comboValue,r.comboType,r.help)}</td>${rowGrades(i,currentTab,r.kind)}</tr>`}body.innerHTML=html;applyFilter();bindTooltips();}
+function renderReview(){const start=currentTab===1?1:5;return `
+ <div class="toolbar">
+  <button class="chip active" onclick="filterRows('all',this)">Todos</button>
+  <button class="chip conflict" onclick="filterRows('conflict',this)">Con conflicto</button>
+  <button class="chip clean" onclick="filterRows('clean',this)">Sin conflicto</button>
+  <input class="search" placeholder="Buscar estudiante por nombre, apellido o selección asociada…" oninput="searchRows(this.value)">
+  <div class="testZone"><span class="testLabel">Controles demo</span><button class="btn danger" onclick="validateAll()">Simular validación aprobada</button><button class="btn danger" onclick="restoreConflicts()">Revertir conflictos</button></div>
+ </div>
+ <div class="summaryStrip"><div><strong id="summaryText"></strong><br><span>42 estudiantes cargados. Los combos de estudiantes son editables y muestran todos los alumnos disponibles.</span></div></div>
+ <div class="tabs"><button class="tab ${currentTab===1?'active':''}" onclick="switchTab(1)">Evaluaciones 1 a 4</button><button class="tab ${currentTab===5?'active':''}" onclick="switchTab(5)">Evaluaciones 5 a 8</button></div>
+ <div class="tableWrap">
+  <table><thead><tr><th class="colV" rowspan="2">Valid.</th><th class="colStudent" rowspan="2">Estudiante PDF</th><th class="colAssoc" rowspan="2">Estudiante asociado</th>${evalCols(start)}</tr><tr>${evalSubHeaders()}</tr></thead><tbody id="rowsBody"></tbody></table>
+ </div>
+ <div class="footerStatus"><span id="footerText"></span></div>`}
+function switchTab(tab){currentTab=tab;modalBody.innerHTML=renderReview();populateStudentList();renderRows();updateCounts()}
+function filterRows(kind,chip){currentFilter=kind;document.querySelectorAll('.toolbar .chip').forEach(c=>c.classList.remove('active'));chip.classList.add('active');applyFilter()}
+function applyFilter(){document.querySelectorAll('#rowsBody tr').forEach(row=>{row.style.display=(currentFilter==='all'||row.dataset.kind===currentFilter)?'':'none'})}
+function searchRows(q){q=q.trim().toLowerCase();document.querySelectorAll('#rowsBody tr').forEach(row=>{row.style.display=row.innerText.toLowerCase().includes(q)?'':'none'})}
+function studentChanged(input){input.classList.remove('missing','candidate');input.classList.add('manual');const row=input.closest('tr');if(input.value.trim())markRowClean(row)}
+function markRowClean(row){row.dataset.kind='clean';row.dataset.severity='clean';row.children[0].innerHTML=icon('clean','<b>Sin conflictos</b>La fila fue corregida y está lista para importar.');row.querySelectorAll('.grade').forEach(g=>g.classList.remove('conflict','invalid','review'));row.querySelectorAll('.gradeAction').forEach(b=>b.classList.remove('has','undone'));updateCounts();bindTooltips()}
+function validateAll(){document.querySelectorAll('tr[data-kind="conflict"]').forEach(markRowClean);updateCounts()}
+function restoreConflicts(){renderRows();updateCounts()}
+function updateCounts(){const conflicts=document.querySelectorAll('tr[data-kind="conflict"]').length;const clean=document.querySelectorAll('tr[data-kind="clean"]').length;if(summaryText)summaryText.textContent=`Pendientes: ${conflicts} filas · Sin conflicto: ${clean} filas`;if(footerText)footerText.textContent=conflicts?`Pendientes: ${conflicts} filas · Botón de continuar bloqueado hasta validar`:`Pendientes: 0 filas · Ya se puede continuar`;const btn=document.getElementById('continueImportBtn');if(btn)btn.disabled=conflicts>0}
+function openNoteMenu(ev){ev.stopPropagation();currentGradeControl=ev.currentTarget.closest('.gradeControl');noteMenu.style.left=Math.min(ev.clientX,innerWidth-240)+'px';noteMenu.style.top=Math.min(ev.clientY+8,innerHeight-220)+'px';noteMenu.classList.add('open')}
+document.addEventListener('click',()=>noteMenu.classList.remove('open'));
+function chooseCandidate(type){if(!currentGradeControl)return;const input=currentGradeControl.querySelector('input');if(type==='system')input.value='6';if(type==='pdf'&&!input.value)input.value='8';input.classList.remove('conflict','invalid','review');input.classList.add(type==='manual'?'manual':'new');currentGradeControl.querySelector('button').classList.remove('has','undone');const row=currentGradeControl.closest('tr');if(row)markRowClean(row);noteMenu.classList.remove('open')}
+function undoNote(){if(!currentGradeControl)return;const input=currentGradeControl.querySelector('input');input.dataset.previous=input.value;input.value='';input.classList.remove('conflict','invalid','review','new','existing');currentGradeControl.querySelector('button').classList.add('undone');noteMenu.classList.remove('open')}
+function restoreNote(){if(!currentGradeControl)return;const input=currentGradeControl.querySelector('input');input.value=input.dataset.previous||'8';input.classList.add('new');currentGradeControl.querySelector('button').classList.remove('undone');noteMenu.classList.remove('open')}
+function bindTooltips(){const tip=floatTip;document.querySelectorAll('.rowStatus').forEach(el=>{el.onmouseenter=e=>{tip.innerHTML=decodeURIComponent(el.dataset.tip||'');tip.style.display='block';positionTip(e)};el.onmousemove=positionTip;el.onmouseleave=()=>tip.style.display='none'})}
+function positionTip(e){const tip=floatTip;tip.style.left=Math.min(e.clientX+14,innerWidth-400)+'px';tip.style.top=Math.min(e.clientY+14,innerHeight-200)+'px'}
+function manualGradeChanged(input){input.classList.remove('conflict','invalid','review');input.classList.add('manual');const row=input.closest('tr');if(row)markRowClean(row)}
+function startImportLoading(){openStage('importing');setTimeout(()=>openStage('success'),1600)}
+function performImport(){openStage('confirmImport')}
+</script>
+</body>
+</html>

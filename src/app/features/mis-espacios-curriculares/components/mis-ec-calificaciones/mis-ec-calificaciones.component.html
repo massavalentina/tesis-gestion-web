@@ -308,26 +308,42 @@
 
       <div class="audit-feed" *ngIf="auditoria.length > 0">
         <article class="audit-session" *ngFor="let session of sesionesAuditoriaVisibles; trackBy: trackByAuditSessionId">
-          <button
+          <div
             class="audit-session-head"
-            type="button"
-            (click)="toggleAuditSession(session.id)"
-            [attr.aria-expanded]="isAuditSessionExpanded(session.id)">
+            [attr.data-expanded]="isAuditSessionExpanded(session.id)">
             <div class="audit-session-main">
               <div class="audit-session-topline">
                 <span class="audit-origin">{{ session.origen }}</span>
-                <span class="audit-session-count">{{ session.cambios.length }} cambio{{ session.cambios.length !== 1 ? 's' : '' }}</span>
+                <span class="audit-session-count">
+                  {{ session.cambios.length }} cambio{{ session.cambios.length !== 1 ? 's' : '' }}
+                  <a
+                    *ngIf="hasImportPdf(session)"
+                    class="audit-import-link"
+                    [href]="session.rutaArchivoImportacion!"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ver PDF usado en esta importación"
+                    aria-label="Ver PDF usado en esta importación">
+                    ↗
+                  </a>
+                </span>
               </div>
               <strong>{{ formatTimestamp(session.timestamp) }}</strong>
               <span class="audit-session-teacher">{{ session.docente }}</span>
             </div>
-            <span class="audit-session-toggle-label">
-              {{ isAuditSessionExpanded(session.id) ? 'Ocultar detalle' : 'Ver detalle' }}
-            </span>
-            <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">
-              ▾
-            </span>
-          </button>
+            <button
+              class="audit-session-toggle"
+              type="button"
+              (click)="toggleAuditSession(session.id)"
+              [attr.aria-expanded]="isAuditSessionExpanded(session.id)">
+              <span class="audit-session-toggle-label">
+                {{ isAuditSessionExpanded(session.id) ? 'Ocultar detalle' : 'Ver detalle' }}
+              </span>
+              <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">
+                ▾
+              </span>
+            </button>
+          </div>
 
           <div class="audit-session-body" *ngIf="isAuditSessionExpanded(session.id)">
             <div class="audit-change-card" *ngFor="let change of session.cambios; trackBy: trackByAuditChangeId">
