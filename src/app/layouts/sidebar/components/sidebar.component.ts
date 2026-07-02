@@ -101,6 +101,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              [routerLink]="item.route"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: item.exact }">
+            <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
             {{ item.label }}
           </a>
         </div>
@@ -134,6 +135,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                [routerLink]="item.route"
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: item.exact }">
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
               {{ item.label }}
             </a>
           </div>
@@ -156,6 +158,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLink="/gestion-usuarios"
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: true }">
+              <mat-icon>people</mat-icon>
               Usuarios
             </a>
           </div>
@@ -223,6 +226,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: item.exact }"
              (click)="closeMobile()">
+            <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
             {{ item.label }}
           </a>
         </div>
@@ -257,6 +261,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: item.exact }"
                (click)="closeMobile()">
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
               {{ item.label }}
             </a>
           </div>
@@ -280,6 +285,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: true }"
                (click)="closeMobile()">
+              <mat-icon>people</mat-icon>
               Usuarios
             </a>
           </div>
