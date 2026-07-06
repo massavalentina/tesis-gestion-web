@@ -269,6 +269,20 @@
           <small class="field-error" *ngIf="claseFechaDesdeInvalida">La fecha debe ser del año lectivo en curso.</small>
         </div>
 
+        <!-- Mostrar en calendario -->
+        <div class="form-field" *ngIf="claseFechaDesde">
+          <div class="toggle-row">
+            <div>
+              <label style="margin-bottom:2px">Mostrar en el calendario</label>
+              <div style="font-size:12px;color:#6b7280">La clase aparecerá en el calendario institucional</div>
+            </div>
+            <label class="toggle-switch sm">
+              <input type="checkbox" [(ngModel)]="claseVisibleEnCalendario" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
         <!-- Estado -->
         <div class="form-field">
           <div class="toggle-row">

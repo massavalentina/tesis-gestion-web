@@ -40,6 +40,7 @@ export class MisEcPlanificacionComponent implements OnInit {
   claseEstado = 'PendienteDar';
   claseFechaDesde = '';
   claseFechaHasta = '';
+  claseVisibleEnCalendario = false;
   claseTituloInvalido = false;
   claseFechaDictadaInvalida = false;
   claseFechaDesdeInvalida = false;
@@ -203,6 +204,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseEstado = clase.estado;
     this.claseFechaDesde = clase.fechaEstimada ?? '';
     this.claseFechaHasta = clase.fechaDictada ?? '';
+    this.claseVisibleEnCalendario = clase.visibleEnCalendario;
     this.claseTituloInvalido = false;
     this.claseFechaDictadaInvalida = false;
     this.claseFechaDesdeInvalida = false;
@@ -222,6 +224,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseEstado = 'PendienteDar';
     this.claseFechaDesde = '';
     this.claseFechaHasta = '';
+    this.claseVisibleEnCalendario = false;
     this.claseTituloInvalido = false;
     this.claseFechaDictadaInvalida = false;
     this.claseFechaDesdeInvalida = false;
@@ -253,6 +256,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     if (this.claseFechaDesde) form.append('fechaDesde', this.claseFechaDesde);
     if (this.claseEstado === 'Dado' && this.claseFechaHasta) form.append('fechaHasta', this.claseFechaHasta);
     if (this.drawerClaseTema) form.append('idBloqueTema', this.drawerClaseTema.idBloquePrograma);
+    form.append('visibleEnCalendario', this.claseVisibleEnCalendario.toString());
     form.append('mantieneArchivo', 'true');
 
     this.guardandoClase = true;
@@ -348,6 +352,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     form.append('estado', 'Dado');
     if (clase.fechaEstimada) form.append('fechaDesde', clase.fechaEstimada);
     form.append('fechaHasta', this.fechaDictadaInput);
+    form.append('visibleEnCalendario', clase.visibleEnCalendario.toString());
     form.append('mantieneArchivo', 'true');
 
     this.service.editarClase(clase.idPlanificacion, form).subscribe({

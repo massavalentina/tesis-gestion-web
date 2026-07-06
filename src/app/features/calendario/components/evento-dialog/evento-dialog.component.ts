@@ -27,6 +27,7 @@ import {
   TipoEvento,
   CursoSeleccion,
   LABEL_TIPO_EVENTO,
+  COLORES_TIPO_EVENTO,
 } from '../../models/calendario.model';
 
 // ─── DateAdapter DD/MM/YYYY ───────────────────────────────────────────────────
@@ -186,6 +187,15 @@ export class EventoDialogComponent implements OnInit {
 
   get mostrarComentarioCambio(): boolean {
     return this.form.get('cambioActividad')!.value === true;
+  }
+
+  get esModoSoloLectura(): boolean {
+    return this.modo === 'detalle' && !this.data.puedeEditar;
+  }
+
+  getEventoColor(): { bg: string; border: string; text: string } {
+    return COLORES_TIPO_EVENTO[this.data.evento?.tipoEvento ?? 0]
+      ?? { bg: '#f3f4f6', border: '#6b7280', text: '#374151' };
   }
 
   get tituloDialog(): string {

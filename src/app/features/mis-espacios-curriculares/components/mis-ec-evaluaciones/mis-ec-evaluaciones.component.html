@@ -199,7 +199,7 @@
         <span class="material-icons banner-inline-icon">warning</span>
         <div class="banner-inline-copy">
           <strong>No se pudo guardar</strong>
-          <p>{{ formError }}</p>
+          <p style="white-space: pre-line">{{ formError }}</p>
         </div>
       </div>
 
@@ -242,6 +242,29 @@
           <small class="helper-text">
             {{ drawerModo === 'detalle' ? 'El estado se puede cambiar sin editar el archivo.' : 'Este estado es independiente de las notas cargadas.' }}
           </small>
+        </div>
+
+        <!-- Mostrar en calendario -->
+        <div class="form-field" *ngIf="drawerModo !== 'detalle'">
+          <div class="toggle-row">
+            <div>
+              <label style="margin-bottom:2px">Mostrar en el calendario</label>
+              <div style="font-size:12px;color:#6b7280">La IE aparecerá en el calendario institucional</div>
+            </div>
+            <label class="toggle-switch sm">
+              <input type="checkbox" [(ngModel)]="visibleEnCalendario" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-field" *ngIf="drawerModo === 'detalle' && archivoActual?.visibleEnCalendario">
+          <div class="toggle-row">
+            <div>
+              <label style="margin-bottom:2px">Visible en el calendario</label>
+            </div>
+            <span style="font-size:12px;color:#00897b;font-weight:600">Si</span>
+          </div>
         </div>
 
         <div class="form-field">

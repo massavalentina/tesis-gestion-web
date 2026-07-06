@@ -38,10 +38,34 @@
 
         <mat-form-field appearance="outline" class="filtro-curso" *ngIf="cursos.length > 0">
           <mat-label>Filtrar por curso</mat-label>
-          <mat-select [(ngModel)]="cursosSeleccionados" multiple>
+          <mat-select [(ngModel)]="cursosSeleccionados" multiple (selectionChange)="onCursoChange()">
             <mat-option *ngFor="let c of cursos" [value]="c.id">{{ c.label }}</mat-option>
           </mat-select>
         </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-ec" *ngIf="ecsDisponibles.length > 0">
+          <mat-label>Espacio curricular</mat-label>
+          <mat-select [(ngModel)]="ecSeleccionado">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let ec of ecsDisponibles" [value]="ec.idEC">{{ ec.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-tipo" *ngIf="opcionesTipoEvento.length > 0">
+          <mat-label>Tipo de evento</mat-label>
+          <mat-select [(ngModel)]="tiposEventoSeleccionados" multiple>
+            <mat-option *ngFor="let t of opcionesTipoEvento" [value]="t.id">{{ t.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button *ngIf="mostrarBotonIE"
+                class="btn-toggle-ie"
+                [class.active]="mostrarIECurso"
+                type="button"
+                (click)="mostrarIECurso = !mostrarIECurso">
+          <mat-icon>assignment</mat-icon>
+          Mostrar IE cargadas
+        </button>
       </div>
 
       <button *ngIf="puedeGestionarEventos"
@@ -74,6 +98,16 @@
         <span class="leg-dot" [style.background]="colores[t.id]?.border"></span>
         {{ t.label }}
       </span>
+      <ng-container *ngIf="eventosDocente.length > 0">
+        <span class="leg-item">
+          <span class="leg-dot" [style.background]="colores[7]?.border"></span>
+          Clase Planificada
+        </span>
+        <span class="leg-item">
+          <span class="leg-dot" [style.background]="colores[8]?.border"></span>
+          Instancia Evaluativa
+        </span>
+      </ng-container>
     </div>
 
     <!-- Cabecera días -->
@@ -87,11 +121,11 @@
            *ngFor="let dia of diasDelMes"
            [class.fuera-mes]="!dia.enMes"
            [class.hoy]="esHoy(dia.fecha)"
-           [class.con-eventos]="dia.eventos.length > 0"
+           [class.con-eventos]="dia.eventos.length > 0 || dia.eventosDocente.length > 0"
            (click)="toggleDia(dia)">
 
         <!-- Franja lateral multi-tipo -->
-        <div class="day-strip" *ngIf="tiposUnicos(dia.eventos).length > 1">
+        <div class="day-strip" *ngIf="puedeGestionarEventos && tiposUnicos(dia.eventos).length > 1">
           <span class="strip-seg"
                 *ngFor="let tipo of tiposUnicos(dia.eventos)"
                 [style.background]="colorEvento(tipo).border">
@@ -99,7 +133,7 @@
         </div>
 
         <!-- Franja lateral mono-tipo -->
-        <ng-container *ngIf="tiposUnicos(dia.eventos).length === 1">
+        <ng-container *ngIf="puedeGestionarEventos && tiposUnicos(dia.eventos).length === 1">
           <div class="day-single-strip"
                [style.background]="colorEvento(dia.eventos[0].tipoEvento).border">
           </div>
@@ -109,7 +143,7 @@
         <span class="day-num">{{ dia.fecha.getDate() }}</span>
 
         <!-- Dots de período (tipos 5-6) -->
-        <div class="day-period-dots" *ngIf="eventosDot(dia.eventos).length > 0">
+        <div class="day-period-dots" *ngIf="puedeGestionarEventos && eventosDot(dia.eventos).length > 0">
           <span class="dot-mini"
                 *ngFor="let ev of eventosDot(dia.eventos)"
                 [style.background]="colorEvento(ev.tipoEvento).border">
@@ -117,7 +151,7 @@
         </div>
 
         <!-- Chips de evento (tipos 1-4, máx 2) -->
-        <div class="day-badges" *ngIf="eventosChip(dia.eventos).length > 0 && eventosChip(dia.eventos).length <= 2">
+        <div class="day-badges" *ngIf="puedeGestionarEventos && eventosChip(dia.eventos).length > 0 && eventosChip(dia.eventos).length <= 2">
           <span class="evento-chip"
                 *ngFor="let ev of eventosChip(dia.eventos)"
                 [style.background]="colorEvento(ev.tipoEvento).bg"
@@ -128,20 +162,55 @@
         </div>
 
         <!-- Dots para 3+ eventos de tipo 1-4 -->
-        <div class="day-dots" *ngIf="eventosChip(dia.eventos).length > 2">
+        <div class="day-dots" *ngIf="puedeGestionarEventos && eventosChip(dia.eventos).length > 2">
           <span class="dot-mini"
                 *ngFor="let ev of eventosChip(dia.eventos)"
                 [style.background]="colorEvento(ev.tipoEvento).border">
           </span>
         </div>
 
+        <!-- Dots de período para roles sin edición (tipos 5-6) -->
+        <div class="day-period-dots" *ngIf="!puedeGestionarEventos && eventosDot(dia.eventos).length > 0">
+          <span class="dot-mini"
+                *ngFor="let ev of eventosDot(dia.eventos)"
+                [style.background]="colorEvento(ev.tipoEvento).border">
+          </span>
+        </div>
+
+        <!-- Badges institucionales para roles sin edición (tipos 1-4) -->
+        <div class="day-docente-badges" *ngIf="!puedeGestionarEventos && eventosChip(dia.eventos).length > 0">
+          <div class="evento-docente-badge"
+               *ngFor="let ev of eventosChip(dia.eventos)"
+               [style.background]="colorEvento(ev.tipoEvento).bg"
+               [style.border-left-color]="colorEvento(ev.tipoEvento).border"
+               [style.color]="colorEvento(ev.tipoEvento).text"
+               (click)="abrirDetalleInstitucional(ev, $event)">
+            <mat-icon class="badge-icon">{{ iconoEvento(ev.tipoEvento) }}</mat-icon>
+            <span class="badge-text">{{ ev.titulo }}</span>
+          </div>
+        </div>
+
+        <!-- Badges de eventos docentes -->
+        <div class="day-docente-badges" *ngIf="dia.eventosDocente.length > 0">
+          <div class="evento-docente-badge"
+               *ngFor="let ed of dia.eventosDocente"
+               [style.background]="colorEvento(ed.tipoEventoNumero).bg"
+               [style.border-left-color]="colorEvento(ed.tipoEventoNumero).border"
+               [style.color]="colorEvento(ed.tipoEventoNumero).text"
+               (click)="abrirDetalleDocente(ed, $event)">
+            <mat-icon class="badge-icon">{{ iconoDocente(ed) }}</mat-icon>
+            <span class="badge-text">{{ ed.titulo }}</span>
+          </div>
+        </div>
+
         <!-- Popover -->
         <div class="day-popover"
              *ngIf="diaPopoverKey === dia.key"
              (click)="$event.stopPropagation()">
+          <!-- Eventos institucionales -->
           <div class="popover-item"
                *ngFor="let ev of dia.eventos"
-               (click)="abrirDetalleEvento(ev)">
+               (click)="puedeGestionarEventos ? abrirDetalleEvento(ev) : abrirDetalleInstitucional(ev, $event)">
             <span class="pop-dot" [style.background]="colorEvento(ev.tipoEvento).border"></span>
             <div class="popover-texto">
               <div class="popover-titulo">{{ ev.titulo }}</div>
@@ -149,6 +218,71 @@
               <div class="popover-meta">{{ formatFecha(ev.fechaInicio) }} — {{ formatFecha(ev.fechaFin) }}</div>
             </div>
           </div>
+
+          <!-- Eventos docentes en popover -->
+          <div class="popover-item popover-item-docente"
+               *ngFor="let ed of dia.eventosDocente"
+               (click)="abrirDetalleDocente(ed, $event)">
+            <span class="pop-dot" [style.background]="colorEvento(ed.tipoEventoNumero).border"></span>
+            <div class="popover-texto">
+              <div class="popover-titulo">{{ ed.titulo }}</div>
+              <div class="popover-meta">{{ ed.tipo === 'ClasePlanificada' ? 'Clase Planificada' : 'Instancia Evaluativa' }} · {{ ed.nombreMateria }}</div>
+              <div class="popover-meta">{{ ed.nombreCurso }} · {{ formatEstadoDocente(ed.estado) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popover detalle institucional (roles sin edición) -->
+        <div class="docente-detalle-popover"
+             *ngIf="eventoInstitucionalDetalle && diaPopoverKey === dia.key && dia.eventos.includes(eventoInstitucionalDetalle)"
+             (click)="$event.stopPropagation()">
+          <div class="detalle-header">
+            <mat-icon [style.color]="colorEvento(eventoInstitucionalDetalle.tipoEvento).border">
+              {{ iconoEvento(eventoInstitucionalDetalle.tipoEvento) }}
+            </mat-icon>
+            <span class="detalle-tipo">{{ eventoInstitucionalDetalle.tipoEventoLabel }}</span>
+            <button class="detalle-close" (click)="cerrarDetalleInstitucional()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="detalle-titulo">{{ eventoInstitucionalDetalle.titulo }}</div>
+          <div class="detalle-info">
+            <div><strong>Fecha:</strong> {{ formatFecha(eventoInstitucionalDetalle.fechaInicio) }} — {{ formatFecha(eventoInstitucionalDetalle.fechaFin) }}</div>
+            <div *ngIf="eventoInstitucionalDetalle.descripcion"><strong>Descripción:</strong> {{ eventoInstitucionalDetalle.descripcion }}</div>
+            <div><strong>Contabiliza asistencia:</strong> {{ eventoInstitucionalDetalle.contabilizaAsistencia ? 'Sí' : 'No' }}</div>
+            <div *ngIf="eventoInstitucionalDetalle.cambioActividad"><strong>Cambio de actividad:</strong> {{ eventoInstitucionalDetalle.comentarioCambioActividad }}</div>
+            <div *ngIf="eventoInstitucionalDetalle.cursos.length > 0"><strong>Cursos:</strong> {{ cursosLabel(eventoInstitucionalDetalle) }}</div>
+          </div>
+        </div>
+
+        <!-- Popover detalle docente -->
+        <div class="docente-detalle-popover"
+             *ngIf="eventoDocenteDetalle && diaPopoverKey === dia.key && dia.eventosDocente.includes(eventoDocenteDetalle)"
+             (click)="$event.stopPropagation()">
+          <div class="detalle-header">
+            <mat-icon [style.color]="colorEvento(eventoDocenteDetalle.tipoEventoNumero).border">
+              {{ iconoDocente(eventoDocenteDetalle) }}
+            </mat-icon>
+            <span class="detalle-tipo">{{ eventoDocenteDetalle.tipo === 'ClasePlanificada' ? 'Clase Planificada' : 'Instancia Evaluativa' }}</span>
+            <button class="detalle-close" (click)="cerrarDetalleDocente()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="detalle-titulo">{{ eventoDocenteDetalle.titulo }}</div>
+          <div class="detalle-info">
+            <div><strong>Espacio Curricular:</strong> {{ eventoDocenteDetalle.nombreMateria }}</div>
+            <div><strong>Curso:</strong> {{ eventoDocenteDetalle.nombreCurso }}</div>
+            <div><strong>Estado:</strong> {{ formatEstadoDocente(eventoDocenteDetalle.estado) }}</div>
+            <div><strong>Fecha:</strong> {{ formatFecha(eventoDocenteDetalle.fecha) }}</div>
+            <div *ngIf="eventoDocenteDetalle.tipoIE"><strong>Tipo IE:</strong> {{ formatTipoIE(eventoDocenteDetalle.tipoIE) }}</div>
+            <div *ngIf="eventoDocenteDetalle.tipoCalificacion"><strong>Tipo:</strong> {{ eventoDocenteDetalle.tipoCalificacion }}</div>
+          </div>
+          <button class="btn-ir-detalle"
+                  *ngIf="eventoDocenteDetalle.tipo === 'ClasePlanificada' || eventoDocenteDetalle.esPropioDocente"
+                  [style.background]="colorEvento(eventoDocenteDetalle.tipoEventoNumero).border"
+                  (click)="navegarDesdeDocente(eventoDocenteDetalle)">
+            {{ eventoDocenteDetalle.tipo === 'ClasePlanificada' ? 'Ir a Planificación' : 'Ir a Evaluaciones' }}
+          </button>
         </div>
 
       </div>

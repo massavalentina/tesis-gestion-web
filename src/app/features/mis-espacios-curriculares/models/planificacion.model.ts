@@ -46,6 +46,7 @@ export interface ClasePlanificacionDto {
   estado: string;
   url?: string;
   fechaCreacion: string;
+  visibleEnCalendario: boolean;
 }
 
 export interface CrearItemDto {

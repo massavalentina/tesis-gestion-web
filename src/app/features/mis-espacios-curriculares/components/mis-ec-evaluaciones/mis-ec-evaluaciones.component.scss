@@ -882,6 +882,57 @@ button:disabled {
   line-height: 1.4;
 }
 
+// ─── Toggle switch ────────────────────────────────────────────────────────────
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    width: 42px;
+    height: 24px;
+    background: var(--line);
+    border-radius: 100px;
+    transition: background .2s;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+  }
+
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider::after { transform: translateX(18px); }
+
+  &.sm .slider { width: 34px; height: 20px; }
+  &.sm .slider::after { width: 14px; height: 14px; top: 3px; left: 3px; }
+  &.sm input:checked + .slider::after { transform: translateX(14px); }
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .drawer-actions {
   display: flex;
   justify-content: flex-end;

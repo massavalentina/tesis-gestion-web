@@ -54,6 +54,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
   estadoIEOriginal: 'Pendiente' | 'Evaluada' = 'Pendiente';
   archivoSeleccionado: File | null = null;
   archivoNombre = '';
+  visibleEnCalendario = false;
   selectedBloques = new Set<string>();
   expandedSlots = new Set<number>();
   expandedUnidades = new Set<string>();
@@ -263,7 +264,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return 'Bloqueado';
     }
 
-    return slot.estado;
+    return slot.estado === 'SinCarga' ? 'Sin carga' : slot.estado;
   }
 
   avisoEstadoSlot(slot: InstanciaEvaluativaSlot): string {
@@ -351,6 +352,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     form.append('fechaEjecucion', fechaParsed.toISOString().slice(0, 10));
     form.append('estado', this.estadoIEActual);
     this.selectedBloques.forEach(id => form.append('idBloquesTema', id));
+    form.append('visibleEnCalendario', this.visibleEnCalendario.toString());
     if (this.archivoSeleccionado) {
       form.append('archivo', this.archivoSeleccionado);
     }
@@ -533,9 +535,9 @@ export class MisEcEvaluacionesComponent implements OnInit {
   nombreTipoIE(tipo: TipoIE): string {
     switch (tipo) {
       case 'EvaluacionEscrita':
-        return 'Evaluacion escrita';
+        return 'Evaluación Escrita';
       case 'EvaluacionOral':
-        return 'Evaluacion oral';
+        return 'Evaluación Oral';
       case 'Entrega':
         return 'Entrega';
       case 'TPI':
@@ -553,16 +555,16 @@ export class MisEcEvaluacionesComponent implements OnInit {
     if (!valor) return '-';
     const fecha = new Date(valor);
     if (Number.isNaN(fecha.getTime())) return valor;
-    return new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(fecha);
+    return new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium', timeZone: 'UTC' }).format(fecha);
   }
 
   formatoFechaCorta(valor?: string | null): string {
     if (!valor) return '';
     const fecha = new Date(valor);
     if (Number.isNaN(fecha.getTime())) return '';
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = fecha.getFullYear();
+    const dia = String(fecha.getUTCDate()).padStart(2, '0');
+    const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+    const anio = fecha.getUTCFullYear();
     return `${dia}/${mes}/${anio}`;
   }
 
@@ -734,6 +736,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.estadoIEOriginal = this.estadoIEActual;
     this.archivoSeleccionado = null;
     this.archivoNombre = archivo?.nombreArchivo ?? '';
+    this.visibleEnCalendario = archivo?.visibleEnCalendario ?? false;
     this.selectedBloques = new Set<string>(archivo?.idBloquesTema ?? []);
     this.expandedUnidades = archivo ? this.expandirUnidadesSegunBloques(archivo.idBloquesTema) : new Set<string>();
     this.formError = '';

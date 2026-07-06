@@ -4,10 +4,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   EventoInstitucional,
+  EventoDocente,
   CrearEventoRequest,
   AuditoriaEvento,
   TipoEvento,
   CursoSeleccion,
+  EcSeleccion,
 } from '../models/calendario.model';
 
 @Injectable({ providedIn: 'root' })
@@ -55,6 +57,18 @@ export class CalendarioService {
   obtenerCursos(anioLectivo: number): Observable<CursoSeleccion[]> {
     return this.http.get<CursoSeleccion[]>(
       `${this.base}/cursos`, { params: { anioLectivo } }
+    );
+  }
+
+  obtenerEventosDocente(anioLectivo: number): Observable<EventoDocente[]> {
+    return this.http.get<EventoDocente[]>(
+      `${this.base}/eventos-docente`, { params: { anioLectivo } }
+    );
+  }
+
+  obtenerEcsDocente(anioLectivo: number): Observable<EcSeleccion[]> {
+    return this.http.get<EcSeleccion[]>(
+      `${this.base}/espacios-curriculares`, { params: { anioLectivo } }
     );
   }
 }

@@ -1,7 +1,7 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,9 +14,11 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { CalendarioService } from '../../services/calendario.service';
 import {
   EventoInstitucional,
+  EventoDocente,
   AuditoriaEvento,
   TipoEvento,
   CursoSeleccion,
+  EcSeleccion,
   DiaCalendario,
   COLORES_TIPO_EVENTO,
   LABEL_TIPO_EVENTO,
@@ -44,6 +46,7 @@ export class CalendarioComponent implements OnInit {
   loading = true;
   error = '';
   eventos: EventoInstitucional[] = [];
+  eventosDocente: EventoDocente[] = [];
   tiposEvento: TipoEvento[] = [];
   cursos: CursoSeleccion[] = [];
   auditoriaGeneral: AuditoriaEvento[] = [];
@@ -51,6 +54,15 @@ export class CalendarioComponent implements OnInit {
   // Filtros
   anioLectivo = new Date().getFullYear();
   cursosSeleccionados: string[] = [];
+  ecSeleccionado = '';
+  ecsDisponibles: EcSeleccion[] = [];
+  tiposEventoSeleccionados: number[] = [];
+
+  // Popover evento docente
+  eventoDocenteDetalle: EventoDocente | null = null;
+
+  // Popover evento institucional (para roles sin edición)
+  eventoInstitucionalDetalle: EventoInstitucional | null = null;
 
   // Calendario
   mesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -58,6 +70,11 @@ export class CalendarioComponent implements OnInit {
 
   // Permisos
   puedeGestionarEventos = false;
+  esDocente = false;
+  esPreceptor = false;
+
+  // Toggle IEs del curso
+  mostrarIECurso = false;
 
   // Historial
   historialAbierto = false;
@@ -80,6 +97,7 @@ export class CalendarioComponent implements OnInit {
     private snackBar: MatSnackBar,
     private elementRef: ElementRef<HTMLElement>,
     private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -88,6 +106,8 @@ export class CalendarioComponent implements OnInit {
     this.puedeGestionarEventos = esAdmin
       || this.authService.tieneRol('Equipo Directivo')
       || this.authService.tieneRol('Secretario');
+    this.esDocente = this.authService.tieneRol('Docente');
+    this.esPreceptor = this.authService.tieneRol('Preceptor');
 
     // Pre-seleccionar curso si viene por query param (ej: desde mis-espacios-curriculares)
     this.cursoIdInicial = this.route.snapshot.queryParamMap.get('cursoId');
@@ -103,17 +123,29 @@ export class CalendarioComponent implements OnInit {
       eventos: this.calendarioService.obtenerEventos(this.anioLectivo),
       tipos: this.calendarioService.obtenerTiposEvento(),
       cursos: this.calendarioService.obtenerCursos(this.anioLectivo),
+      eventosDocente: this.calendarioService.obtenerEventosDocente(this.anioLectivo),
+      ecsDocente: this.calendarioService.obtenerEcsDocente(this.anioLectivo),
     }).subscribe({
-      next: ({ eventos, tipos, cursos }) => {
+      next: ({ eventos, tipos, cursos, eventosDocente, ecsDocente }) => {
         this.eventos = eventos;
         this.tiposEvento = tipos;
         this.cursos = cursos;
+        this.eventosDocente = eventosDocente;
+        this.ecsDisponibles = ecsDocente;
 
         // Aplicar filtro inicial por curso (query param)
         if (this.cursoIdInicial && cursos.some(c => c.id === this.cursoIdInicial)) {
           this.cursosSeleccionados = [this.cursoIdInicial];
           this.cursoIdInicial = null; // solo la primera vez
         }
+
+        // Opciones del filtro por tipo
+        const opciones = tipos.map(t => ({ id: t.id, label: t.label }));
+        if (eventosDocente.length > 0) {
+          opciones.push({ id: 7, label: this.labelTipo[7] });
+          opciones.push({ id: 8, label: this.labelTipo[8] });
+        }
+        this.opcionesTipoEvento = opciones;
 
         this.loading = false;
       },
@@ -124,8 +156,24 @@ export class CalendarioComponent implements OnInit {
     });
   }
 
+  get mostrarBotonIE(): boolean {
+    return (this.esDocente || this.esPreceptor) && this.cursosSeleccionados.length > 0;
+  }
+
+  onCursoChange(): void {
+    if (this.cursosSeleccionados.length === 0) {
+      this.mostrarIECurso = false;
+    }
+  }
+
+  /** Opciones del filtro por tipo (tipos institucionales + docentes si aplica) */
+  opcionesTipoEvento: { id: number; label: string }[] = [];
+
   onAnioChange(): void {
     this.cursosSeleccionados = [];
+    this.ecSeleccionado = '';
+    this.mostrarIECurso = false;
+    this.tiposEventoSeleccionados = [];
     this.auditoriaGeneral = [];
     this.historialAbierto = false;
     // Navegar al mismo mes en el año seleccionado
@@ -145,35 +193,42 @@ export class CalendarioComponent implements OnInit {
 
     const dias: DiaCalendario[] = [];
     const eventosFiltrados = this.eventosFiltrados;
+    const edFiltrados = this.eventosDocenteFiltrados;
 
     for (let i = offsetInicio; i > 0; i--) {
       const d = new Date(year, month, 1 - i);
       const key = this.toKey(d);
-      dias.push({ fecha: d, enMes: false, key, eventos: this.eventosParaFecha(key, eventosFiltrados) });
+      dias.push({ fecha: d, enMes: false, key, eventos: this.eventosParaFecha(key, eventosFiltrados), eventosDocente: this.eventosDocenteParaFecha(key, edFiltrados) });
     }
     for (let day = 1; day <= ultimoDia.getDate(); day++) {
       const d = new Date(year, month, day);
       const key = this.toKey(d);
-      dias.push({ fecha: d, enMes: true, key, eventos: this.eventosParaFecha(key, eventosFiltrados) });
+      dias.push({ fecha: d, enMes: true, key, eventos: this.eventosParaFecha(key, eventosFiltrados), eventosDocente: this.eventosDocenteParaFecha(key, edFiltrados) });
     }
     while (dias.length % 7 !== 0) {
       const ultima = dias[dias.length - 1].fecha;
       const d = new Date(ultima.getFullYear(), ultima.getMonth(), ultima.getDate() + 1);
       const key = this.toKey(d);
-      dias.push({ fecha: d, enMes: false, key, eventos: this.eventosParaFecha(key, eventosFiltrados) });
+      dias.push({ fecha: d, enMes: false, key, eventos: this.eventosParaFecha(key, eventosFiltrados), eventosDocente: this.eventosDocenteParaFecha(key, edFiltrados) });
     }
     return dias;
   }
 
   get eventosFiltrados(): EventoInstitucional[] {
+    let filtrados: EventoInstitucional[];
     if (this.cursosSeleccionados.length === 0) {
-      // Sin filtro de curso: solo eventos institucionales (sin cursos asignados)
-      return this.eventos.filter(e => e.cursos.length === 0);
+      filtrados = this.eventos.filter(e => e.cursos.length === 0);
+    } else {
+      filtrados = this.eventos.filter(e => {
+        if (e.cursos.length === 0) return true;
+        return e.cursos.some(c => this.cursosSeleccionados.includes(c.idCurso));
+      });
     }
-    return this.eventos.filter(e => {
-      if (e.cursos.length === 0) return true;
-      return e.cursos.some(c => this.cursosSeleccionados.includes(c.idCurso));
-    });
+
+    if (this.tiposEventoSeleccionados.length > 0) {
+      filtrados = filtrados.filter(e => this.tiposEventoSeleccionados.includes(e.tipoEvento));
+    }
+    return filtrados;
   }
 
   private eventosParaFecha(key: string, eventos: EventoInstitucional[]): EventoInstitucional[] {
@@ -186,17 +241,20 @@ export class CalendarioComponent implements OnInit {
   mesAnterior(): void {
     this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() - 1, 1);
     this.diaPopoverKey = null;
+    this.tiposEventoSeleccionados = [];
   }
 
   mesSiguiente(): void {
     this.mesActual = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 1);
     this.diaPopoverKey = null;
+    this.tiposEventoSeleccionados = [];
   }
 
   irAHoy(): void {
     const hoy = new Date();
     this.mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     this.diaPopoverKey = null;
+    this.tiposEventoSeleccionados = [];
   }
 
   esHoy(fecha: Date): boolean {
@@ -207,7 +265,9 @@ export class CalendarioComponent implements OnInit {
   }
 
   toggleDia(dia: DiaCalendario): void {
-    if (dia.eventos.length === 0) return;
+    if (dia.eventos.length === 0 && dia.eventosDocente.length === 0) return;
+    this.eventoDocenteDetalle = null;
+    this.eventoInstitucionalDetalle = null;
     this.diaPopoverKey = this.diaPopoverKey === dia.key ? null : dia.key;
   }
 
@@ -244,6 +304,79 @@ export class CalendarioComponent implements OnInit {
       return `${ev.titulo} (${cursosStr})`;
     }
     return ev.titulo;
+  }
+
+  // ─── Eventos docentes ────────────────────────────────────────────────────────
+
+  get eventosDocenteFiltrados(): EventoDocente[] {
+    let filtrados = this.eventosDocente;
+
+    // Ocultar IEs ajenas (esPropioDocente = false) cuando el toggle está desactivado
+    if (!this.mostrarIECurso) {
+      filtrados = filtrados.filter(e => e.tipo !== 'InstanciaEvaluativa' || e.esPropioDocente);
+    }
+
+    if (this.cursosSeleccionados.length > 0) {
+      filtrados = filtrados.filter(e => this.cursosSeleccionados.includes(e.idCurso));
+    }
+    if (this.ecSeleccionado) {
+      filtrados = filtrados.filter(e => e.idEC === this.ecSeleccionado);
+    }
+
+    if (this.tiposEventoSeleccionados.length > 0) {
+      filtrados = filtrados.filter(e => this.tiposEventoSeleccionados.includes(e.tipoEventoNumero));
+    }
+    return filtrados;
+  }
+
+  private eventosDocenteParaFecha(key: string, eventos: EventoDocente[]): EventoDocente[] {
+    return eventos.filter(e => e.fecha === key);
+  }
+
+  abrirDetalleDocente(ed: EventoDocente, event: MouseEvent): void {
+    event.stopPropagation();
+    this.eventoDocenteDetalle = this.eventoDocenteDetalle?.id === ed.id ? null : ed;
+  }
+
+  cerrarDetalleDocente(): void {
+    this.eventoDocenteDetalle = null;
+  }
+
+  // ─── Detalle institucional (roles sin edición) ────────────────────────────────
+
+  iconoEvento(tipo: number): string {
+    const iconos: Record<number, string> = {
+      1: 'event', 2: 'star', 3: 'celebration', 4: 'event_busy', 5: 'school', 6: 'quiz',
+    };
+    return iconos[tipo] ?? 'event';
+  }
+
+  abrirDetalleInstitucional(ev: EventoInstitucional, event: MouseEvent): void {
+    event.stopPropagation();
+    this.eventoDocenteDetalle = null;
+    this.eventoInstitucionalDetalle = this.eventoInstitucionalDetalle?.idEvento === ev.idEvento ? null : ev;
+  }
+
+  cerrarDetalleInstitucional(): void {
+    this.eventoInstitucionalDetalle = null;
+  }
+
+  cursosLabel(ev: EventoInstitucional): string {
+    return ev.cursos.map(c => c.label).join(', ');
+  }
+
+  navegarDesdeDocente(ed: EventoDocente): void {
+    this.eventoDocenteDetalle = null;
+    this.diaPopoverKey = null;
+    if (ed.tipo === 'ClasePlanificada') {
+      this.router.navigate(['/mis-espacios-curriculares', ed.idEC, 'planificacion']);
+    } else {
+      this.router.navigate(['/mis-espacios-curriculares', ed.idEC, 'evaluaciones']);
+    }
+  }
+
+  iconoDocente(ed: EventoDocente): string {
+    return ed.tipo === 'ClasePlanificada' ? 'menu_book' : 'assignment';
   }
 
   // ─── Helpers de fecha ──────────────────────────────────────────────────────────
@@ -322,6 +455,22 @@ export class CalendarioComponent implements OnInit {
     });
   }
 
+  formatTipoIE(tipo: string): string {
+    const map: Record<string, string> = {
+      EvaluacionEscrita: 'Evaluación Escrita',
+      EvaluacionOral: 'Evaluación Oral',
+      Entrega: 'Entrega',
+      TPI: 'TPI',
+    };
+    return map[tipo] ?? tipo;
+  }
+
+  formatEstadoDocente(estado: string): string {
+    if (estado === 'Dado') return 'Dictada';
+    if (estado === 'PendienteDar') return 'Pendiente';
+    return estado;
+  }
+
   formatFechaHora(iso: string): string {
     const d = new Date(iso);
     const dia = String(d.getDate()).padStart(2, '0');
@@ -364,7 +513,7 @@ export class CalendarioComponent implements OnInit {
 
   // ─── Parseo de auditoría ─────────────────────────────────────────────────────
 
-  private readonly labelTipo = LABEL_TIPO_EVENTO;
+  readonly labelTipo = LABEL_TIPO_EVENTO;
 
   parsearDetalle(a: AuditoriaEvento): string[] {
     if (a.tipoOperacion === 'Creación' && a.valoresNuevos) {

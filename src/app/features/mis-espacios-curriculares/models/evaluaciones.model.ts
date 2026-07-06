@@ -17,6 +17,7 @@ export interface ArchivoIEGestion {
   puedeEliminar: boolean;
   motivoBloqueo?: string | null;
   idBloquesTema: string[];
+  visibleEnCalendario: boolean;
 }
 
 export interface InstanciaEvaluativaSlot {
