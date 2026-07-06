@@ -51,6 +51,11 @@ export interface QrCredentialRegenerationResponseDto {
   mensaje: string;
 }
 
+export interface EspacioCurricularFicha {
+  idEC: string;
+  nombre: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FichaAlumnoService {
   private readonly apiUrl = environment.apiUrl;
@@ -66,6 +71,12 @@ export class FichaAlumnoService {
   getEstudiantesPorCurso(idCurso: string): Observable<EstudianteFicha[]> {
     return this.http.get<EstudianteFicha[]>(
       `${this.apiUrl}/api/cursos/${idCurso}/estudiantes`
+    );
+  }
+
+  getEspaciosCurricularesPorCurso(idCurso: string): Observable<EspacioCurricularFicha[]> {
+    return this.http.get<EspacioCurricularFicha[]>(
+      `${this.apiUrl}/api/cursos/${idCurso}/espacios-curriculares`
     );
   }
 

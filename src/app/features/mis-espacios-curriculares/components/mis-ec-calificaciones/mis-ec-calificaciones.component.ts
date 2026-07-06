@@ -5,7 +5,18 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { catchError, finalize, forkJoin, lastValueFrom, map, of } from 'rxjs';
+import { EChartsOption } from 'echarts';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { AuthService } from '../../../auth/services/auth.service';
+import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 import { MisEcItem } from '../../models/mis-ec.model';
 import {
   AuditoriaCalificacionSesion as AuditoriaCalificacionSesionApi,
@@ -18,6 +29,14 @@ import {
   TipoCalificacion,
 } from '../../models/calificaciones.model';
 import {
+  ReporteAlumno,
+  ReporteEstadoFinal,
+  ReporteResumenGlobal,
+  ReporteVariacionCalificacionesGlobal,
+  buildCalificacionesVariacionReport,
+  buildCalificacionesReport,
+} from '../../utils/calificaciones-reporte.utils';
+import {
   CalificacionesCambiosPendientesDialogComponent,
   CalificacionesCambiosPendientesDialogData,
   CalificacionesCambiosPendientesDialogResult,
@@ -27,6 +46,7 @@ import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curr
 
 type FiltroEstado = 'all' | 'without-notes' | 'changed';
 type TabId = 1 | 5;
+type ViewMode = 'read' | 'edit' | 'report';
 type CellValueMap = Record<string, number | null>;
 type DraftParsedValue = number | null | 'invalid';
 
@@ -64,10 +84,42 @@ interface CalificacionAuditSession {
   cambios: CalificacionAuditChange[];
 }
 
+interface ReporteVariacionSerieVista {
+  idEstudiante: string;
+  nombreCompleto: string;
+  label: string;
+  color: string;
+  valores: Array<number | null>;
+}
+
+const REPORT_VARIATION_COLORS = [
+  '#173f85',
+  '#1f5eb6',
+  '#2f74d0',
+  '#3f86dc',
+  '#4e97e5',
+  '#63a9ec',
+  '#7bb9f1',
+  '#94c8f6',
+  '#aad6fa',
+  '#bfdffb',
+  '#d1e8fd',
+  '#e2f0fe',
+] as const;
+
+echarts.use([
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  CanvasRenderer,
+]);
+
 @Component({
   selector: 'app-mis-ec-calificaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, NgxEchartsDirective],
+  providers: [provideEchartsCore({ echarts })],
   templateUrl: './mis-ec-calificaciones.component.html',
   styleUrl: './mis-ec-calificaciones.component.scss',
 })
@@ -78,6 +130,15 @@ export class MisEcCalificacionesComponent implements OnInit {
     { id: 'without-notes', label: 'Sin notas' },
     { id: 'changed', label: 'Con cambios' },
   ];
+  readonly reportLegendPrimaryItems = [
+    { key: 'aprobado', label: 'Aprobado: Nota Final >= 7' },
+    { key: 'desaprobado_tema', label: 'Desaprobado por Tema: Nota Final >= 7 pero alguna eval no supera 7' },
+    { key: 'desaprobado', label: 'Desaprobado: Nota Final < 7' },
+  ] as const;
+  readonly reportLegendSecondaryItems = [
+    { key: 'bloque_rojo', label: 'Bloque rojo claro: ninguna de las 3 notas supera el 7' },
+    { key: 'bloque_gris', label: 'Bloque gris claro: evaluación con recuperatorio cargado' },
+  ] as const;
   readonly pageSizeOptions = [10, 20, 30];
   readonly auditSessionPageSize = 5;
 
@@ -93,13 +154,14 @@ export class MisEcCalificacionesComponent implements OnInit {
   error = false;
   saving = false;
   auditLoadingMore = false;
+  exportingPdf = false;
   idEC = '';
   errorMessage = 'No se pudieron cargar las calificaciones de este espacio curricular.';
 
   busqueda = '';
   filtroActivo: FiltroEstado = 'all';
   tabActivo: TabId = 1;
-  modoEdicion = false;
+  viewMode: ViewMode = 'read';
   pageSize = 10;
   pageIndex = 0;
 
@@ -121,11 +183,17 @@ export class MisEcCalificacionesComponent implements OnInit {
   estadoAvisoEvaluadaSinNotas = '';
   feedbackGuardado = '';
   saveError = '';
+  reportActionError = '';
 
   auditoria: CalificacionAuditSession[] = [];
   expandedAuditSessions: Record<string, boolean> = {};
   totalAuditSessions = 0;
   hasMoreAuditSessions = false;
+  reportRowsByStudentId: Record<string, ReporteAlumno> = {};
+  reportSummary: ReporteResumenGlobal | null = null;
+  reportVariationSeries: ReporteVariacionSerieVista[] = [];
+  reportVariationOptions: EChartsOption = {};
+  reportVariationSubtitle = '';
 
   private savedCells: CellValueMap = {};
   private draftCells: Record<string, string> = {};
@@ -136,6 +204,8 @@ export class MisEcCalificacionesComponent implements OnInit {
   private lastUpdatedAt: string | null = null;
   private instanciasByNumero = new Map<number, InstanciaEvaluativaResumen>();
   private instanciasById = new Map<string, InstanciaEvaluativaResumen>();
+  private reportChartInstance: any = null;
+  private reportHoveredStudentId: string | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -144,6 +214,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     private readonly misEcService: MisEspaciosCurricularesService,
     private readonly calificacionesService: CalificacionesService,
     private readonly dialog: MatDialog,
+    private readonly pdfReporteService: PdfReporteService,
   ) {}
 
   ngOnInit(): void {
@@ -160,6 +231,26 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   get totalAuditoria(): number {
     return this.auditoria.reduce((total, session) => total + session.cambios.length, 0);
+  }
+
+  get modoEdicion(): boolean {
+    return this.viewMode === 'edit';
+  }
+
+  get modoReporte(): boolean {
+    return this.viewMode === 'report';
+  }
+
+  get modeLabel(): string {
+    if (this.modoEdicion) {
+      return 'Edicion activa';
+    }
+
+    if (this.modoReporte) {
+      return 'Vista reporte';
+    }
+
+    return 'Solo consulta';
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -304,13 +395,47 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   activarEdicion(): void {
-    this.modoEdicion = true;
+    this.viewMode = 'edit';
     this.feedbackGuardado = '';
     this.saveError = '';
+    this.reportActionError = '';
     this.draftCells = this.toDraftCells(this.savedCells);
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
     }
+    this.recomputeDerivedState();
+  }
+
+  async activarReporte(): Promise<void> {
+    if (this.modoReporte) {
+      return;
+    }
+
+    if (this.tieneCambiosSinGuardar()) {
+      const puedeCambiar = await this.confirmarSalidaConCambios('switch-view');
+      if (!puedeCambiar) {
+        return;
+      }
+
+      if (this.modoEdicion) {
+        return;
+      }
+    }
+
+    this.viewMode = 'report';
+    this.feedbackGuardado = '';
+    this.saveError = '';
+    this.reportActionError = '';
+    this.recomputeDerivedState();
+  }
+
+  volverAVistaNormal(): void {
+    if (!this.modoReporte) {
+      return;
+    }
+
+    this.viewMode = 'read';
+    this.reportActionError = '';
     this.recomputeDerivedState();
   }
 
@@ -334,11 +459,63 @@ export class MisEcCalificacionesComponent implements OnInit {
     await this.persistDraftChanges();
   }
 
+  async exportarReportePdf(): Promise<void> {
+    if (!this.modoReporte || !this.espacio || this.estudiantes.length === 0 || !this.reportSummary || this.exportingPdf) {
+      return;
+    }
+
+    this.exportingPdf = true;
+    this.reportActionError = '';
+
+    try {
+      await this.pdfReporteService.exportarReporteCalificacionesEspacio({
+        cursoLabel: this.formatCurso(this.espacio.anioNumero, this.espacio.division),
+        nombreEspacio: this.espacio.nombreMateria,
+        anioLectivo: this.espacio.anioLectivo,
+        docenteLabel: this.docenteActualLabel,
+        totalEstudiantes: this.estudiantes.length,
+        evaluaciones: this.evaluaciones.map(evaluacion => ({
+          numero: evaluacion.numero,
+          label: evaluacion.label,
+          tieneEstructura: this.evaluacionTieneEstructura(evaluacion.numero),
+        })),
+        estudiantes: this.estudiantes.map(estudiante => {
+          const reporte = this.reportRowsByStudentId[estudiante.idEstudiante];
+          return {
+            estudiante: estudiante.nombreCompleto,
+            documento: estudiante.documento,
+            notaFinal: reporte?.notaFinal ?? null,
+            estadoFinal: reporte?.estadoFinal ?? 'desaprobado',
+            evaluaciones: this.evaluaciones.map(evaluacion => ({
+              numero: evaluacion.numero,
+              n: this.getSavedCellValue(estudiante.idEstudiante, evaluacion.numero, 'N'),
+              r1: this.getSavedCellValue(estudiante.idEstudiante, evaluacion.numero, 'R1'),
+              r2: this.getSavedCellValue(estudiante.idEstudiante, evaluacion.numero, 'R2'),
+              mejorNota: reporte?.evaluaciones[evaluacion.numero]?.mejorNota ?? null,
+              usoRecuperatorio: reporte?.evaluaciones[evaluacion.numero]?.usoRecuperatorio ?? false,
+              apruebaTema: reporte?.evaluaciones[evaluacion.numero]?.apruebaTema ?? false,
+              sinNotas: reporte?.evaluaciones[evaluacion.numero]?.sinNotas ?? true,
+              tieneEstructura: reporte?.evaluaciones[evaluacion.numero]?.tieneEstructura ?? false,
+            })),
+          };
+        }),
+        summary: this.reportSummary,
+      });
+    } catch (error) {
+      this.reportActionError = this.extractErrorMessage(
+        error,
+        'No se pudo exportar el PDF del reporte de calificaciones.',
+      );
+    } finally {
+      this.exportingPdf = false;
+    }
+  }
+
   tieneCambiosSinGuardar(): boolean {
     return this.modoEdicion && Object.values(this.rowHasChangesMap).some(hasChanges => hasChanges);
   }
 
-  async confirmarSalidaConCambios(contexto: 'navigation' | 'cancel-edit'): Promise<boolean> {
+  async confirmarSalidaConCambios(contexto: 'navigation' | 'cancel-edit' | 'switch-view'): Promise<boolean> {
     const dialogResult = await lastValueFrom(
       this.dialog.open(CalificacionesCambiosPendientesDialogComponent, {
         width: '420px',
@@ -359,9 +536,10 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   private descartarEdicion(): void {
-    this.modoEdicion = false;
+    this.viewMode = 'read';
     this.feedbackGuardado = '';
     this.saveError = '';
+    this.reportActionError = '';
     this.draftCells = {};
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
@@ -407,6 +585,127 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   getDraftCellValue(idEstudiante: string, evaluacion: number, tipo: TipoCalificacion): string {
     return this.draftCells[this.cellKey(idEstudiante, evaluacion, tipo)] ?? '';
+  }
+
+  getReportCellClasses(idEstudiante: string, evaluacion: number): Record<string, boolean> {
+    if (!this.modoReporte) {
+      return {};
+    }
+
+    const reporte = this.reportRowsByStudentId[idEstudiante]?.evaluaciones[evaluacion];
+    if (!reporte?.tieneEstructura) {
+      return {};
+    }
+
+    return {
+      'report-grade-cell': true,
+      'report-grade-cell--failed': !reporte.apruebaTema,
+      'report-grade-cell--recovery': reporte.apruebaTema && reporte.usoRecuperatorio,
+      'report-grade-cell--neutral': reporte.apruebaTema && !reporte.usoRecuperatorio,
+    };
+  }
+
+  getReportFinalLabel(idEstudiante: string): string {
+    return this.formatReportAverage(this.reportRowsByStudentId[idEstudiante]?.notaFinal ?? null);
+  }
+
+  getReportEstadoLabel(idEstudiante: string): string {
+    return this.estadoReporteLabel(this.reportRowsByStudentId[idEstudiante]?.estadoFinal ?? 'desaprobado');
+  }
+
+  getReportEstadoClasses(idEstudiante: string): Record<string, boolean> {
+    const estado = this.reportRowsByStudentId[idEstudiante]?.estadoFinal ?? 'desaprobado';
+    return {
+      'report-status': true,
+      'report-status--approved': estado === 'aprobado',
+      'report-status--topic': estado === 'desaprobado_tema',
+      'report-status--failed': estado === 'desaprobado',
+    };
+  }
+
+  getReportSummaryEvaluationValue(kind: 'average' | 'recoveries' | 'passing', evaluacion: number): string {
+    if (!this.reportSummary || !this.evaluacionTieneEstructura(evaluacion)) {
+      return '—';
+    }
+
+    switch (kind) {
+      case 'average':
+        return this.formatReportAverage(this.reportSummary.promedioPorEvaluacion[evaluacion] ?? null);
+      case 'recoveries':
+        return this.formatReportPercentage(this.reportSummary.porcentajeRecuperatoriosPorEvaluacion[evaluacion] ?? 0);
+      case 'passing':
+        return this.formatReportPercentage(this.reportSummary.porcentajeAprobadasPorEvaluacion[evaluacion] ?? 0);
+      default:
+        return '—';
+    }
+  }
+
+  getReportSummaryFinalValue(kind: 'average' | 'recoveries' | 'passing'): string {
+    if (!this.reportSummary) {
+      return '—';
+    }
+
+    switch (kind) {
+      case 'average':
+        return this.formatReportAverage(this.reportSummary.promedioFinal);
+      case 'recoveries':
+        return this.formatReportPercentage(this.reportSummary.porcentajeRecuperatoriosFinal);
+      case 'passing':
+        return this.formatReportPercentage(this.reportSummary.porcentajeAprobadosFinal);
+      default:
+        return '—';
+    }
+  }
+
+  getReportStudentColor(idEstudiante: string): string {
+    return this.reportVariationSeries.find(serie => serie.idEstudiante === idEstudiante)?.color
+      ?? REPORT_VARIATION_COLORS[0];
+  }
+
+  onReportChartInit(instance: any): void {
+    this.reportChartInstance = instance;
+  }
+
+  onReportStudentHover(idEstudiante: string | null): void {
+    if (!this.reportChartInstance) {
+      return;
+    }
+
+    if (this.reportHoveredStudentId && this.reportHoveredStudentId !== idEstudiante) {
+      const previous = this.reportVariationSeries.find(item => item.idEstudiante === this.reportHoveredStudentId);
+      if (previous) {
+        this.reportChartInstance.dispatchAction({
+          type: 'downplay',
+          seriesName: previous.label,
+        });
+      }
+    }
+
+    if (!idEstudiante) {
+      if (this.reportHoveredStudentId) {
+        const previous = this.reportVariationSeries.find(item => item.idEstudiante === this.reportHoveredStudentId);
+        if (previous) {
+          this.reportChartInstance.dispatchAction({
+            type: 'downplay',
+            seriesName: previous.label,
+          });
+        }
+      }
+      this.reportHoveredStudentId = null;
+      return;
+    }
+
+    const serie = this.reportVariationSeries.find(item => item.idEstudiante === idEstudiante);
+    if (!serie) {
+      this.reportHoveredStudentId = null;
+      return;
+    }
+
+    this.reportHoveredStudentId = idEstudiante;
+    this.reportChartInstance.dispatchAction({
+      type: 'highlight',
+      seriesName: serie.label,
+    });
   }
 
   onDraftValueChange(
@@ -458,6 +757,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.error = false;
     this.dataWarning = '';
     this.auditWarning = '';
+    this.reportActionError = '';
 
     forkJoin({
       espacio: this.misEcService.getMisEspaciosCurriculares().pipe(
@@ -551,13 +851,244 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.evaluacionesVisibles = this.tabActivo === 1
       ? this.evaluaciones.slice(0, 4)
       : this.evaluaciones.slice(4, 8);
-    this.totalColumnasTabla = 2 + (this.evaluacionesVisibles.length * this.tiposCalificacion.length);
+    this.totalColumnasTabla = 2 + (this.evaluacionesVisibles.length * this.tiposCalificacion.length) + (this.modoReporte ? 2 : 0);
   }
 
   private recomputeDerivedState(): void {
+    this.refreshVisibleEvaluaciones();
     this.recomputeRowState();
+    this.recomputeReportState();
+    this.recomputeReportVariationState();
     this.refreshTableState();
     this.recomputeEstadoAvisos();
+  }
+
+  private recomputeReportState(): void {
+    const report = buildCalificacionesReport(
+      this.estudiantes,
+      this.evaluaciones,
+      (idEstudiante, evaluacion, tipo) => this.getSavedCellValue(idEstudiante, evaluacion, tipo),
+      (evaluacion, tipo) => this.isSlotEnabled(evaluacion, tipo),
+    );
+
+    this.reportRowsByStudentId = report.rowsByStudentId;
+    this.reportSummary = report.summary;
+  }
+
+  private recomputeReportVariationState(): void {
+    const report = buildCalificacionesVariacionReport(
+      this.estudiantes,
+      this.evaluaciones,
+      (idEstudiante, evaluacion, tipo) => this.getSavedCellValue(idEstudiante, evaluacion, tipo),
+      (evaluacion, tipo) => this.isSlotEnabled(evaluacion, tipo),
+    );
+
+    this.reportVariationSeries = this.estudiantes.map((estudiante, index) => {
+      const serie = report.seriesByStudentId[estudiante.idEstudiante];
+      return {
+        idEstudiante: estudiante.idEstudiante,
+        nombreCompleto: estudiante.nombreCompleto,
+        label: estudiante.nombreCompleto,
+        color: REPORT_VARIATION_COLORS[index % REPORT_VARIATION_COLORS.length],
+        valores: this.evaluaciones.map(evaluacion => serie?.valoresPorEvaluacion[evaluacion.numero] ?? null),
+      };
+    });
+
+    this.reportVariationSubtitle = this.buildReportVariationSubtitle(report);
+    this.reportVariationOptions = this.buildReportVariationOptions(report);
+  }
+
+  private buildReportVariationSubtitle(report: ReporteVariacionCalificacionesGlobal): string {
+    const evaluacionesVisibles = this.evaluaciones.filter(evaluacion => this.evaluacionTieneEstructura(evaluacion.numero));
+    const desvios = evaluacionesVisibles
+      .map(evaluacion => report.desviacionPorEvaluacion[evaluacion.numero])
+      .filter((value): value is number => value !== null);
+    const promedioDesvio = desvios.length > 0
+      ? desvios.reduce((total, value) => total + value, 0) / desvios.length
+      : 0;
+
+    return `Serie por estudiante sobre ${evaluacionesVisibles.length} IE con banda de promedio ± desviación estándar media de ${promedioDesvio.toFixed(2)}.`;
+  }
+
+  private buildReportVariationOptions(report: ReporteVariacionCalificacionesGlobal): EChartsOption {
+    const evaluacionesVisibles = this.evaluaciones.filter(evaluacion => this.evaluacionTieneEstructura(evaluacion.numero));
+    const categories = evaluacionesVisibles.map(evaluacion => `IE ${evaluacion.numero}`);
+    const promedioData = evaluacionesVisibles.map(evaluacion => report.promedioPorEvaluacion[evaluacion.numero] ?? null);
+    const bandaInferiorData = evaluacionesVisibles.map(evaluacion => report.bandaInferiorPorEvaluacion[evaluacion.numero] ?? null);
+    const bandaSuperiorData = evaluacionesVisibles.map(evaluacion => report.bandaSuperiorPorEvaluacion[evaluacion.numero] ?? null);
+
+    const studentSeries = this.reportVariationSeries.map(serie => ({
+      name: serie.nombreCompleto,
+      type: 'line' as const,
+      data: serie.valores,
+      smooth: true,
+      symbol: 'circle' as const,
+      symbolSize: 4,
+      showSymbol: false,
+      connectNulls: false,
+      lineStyle: {
+        width: 1.5,
+        color: serie.color,
+        opacity: 0.58,
+      },
+      itemStyle: {
+        color: serie.color,
+      },
+      emphasis: {
+        focus: 'series' as const,
+        lineStyle: {
+          width: 2.5,
+          opacity: 1,
+        },
+      },
+      z: 2,
+    }));
+
+    return {
+      color: this.reportVariationSeries.map(serie => serie.color),
+      tooltip: {
+        trigger: 'axis',
+        triggerOn: 'mousemove',
+        axisPointer: {
+          type: 'line',
+        },
+        confine: true,
+        backgroundColor: 'rgba(255, 255, 255, .98)',
+        borderColor: '#d8e1ec',
+        borderWidth: 1,
+        textStyle: {
+          color: '#1e293b',
+          fontFamily: 'Open Sans, sans-serif',
+        },
+        formatter: (params: any) => {
+          const items = Array.isArray(params) ? params : [params];
+          const studentItem = items.find((item: any) => item?.seriesName && item.seriesName !== 'Promedio' && item.seriesName !== 'Banda');
+          const axisIndex = Array.isArray(studentItem?.dataIndex) ? studentItem.dataIndex[0] : studentItem?.dataIndex;
+          const evaluacion = typeof axisIndex === 'number' ? evaluacionesVisibles[axisIndex] : null;
+          const value = typeof studentItem?.data === 'number' ? studentItem.data : null;
+          const promedio = evaluacion ? report.promedioPorEvaluacion[evaluacion.numero] : null;
+          const desvio = evaluacion ? report.desviacionPorEvaluacion[evaluacion.numero] : null;
+          const bandaInferior = evaluacion ? report.bandaInferiorPorEvaluacion[evaluacion.numero] : null;
+          const bandaSuperior = evaluacion ? report.bandaSuperiorPorEvaluacion[evaluacion.numero] : null;
+          const title = studentItem?.seriesName ?? 'Alumno';
+
+          return [
+            `<strong>${title}</strong>`,
+            evaluacion ? `IE: ${evaluacion.label}` : 'IE: —',
+            value === null ? 'Nota: —' : `Nota: ${value.toFixed(2)}`,
+            promedio === null ? 'Promedio: —' : `Promedio: ${promedio.toFixed(2)}`,
+            desvio === null ? 'Desviacion: —' : `Desviacion estandar: ${desvio.toFixed(2)}`,
+            bandaInferior === null || bandaSuperior === null
+              ? 'Banda: —'
+              : `Banda: ${bandaInferior.toFixed(2)} - ${bandaSuperior.toFixed(2)}`,
+          ].join('<br/>');
+        },
+      },
+      grid: {
+        left: 46,
+        right: 28,
+        top: 28,
+        bottom: 52,
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: categories,
+        boundaryGap: true,
+        axisLine: { lineStyle: { color: '#cfd8e3' } },
+        axisTick: { alignWithLabel: true },
+        axisLabel: {
+          color: '#64748b',
+          fontSize: 11,
+          margin: 12,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 10,
+        interval: 1,
+        axisLine: { lineStyle: { color: '#cfd8e3' } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: '#64748b',
+          fontSize: 11,
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#e5edf5',
+            type: 'dashed',
+          },
+        },
+      },
+      legend: {
+        show: true,
+        bottom: 0,
+        left: 'center',
+        icon: 'roundRect',
+        itemWidth: 14,
+        itemHeight: 3,
+        textStyle: {
+          color: '#64748b',
+          fontFamily: 'Open Sans, sans-serif',
+          fontSize: 11,
+        },
+        data: ['Promedio', 'Banda'],
+      },
+      series: [
+        {
+          name: 'Banda',
+          type: 'line' as const,
+          stack: 'band',
+          data: bandaInferiorData,
+          symbol: 'none' as const,
+          lineStyle: { opacity: 0 },
+          itemStyle: { opacity: 0 },
+          areaStyle: { opacity: 0 },
+          silent: true,
+          emphasis: { disabled: true },
+          z: 1,
+        },
+        {
+          name: 'Banda',
+          type: 'line' as const,
+          stack: 'band',
+          data: bandaSuperiorData.map((upper, index) => {
+            const lower = bandaInferiorData[index];
+            if (upper === null || lower === null) {
+              return null;
+            }
+
+            return Math.max(0, upper - lower);
+          }),
+          symbol: 'none' as const,
+          lineStyle: { opacity: 0 },
+          itemStyle: { opacity: 0 },
+          areaStyle: { color: 'rgba(60, 120, 180, .14)' },
+          silent: true,
+          emphasis: { disabled: true },
+          z: 1,
+        },
+        {
+          name: 'Promedio',
+          type: 'line' as const,
+          data: promedioData,
+          smooth: true,
+          symbol: 'circle' as const,
+          symbolSize: 6,
+          lineStyle: {
+            width: 3,
+            color: '#111111',
+          },
+          itemStyle: {
+            color: '#111111',
+          },
+          showSymbol: true,
+          z: 3,
+        },
+        ...studentSeries,
+      ],
+    };
   }
 
   private recomputeRowState(): void {
@@ -699,7 +1230,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   ): void {
     if (response.cambiosAplicados === 0) {
       this.feedbackGuardado = 'No se detectaron cambios nuevos para guardar.';
-      this.modoEdicion = false;
+      this.viewMode = 'read';
       this.draftCells = {};
       return;
     }
@@ -722,7 +1253,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.feedbackGuardado = response.cambiosAplicados === 1
       ? 'Se guardo 1 cambio en la base de datos.'
       : `Se guardaron ${response.cambiosAplicados} cambios en la base de datos.`;
-    this.modoEdicion = false;
+    this.viewMode = 'read';
     this.draftCells = {};
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
@@ -927,7 +1458,30 @@ export class MisEcCalificacionesComponent implements OnInit {
     return fallback;
   }
 
-  private buildDialogData(contexto: 'navigation' | 'cancel-edit'): CalificacionesCambiosPendientesDialogData {
+  private formatReportAverage(value: number | null): string {
+    return value === null ? '—' : value.toFixed(2);
+  }
+
+  private formatReportPercentage(value: number): string {
+    return `${value.toFixed(1)}%`;
+  }
+
+  private estadoReporteLabel(estado: ReporteEstadoFinal): string {
+    switch (estado) {
+      case 'aprobado':
+        return 'Aprobado';
+      case 'desaprobado_tema':
+        return 'Desaprobado por Tema';
+      default:
+        return 'Desaprobado';
+    }
+  }
+
+  private evaluacionTieneEstructura(evaluacion: number): boolean {
+    return this.tiposCalificacion.some(tipo => this.isSlotEnabled(evaluacion, tipo));
+  }
+
+  private buildDialogData(contexto: 'navigation' | 'cancel-edit' | 'switch-view'): CalificacionesCambiosPendientesDialogData {
     const permitirGuardar = this.canSave;
     const mensajeBase = permitirGuardar
       ? 'Tenés cambios sin guardar. Podés guardarlos o descartarlos.'
@@ -938,6 +1492,15 @@ export class MisEcCalificacionesComponent implements OnInit {
         titulo: 'Salir de edición',
         mensaje: `${mensajeBase} Si salís ahora, perderás lo editado.`,
         textoDescartar: 'Salir sin guardar',
+        permitirGuardar,
+      };
+    }
+
+    if (contexto === 'switch-view') {
+      return {
+        titulo: 'Cambiar de vista',
+        mensaje: `${mensajeBase} Si cambiás a la vista reporte, perderás lo editado.`,
+        textoDescartar: 'Cambiar sin guardar',
         permitirGuardar,
       };
     }

@@ -1,0 +1,458 @@
+.reporte-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+.reporte-container.embedded-view {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 14px;
+}
+
+.topbar,
+.header-card,
+.selector-card,
+.summary-pills,
+.report-card,
+.chart-card {
+  background: #fff;
+  border: 1px solid #dbe5f5;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.btn-volver,
+.btn-export {
+  border-radius: 999px;
+}
+
+.header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.eyebrow,
+.report-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #2f67b1;
+  text-transform: uppercase;
+}
+
+.header-main h1,
+.report-card-head h2 {
+  margin: 4px 0 6px;
+  font-size: 22px;
+  color: #111827;
+}
+
+.header-main p,
+.report-card-head p {
+  margin: 0;
+  color: #66758f;
+  font-size: 13px;
+}
+
+.header-side {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pill-muted { background: #f3f7fd; color: #5d6a80; }
+.pill-blue { background: #e9f2ff; color: #2f67b1; }
+
+.selector-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.selector-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.selector-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5d6a80;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.estado-center {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #5d6a80;
+}
+
+.estado-center.error {
+  color: #cc4b4b;
+}
+
+.estado-center.muted {
+  color: #7c8799;
+}
+
+.summary-pills {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.summary-pill {
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid transparent;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #66758f;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.tone-blue { background: #eef5ff; border-color: #d7e5fb; color: #1f4f8e; }
+.tone-violet { background: #f5effb; border-color: #e6d6f5; color: #6f3fa3; }
+.tone-green { background: #eef9f0; border-color: #d7efdc; color: #1d7a41; }
+.tone-aprobado { background: #ecf9ef; border-color: #d7efdc; color: #1d7a41; }
+.tone-desaprobado { background: #fff1f2; border-color: #ffd7dd; color: #c53d4f; }
+.tone-desaprobado_tema { background: #ffeef0; border-color: #ffccd3; color: #bf3748; }
+
+.report-card,
+.chart-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.report-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 16px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-bottom: 1px solid #e4ecf7;
+}
+
+.report-card-head.embedded-head {
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+.tabs {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: #edf2fb;
+  border: 1px solid #d8e2f1;
+}
+
+.tab-btn {
+  border: 0;
+  background: transparent;
+  color: #5d6a80;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #fff;
+  color: #1f4f8e;
+  box-shadow: 0 4px 14px rgba(37, 75, 121, 0.12);
+}
+
+.table-wrap {
+  padding: 0 14px;
+  overflow-x: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+  table-layout: fixed;
+}
+
+.report-table th,
+.report-table td {
+  border: 1px solid #dbe5f5;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 13px;
+  background: #fff;
+}
+
+.report-table thead th {
+  background: #f4f8fe;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sticky-left,
+.student-name {
+  text-align: left !important;
+  font-weight: 800;
+}
+
+.dni-col {
+  width: 84px;
+}
+
+.nota-col {
+  width: 74px;
+}
+
+.estado-col {
+  width: 92px;
+}
+
+.student-row .sticky-left,
+.report-table .sticky-left {
+  width: 150px;
+}
+
+.student-row td {
+  background: #fff;
+}
+
+.student-row td.cell-warn {
+  background: #fff1f2;
+}
+
+.student-row td.cell-recovery {
+  background: #f4f5f8;
+}
+
+.nota-final {
+  background: #f4f8ff !important;
+}
+
+.nota-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #edf4ff;
+  color: #173b6d;
+  font-weight: 800;
+}
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.estado-badge.aprobado { background: #e7f8ea; color: #1d7a41; }
+.estado-badge.desaprobado { background: #fff0f2; color: #cb4154; }
+.estado-badge.desaprobado_tema { background: #ffe7ea; color: #bf3748; }
+
+.summary-row td {
+  font-weight: 800;
+  background: #f8fbff;
+}
+
+.summary-row .summary-label {
+  text-align: left;
+  color: #31486c;
+}
+
+.summary-row.promedio td { background: #eef5ff; }
+.summary-row.recovery td { background: #f4effb; }
+.summary-row.passing td { background: #eef9f0; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 12px 14px 14px;
+  margin-top: 0;
+  border-top: 1px solid #e6edf7;
+  color: #607086;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.swatch-green { background: #8ed49a; }
+.swatch-red { background: #f1a8b0; }
+.swatch-rose { background: #f6d1d7; }
+.swatch-gray { background: #cfd7e6; }
+
+.chart-card .chart-head {
+  margin-bottom: 0;
+}
+
+.chart-note {
+  border: 1px solid #d9e4f2;
+  background: #f7faff;
+  color: #334155;
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chart-body {
+  padding: 0 12px 12px;
+  min-height: 360px;
+}
+
+@media (max-width: 1100px) {
+  .report-card-head,
+  .header-card {
+    flex-direction: column;
+  }
+}
+
+.embedded-view .selector-card,
+.embedded-view .report-card,
+.embedded-view .chart-card {
+  border-radius: 12px;
+}
+
+.embedded-view .report-card-head,
+.embedded-view .selector-card {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.embedded-view .report-card-head.embedded-head {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.embedded-view .table-wrap {
+  padding: 0 12px;
+}
+
+.embedded-view .legend {
+  padding: 10px 12px 12px;
+}
+
+.embedded-view .chart-body {
+  min-height: 320px;
+}
+
+.embedded-view .report-table {
+  min-width: 0;
+}
+
+.embedded-view .report-table th,
+.embedded-view .report-table td {
+  padding: 6px 3px;
+  font-size: 10px;
+}
+
+.embedded-view .report-table thead th {
+  font-size: 10px;
+}
+
+.embedded-view .sticky-left,
+.embedded-view .student-name {
+  width: 140px;
+}
+
+.embedded-view .dni-col {
+  width: 70px;
+}
+
+.embedded-view .nota-col {
+  width: 60px;
+}
+
+.embedded-view .estado-col {
+  width: 78px;
+}
+
+.embedded-view .nota-badge {
+  min-width: 38px;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.embedded-view .estado-badge {
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 6px;
+  font-size: 9px;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+}
+
+.reporte-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reporte-view-header {
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+}

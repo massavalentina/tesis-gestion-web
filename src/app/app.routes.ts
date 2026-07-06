@@ -154,6 +154,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoGuard('FICHA_ALUMNO_R')],
       },
       {
+        path: 'ficha-alumno/reporte-calificaciones/:estudianteId',
+        ...withSectionData('fichaAlumno'),
+        loadComponent: () =>
+          import('./features/ficha-alumno/components/reporte-calificaciones-estudiante/reporte-calificaciones-estudiante.component')
+            .then(m => m.ReporteCalificacionesEstudianteComponent),
+        canActivate: [authGuard, permisoGuard('FICHA_ALUMNO_R')],
+      },
+      {
         path: 'reporte-asistencia-docente',
         ...withSectionData('reporteAsistenciaDocente'),
         loadComponent: () =>

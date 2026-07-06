@@ -33,6 +33,7 @@ import { LibretaCalificacionesComponent } from '../libreta-calificaciones/libret
 import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 import { ReporteAsistenciaService } from '../../../reporte-asistencia/services/reporte-asistencia.service';
 import { LibretaEspacio } from '../../models/libreta-calificaciones.model';
+import { ReporteCalificacionesEstudianteComponent } from '../reporte-calificaciones-estudiante/reporte-calificaciones-estudiante.component';
 
 function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -113,6 +114,7 @@ interface ModalCredencialQrState {
     ReactiveFormsModule,
     QrCredentialPreviewCardComponent,
     LibretaCalificacionesComponent,
+    ReporteCalificacionesEstudianteComponent
   ],
   templateUrl: './ficha-alumno.component.html',
   styleUrl: './ficha-alumno.component.css'
@@ -142,6 +144,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   cargandoFichaIds = new Set<string>();
   errorFichaIds = new Set<string>();
   vistaTutoresIds = new Set<string>();
+  vistaReporteIds = new Set<string>();
 
   modalEstudiante: ModalEstudianteState | null = null;
   modalTutor: ModalTutorState | null = null;
@@ -213,6 +216,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.libretaMap.clear();
     this.cargandoLibretaIds.clear();
     this.errorLibretaIds.clear();
+    this.vistaReporteIds.clear();
     this.enviandoNotificacionCurso = false;
     this.cargarEstudiantes(this.cursoSeleccionado.idCurso, null);
   }
@@ -290,6 +294,7 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
 
   verTutores(idEstudiante: string): void {
     this.vistaLibretaIds.delete(idEstudiante);
+    this.vistaReporteIds.delete(idEstudiante);
     this.vistaTutoresIds.add(idEstudiante);
   }
 
@@ -394,6 +399,19 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
         fichaState_estudianteId: est.idEstudiante,
       },
     });
+  }
+
+  verReporteCalificaciones(est: EstudianteFicha): void {
+    if (this.vistaReporteIds.has(est.idEstudiante)) {
+      this.vistaReporteIds.delete(est.idEstudiante);
+      return;
+    }
+    this.vistaTutoresIds.delete(est.idEstudiante);
+    this.vistaReporteIds.add(est.idEstudiante);
+  }
+
+  volverReporte(idEstudiante: string): void {
+    this.vistaReporteIds.delete(idEstudiante);
   }
 
   getCredencialLabel(idEstudiante: string): string {
