@@ -7,8 +7,28 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AsignacionService } from '../../services/asignacion.service';
-import { ECsinDocente } from '../../models/asignacion.model';
+import { ECsinDocente, HorarioInfo } from '../../models/asignacion.model';
+
+const ORDEN_DIAS: Record<string, number> = {
+  monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7,
+};
+
+function horarioAMinutos(hora: string): number {
+  const [h, m] = hora.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function seSuperponen(a: HorarioInfo, b: HorarioInfo): boolean {
+  if (a.diaSemana.toLowerCase() !== b.diaSemana.toLowerCase()) return false;
+  const inicioA = horarioAMinutos(a.horarioEntrada);
+  const finA = horarioAMinutos(a.horarioSalida);
+  const inicioB = horarioAMinutos(b.horarioEntrada);
+  const finB = horarioAMinutos(b.horarioSalida);
+  return inicioA < finB && inicioB < finA;
+}
 
 export interface AsignarECData {
   idDocente: string;
@@ -61,7 +81,9 @@ export interface AsignarECResult {
           <div class="horarios-panel" *ngIf="ecSeleccionado && ecSeleccionado.horarios.length > 0">
             <span class="horarios-label">Horarios</span>
             <div class="horarios-chips">
-              <span class="horario-chip" *ngFor="let h of ecSeleccionado.horarios">
+              <span class="horario-chip"
+                    [class.horario-chip--conflicto]="tieneConflicto(h)"
+                    *ngFor="let h of horariosOrdenados(ecSeleccionado.horarios)">
                 {{ formatHorario(h) }}
               </span>
             </div>
@@ -69,6 +91,11 @@ export interface AsignarECResult {
           <div class="horarios-panel horarios-panel--vacio" *ngIf="ecSeleccionado && ecSeleccionado.horarios.length === 0">
             <span class="horarios-label">Horarios</span>
             <span class="sin-horario">Sin horario asignado</span>
+          </div>
+
+          <div class="aviso-conflicto" *ngIf="tieneConflictoHorario">
+            <mat-icon>error_outline</mat-icon>
+            <span>El docente no tiene disponibilidad en ese horario (ya tiene otro espacio asignado ese día y horario). Igual podés asignarlo si corresponde.</span>
           </div>
 
           <div class="aviso-historial" *ngIf="ecSeleccionado?.tieneHistorial">
@@ -137,8 +164,14 @@ export interface AsignarECResult {
       font-weight: 500;
       white-space: nowrap;
     }
+    .horario-chip--conflicto {
+      background: #fee2e2;
+      color: #b91c1c;
+      font-weight: 700;
+    }
     .sin-horario { font-size: 0.8rem; color: #94a3b8; font-style: italic; }
-    .aviso-historial {
+    .aviso-historial,
+    .aviso-conflicto {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -148,7 +181,21 @@ export interface AsignarECResult {
       font-size: 0.8rem;
       color: #92400e;
     }
-    .aviso-historial mat-icon { font-size: 16px; width: 16px; height: 16px; color: #d97706; }
+    .aviso-historial mat-icon,
+    .aviso-conflicto mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      line-height: 16px;
+      flex-shrink: 0;
+    }
+    .aviso-historial mat-icon { color: #d97706; }
+    .aviso-conflicto {
+      align-items: flex-start;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .aviso-conflicto mat-icon { color: #dc2626; margin-top: 1px; }
     .dlg-actions {
       display: flex;
       gap: 8px;
@@ -163,8 +210,17 @@ export class AsignarECDialogComponent implements OnInit {
   cargando = signal(true);
   idECSeleccionado: string | null = null;
 
+  /** Horarios que el docente ya tiene ocupados por otros espacios curriculares activos. */
+  private horariosDocente: HorarioInfo[] = [];
+
   get ecSeleccionado(): ECsinDocente | undefined {
     return this.ecs().find(ec => ec.idEC === this.idECSeleccionado);
+  }
+
+  get tieneConflictoHorario(): boolean {
+    const ec = this.ecSeleccionado;
+    if (!ec) return false;
+    return ec.horarios.some(h => this.tieneConflicto(h));
   }
 
   constructor(
@@ -174,8 +230,17 @@ export class AsignarECDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.asignacionService.getECsSinDocente().subscribe({
-      next: ecs => { this.ecs.set(ecs); this.cargando.set(false); },
+    forkJoin({
+      ecs: this.asignacionService.getECsSinDocente(),
+      docente: this.asignacionService.getECsDocente(this.data.idDocente).pipe(
+        catchError(() => of({ activos: [], historial: [] })),
+      ),
+    }).subscribe({
+      next: ({ ecs, docente }) => {
+        this.ecs.set(ecs);
+        this.horariosDocente = docente.activos.flatMap(ec => ec.horarios);
+        this.cargando.set(false);
+      },
       error: () => { this.cargando.set(false); },
     });
   }
@@ -194,6 +259,18 @@ export class AsignarECDialogComponent implements OnInit {
     };
     const dia = dias[h.diaSemana.toLowerCase()] ?? h.diaSemana;
     return `${dia} ${h.horarioEntrada}–${h.horarioSalida}`;
+  }
+
+  horariosOrdenados(horarios: HorarioInfo[]): HorarioInfo[] {
+    return [...horarios].sort((a, b) => {
+      const da = ORDEN_DIAS[a.diaSemana.toLowerCase()] ?? 99;
+      const db = ORDEN_DIAS[b.diaSemana.toLowerCase()] ?? 99;
+      return da !== db ? da - db : a.horarioEntrada.localeCompare(b.horarioEntrada);
+    });
+  }
+
+  tieneConflicto(h: HorarioInfo): boolean {
+    return this.horariosDocente.some(dh => seSuperponen(h, dh));
   }
 
   confirmar(): void {

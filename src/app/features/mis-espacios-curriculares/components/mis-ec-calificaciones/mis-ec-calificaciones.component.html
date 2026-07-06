@@ -16,19 +16,28 @@
   </div>
 
   <ng-container *ngIf="!loading && !error && espacio">
-    <nav class="breadcrumb">
-      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <a (click)="volverAMateria()" class="crumb-link">
-        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
-      </a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <span class="crumb-current">Calificaciones</span>
-    </nav>
+    <div class="breadcrumb-row">
+      <button class="btn-back-circle" type="button" (click)="volverAMateria()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <nav class="breadcrumb">
+        <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <a (click)="volverAMateria()" class="crumb-link">{{ formatCurso(espacio.anioNumero, espacio.division) }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <a (click)="volverAMateria()" class="crumb-link">{{ espacio.nombreMateria }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="crumb-current">Calificaciones</span>
+      </nav>
+    </div>
 
     <div class="detail-head">
       <div class="detail-icon">

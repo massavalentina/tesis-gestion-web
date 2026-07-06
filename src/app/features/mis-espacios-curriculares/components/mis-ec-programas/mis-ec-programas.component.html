@@ -8,29 +8,48 @@
   <ng-container *ngIf="!loading">
 
     <!-- Breadcrumb -->
-    <nav class="breadcrumb">
-      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <a (click)="volverAMateria()" class="crumb-link" *ngIf="espacio">
-        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
-      </a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <span class="crumb-current">Programas</span>
-    </nav>
+    <div class="breadcrumb-row">
+      <button class="btn-back-circle" type="button" (click)="volverAMateria()" *ngIf="espacio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <nav class="breadcrumb">
+        <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <ng-container *ngIf="espacio">
+          <a (click)="volverAMateria()" class="crumb-link">{{ formatCurso(espacio.anioNumero, espacio.division) }}</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <a (click)="volverAMateria()" class="crumb-link">{{ espacio.nombreMateria }}</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </ng-container>
+        <span class="crumb-current">Programas</span>
+      </nav>
+    </div>
 
-    <!-- Encabezado -->
-    <div class="header">
-      <div class="header-text">
-        <h2>Programas del Espacio</h2>
-        <p *ngIf="espacio">
-          {{ espacio.nombreMateria }} · {{ formatCurso(espacio.anioNumero, espacio.division) }}
-        </p>
+    <!-- Encabezado hero -->
+    <div class="prog-hero">
+      <div class="prog-hero-left">
+        <div class="prog-hero-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="prog-hero-title">Programas del Espacio</h1>
+          <p class="prog-hero-sub" *ngIf="espacio">
+            {{ formatCurso(espacio.anioNumero, espacio.division) }} · {{ espacio.nombreMateria }} — Ciclo lectivo {{ espacio.anioLectivo }}
+          </p>
+        </div>
       </div>
-      <div class="header-actions">
+      <div class="prog-hero-right">
         <button class="btn btn-outline" (click)="cargarDesdeArchivo()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

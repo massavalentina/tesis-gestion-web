@@ -29,13 +29,37 @@ $kpi-color:     #0284c7;
 }
 
 // ── Breadcrumb ─────────────────────────────────────────────────────────────
+.breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.btn-back-circle {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $label;
+  flex-shrink: 0;
+  transition: background .15s;
+
+  svg { width: 18px; height: 18px; }
+  &:hover { background: $bg; }
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 13.5px;
   color: $label;
-  margin-bottom: 18px;
   flex-wrap: wrap;
 
   svg { width: 13px; height: 13px; flex-shrink: 0; }

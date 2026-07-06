@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { catchError, forkJoin, of } from 'rxjs';
 import { PlanificacionService } from '../../services/planificacion.service';
+import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
+import { MisEcItem } from '../../models/mis-ec.model';
 import {
   ArbolPlanificacionDto,
   UnidadArbolDto,
@@ -23,6 +26,11 @@ export class MisEcPlanificacionComponent implements OnInit {
   loading = true;
   error = '';
   arbol: ArbolPlanificacionDto | null = null;
+  espacio: MisEcItem | null = null;
+
+  get cursoLabel(): string {
+    return this.espacio ? `${this.espacio.anioNumero}°${this.espacio.division}` : '';
+  }
 
   // Expansión
   openUnidades = new Set<string>();
@@ -90,6 +98,7 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   constructor(
     private service: PlanificacionService,
+    private ecService: MisEspaciosCurricularesService,
     private route: ActivatedRoute,
     private router: Router,
     private sanitizer: DomSanitizer,
@@ -103,9 +112,13 @@ export class MisEcPlanificacionComponent implements OnInit {
   private cargarArbol(): void {
     this.loading = true;
     this.error = '';
-    this.service.getArbol(this.idEC).subscribe({
-      next: arbol => {
+    forkJoin({
+      arbol: this.service.getArbol(this.idEC),
+      espacio: this.ecService.getEspacioCurricularPorId(this.idEC).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ arbol, espacio }) => {
         this.arbol = arbol;
+        this.espacio = espacio;
         this.loading = false;
       },
       error: () => {

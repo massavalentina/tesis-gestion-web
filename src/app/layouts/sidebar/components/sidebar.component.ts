@@ -425,7 +425,8 @@ export class SidebarComponent {
       case 'reporteAsistencia':
         return this.esAdmin || this.authService.tienePermiso('REPORTES_ASISTENCIA_RW');
       case 'reporteAsistenciaDocente':
-        return this.esAdmin || this.authService.tienePermiso('REPORTES_EC_RW');
+        return this.esAdmin
+          || (this.authService.tienePermiso('REPORTES_EC_RW') && !this.authService.tieneRol('Secretario'));
       case 'credencialesQr':
         return this.esAdmin
           || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
@@ -434,10 +435,7 @@ export class SidebarComponent {
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reporteRetiros':
-        return this.esAdmin
-          || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW')
-          || this.authService.tieneRol('Equipo Directivo')
-          || this.authService.tieneRol('Secretario');
+        return this.esAdmin || this.authService.tieneRol('Preceptor');
       case 'reportesEstrategicosAsistencia':
       case 'reportesEstrategicosCalificaciones':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');

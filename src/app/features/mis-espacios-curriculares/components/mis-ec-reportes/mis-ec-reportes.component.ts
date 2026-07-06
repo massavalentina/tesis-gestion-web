@@ -13,39 +13,31 @@ import { ChartFullscreenDialogComponent } from '../../../reportes-estrategicos/c
 import { PlanificacionService } from '../../services/planificacion.service';
 import { ArbolPlanificacionDto, UnidadArbolDto } from '../../models/planificacion.model';
 import { EvaluacionesService } from '../../services/evaluaciones.service';
-
-const ESPACIO_DEMO = '6°B Teatro';
+import { CalificacionesService } from '../../services/calificaciones.service';
+import { CalificacionVigente, InstanciaEvaluativaResumen, GestionManualEstudiante } from '../../models/calificaciones.model';
 
 const COLORS = { aprob: '#1f4e87', recup: '#7ba9d6', desapTema: '#f0a35e', desap: '#e23744' };
+// Escala de azules para distribución de estados (claro = mejor, oscuro = peor)
+const ESTADO_COLORS = { aprob: '#9cc1e3', recup: '#5b8bc4', desapTema: '#3f78b5', desap: '#11365b' };
+// Histograma de calificaciones: oscuro = desaprobado (<7), claro = aprobado (>=7)
+const NOTA_BAJA = '#11365b';
+const NOTA_BUENA = '#9cc1e3';
 const FONT = 'Inter, -apple-system, "Segoe UI", Roboto, sans-serif';
 
-// All demo data isolated here — swap for a service call when backend is ready
-const DEMO_DATA = {
-  alumnos: 30,
-  recuperatoriosRealizados: 158,
-  promedioRecuperatorios: 5.27,
-  evaluacionesBase: 240,
-  alumnosRiesgo: [
-    { nombre: 'Díaz, Tomás',      promedio: 4.80 },
-    { nombre: 'Pérez, Mora',      promedio: 5.90 },
-    { nombre: 'Rojas, Valentina', promedio: 6.20 },
-    { nombre: 'Gómez, Lucas',     promedio: 6.40 },
-    { nombre: 'Acosta, Mía',      promedio: 6.75 },
-  ] as { nombre: string; promedio: number }[],
-  histPorInstancia: {
-    '1': [0,0,0,1,1,2,5,9,8,4],
-    '2': [0,0,0,0,1,2,5,8,9,5],
-    '3': [0,0,1,1,1,2,6,9,7,3],
-    '4': [0,0,0,0,1,1,4,9,10,5],
-    '5': [0,0,0,1,1,2,5,9,8,4],
-    '6': [0,0,0,0,1,1,5,8,10,5],
-    '7': [0,0,1,1,1,2,6,8,8,3],
-    '8': [0,0,0,1,1,2,5,9,8,4],
-  } as Record<string, number[]>,
-};
+interface ExamenFinal {
+  idIE: string;
+  idEstudiante: string;
+  nro: number;
+  puntajeFinal: number;
+  tieneRecuperatorio: boolean;
+}
 
-const HIST_TODAS: number[] = Object.values(DEMO_DATA.histPorInstancia)
-  .reduce((acc: number[], h: number[]) => acc.map((v, i) => v + h[i]), new Array(10).fill(0) as number[]);
+interface DistribucionEstados {
+  aprobados: number;
+  aprobConRecup: number;
+  desapTema: number;
+  desaprobados: number;
+}
 
 function estadisticas(hist: number[]): { promedio: number; desvio: number; moda: number } {
   const arr: number[] = [];
@@ -57,60 +49,6 @@ function estadisticas(hist: number[]): { promedio: number; desvio: number; moda:
   hist.forEach((c, i) => { if (c > maxC) { maxC = c; moda = i + 1; } });
   return { promedio, desvio: Math.sqrt(varianza), moda };
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const OPTION_PIE: any = {
-  textStyle: { fontFamily: FONT },
-  tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-  legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
-  series: [{
-    type: 'pie', radius: ['46%', '72%'], center: ['50%', '44%'],
-    avoidLabelOverlap: true,
-    itemStyle: { borderColor: '#fff', borderWidth: 2 },
-    label: { show: true, formatter: '{d}%', fontSize: 11, color: '#475569' },
-    labelLine: { length: 8, length2: 8 },
-    data: [
-      { value: 120, name: 'Aprobados',         itemStyle: { color: COLORS.aprob } },
-      { value: 88,  name: 'Aprob. con Recup.', itemStyle: { color: COLORS.recup } },
-      { value: 14,  name: 'Desap. por Tema',   itemStyle: { color: COLORS.desapTema } },
-      { value: 18,  name: 'Desaprobados',      itemStyle: { color: COLORS.desap } },
-    ],
-  }],
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const OPTION_BAR_ESTADO: any = {
-  textStyle: { fontFamily: FONT },
-  grid: { left: 12, right: 52, top: 10, bottom: 12, containLabel: true },
-  tooltip: { trigger: 'axis', valueFormatter: (v: number | string) => `${v}%` },
-  xAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%', color: '#94a3b8' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-  yAxis: { type: 'category', data: ['Aprobados', 'Aprob. con Recup.', 'Desap. por Tema', 'Desaprobados'], inverse: true, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: '#475569', fontSize: 12 } },
-  series: [{
-    type: 'bar', barWidth: 14,
-    itemStyle: { borderRadius: [0, 7, 7, 0] },
-    label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 11 },
-    data: [
-      { value: 50.0, itemStyle: { color: COLORS.aprob } },
-      { value: 36.7, itemStyle: { color: COLORS.recup } },
-      { value: 5.8,  itemStyle: { color: COLORS.desapTema } },
-      { value: 7.5,  itemStyle: { color: COLORS.desap } },
-    ],
-  }],
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const OPTION_BAR_COMP: any = {
-  textStyle: { fontFamily: FONT },
-  grid: { left: 12, right: 16, top: 32, bottom: 14, containLabel: true },
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  legend: { top: 0, icon: 'circle', itemWidth: 9, itemHeight: 9, itemGap: 14, textStyle: { fontSize: 11, color: '#64748b' } },
-  xAxis: { type: 'category', data: ['1','2','3','4','5','6','7','8'], axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontSize: 11 } },
-  yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
-  series: [
-    { name: 'R1', type: 'bar', stack: 'rec', barWidth: '55%', itemStyle: { color: COLORS.aprob }, data: [12,10,16,8,13,9,18,17] },
-    { name: 'R2', type: 'bar', stack: 'rec', itemStyle: { color: COLORS.recup, borderRadius: [4,4,0,0] }, data: [6,5,8,4,7,5,10,10] },
-  ],
-};
 
 @Component({
   selector: 'app-mis-ec-reportes',
@@ -136,6 +74,22 @@ export class MisEcReportesComponent implements OnInit {
   activeTab: 'notas' | 'eval' | 'programa' = 'notas';
   showModal = false;
 
+  // Pestaña Notas / Evaluaciones (datos reales)
+  loadingNotas = true;
+  alumnosCount = 0;
+  recuperatoriosRealizados = 0;
+  promedioRecuperatorios = '0.00';
+  alumnosRiesgo: { nombre: string; promedio: number }[] = [];
+  private histPorInstancia: Record<string, number[]> = {};
+  private histTodas: number[] = new Array(10).fill(0);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  optionPie: any = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  optionBarEstado: any = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  optionBarComp: any = {};
+
   // Pestaña Programa
   arbolPrograma: ArbolPlanificacionDto | null = null;
   loadingPrograma = false;
@@ -155,17 +109,13 @@ export class MisEcReportesComponent implements OnInit {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   histOptions: any = {};
 
-  readonly optionPie = OPTION_PIE;
-  readonly optionBarEstado = OPTION_BAR_ESTADO;
-  readonly optionBarComp = OPTION_BAR_COMP;
-  readonly alumnosRiesgo = [...DEMO_DATA.alumnosRiesgo].sort((a, b) => a.promedio - b.promedio);
-  readonly demoData = DEMO_DATA;
   readonly instancias = [1, 2, 3, 4, 5, 6, 7, 8];
 
   constructor(
     private service: MisEspaciosCurricularesService,
     private planificacionService: PlanificacionService,
     private evaluacionesService: EvaluacionesService,
+    private calificacionesService: CalificacionesService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog,
@@ -173,21 +123,17 @@ export class MisEcReportesComponent implements OnInit {
 
   ngOnInit(): void {
     this.idEC = this.route.snapshot.paramMap.get('idEC') ?? '';
-    this.service.getMisEspaciosCurriculares().pipe(
+    this.service.getEspacioCurricularPorId(this.idEC).pipe(
       catchError(() => {
         this.error = true;
         this.loading = false;
-        return of([]);
+        return of(null);
       }),
-    ).subscribe(ecs => {
-      this.espacio = ecs.find(e => e.idEC === this.idEC) ?? null;
+    ).subscribe(espacio => {
+      this.espacio = espacio;
       if (!this.espacio && !this.error) this.error = true;
       this.loading = false;
-      const nombre = this.espacio
-        ? `${this.espacio.anioNumero}°${this.espacio.division} ${this.espacio.nombreMateria}`
-        : '';
-      this.hayDatos = nombre === ESPACIO_DEMO;
-      if (this.hayDatos) this.applyHistFilter('todas');
+      if (this.espacio) this.cargarNotasYEvaluaciones();
     });
   }
 
@@ -203,8 +149,228 @@ export class MisEcReportesComponent implements OnInit {
     return `${d}/${m}/${hoy.getFullYear()}`;
   }
 
+  private cargarNotasYEvaluaciones(): void {
+    this.loadingNotas = true;
+
+    forkJoin({
+      instancias: this.calificacionesService.getInstancias(this.idEC).pipe(catchError(() => of([]))),
+      estudiantes: this.calificacionesService.getEstudiantes(this.idEC).pipe(catchError(() => of([]))),
+      calificaciones: this.calificacionesService.getCalificacionesVigentes(this.idEC).pipe(catchError(() => of([]))),
+    }).subscribe(({ instancias, estudiantes, calificaciones }) => {
+      this.alumnosCount = estudiantes.length;
+
+      const examenes = this.construirExamenesFinales(instancias, calificaciones);
+      this.hayDatos = examenes.length > 0;
+
+      this.histPorInstancia = this.buildHistPorInstancia(examenes);
+      this.applyHistFilter('todas');
+
+      const distribucion = this.buildDistribucion(examenes);
+      this.optionPie = this.buildOptionPie(distribucion);
+      this.optionBarEstado = this.buildOptionBarEstado(distribucion);
+      this.optionBarComp = this.buildOptionBarComp(calificaciones, instancias);
+
+      this.alumnosRiesgo = this.buildAlumnosRiesgo(examenes, estudiantes);
+
+      const recuperatorios = calificaciones.filter(c =>
+        (c.tipoCalificacion === 'R1' || c.tipoCalificacion === 'R2') && c.puntaje !== null);
+      this.recuperatoriosRealizados = recuperatorios.length;
+      this.promedioRecuperatorios = recuperatorios.length > 0
+        ? (recuperatorios.reduce((a, c) => a + (c.puntaje ?? 0), 0) / recuperatorios.length).toFixed(2)
+        : '0.00';
+
+      this.loadingNotas = false;
+    });
+  }
+
+  private construirExamenesFinales(
+    instancias: InstanciaEvaluativaResumen[],
+    calificaciones: CalificacionVigente[],
+  ): ExamenFinal[] {
+    const nroPorIE = new Map(instancias.map(i => [i.idIE, i.nro]));
+    const porExamen = new Map<string, CalificacionVigente[]>();
+
+    for (const c of calificaciones) {
+      if (c.puntaje === null) continue;
+      const key = `${c.idIE}|${c.idEstudiante}`;
+      const arr = porExamen.get(key) ?? [];
+      arr.push(c);
+      porExamen.set(key, arr);
+    }
+
+    const resultado: ExamenFinal[] = [];
+    for (const [key, califs] of porExamen) {
+      const [idIE, idEstudiante] = key.split('|');
+      const nro = nroPorIE.get(idIE);
+      if (!nro) continue;
+
+      const rec2 = califs.find(c => c.tipoCalificacion === 'R2');
+      const rec1 = califs.find(c => c.tipoCalificacion === 'R1');
+      const orig = califs.find(c => c.tipoCalificacion === 'N');
+      const final = rec2 ?? rec1 ?? orig;
+      if (!final || final.puntaje === null) continue;
+
+      resultado.push({
+        idIE,
+        idEstudiante,
+        nro,
+        puntajeFinal: final.puntaje,
+        tieneRecuperatorio: !!rec1 || !!rec2,
+      });
+    }
+
+    return resultado;
+  }
+
+  private buildHistPorInstancia(examenes: ExamenFinal[]): Record<string, number[]> {
+    const hist: Record<string, number[]> = {};
+    for (let n = 1; n <= 8; n++) hist[String(n)] = new Array(10).fill(0);
+
+    for (const e of examenes) {
+      const idx = Math.min(Math.max(Math.round(e.puntajeFinal), 1), 10) - 1;
+      hist[String(e.nro)][idx]++;
+    }
+
+    this.histTodas = Object.values(hist)
+      .reduce((acc: number[], h: number[]) => acc.map((v, i) => v + h[i]), new Array(10).fill(0) as number[]);
+
+    return hist;
+  }
+
+  private buildDistribucion(examenes: ExamenFinal[]): DistribucionEstados {
+    const d: DistribucionEstados = { aprobados: 0, aprobConRecup: 0, desapTema: 0, desaprobados: 0 };
+
+    const porEstudiante = new Map<string, ExamenFinal[]>();
+    for (const e of examenes) {
+      const arr = porEstudiante.get(e.idEstudiante) ?? [];
+      arr.push(e);
+      porEstudiante.set(e.idEstudiante, arr);
+    }
+
+    // Estado por alumno según su PROMEDIO (no por examen suelto): igual criterio que la libreta de calificaciones.
+    for (const instancias of porEstudiante.values()) {
+      const promedio = instancias.reduce((s, e) => s + e.puntajeFinal, 0) / instancias.length;
+      const algunaFallo = instancias.some(e => e.puntajeFinal < 7);
+      const algunaRecuperada = instancias.some(e => e.tieneRecuperatorio);
+
+      if (promedio < 7) {
+        d.desaprobados++;
+      } else if (algunaFallo) {
+        d.desapTema++;
+      } else if (algunaRecuperada) {
+        d.aprobConRecup++;
+      } else {
+        d.aprobados++;
+      }
+    }
+
+    return d;
+  }
+
+  private buildAlumnosRiesgo(
+    examenes: ExamenFinal[],
+    estudiantes: GestionManualEstudiante[],
+  ): { nombre: string; promedio: number }[] {
+    const porEstudiante = new Map<string, number[]>();
+    for (const e of examenes) {
+      const arr = porEstudiante.get(e.idEstudiante) ?? [];
+      arr.push(e.puntajeFinal);
+      porEstudiante.set(e.idEstudiante, arr);
+    }
+
+    const nombrePorId = new Map(estudiantes.map(e => [e.idEstudiante, `${e.apellido}, ${e.nombre}`]));
+    const riesgo: { nombre: string; promedio: number }[] = [];
+
+    for (const [idEst, notas] of porEstudiante) {
+      const promedio = notas.reduce((a, b) => a + b, 0) / notas.length;
+      if (promedio < 7) {
+        riesgo.push({ nombre: nombrePorId.get(idEst) ?? 'Estudiante', promedio: +promedio.toFixed(2) });
+      }
+    }
+
+    return riesgo.sort((a, b) => a.promedio - b.promedio);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildOptionPie(d: DistribucionEstados): any {
+    return {
+      textStyle: { fontFamily: FONT },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
+      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+      series: [{
+        type: 'pie', radius: ['46%', '72%'], center: ['50%', '44%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, formatter: '{d}%', fontSize: 11, color: '#475569' },
+        labelLine: { length: 8, length2: 8 },
+        data: [
+          { value: d.aprobados,     name: 'Aprobados',        itemStyle: { color: ESTADO_COLORS.aprob } },
+          { value: d.aprobConRecup, name: 'Aprob. con Recup.', itemStyle: { color: ESTADO_COLORS.recup } },
+          { value: d.desapTema,     name: 'Desap. por Tema',  itemStyle: { color: ESTADO_COLORS.desapTema } },
+          { value: d.desaprobados,  name: 'Desaprobados',     itemStyle: { color: ESTADO_COLORS.desap } },
+        ],
+      }],
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildOptionBarEstado(d: DistribucionEstados): any {
+    const total = d.aprobados + d.aprobConRecup + d.desapTema + d.desaprobados;
+    const pct = (n: number) => total > 0 ? Math.round((n / total) * 1000) / 10 : 0;
+
+    return {
+      textStyle: { fontFamily: FONT },
+      grid: { left: 12, right: 52, top: 10, bottom: 12, containLabel: true },
+      tooltip: { trigger: 'axis', valueFormatter: (v: number | string) => `${v}%`, confine: true },
+      xAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%', color: '#94a3b8' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+      yAxis: { type: 'category', data: ['Aprobados', 'Aprob. con Recup.', 'Desap. por Tema', 'Desaprobados'], inverse: true, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: '#475569', fontSize: 12 } },
+      series: [{
+        type: 'bar', barWidth: 14,
+        itemStyle: { borderRadius: [0, 7, 7, 0] },
+        label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 11 },
+        data: [
+          { value: pct(d.aprobados),     itemStyle: { color: ESTADO_COLORS.aprob } },
+          { value: pct(d.aprobConRecup), itemStyle: { color: ESTADO_COLORS.recup } },
+          { value: pct(d.desapTema),     itemStyle: { color: ESTADO_COLORS.desapTema } },
+          { value: pct(d.desaprobados),  itemStyle: { color: ESTADO_COLORS.desap } },
+        ],
+      }],
+    };
+  }
+
+  private buildOptionBarComp(
+    calificaciones: CalificacionVigente[],
+    instancias: InstanciaEvaluativaResumen[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): any {
+    const nroPorIE = new Map(instancias.map(i => [i.idIE, i.nro]));
+    const r1PorNro = new Array(8).fill(0);
+    const r2PorNro = new Array(8).fill(0);
+
+    for (const c of calificaciones) {
+      if (c.puntaje === null) continue;
+      const nro = nroPorIE.get(c.idIE);
+      if (!nro) continue;
+      if (c.tipoCalificacion === 'R1') r1PorNro[nro - 1]++;
+      else if (c.tipoCalificacion === 'R2') r2PorNro[nro - 1]++;
+    }
+
+    return {
+      textStyle: { fontFamily: FONT },
+      grid: { left: 12, right: 16, top: 32, bottom: 14, containLabel: true },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, confine: true },
+      legend: { top: 0, icon: 'circle', itemWidth: 9, itemHeight: 9, itemGap: 14, textStyle: { fontSize: 11, color: '#64748b' } },
+      xAxis: { type: 'category', data: ['1','2','3','4','5','6','7','8'], axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontSize: 11 } },
+      yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
+      series: [
+        { name: 'R1', type: 'bar', stack: 'rec', barWidth: '55%', itemStyle: { color: COLORS.aprob }, data: r1PorNro },
+        { name: 'R2', type: 'bar', stack: 'rec', itemStyle: { color: COLORS.recup, borderRadius: [4,4,0,0] }, data: r2PorNro },
+      ],
+    };
+  }
+
   applyHistFilter(key: string): void {
-    const hist = key === 'todas' ? HIST_TODAS : (DEMO_DATA.histPorInstancia[key] ?? HIST_TODAS);
+    const hist = key === 'todas' ? this.histTodas : (this.histPorInstancia[key] ?? this.histTodas);
     const s = estadisticas(hist);
     this.kpiPromedio = s.promedio.toFixed(2);
     this.kpiModa = s.moda;
@@ -216,6 +382,7 @@ export class MisEcReportesComponent implements OnInit {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
         valueFormatter: (v: number | string) => `${v} calificaciones`,
+        confine: true,
       },
       xAxis: { type: 'category', data: ['1','2','3','4','5','6','7','8','9','10'], axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b', fontSize: 11 } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8' } },
@@ -227,7 +394,7 @@ export class MisEcReportesComponent implements OnInit {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter: (p: any) => (p.value ? String(p.value) : ''),
         },
-        data: hist.map((v, i) => ({ value: v, itemStyle: { color: i + 1 < 7 ? COLORS.desap : COLORS.aprob } })),
+        data: hist.map((v, i) => ({ value: v, itemStyle: { color: i + 1 < 7 ? NOTA_BAJA : NOTA_BUENA } })),
       }],
     };
   }
@@ -304,7 +471,7 @@ export class MisEcReportesComponent implements OnInit {
     const pct = Math.round(arbol.avance);
     this.optionDonutAvance = {
       textStyle: { fontFamily: FONT },
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
       legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
       graphic: [
         { type: 'text', left: 'center', top: '34%',
@@ -334,7 +501,7 @@ export class MisEcReportesComponent implements OnInit {
     const pct = total === 0 ? 0 : Math.round(evaluados / total * 100);
     this.optionDonutEval = {
       textStyle: { fontFamily: FONT },
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
       legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
       graphic: [
         { type: 'text', left: 'center', top: '34%',
@@ -347,8 +514,8 @@ export class MisEcReportesComponent implements OnInit {
         avoidLabelOverlap: false, label: { show: false },
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
         data: [
-          { value: evaluados, name: 'Temas evaluados',   itemStyle: { color: '#1f4e87' } },
-          { value: sinEval,   name: 'Temas sin evaluar', itemStyle: { color: '#7ba9d6' } },
+          { value: evaluados, name: 'Temas evaluados',   itemStyle: { color: '#7ba9d6' } },
+          { value: sinEval,   name: 'Temas sin evaluar', itemStyle: { color: '#e2e8f0' } },
         ],
       }],
     };

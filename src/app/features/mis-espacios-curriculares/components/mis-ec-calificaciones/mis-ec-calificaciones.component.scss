@@ -25,13 +25,37 @@ $success-bg: #ecfdf3;
   animation: fadeUp .35s both;
 }
 
+.breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.btn-back-circle {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $text-muted;
+  flex-shrink: 0;
+  transition: background .15s;
+
+  svg { width: 18px; height: 18px; }
+  &:hover { background: #f1f5f9; }
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 13.5px;
   color: $text-muted;
-  margin-bottom: 18px;
   flex-wrap: wrap;
 
   svg {

@@ -34,8 +34,9 @@ echarts.use([
 ]);
 
 import { ReportesEstrategicosService } from '../../services/reportes-estrategicos.service';
-import { DashboardCalificaciones, CursoLabel } from '../../models/dashboard-calificaciones.model';
+import { DashboardCalificaciones, CursoLabel, AnioTasaAprobacion, CursoTasaAprobacion } from '../../models/dashboard-calificaciones.model';
 import { ChartFullscreenDialogComponent } from '../chart-fullscreen-dialog/chart-fullscreen-dialog.component';
+import { PdfReporteService, DashboardPdfData } from '../../../../core/services/pdf-reporte.service';
 
 class DdMmYyyyAdapter extends NativeDateAdapter {
   override format(date: Date, _displayFormat: object): string {
@@ -64,9 +65,12 @@ const DD_MM_YYYY_FORMATS = {
 const NAVY  = '#1f4e87';
 const BLUE  = '#5b8bc4';
 const BLUEL = '#9cc1e3';
-const RED   = '#e23744';
-const AMBER = '#f0a35e';
+const DARK  = '#11365b';
+const MID   = '#3f78b5';
 const MUTED = '#64748b';
+
+// Degradé descendente para los Top 5 de desaprobación: el más alto, más oscuro/fuerte
+const DESAP_SCALE = [DARK, '#27568c', MID, '#6f9ec9', BLUEL];
 
 @Component({
   selector: 'app-dashboard-calificaciones',
@@ -100,6 +104,7 @@ export class DashboardCalificacionesComponent implements OnInit {
 
   // Estructura de ejes construida desde cursos reales
   yearLabels:   string[] = [];
+  yearNumbers:  number[] = [];
   courseLabels: string[] = [];
 
   chartMayorDesap:    EChartsOption = {};
@@ -109,9 +114,16 @@ export class DashboardCalificacionesComponent implements OnInit {
   chartTasaPorAnio:   EChartsOption = {};
   chartTasaPorCurso:  EChartsOption = {};
 
+  // ECharts instances para exportación PDF
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  chartInstances: Record<string, any> = {};
+
+  exportandoPdf = false;
+
   constructor(
     private reportesService: ReportesEstrategicosService,
     private dialog: MatDialog,
+    private pdfService: PdfReporteService,
   ) {}
 
   ngOnInit(): void {
@@ -141,6 +153,8 @@ export class DashboardCalificacionesComponent implements OnInit {
       next: (data) => {
         this.dashboard = data;
         this.buildCharts();
+        this.buildChartTasaPorAnio();
+        this.buildChartTasaPorCurso();
         this.cargando = false;
       },
       error: () => { this.cargando = false; },
@@ -165,8 +179,118 @@ export class DashboardCalificacionesComponent implements OnInit {
     this.cargar();
   }
 
-  exportarPdf(): void {
-    // TODO: implementar exportación a PDF
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChartInit(key: string, instance: any): void {
+    this.chartInstances[key] = instance;
+  }
+
+  // ── Exportación PDF ────────────────────────────────────────────────────────
+
+  private readonly EXPORT_SIZES: Record<string, { w: number; h: number }> = {
+    mayorDesap:    { w: 500, h: 350 },
+    mejorPromedio: { w: 500, h: 350 },
+    tasaCurso:     { w: 500, h: 350 },
+    condicion:     { w: 500, h: 350 },
+    tasaPorAnio:   { w: 900, h: 350 },
+    tasaPorCurso:  { w: 900, h: 350 },
+  };
+
+  private captureChart(key: string): { dataUrl: string; aspectRatio: number } | null {
+    const inst = this.chartInstances[key];
+    // Si el gráfico quedó oculto por un filtro (ej: Top 5 sin datos en el período),
+    // su instancia previa fue destruida por Angular pero la referencia queda guardada.
+    if (!inst || (typeof inst.isDisposed === 'function' && inst.isDisposed())) return null;
+
+    const baseSize = this.EXPORT_SIZES[key] ?? { w: 600, h: 400 };
+    const origW = inst.getWidth();
+    const origH = inst.getHeight();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const option = inst.getOption() as any;
+    const hasDataZoom = Array.isArray(option?.dataZoom) && option.dataZoom.length > 0;
+
+    inst.resize({ width: baseSize.w, height: baseSize.h });
+
+    // Mostrar todos los datos en el PDF, sin importar el zoom aplicado en pantalla
+    if (hasDataZoom) {
+      inst.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, start: 0, end: 100 });
+    }
+
+    const dataUrl = inst.getDataURL({ type: 'png', pixelRatio: 3 });
+
+    // Restaurar estado original del dataZoom y tamaño
+    if (hasDataZoom) {
+      const dz = option.dataZoom[0];
+      if (dz.startValue !== undefined) {
+        inst.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue: dz.startValue, endValue: dz.endValue });
+      } else {
+        inst.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, start: dz.start ?? 0, end: dz.end ?? 100 });
+      }
+    }
+    inst.resize({ width: origW, height: origH });
+
+    return { dataUrl, aspectRatio: baseSize.w / baseSize.h };
+  }
+
+  async exportarPdf(): Promise<void> {
+    if (!this.dashboard) return;
+    this.exportandoPdf = true;
+    try {
+      const charts: { titulo: string; dataUrl: string; aspectRatio?: number }[] = [];
+      const chartKeys: { key: string; titulo: string }[] = [
+        { key: 'mayorDesap', titulo: 'Top 5 EC con Mayor Tasa de Desaprobación' },
+        { key: 'mejorPromedio', titulo: 'Top 5 EC con Mejor Promedio' },
+        { key: 'tasaCurso', titulo: 'Top 5 Cursos con Mayor Tasa de Desaprobación' },
+        { key: 'condicion', titulo: 'Condición de los alumnos' },
+        { key: 'tasaPorAnio', titulo: 'Tasa de Aprobación por Año' },
+        { key: 'tasaPorCurso', titulo: 'Tasa de Aprobación por Curso' },
+      ];
+      for (const ck of chartKeys) {
+        try {
+          const result = this.captureChart(ck.key);
+          if (result) {
+            charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+          }
+        } catch {
+          // Gráfico no disponible para este filtro (ej: sin datos en el período) — se omite del PDF
+        }
+      }
+
+      const data: DashboardPdfData = {
+        titulo: 'Dashboard Estratégico - Calificaciones',
+        subtitulo: `Año lectivo: ${this.anioLectivo}`,
+        nombreArchivo: `dashboard-calificaciones-${this.anioLectivo}.pdf`,
+        filtrosAplicados: this.buildFiltrosTexto(),
+        kpis: [
+          { label: 'Avance en Programas', valor: this.avanceTexto },
+          { label: 'Calificación Promedio General', valor: this.promedioTexto },
+          { label: 'Tasa de Aprobación General', valor: this.tasaAprobTexto },
+          { label: 'Alumnos en Riesgo', valor: this.alumnosRiesgoTexto },
+          { label: 'Exámenes Realizados', valor: `${this.dashboard.examenesRealizados ?? '-'}` },
+          { label: 'Exámenes sin recuperatorio', valor: `${this.dashboard.porcentajeSinRecuperatorio.toFixed(1)}%` },
+          { label: 'Con 1 recuperatorio', valor: `${this.dashboard.porcentajeConRecuperatorio1.toFixed(1)}%` },
+          { label: 'Con 2 recuperatorios', valor: `${this.dashboard.porcentajeConRecuperatorio2.toFixed(1)}%` },
+        ],
+        charts,
+      };
+      await this.pdfService.exportarDashboardGeneralPdf(data);
+    } finally {
+      this.exportandoPdf = false;
+    }
+  }
+
+  private buildFiltrosTexto(): string {
+    const partes: string[] = [];
+    if (this.fechaDesde || this.fechaHasta) {
+      const desde = this.fechaDesde ? this.fmtDateDisplay(this.fechaDesde) : '—';
+      const hasta = this.fechaHasta ? this.fmtDateDisplay(this.fechaHasta) : '—';
+      partes.push(`Período: ${desde} al ${hasta}`);
+    }
+    return partes.length > 0 ? partes.join(' · ') : 'Sin filtros adicionales';
+  }
+
+  private fmtDateDisplay(d: Date): string {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }
 
   abrirFullscreen(options: EChartsOption, titulo: string): void {
@@ -218,7 +342,7 @@ export class DashboardCalificacionesComponent implements OnInit {
     const data = this.dashboard!.top5EcMayorDesaprobacion;
     if (!data.length) return;
     this.chartMayorDesap = {
-      grid: { left: 0, right: 10, top: 14, bottom: 0, containLabel: true },
+      grid: { left: 16, right: 16, top: 14, bottom: 0, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
@@ -229,7 +353,7 @@ export class DashboardCalificacionesComponent implements OnInit {
         data: data.map(d => d.nombre),
         axisTick: { show: false },
         axisLine: { lineStyle: { color: '#e2e8f0' } },
-        axisLabel: { color: MUTED, fontSize: 11, interval: 0, overflow: 'truncate', width: 80 },
+        axisLabel: { color: MUTED, fontSize: 11, interval: 0, overflow: 'break', width: 80, lineHeight: 14 },
       },
       yAxis: {
         type: 'value',
@@ -239,7 +363,6 @@ export class DashboardCalificacionesComponent implements OnInit {
       series: [{
         type: 'bar',
         barWidth: '52%',
-        itemStyle: { color: RED, borderRadius: [4, 4, 0, 0] },
         label: {
           show: true,
           position: 'top',
@@ -247,7 +370,10 @@ export class DashboardCalificacionesComponent implements OnInit {
           color: MUTED,
           fontSize: 11,
         },
-        data: data.map(d => d.tasaDesaprobacion),
+        data: data.map((d, i) => ({
+          value: d.tasaDesaprobacion,
+          itemStyle: { color: DESAP_SCALE[Math.min(i, DESAP_SCALE.length - 1)], borderRadius: [4, 4, 0, 0] },
+        })),
       }],
       dataZoom: [{ type: 'inside' }],
     };
@@ -256,9 +382,9 @@ export class DashboardCalificacionesComponent implements OnInit {
   private buildChartMejorPromedio(): void {
     const data = this.dashboard!.top5EcMejorPromedio;
     if (!data.length) return;
-    const blueScale = [NAVY, '#2c5f9e', BLUE, '#7ba9d6', BLUEL];
+    const blueScale = [NAVY, MID, BLUE, '#7ba9d6', BLUEL];
     this.chartMejorPromedio = {
-      grid: { left: 0, right: 40, top: 10, bottom: 0, containLabel: true },
+      grid: { left: 16, right: 40, top: 10, bottom: 0, containLabel: true },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       xAxis: {
         type: 'value',
@@ -272,7 +398,7 @@ export class DashboardCalificacionesComponent implements OnInit {
         data: data.map(d => d.nombre),
         axisTick: { show: false },
         axisLine: { show: false },
-        axisLabel: { color: '#475569', fontSize: 11, width: 130, overflow: 'truncate' },
+        axisLabel: { color: '#475569', fontSize: 11, width: 130, overflow: 'break', lineHeight: 14 },
       },
       series: [{
         type: 'bar',
@@ -292,7 +418,7 @@ export class DashboardCalificacionesComponent implements OnInit {
     const data = this.dashboard!.top5CursosMayorTasa;
     if (!data.length) return;
     this.chartTasaCurso = {
-      grid: { left: 0, right: 10, top: 14, bottom: 0, containLabel: true },
+      grid: { left: 16, right: 16, top: 14, bottom: 0, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
@@ -313,7 +439,6 @@ export class DashboardCalificacionesComponent implements OnInit {
       series: [{
         type: 'bar',
         barWidth: '52%',
-        itemStyle: { color: RED, borderRadius: [4, 4, 0, 0] },
         label: {
           show: true,
           position: 'top',
@@ -321,7 +446,10 @@ export class DashboardCalificacionesComponent implements OnInit {
           color: MUTED,
           fontSize: 11,
         },
-        data: data.map(d => d.tasaDesaprobacion),
+        data: data.map((d, i) => ({
+          value: d.tasaDesaprobacion,
+          itemStyle: { color: DESAP_SCALE[Math.min(i, DESAP_SCALE.length - 1)], borderRadius: [4, 4, 0, 0] },
+        })),
       }],
       dataZoom: [{ type: 'inside' }],
     };
@@ -354,9 +482,9 @@ export class DashboardCalificacionesComponent implements OnInit {
           position: 'inside',
         },
         data: [
-          { value: est.aprobado,          name: 'Aprobado',        itemStyle: { color: NAVY } },
-          { value: est.desaprobadoPorTema, name: 'Desap. por Tema', itemStyle: { color: AMBER } },
-          { value: est.desaprobado,        name: 'Desaprobado',     itemStyle: { color: RED } },
+          { value: est.aprobado,          name: 'Aprobado',        itemStyle: { color: '#7ba9d6' } },
+          { value: est.desaprobadoPorTema, name: 'Desap. por Tema', itemStyle: { color: MID } },
+          { value: est.desaprobado,        name: 'Desaprobado',     itemStyle: { color: DARK } },
         ],
       }] as any,
     };
@@ -364,13 +492,17 @@ export class DashboardCalificacionesComponent implements OnInit {
 
   private buildChartTasaPorAnio(): void {
     if (!this.yearLabels.length) return;
-    // Los valores de tasa van en null hasta que se implemente el cálculo por año.
+    const porAnio: AnioTasaAprobacion[] = this.dashboard?.tasaAprobacionPorAnio ?? [];
+    const tasaPorAnio = new Map(porAnio.map(a => [a.anio, a.tasaAprobacion]));
+    const data = this.yearNumbers.map(y => tasaPorAnio.get(y) ?? null);
+    const sinDatos = data.every(v => v === null);
+
     this.chartTasaPorAnio = {
       grid: { left: 16, right: 16, top: 16, bottom: 24, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        valueFormatter: (v: unknown) => (v !== null ? `${v}%` : 'Sin datos'),
+        valueFormatter: (v: unknown) => (v !== null && v !== undefined ? `${v}%` : 'Sin datos'),
       },
       xAxis: {
         type: 'category',
@@ -385,27 +517,38 @@ export class DashboardCalificacionesComponent implements OnInit {
         axisLabel: { formatter: '{value}%', color: '#94a3b8' },
         splitLine: { lineStyle: { color: '#f1f5f9' } },
       },
-      // TODO: poblar data con tasas reales de aprobación por año lectivo
-      series: [{ type: 'bar', barWidth: '46%', itemStyle: { color: NAVY }, data: this.yearLabels.map(() => 0) }],
+      series: [{
+        type: 'bar',
+        barWidth: '46%',
+        label: { show: true, position: 'top', formatter: (p: { value: unknown }) => (p.value !== null ? `${p.value}%` : ''), color: MUTED, fontSize: 11 },
+        data: data.map(v => ({
+          value: v,
+          itemStyle: { color: v !== null && v < 50 ? DARK : BLUE, borderRadius: [4, 4, 0, 0] },
+        })),
+      }],
       dataZoom: [{ type: 'inside' }],
-      graphic: [{
+      graphic: sinDatos ? [{
         type: 'text',
         left: 'center',
         top: 'middle',
-        style: { text: 'Implementación pendiente — los valores estarán disponibles próximamente', fill: '#94a3b8', fontSize: 12 },
-      }],
+        style: { text: 'Todavía no hay calificaciones cargadas para este año lectivo.', fill: '#94a3b8', fontSize: 12 },
+      }] : [],
     };
   }
 
   private buildChartTasaPorCurso(): void {
     if (!this.courseLabels.length) return;
-    // Los valores de tasa van en null hasta que se implemente el cálculo por curso.
+    const porCurso: CursoTasaAprobacion[] = this.dashboard?.tasaAprobacionPorCurso ?? [];
+    const tasaPorCurso = new Map(porCurso.map(c => [c.curso, c.tasaAprobacion]));
+    const data = this.courseLabels.map(c => tasaPorCurso.get(c) ?? null);
+    const sinDatos = data.every(v => v === null);
+
     this.chartTasaPorCurso = {
       grid: { left: 16, right: 16, top: 16, bottom: 24, containLabel: true },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        valueFormatter: (v: unknown) => (v !== null ? `${v}%` : 'Sin datos'),
+        valueFormatter: (v: unknown) => (v !== null && v !== undefined ? `${v}%` : 'Sin datos'),
       },
       xAxis: {
         type: 'category',
@@ -420,15 +563,22 @@ export class DashboardCalificacionesComponent implements OnInit {
         axisLabel: { formatter: '{value}%', color: '#94a3b8' },
         splitLine: { lineStyle: { color: '#f1f5f9' } },
       },
-      // TODO: poblar data con tasas reales de aprobación por curso/división
-      series: [{ type: 'bar', barWidth: '60%', itemStyle: { color: NAVY }, data: this.courseLabels.map(() => 0) }],
+      series: [{
+        type: 'bar',
+        barWidth: '60%',
+        label: { show: true, position: 'top', formatter: (p: { value: unknown }) => (p.value !== null ? `${p.value}%` : ''), color: MUTED, fontSize: 11 },
+        data: data.map(v => ({
+          value: v,
+          itemStyle: { color: v !== null && v < 50 ? DARK : BLUE, borderRadius: [4, 4, 0, 0] },
+        })),
+      }],
       dataZoom: [{ type: 'inside' }],
-      graphic: [{
+      graphic: sinDatos ? [{
         type: 'text',
         left: 'center',
         top: 'middle',
-        style: { text: 'Implementación pendiente — los valores estarán disponibles próximamente', fill: '#94a3b8', fontSize: 12 },
-      }],
+        style: { text: 'Todavía no hay calificaciones cargadas para estos cursos.', fill: '#94a3b8', fontSize: 12 },
+      }] : [],
     };
   }
 
@@ -441,7 +591,8 @@ export class DashboardCalificacionesComponent implements OnInit {
       const n = parseInt(c.label.charAt(0), 10);
       if (!isNaN(n)) years.add(n);
     }
-    this.yearLabels   = [...years].sort((a, b) => a - b).map(y => `${y}° año`);
+    this.yearNumbers  = [...years].sort((a, b) => a - b);
+    this.yearLabels   = this.yearNumbers.map(y => `${y}° año`);
     this.courseLabels = cursos.map(c => c.label).sort();
   }
 

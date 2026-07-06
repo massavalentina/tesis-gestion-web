@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -33,7 +33,6 @@ import { LibretaCalificacionesComponent } from '../libreta-calificaciones/libret
 import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 import { ReporteAsistenciaService } from '../../../reporte-asistencia/services/reporte-asistencia.service';
 import { LibretaEspacio } from '../../models/libreta-calificaciones.model';
-import { ALUMNOS_DEMO, Evaluacion } from '../../demo/calificaciones-demo';
 
 function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -135,6 +134,10 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   expandedIds = new Set<string>();
   vistaLibretaIds = new Set<string>();
 
+  libretaMap = new Map<string, LibretaEspacio[]>();
+  cargandoLibretaIds = new Set<string>();
+  errorLibretaIds = new Set<string>();
+
   fichaMap = new Map<string, FichaDetalle>();
   cargandoFichaIds = new Set<string>();
   errorFichaIds = new Set<string>();
@@ -207,6 +210,9 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.errorFichaIds.clear();
     this.vistaTutoresIds.clear();
     this.vistaLibretaIds.clear();
+    this.libretaMap.clear();
+    this.cargandoLibretaIds.clear();
+    this.errorLibretaIds.clear();
     this.enviandoNotificacionCurso = false;
     this.cargarEstudiantes(this.cursoSeleccionado.idCurso, null);
   }
@@ -294,78 +300,70 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   verLibreta(idEstudiante: string): void {
     this.vistaTutoresIds.delete(idEstudiante);
     this.vistaLibretaIds.add(idEstudiante);
+    if (!this.libretaMap.has(idEstudiante) && !this.cargandoLibretaIds.has(idEstudiante)) {
+      this.cargarLibreta(idEstudiante);
+    }
   }
 
   cerrarLibreta(idEstudiante: string): void {
     this.vistaLibretaIds.delete(idEstudiante);
   }
 
-  getEspaciosDemo(dni: string): LibretaEspacio[] {
-    const demo = ALUMNOS_DEMO.find(a => a.dni === dni);
-    if (!demo) return [];
-    return demo.calificaciones.map((ec, idx) => ({
-      idEC: `EC-${idx + 1}`,
-      nombreMateria: ec.espacio,
-      instancias: ec.evaluaciones.map((ev: Evaluacion, i: number) => ({
-        nro: i + 1,
-        n:   ev ? ev.n           : null,
-        r1:  ev ? (ev.r1 ?? null) : null,
-        r2:  ev ? (ev.r2 ?? null) : null,
-      })),
-    }));
+  private cargarLibreta(idEstudiante: string): void {
+    this.cargandoLibretaIds.add(idEstudiante);
+    this.errorLibretaIds.delete(idEstudiante);
+
+    this.fichaService.getLibretaEstudiante(idEstudiante).pipe(
+      catchError(() => {
+        this.errorLibretaIds.add(idEstudiante);
+        this.cargandoLibretaIds.delete(idEstudiante);
+        return EMPTY;
+      })
+    ).subscribe(espacios => {
+      this.libretaMap.set(idEstudiante, espacios);
+      this.cargandoLibretaIds.delete(idEstudiante);
+    });
+  }
+
+  getLibreta(idEstudiante: string): LibretaEspacio[] {
+    return this.libretaMap.get(idEstudiante) ?? [];
   }
 
   exportarLibreta(est: EstudianteFicha): void {
     const cursoId = this.cursoSeleccionado?.idCurso;
     if (!cursoId) return;
 
-    const espacios = this.getEspaciosDemo(est.documento);
-
-    this.reporteService.getReporteCurso(cursoId).subscribe({
-      next: (resp) => {
-        const item = resp.estudiantes.find(e => e.idEstudiante === est.idEstudiante);
-        this.pdfService.exportarLibretaCalificaciones({
-          apellido:    est.apellido,
-          nombre:      est.nombre,
-          codigoCurso: this.cursoSeleccionado?.codigo ?? '',
-          anioLectivo: 2026,
-          espacios,
-          asistencia: item ? {
-            presencias:                   item.presencias,
-            inasistencias:                item.inasistencias,
-            ausenciasPuras:               item.ausenciasPuras ?? 0,
-            ancCount:                     item.ausentesNoComputables ?? 0,
-            llegadasTarde:                item.llegadasTarde,
-            ausentePorLLT:                item.ausentePorLLT,
-            retirosAnticipados:           item.retirosAnticipados,
-            retirosExpress:               item.retirosExpress,
-            retirosAnticipadosExtendidos: item.retirosAnticipadosExtendidos,
-            ausentePorRA:                 item.ausentePorRA ?? 0,
-            porcentajeAsistencia:         item.porcentajeAsistencia,
-            teaGeneral:                   item.teaGeneral,
-          } : {
-            presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
-            ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,
-            retirosExpress: 0, retirosAnticipadosExtendidos: 0, ausentePorRA: 0,
-            porcentajeAsistencia: 0, teaGeneral: est.teaGeneral,
-          },
-        });
-      },
-      error: () => {
-        this.pdfService.exportarLibretaCalificaciones({
-          apellido:    est.apellido,
-          nombre:      est.nombre,
-          codigoCurso: this.cursoSeleccionado?.codigo ?? '',
-          anioLectivo: 2026,
-          espacios,
-          asistencia: {
-            presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
-            ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,
-            retirosExpress: 0, retirosAnticipadosExtendidos: 0, ausentePorRA: 0,
-            porcentajeAsistencia: 0, teaGeneral: est.teaGeneral,
-          },
-        });
-      },
+    forkJoin({
+      reporte: this.reporteService.getReporteCurso(cursoId).pipe(catchError(() => of(null))),
+      espacios: this.fichaService.getLibretaEstudiante(est.idEstudiante).pipe(catchError(() => of([] as LibretaEspacio[]))),
+    }).subscribe(({ reporte, espacios }) => {
+      const item = reporte?.estudiantes.find(e => e.idEstudiante === est.idEstudiante);
+      this.pdfService.exportarLibretaCalificaciones({
+        apellido:    est.apellido,
+        nombre:      est.nombre,
+        codigoCurso: this.cursoSeleccionado?.codigo ?? '',
+        anioLectivo: 2026,
+        espacios,
+        asistencia: item ? {
+          presencias:                   item.presencias,
+          inasistencias:                item.inasistencias,
+          ausenciasPuras:               item.ausenciasPuras ?? 0,
+          ancCount:                     item.ausentesNoComputables ?? 0,
+          llegadasTarde:                item.llegadasTarde,
+          ausentePorLLT:                item.ausentePorLLT,
+          retirosAnticipados:           item.retirosAnticipados,
+          retirosExpress:               item.retirosExpress,
+          retirosAnticipadosExtendidos: item.retirosAnticipadosExtendidos,
+          ausentePorRA:                 item.ausentePorRA ?? 0,
+          porcentajeAsistencia:         item.porcentajeAsistencia,
+          teaGeneral:                   item.teaGeneral,
+        } : {
+          presencias: 0, inasistencias: est.faltasAcumuladas, ausenciasPuras: 0,
+          ancCount: 0, llegadasTarde: 0, ausentePorLLT: 0, retirosAnticipados: 0,
+          retirosExpress: 0, retirosAnticipadosExtendidos: 0, ausentePorRA: 0,
+          porcentajeAsistencia: 0, teaGeneral: est.teaGeneral,
+        },
+      });
     });
   }
 

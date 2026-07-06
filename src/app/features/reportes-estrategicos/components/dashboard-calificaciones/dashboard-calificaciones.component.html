@@ -41,9 +41,9 @@
     <!-- ── Título de sección ──────────────────────────────────────────────────── -->
     <div class="section-title-row">
       <h2 class="section-title">Indicadores Estratégicos Generales</h2>
-      <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdf()">
+      <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdf()" [disabled]="exportandoPdf">
         <mat-icon>picture_as_pdf</mat-icon>
-        Exportar PDF
+        {{ exportandoPdf ? 'Exportando...' : 'Exportar PDF' }}
       </button>
     </div>
 
@@ -62,13 +62,12 @@
         </div>
         <span class="kpi-value">{{ avanceTexto }}</span>
         <span class="kpi-label">Avance en Programas</span>
-        <span class="kpi-desc">Avance de programas estructurados</span>
       </div>
 
       <!-- Calificación Promedio General -->
       <div class="kpi-card">
         <button class="kpi-info-btn"
-          matTooltip="Promedio general de todas las calificaciones del colegio a la fecha de corte."
+          matTooltip="Promedio general de todas las calificaciones del colegio. Sobre 10 puntos."
           matTooltipPosition="above" matTooltipClass="kpi-tooltip">
           <mat-icon>info_outline</mat-icon>
         </button>
@@ -77,7 +76,6 @@
         </div>
         <span class="kpi-value">{{ promedioTexto }}</span>
         <span class="kpi-label">Calificación Promedio General</span>
-        <span class="kpi-desc">Sobre 10 puntos</span>
       </div>
 
       <!-- Tasa de Aprobación General -->
@@ -92,7 +90,6 @@
         </div>
         <span class="kpi-value">{{ tasaAprobTexto }}</span>
         <span class="kpi-label">Tasa de Aprobación General</span>
-        <span class="kpi-desc">Alumnos en condición Aprobado</span>
       </div>
 
       <!-- Alumnos en Riesgo -->
@@ -107,13 +104,12 @@
         </div>
         <span class="kpi-value kpi-value--alert">{{ alumnosRiesgoTexto }}</span>
         <span class="kpi-label">Alumnos en Riesgo</span>
-        <span class="kpi-desc">Con promedio menor a 7</span>
       </div>
 
       <!-- Exámenes Realizados -->
       <div class="kpi-card">
         <button class="kpi-info-btn"
-          matTooltip="Total de instancias evaluativas rendidas en el colegio en el período seleccionado."
+          matTooltip="Total de archivos de examen habilitados en el período: incluye el original y cada recuperatorio subido por separado."
           matTooltipPosition="above" matTooltipClass="kpi-tooltip">
           <mat-icon>info_outline</mat-icon>
         </button>
@@ -122,7 +118,6 @@
         </div>
         <span class="kpi-value">{{ dashboard?.examenesRealizados ?? '-' }}</span>
         <span class="kpi-label">Exámenes Realizados</span>
-        <span class="kpi-desc">Total institucional</span>
       </div>
 
     </div>
@@ -133,7 +128,7 @@
         <h3>Recuperatorios en Exámenes</h3>
         <div class="chart-header-actions">
           <button mat-icon-button
-            matTooltip="Distribución de los exámenes según cuántos recuperatorios necesitaron."
+            matTooltip="Distribución de los exámenes según cuántos recuperatorios necesitaron. Cada examen original se cuenta una sola vez, aunque haya tenido recuperatorio."
             matTooltipPosition="above" matTooltipClass="kpi-tooltip">
             <mat-icon>info_outline</mat-icon>
           </button>
@@ -180,7 +175,7 @@
           <span>Sin datos disponibles</span>
         </div>
         <div class="chart-body chart-bar" *ngIf="dashboard.top5EcMayorDesaprobacion.length"
-             echarts [options]="chartMayorDesap"></div>
+             echarts [options]="chartMayorDesap" (chartInit)="onChartInit('mayorDesap', $event)"></div>
       </div>
 
       <!-- Top 5 EC con Mejor Promedio -->
@@ -205,7 +200,7 @@
           <span>Sin datos disponibles</span>
         </div>
         <div class="chart-body chart-bar" *ngIf="dashboard.top5EcMejorPromedio.length"
-             echarts [options]="chartMejorPromedio"></div>
+             echarts [options]="chartMejorPromedio" (chartInit)="onChartInit('mejorPromedio', $event)"></div>
       </div>
 
     </div>
@@ -235,7 +230,7 @@
           <span>Sin datos disponibles</span>
         </div>
         <div class="chart-body chart-bar" *ngIf="dashboard.top5CursosMayorTasa.length"
-             echarts [options]="chartTasaCurso"></div>
+             echarts [options]="chartTasaCurso" (chartInit)="onChartInit('tasaCurso', $event)"></div>
       </div>
 
       <!-- Condición de los alumnos -->
@@ -263,7 +258,7 @@
         </div>
         <div class="chart-body chart-pie"
           *ngIf="dashboard.distribucionEstados.aprobado + dashboard.distribucionEstados.desaprobado + dashboard.distribucionEstados.desaprobadoPorTema > 0"
-          echarts [options]="chartCondicion"></div>
+          echarts [options]="chartCondicion" (chartInit)="onChartInit('condicion', $event)"></div>
       </div>
 
     </div>
@@ -285,7 +280,7 @@
           </button>
         </div>
       </div>
-      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorAnio"></div>
+      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorAnio" (chartInit)="onChartInit('tasaPorAnio', $event)"></div>
     </div>
 
     <!-- ═══ Tasa de Aprobación por Curso ══════════════════════════════════════ -->
@@ -305,7 +300,7 @@
           </button>
         </div>
       </div>
-      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorCurso"></div>
+      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorCurso" (chartInit)="onChartInit('tasaPorCurso', $event)"></div>
     </div>
 
   </ng-container>

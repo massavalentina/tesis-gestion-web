@@ -46,7 +46,9 @@
       <tbody>
         <tr *ngFor="let fila of filas" class="fila-espacio">
 
-          <td class="td-materia">{{ fila.espacio.nombreMateria }}</td>
+          <td class="td-materia">
+            {{ fila.espacio.nombreMateria }}
+          </td>
 
           <ng-container *ngFor="let i of tabIndices">
             <td class="td-eval-start">

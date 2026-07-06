@@ -5,6 +5,7 @@ import { LayoutComponent } from './layouts/layout.component';
 import { cambiosSinGuardarGuard } from './features/asistencia-general-manual/guards/cambios-sin-guardar.guard';
 import { authGuard } from './core/auth/guards/auth.guard';
 import { permisoGuard } from './core/auth/guards/permiso.guard';
+import { permisoSinRolGuard } from './core/auth/guards/permiso-sin-rol.guard';
 import { permisoORolGuard } from './core/auth/guards/permiso-o-rol.guard';
 import { calificacionesCambiosPendientesGuard } from './features/mis-espacios-curriculares/guards/calificaciones-cambios-pendientes.guard';
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
@@ -96,7 +97,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-retiros/components/reporte-retiros/reporte-retiros.component')
             .then(m => m.ReporteRetirosComponent),
-        canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW'], ['Equipo Directivo', 'Secretario'])],
+        canActivate: [authGuard, permisoORolGuard([], ['Preceptor'])],
       },
       {
         path: 'attendance/scan',
@@ -158,7 +159,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/reporte-asistencia-docente/reporte-asistencia-docente.component')
             .then(m => m.ReporteAsistenciaDocenteComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
+        canActivate: [authGuard, permisoSinRolGuard('REPORTES_EC_RW', ['Secretario'])],
       },
       {
         path: 'reporte-asistencia-docente/detalle/:estudianteId/:idEC',
@@ -166,7 +167,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia-docente/components/detalle-asistencia-docente/detalle-asistencia-docente.component')
             .then(m => m.DetalleAsistenciaDocenteComponent),
-        canActivate: [authGuard, permisoGuard('REPORTES_EC_RW')],
+        canActivate: [authGuard, permisoSinRolGuard('REPORTES_EC_RW', ['Secretario'])],
       },
       {
         path: 'reportes-estrategicos/asistencia',
@@ -245,7 +246,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/mis-espacios-curriculares/components/mis-ec-reportes/mis-ec-reportes.component')
             .then(m => m.MisEcReportesComponent),
-        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+        canActivate: [authGuard, permisoORolGuard([], ['Docente', 'Equipo Directivo', 'Secretario'])],
       },
       {
         path: 'mis-espacios-curriculares/:idEC/evaluaciones',

@@ -18,6 +18,10 @@
       <div class="breadcrumb">
         <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
         <span class="material-icons bc-sep">chevron_right</span>
+        <span class="bc-item" (click)="volver()">{{ gestion.nombreCurso }}</span>
+        <span class="material-icons bc-sep">chevron_right</span>
+        <span class="bc-item" (click)="volver()">{{ gestion.nombreMateria }}</span>
+        <span class="material-icons bc-sep">chevron_right</span>
         <span class="bc-item bc-active">Evaluaciones</span>
       </div>
     </div>
@@ -60,10 +64,6 @@
         <button class="btn-ir-programas" type="button" (click)="irACalificaciones()">
           <span class="material-icons">table_chart</span>
           Ir a calificaciones
-        </button>
-        <button class="btn-ver-pdf" type="button" (click)="volver()">
-          <span class="material-icons">arrow_back</span>
-          Volver al espacio
         </button>
       </div>
     </section>

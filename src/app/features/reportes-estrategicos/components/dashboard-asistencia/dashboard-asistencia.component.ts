@@ -762,7 +762,9 @@ export class DashboardAsistenciaComponent implements OnInit {
 
   private captureChart(key: string): { dataUrl: string; aspectRatio: number } | null {
     const inst = this.chartInstances[key];
-    if (!inst) return null;
+    // Si el gráfico quedó oculto por un filtro (ej: sin datos en el período), su instancia
+    // previa fue destruida por Angular pero la referencia queda guardada.
+    if (!inst || (typeof inst.isDisposed === 'function' && inst.isDisposed())) return null;
 
     const baseSize = this.EXPORT_SIZES[key] ?? { w: 600, h: 400 };
     const origW = inst.getWidth();
@@ -834,9 +836,13 @@ export class DashboardAsistenciaComponent implements OnInit {
         { key: 'subtipos', titulo: this.tituloSubtipos },
       ];
       for (const ck of chartKeys) {
-        const result = this.captureChart(ck.key);
-        if (result) {
-          charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+        try {
+          const result = this.captureChart(ck.key);
+          if (result) {
+            charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+          }
+        } catch {
+          // Gráfico no disponible para este filtro (ej: sin datos en el período) — se omite del PDF
         }
       }
 
@@ -868,9 +874,13 @@ export class DashboardAsistenciaComponent implements OnInit {
         { key: 'distribucionEC', titulo: 'Distribución de Inasistencias por EC' },
       ];
       for (const ck of chartKeys) {
-        const result = this.captureChart(ck.key);
-        if (result) {
-          charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+        try {
+          const result = this.captureChart(ck.key);
+          if (result) {
+            charts.push({ titulo: ck.titulo, dataUrl: result.dataUrl, aspectRatio: result.aspectRatio });
+          }
+        } catch {
+          // Gráfico no disponible para este filtro (ej: sin datos en el período) — se omite del PDF
         }
       }
 

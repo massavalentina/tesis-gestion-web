@@ -12,4 +12,8 @@ export class MisEspaciosCurricularesService {
   getMisEspaciosCurriculares(): Observable<MisEcItem[]> {
     return this.http.get<MisEcItem[]>(`${this.base}/mis-espacios-curriculares`);
   }
+
+  getEspacioCurricularPorId(idEC: string): Observable<MisEcItem> {
+    return this.http.get<MisEcItem>(`${environment.apiUrl}/api/espacios-curriculares/${idEC}`);
+  }
 }

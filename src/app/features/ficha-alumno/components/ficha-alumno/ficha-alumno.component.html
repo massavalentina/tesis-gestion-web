@@ -424,12 +424,19 @@
              VISTA: LIBRETA DE CALIFICACIONES
              ═══════════════════════════════════════════════════════ -->
         <div *ngIf="vistaLibretaIds.has(est.idEstudiante)">
+          <div class="ficha-loading" *ngIf="cargandoLibretaIds.has(est.idEstudiante)">
+            <mat-spinner diameter="32"></mat-spinner>
+          </div>
+          <div class="estado-center error" *ngIf="errorLibretaIds.has(est.idEstudiante)">
+            No se pudieron cargar las calificaciones. Intentá de nuevo más tarde.
+          </div>
           <app-libreta-calificaciones
+            *ngIf="!cargandoLibretaIds.has(est.idEstudiante) && !errorLibretaIds.has(est.idEstudiante)"
             [apellido]="est.apellido"
             [nombre]="est.nombre"
             [codigoCurso]="cursoSeleccionado?.codigo ?? ''"
             [anioLectivo]="2026"
-            [espacios]="getEspaciosDemo(est.documento)"
+            [espacios]="getLibreta(est.idEstudiante)"
             (volver)="cerrarLibreta(est.idEstudiante)">
           </app-libreta-calificaciones>
         </div>

@@ -19,15 +19,22 @@
   <ng-container *ngIf="!loading && !error && espacio">
 
     <!-- Breadcrumb -->
-    <nav class="breadcrumb">
-      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      <a (click)="volverAlDetalle()" class="crumb-link">{{ cursoLabel }}</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      <a (click)="volverAlDetalle()" class="crumb-link">{{ espacio.nombreMateria }}</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      <span class="crumb-current">Reportes</span>
-    </nav>
+    <div class="breadcrumb-row">
+      <button class="btn-back-circle" type="button" (click)="volverAlDetalle()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <nav class="breadcrumb">
+        <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <a (click)="volverAlDetalle()" class="crumb-link">{{ cursoLabel }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <a (click)="volverAlDetalle()" class="crumb-link">{{ espacio.nombreMateria }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="crumb-current">Reportes</span>
+      </nav>
+    </div>
 
     <!-- Encabezado hero -->
     <div class="rep-hero">
@@ -41,9 +48,9 @@
         </div>
       </div>
       <div class="rep-hero-right">
-        <span class="rep-hero-alumnos" *ngIf="hayDatos">
+        <span class="rep-hero-alumnos" *ngIf="!loadingNotas">
           <mat-icon>group</mat-icon>
-          <b>{{ demoData.alumnos }}</b>&nbsp;alumnos
+          <b>{{ alumnosCount }}</b>&nbsp;alumnos
         </span>
         <span class="rep-hero-fecha">Datos al {{ fechaCorte }}</span>
       </div>
@@ -77,14 +84,19 @@
       <!-- ═══ VISTA NOTAS ═══ -->
       <div *ngIf="activeTab === 'notas'">
 
-        <div class="state-center" *ngIf="!hayDatos">
+        <div class="state-center" *ngIf="loadingNotas">
+          <div class="spinner"></div>
+          <p>Cargando…</p>
+        </div>
+
+        <div class="state-center" *ngIf="!loadingNotas && !hayDatos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
             <path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/>
           </svg>
           <p>Todavía no hay datos de calificaciones para mostrar.</p>
         </div>
 
-        <ng-container *ngIf="hayDatos">
+        <ng-container *ngIf="!loadingNotas && hayDatos">
         <div class="filterbar">
           <span class="fl">Instancia evaluativa</span>
           <select (change)="onFiltroChange($event)">
@@ -163,7 +175,12 @@
       <!-- ═══ VISTA EVALUACIONES ═══ -->
       <div *ngIf="activeTab === 'eval'">
 
-        <div class="state-center" *ngIf="!hayDatos">
+        <div class="state-center" *ngIf="loadingNotas">
+          <div class="spinner"></div>
+          <p>Cargando…</p>
+        </div>
+
+        <div class="state-center" *ngIf="!loadingNotas && !hayDatos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="state-icon">
             <rect x="8" y="2" width="8" height="4" rx="1"/>
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -172,7 +189,7 @@
           <p>Todavía no hay datos de evaluaciones para mostrar.</p>
         </div>
 
-        <div *ngIf="hayDatos" class="eval-grid">
+        <div *ngIf="!loadingNotas && hayDatos" class="eval-grid">
 
         <!-- Distribución de Estados (torta) -->
         <div class="chart-card">
@@ -245,7 +262,7 @@
           <div class="kpi-icon-circle">
             <mat-icon>replay</mat-icon>
           </div>
-          <span class="kpi-value">{{ demoData.recuperatoriosRealizados }}</span>
+          <span class="kpi-value">{{ recuperatoriosRealizados }}</span>
           <span class="kpi-label">Recuperatorios Realizados</span>
         </div>
 
@@ -259,7 +276,7 @@
           <div class="kpi-icon-circle">
             <mat-icon>bar_chart</mat-icon>
           </div>
-          <span class="kpi-value">{{ demoData.promedioRecuperatorios }}</span>
+          <span class="kpi-value">{{ promedioRecuperatorios }}</span>
           <span class="kpi-label">Promedio de Recuperatorios</span>
         </div>
 
