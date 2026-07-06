@@ -2373,6 +2373,25 @@ export class PdfReporteService {
     });
   }
 
+  private dibujarLeyendaCalificaciones(doc: jsPDF): void {
+    const pageH = doc.internal.pageSize.getHeight();
+    const y = pageH - 8;
+    doc.setFontSize(6.5);
+    const items: [string, [number,number,number]][] = [
+      ['Aprobado',              [24, 121, 78]],
+      ['Desaprobado por Tema',  [203, 55, 72]],
+      ['Desaprobado',           [209, 67, 67]],
+    ];
+    let x = 14;
+    items.forEach(([label, color]) => {
+      doc.setFillColor(...color);
+      doc.circle(x + 1.5, y - 0.5, 1.5, 'F');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, x + 4.5, y);
+      x += 48;
+    });
+  }
+
   // ── Exportar sección del dashboard como imagen en PDF ────────────────────
 
   async exportarDashboardGeneralPdf(data: DashboardPdfData): Promise<void> {

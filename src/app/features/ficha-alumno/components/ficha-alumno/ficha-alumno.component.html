@@ -258,33 +258,16 @@
                 </button>
               </div>
 
-              <!-- Separador interno -->
-              <div class="col-sep"></div>
-
-              <!-- Historial -->
-              <div class="historial-placeholder">
-                <span class="historial-titulo">[ HISTORIAL ACADÉMICO ]</span>
-                <span class="historial-sub">Resumen académico del estudiante</span>
-              </div>
-
-              <!-- Botón secundario derecho -->
-              <div class="col-btn-row">
-                <button mat-stroked-button class="btn-detalle" (click)="verReporteCalificaciones(est)">
-                  <mat-icon>bar_chart</mat-icon>
-                  Ver reporte de calificaciones
-                </button>
-              </div>
-
             </div>
 
           </div><!-- /ficha-grid -->
 
           <!-- ── HISTORIAL ACADÉMICO ── -->
-          <div class="historial-academico" *ngIf="!esDocente">
+          <div class="historial-academico">
 
             <div class="hist-head">
               <span class="hist-title">Historial académico</span>
-              <button class="btn-hist-pdf" (click)="exportarLibreta(est)">
+              <button class="btn-hist-pdf" *ngIf="!esDocente" (click)="exportarLibreta(est)">
                 <mat-icon class="btn-hist-pdf-icon">description</mat-icon>
                 Exportar boletín PDF
               </button>
@@ -292,29 +275,42 @@
 
             <div class="hist-tiles">
 
-              <button class="hist-tile" (click)="verDetalleFaltas(est)">
-                <div class="hist-tile-ic hist-ic-asis">
+              <ng-container *ngIf="!esDocente">
+                <button class="hist-tile" (click)="verDetalleFaltas(est)">
+                  <div class="hist-tile-ic hist-ic-asis">
+                    <mat-icon>bar_chart</mat-icon>
+                  </div>
+                  <div class="hist-tile-body">
+                    <div class="hist-tile-t">Asistencias</div>
+                    <div class="hist-tile-s">
+                      <span class="faltas-badge" [class]="'estado-' + getEstado(est)">
+                        {{ getLabelFaltas(est) }}
+                      </span>
+                      acumuladas
+                    </div>
+                  </div>
+                  <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
+                </button>
+
+                <button class="hist-tile" (click)="verLibreta(est.idEstudiante)">
+                  <div class="hist-tile-ic hist-ic-cal">
+                    <mat-icon>menu_book</mat-icon>
+                  </div>
+                  <div class="hist-tile-body">
+                    <div class="hist-tile-t">Calificaciones</div>
+                    <div class="hist-tile-s hist-tile-s-muted">Notas por espacio curricular</div>
+                  </div>
+                  <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
+                </button>
+              </ng-container>
+
+              <button class="hist-tile" *ngIf="esDocente" (click)="verReporteCalificaciones(est)">
+                <div class="hist-tile-ic hist-ic-rep">
                   <mat-icon>bar_chart</mat-icon>
                 </div>
                 <div class="hist-tile-body">
-                  <div class="hist-tile-t">Asistencias</div>
-                  <div class="hist-tile-s">
-                    <span class="faltas-badge" [class]="'estado-' + getEstado(est)">
-                      {{ getLabelFaltas(est) }}
-                    </span>
-                    acumuladas
-                  </div>
-                </div>
-                <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
-              </button>
-
-              <button class="hist-tile" (click)="verLibreta(est.idEstudiante)">
-                <div class="hist-tile-ic hist-ic-cal">
-                  <mat-icon>menu_book</mat-icon>
-                </div>
-                <div class="hist-tile-body">
-                  <div class="hist-tile-t">Calificaciones</div>
-                  <div class="hist-tile-s hist-tile-s-muted">Notas por espacio curricular</div>
+                  <div class="hist-tile-t">Reporte de Calificaciones</div>
+                  <div class="hist-tile-s hist-tile-s-muted">Análisis detallado por espacio curricular</div>
                 </div>
                 <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
               </button>

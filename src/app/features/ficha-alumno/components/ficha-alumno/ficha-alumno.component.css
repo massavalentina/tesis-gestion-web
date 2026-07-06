@@ -410,11 +410,6 @@
 .estado-rojo     { background-color: #c62828; color: #fff; }
 .estado-tea      { background-color: #757575; color: #fff; }
 
-/* Botón secundario (ver detalle) */
-.btn-detalle {
-  font-size: 0.78rem;
-}
-
 /* ── Historial Académico (rediseñado) ── */
 .historial-academico {
   border-top: 1px solid #eceff3;
@@ -467,7 +462,7 @@
 
 .hist-tiles {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 
@@ -515,6 +510,11 @@
 .hist-ic-cal {
   background: #e8f1fb;
   color: #2f80c4;
+}
+
+.hist-ic-rep {
+  background: #f2ecfb;
+  color: #7c4dbd;
 }
 
 .hist-tile-body {
