@@ -10,6 +10,7 @@ export const APP_SECTION_VISIBILITY = {
   parteDiario: 'all',
   reporteAsistencia: 'desktop',
   reporteAsistenciaDocente: 'desktop',
+  calendario: 'desktop',
   credencialesQr: 'desktop',
   fichaAlumno: 'all',
   perfil: 'all',
