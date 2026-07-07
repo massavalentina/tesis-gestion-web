@@ -7,6 +7,7 @@ import { EstudianteFicha } from '../models/estudiante-ficha.model';
 import { EstudianteBusquedaFicha } from '../models/estudiante-busqueda-ficha.model';
 import { FichaDetalle } from '../models/ficha-detalle.model';
 import { TutorFicha } from '../models/tutor-ficha.model';
+import { LibretaEspacio } from '../models/libreta-calificaciones.model';
 
 export interface UpdateEstudianteDto {
   nombre: string;
@@ -89,6 +90,13 @@ export class FichaAlumnoService {
   getFichaEstudiante(idEstudiante: string, anioLectivo: number = 2026): Observable<FichaDetalle> {
     return this.http.get<FichaDetalle>(
       `${this.apiUrl}/api/ficha/estudiante/${idEstudiante}`,
+      { params: { anioLectivo: anioLectivo.toString() } }
+    );
+  }
+
+  getLibretaEstudiante(idEstudiante: string, anioLectivo: number = 2026): Observable<LibretaEspacio[]> {
+    return this.http.get<LibretaEspacio[]>(
+      `${this.apiUrl}/api/ficha/estudiante/${idEstudiante}/libreta`,
       { params: { anioLectivo: anioLectivo.toString() } }
     );
   }

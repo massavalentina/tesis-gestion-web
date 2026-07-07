@@ -109,7 +109,9 @@
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: RESUMEN
              â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante) && !vistaReporteIds.has(est.idEstudiante)">
+
+        <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante) && !vistaLibretaIds.has(est.idEstudiante) && !vistaReporteIds.has(est.idEstudiante)">
+
 
           <div class="ficha-grid">
 
@@ -159,11 +161,12 @@
                 </button>
               </div>
 
+              <ng-container *ngIf="!esDocente && !esEquipoDirectivo && !esSecretario">
               <!-- Separador interno -->
               <div class="col-sep"></div>
 
-              <!-- Badges: Docente no puede ver credenciales QR -->
-              <div class="info-row" *ngIf="!esDocente">
+              <!-- Credencial QR: solo visible para roles distintos de Docente, Equipo Directivo y Secretario -->
+              <div class="info-row">
                 <span class="info-label">Credencial QR personal</span>
                 <span class="credencial-badge" [class]="getCredencialClass(est.idEstudiante)">
                   {{ getCredencialLabel(est.idEstudiante) }}
@@ -174,22 +177,7 @@
                   <mat-icon>qr_code_2</mat-icon>
                 </button>
               </div>
-              <div class="info-row">
-                <mat-icon class="info-icon">event_busy</mat-icon>
-                <span class="info-label">Asistencia acumulada</span>
-                <span class="faltas-badge" [class]="'estado-' + getEstado(est)">
-                  {{ getLabelFaltas(est) }}
-                </span>
-              </div>
-
-              <!-- Botón secundario izquierdo -->
-              <div class="col-btn-row">
-                <button mat-stroked-button class="btn-detalle" (click)="verDetalleFaltas(est)">
-                  <mat-icon>bar_chart</mat-icon>
-                  Ver detalle de asistencia
-                </button>
-              </div>
-
+              </ng-container>
             </div>
 
             <!-- Divisor vertical -->
@@ -270,26 +258,65 @@
                 </button>
               </div>
 
-              <!-- Separador interno -->
-              <div class="col-sep"></div>
-
-              <!-- Historial -->
-              <div class="historial-placeholder">
-                <span class="historial-titulo">[ HISTORIAL ACADÉMICO ]</span>
-                <span class="historial-sub">Resumen académico del estudiante</span>
-              </div>
-
-              <!-- Botón secundario derecho -->
-              <div class="col-btn-row">
-                <button mat-stroked-button class="btn-detalle" (click)="verReporteCalificaciones(est)">
-                  <mat-icon>bar_chart</mat-icon>
-                  Ver reporte de calificaciones
-                </button>
-              </div>
-
             </div>
 
           </div><!-- /ficha-grid -->
+
+          <!-- ── HISTORIAL ACADÉMICO ── -->
+          <div class="historial-academico">
+
+            <div class="hist-head">
+              <span class="hist-title">Historial académico</span>
+              <button class="btn-hist-pdf" *ngIf="!esDocente" (click)="exportarLibreta(est)">
+                <mat-icon class="btn-hist-pdf-icon">description</mat-icon>
+                Exportar boletín PDF
+              </button>
+            </div>
+
+            <div class="hist-tiles">
+
+              <ng-container *ngIf="!esDocente">
+                <button class="hist-tile" (click)="verDetalleFaltas(est)">
+                  <div class="hist-tile-ic hist-ic-asis">
+                    <mat-icon>bar_chart</mat-icon>
+                  </div>
+                  <div class="hist-tile-body">
+                    <div class="hist-tile-t">Asistencias</div>
+                    <div class="hist-tile-s">
+                      <span class="faltas-badge" [class]="'estado-' + getEstado(est)">
+                        {{ getLabelFaltas(est) }}
+                      </span>
+                      acumuladas
+                    </div>
+                  </div>
+                  <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
+                </button>
+
+                <button class="hist-tile" (click)="verLibreta(est.idEstudiante)">
+                  <div class="hist-tile-ic hist-ic-cal">
+                    <mat-icon>menu_book</mat-icon>
+                  </div>
+                  <div class="hist-tile-body">
+                    <div class="hist-tile-t">Calificaciones</div>
+                    <div class="hist-tile-s hist-tile-s-muted">Notas por espacio curricular</div>
+                  </div>
+                  <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
+                </button>
+              </ng-container>
+
+              <button class="hist-tile" *ngIf="esDocente" (click)="verReporteCalificaciones(est)">
+                <div class="hist-tile-ic hist-ic-rep">
+                  <mat-icon>bar_chart</mat-icon>
+                </div>
+                <div class="hist-tile-body">
+                  <div class="hist-tile-t">Reporte de Calificaciones</div>
+                  <div class="hist-tile-s hist-tile-s-muted">Análisis detallado por espacio curricular</div>
+                </div>
+                <mat-icon class="hist-tile-arrow">chevron_right</mat-icon>
+              </button>
+
+            </div>
+          </div>
 
         </div><!-- /alumno-detalle (resumen) -->
 
@@ -424,6 +451,27 @@
           </div>
 
         </div><!-- /tutores-view -->
+
+        <!-- ═══════════════════════════════════════════════════════
+             VISTA: LIBRETA DE CALIFICACIONES
+             ═══════════════════════════════════════════════════════ -->
+        <div *ngIf="vistaLibretaIds.has(est.idEstudiante)">
+          <div class="ficha-loading" *ngIf="cargandoLibretaIds.has(est.idEstudiante)">
+            <mat-spinner diameter="32"></mat-spinner>
+          </div>
+          <div class="estado-center error" *ngIf="errorLibretaIds.has(est.idEstudiante)">
+            No se pudieron cargar las calificaciones. Intentá de nuevo más tarde.
+          </div>
+          <app-libreta-calificaciones
+            *ngIf="!cargandoLibretaIds.has(est.idEstudiante) && !errorLibretaIds.has(est.idEstudiante)"
+            [apellido]="est.apellido"
+            [nombre]="est.nombre"
+            [codigoCurso]="cursoSeleccionado?.codigo ?? ''"
+            [anioLectivo]="2026"
+            [espacios]="getLibreta(est.idEstudiante)"
+            (volver)="cerrarLibreta(est.idEstudiante)">
+          </app-libreta-calificaciones>
+        </div>
 
       </ng-container>
 

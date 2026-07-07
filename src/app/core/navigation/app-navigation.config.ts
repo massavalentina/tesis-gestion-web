@@ -31,17 +31,18 @@ const navItem = (
 export const HOME_NAV_ITEM = navItem('home', 'Inicio', '/', 'home');
 
 export const ASISTENCIA_NAV_ITEMS: AppNavItem[] = [
-  navItem('asistenciaRapida', 'Búsqueda Rápida', '/asistencia-rapida'),
-  navItem('qrScanner', 'Escáner QR', '/attendance/scan'),
-  navItem('asistenciaManual', 'Asistencia Manual', '/asistencia-manual-curso'),
-  navItem('parteDiario', 'Parte Diario', '/parte-diario-digital'),
-  navItem('reporteRetiros', 'Listado de Retiros', '/reporte-retiros'),
-  navItem('reporteAsistencia', 'Asistencia General', '/reporte-asistencia', undefined, false),
-  navItem('reporteAsistenciaDocente', 'Asistencia por EC', '/reporte-asistencia-docente', undefined, false),
+  navItem('asistenciaRapida', 'Búsqueda Rápida', '/asistencia-rapida', 'bolt'),
+  navItem('qrScanner', 'Escáner QR', '/attendance/scan', 'qr_code_scanner'),
+  navItem('asistenciaManual', 'Asistencia Manual', '/asistencia-manual-curso', 'fact_check'),
+  navItem('parteDiario', 'Parte Diario', '/parte-diario-digital', 'today'),
+  navItem('reporteRetiros', 'Listado de Retiros', '/reporte-retiros', 'assignment_return'),
+  navItem('reporteAsistencia', 'Asistencia General', '/reporte-asistencia', 'bar_chart', false),
+  navItem('reporteAsistenciaDocente', 'Asistencia por EC', '/reporte-asistencia-docente', 'school', false),
 ];
 
 export const REPORTES_ESTRATEGICOS_NAV_ITEMS: AppNavItem[] = [
-  navItem('reportesEstrategicosAsistencia', 'Asistencia', '/reportes-estrategicos/asistencia'),
+  navItem('reportesEstrategicosAsistencia', 'Asistencia', '/reportes-estrategicos/asistencia', 'show_chart'),
+  navItem('reportesEstrategicosCalificaciones', 'Generales', '/reportes-estrategicos/calificaciones', 'leaderboard'),
 ];
 
 export const PROFILE_NAV_ITEM = navItem('perfil', 'Mi perfil', '/perfil', 'account_circle');

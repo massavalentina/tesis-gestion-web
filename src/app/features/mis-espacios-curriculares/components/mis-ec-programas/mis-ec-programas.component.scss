@@ -16,20 +16,44 @@ $radius: 16px;
 
 .page-wrap {
   padding: 32px 28px 60px;
-  max-width: 880px;
+  max-width: 1100px;
   margin: 0 auto;
   font-family: 'Open Sans', sans-serif;
   animation: fadeUp .35s both;
 }
 
 /* ─── Breadcrumb ─── */
+.breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.btn-back-circle {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $text-muted;
+  flex-shrink: 0;
+  transition: background .15s;
+
+  svg { width: 18px; height: 18px; }
+  &:hover { background: #f1f5f9; }
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 13.5px;
   color: $text-muted;
-  margin-bottom: 22px;
   flex-wrap: wrap;
 
   svg { width: 13px; height: 13px; flex-shrink: 0; }
@@ -50,32 +74,54 @@ $radius: 16px;
 }
 
 /* ─── Header ─── */
-.header {
+.prog-hero {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  padding: 22px 28px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 20px;
   flex-wrap: wrap;
+  margin-bottom: 28px;
 }
 
-.header-text {
-  h2 {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -.3px;
-    margin: 0 0 4px;
-    color: $text;
-  }
-
-  p {
-    font-size: 14px;
-    color: $text-muted;
-    margin: 0;
-  }
+.prog-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
-.header-actions {
+.prog-hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(60, 120, 180, .1);
+  color: $primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 26px; height: 26px; }
+}
+
+.prog-hero-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  margin: 0;
+  color: $text;
+}
+
+.prog-hero-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.prog-hero-right {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;

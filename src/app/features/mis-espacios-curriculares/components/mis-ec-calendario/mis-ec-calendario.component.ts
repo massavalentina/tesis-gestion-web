@@ -1,7 +1,10 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 import { PlanificacionService } from '../../services/planificacion.service';
+import { MisEspaciosCurricularesService } from '../../services/mis-espacios-curriculares.service';
+import { MisEcItem } from '../../models/mis-ec.model';
 import { ArbolPlanificacionDto, ClasePlanificacionDto } from '../../models/planificacion.model';
 
 type ColorEvento = 'azul' | 'verde' | 'rojo';
@@ -35,6 +38,11 @@ export class MisEcCalendarioComponent implements OnInit {
   loading = true;
   error = '';
   arbol: ArbolPlanificacionDto | null = null;
+  espacio: MisEcItem | null = null;
+
+  get cursoLabel(): string {
+    return this.espacio ? `${this.espacio.anioNumero}°${this.espacio.division}` : '';
+  }
 
   mesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   diaPopoverKey: string | null = null;
@@ -49,6 +57,7 @@ export class MisEcCalendarioComponent implements OnInit {
 
   constructor(
     private service: PlanificacionService,
+    private ecService: MisEspaciosCurricularesService,
     private route: ActivatedRoute,
     private router: Router,
     private elementRef: ElementRef<HTMLElement>,
@@ -62,9 +71,13 @@ export class MisEcCalendarioComponent implements OnInit {
   private cargarArbol(): void {
     this.loading = true;
     this.error = '';
-    this.service.getArbol(this.idEC).subscribe({
-      next: arbol => {
+    forkJoin({
+      arbol: this.service.getArbol(this.idEC),
+      espacio: this.ecService.getEspacioCurricularPorId(this.idEC).pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ arbol, espacio }) => {
         this.arbol = arbol;
+        this.espacio = espacio;
         this.construirEventos();
         this.loading = false;
       },

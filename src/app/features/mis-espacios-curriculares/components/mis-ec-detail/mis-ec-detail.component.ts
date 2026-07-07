@@ -101,4 +101,8 @@ export class MisEcDetailComponent implements OnInit {
       queryParams: { cursoId: this.espacio.idCurso },
     });
   }
+
+  navegarReportes(): void {
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'reportes']);
+  }
 }

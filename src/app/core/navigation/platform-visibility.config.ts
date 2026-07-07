@@ -15,6 +15,7 @@ export const APP_SECTION_VISIBILITY = {
   perfil: 'all',
   misEspaciosCurriculares: 'desktop',
   reportesEstrategicosAsistencia: 'desktop',
+  reportesEstrategicosCalificaciones: 'desktop',
   reporteRetiros: 'all',
 } as const satisfies Record<string, PlatformVisibility>;
 

@@ -23,6 +23,12 @@
       <div class="breadcrumb">
         <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
         <span class="material-icons bc-sep">chevron_right</span>
+        <ng-container *ngIf="espacio">
+          <span class="bc-item" (click)="volver()">{{ cursoLabel }}</span>
+          <span class="material-icons bc-sep">chevron_right</span>
+          <span class="bc-item" (click)="volver()">{{ espacio.nombreMateria }}</span>
+          <span class="material-icons bc-sep">chevron_right</span>
+        </ng-container>
         <span class="bc-item bc-active">Calendario</span>
       </div>
     </div>

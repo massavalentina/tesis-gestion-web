@@ -252,7 +252,7 @@
                   <td class="col-curso">{{ formatCodigoCurso(ec.codigoCurso) }}</td>
                   <td class="col-horarios">
                     <span *ngIf="ec.horarios.length === 0" class="sin-dato">—</span>
-                    <span *ngFor="let h of ec.horarios" class="horario-chip">{{ formatHorario(h) }}</span>
+                    <span *ngFor="let h of horariosOrdenados(ec.horarios)" class="horario-chip">{{ formatHorario(h) }}</span>
                   </td>
                   <td class="col-fecha">{{ formatFecha(ec.fechaDesde) }}</td>
                   <td class="col-accion">

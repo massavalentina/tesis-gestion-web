@@ -16,7 +16,7 @@ import { GestionUsuariosService } from '../../services/gestion-usuarios.service'
 import { GestionRolesService } from '../../../gestion-roles/services/gestion-roles.service';
 import { AsignacionService } from '../../services/asignacion.service';
 import { Usuario } from '../../models/usuario.model';
-import { DocenteECActivo, DocenteECHistorial, PreceptorCursoActivo, PreceptorCursoHistorial } from '../../models/asignacion.model';
+import { DocenteECActivo, DocenteECHistorial, HorarioInfo, PreceptorCursoActivo, PreceptorCursoHistorial } from '../../models/asignacion.model';
 import { Rol } from '../../../gestion-roles/models/rol.model';
 import {
   ConfirmarAccionUsuarioDialogComponent,
@@ -48,6 +48,10 @@ interface ConfirmData {
   confirmLabel: string;
   warn?: boolean;
 }
+
+const ORDEN_DIAS: Record<string, number> = {
+  monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7,
+};
 
 @Component({
   selector: 'app-confirm-rol-dialog',
@@ -655,6 +659,14 @@ export class FichaUsuarioComponent implements OnInit {
     };
     const dia = dias[h.diaSemana.toLowerCase()] ?? h.diaSemana;
     return `${dia} ${h.horarioEntrada}–${h.horarioSalida}`;
+  }
+
+  horariosOrdenados(horarios: HorarioInfo[]): HorarioInfo[] {
+    return [...horarios].sort((a, b) => {
+      const da = ORDEN_DIAS[a.diaSemana.toLowerCase()] ?? 99;
+      const db = ORDEN_DIAS[b.diaSemana.toLowerCase()] ?? 99;
+      return da !== db ? da - db : a.horarioEntrada.localeCompare(b.horarioEntrada);
+    });
   }
 
   desasignarECIndividual(ec: DocenteECActivo): void {

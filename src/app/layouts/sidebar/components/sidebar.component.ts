@@ -101,6 +101,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              [routerLink]="item.route"
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: item.exact }">
+            <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
             {{ item.label }}
           </a>
         </div>
@@ -134,6 +135,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                [routerLink]="item.route"
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: item.exact }">
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
               {{ item.label }}
             </a>
           </div>
@@ -156,6 +158,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLink="/gestion-usuarios"
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: true }">
+              <mat-icon>people</mat-icon>
               Usuarios
             </a>
           </div>
@@ -223,6 +226,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
              routerLinkActive="is-active-sub"
              [routerLinkActiveOptions]="{ exact: item.exact }"
              (click)="closeMobile()">
+            <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
             {{ item.label }}
           </a>
         </div>
@@ -257,6 +261,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: item.exact }"
                (click)="closeMobile()">
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
               {{ item.label }}
             </a>
           </div>
@@ -280,6 +285,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
                routerLinkActive="is-active-sub"
                [routerLinkActiveOptions]="{ exact: true }"
                (click)="closeMobile()">
+              <mat-icon>people</mat-icon>
               Usuarios
             </a>
           </div>
@@ -419,7 +425,8 @@ export class SidebarComponent {
       case 'reporteAsistencia':
         return this.esAdmin || this.authService.tienePermiso('REPORTES_ASISTENCIA_RW');
       case 'reporteAsistenciaDocente':
-        return this.esAdmin || this.authService.tienePermiso('REPORTES_EC_RW');
+        return this.esAdmin
+          || (this.authService.tienePermiso('REPORTES_EC_RW') && !this.authService.tieneRol('Secretario'));
       case 'credencialesQr':
         return this.esAdmin
           || (this.usuarioEsPreceptorDelegado && this.authService.tienePermiso('CREDENCIALES_QR_RW'));
@@ -428,11 +435,9 @@ export class SidebarComponent {
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
       case 'reporteRetiros':
-        return this.esAdmin
-          || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW')
-          || this.authService.tieneRol('Equipo Directivo')
-          || this.authService.tieneRol('Secretario');
+        return this.esAdmin || this.authService.tieneRol('Preceptor');
       case 'reportesEstrategicosAsistencia':
+      case 'reportesEstrategicosCalificaciones':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
       case 'calendario':
         return this.esAdmin

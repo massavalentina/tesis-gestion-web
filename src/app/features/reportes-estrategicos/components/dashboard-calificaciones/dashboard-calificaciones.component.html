@@ -1,0 +1,308 @@
+<div class="dashboard-container">
+
+  <!-- ── Filtros ──────────────────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+    <mat-form-field appearance="outline" class="filtro-field filtro-anio">
+      <mat-label>Año lectivo</mat-label>
+      <mat-select [(ngModel)]="anioLectivo" (ngModelChange)="onAnioChange()">
+        <mat-option [value]="2025">2025</mat-option>
+        <mat-option [value]="2026">2026</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filtro-field filtro-rango">
+      <mat-label>Período</mat-label>
+      <mat-date-range-input [rangePicker]="rangePicker" [min]="minDatePeriodo" [max]="maxDatePeriodo">
+        <input matStartDate [(ngModel)]="fechaDesde" placeholder="Desde">
+        <input matEndDate   [(ngModel)]="fechaHasta" placeholder="Hasta">
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #rangePicker></mat-date-range-picker>
+    </mat-form-field>
+
+    <div class="filtros-actions">
+      <button mat-flat-button color="primary" (click)="aplicarFiltros()" [disabled]="isLoading">
+        <mat-icon>filter_list</mat-icon> Aplicar
+      </button>
+      <button mat-stroked-button (click)="limpiarFiltros()" [disabled]="isLoading">
+        <mat-icon>clear</mat-icon> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Spinner ─────────────────────────────────────────────────────────────── -->
+  <div class="spinner-container" *ngIf="isLoading">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
+
+  <!-- ── Contenido ───────────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!isLoading">
+
+    <!-- ── Título de sección ──────────────────────────────────────────────────── -->
+    <div class="section-title-row">
+      <h2 class="section-title">Indicadores Estratégicos Generales</h2>
+      <button mat-stroked-button class="btn-export-pdf" (click)="exportarPdf()" [disabled]="exportandoPdf">
+        <mat-icon>picture_as_pdf</mat-icon>
+        {{ exportandoPdf ? 'Exportando...' : 'Exportar PDF' }}
+      </button>
+    </div>
+
+    <!-- ═══ KPIs ═══════════════════════════════════════════════════════════════ -->
+    <div class="kpi-grid kpi-grid--5">
+
+      <!-- Avance en Programas -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Promedio ponderado del avance de los programas estructurados vigentes. Los cargados por PDF no se incluyen."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#1f4e8718;color:#1f4e87">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <span class="kpi-value">{{ avanceTexto }}</span>
+        <span class="kpi-label">Avance en Programas</span>
+      </div>
+
+      <!-- Calificación Promedio General -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Promedio general de todas las calificaciones del colegio. Sobre 10 puntos."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#1f4e8718;color:#1f4e87">
+          <mat-icon>grade</mat-icon>
+        </div>
+        <span class="kpi-value">{{ promedioTexto }}</span>
+        <span class="kpi-label">Calificación Promedio General</span>
+      </div>
+
+      <!-- Tasa de Aprobación General -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Porcentaje de alumnos en condición Aprobado (puntaje ≥ 7) sobre el total de exámenes realizados."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#1f4e8718;color:#1f4e87">
+          <mat-icon>check_circle_outline</mat-icon>
+        </div>
+        <span class="kpi-value">{{ tasaAprobTexto }}</span>
+        <span class="kpi-label">Tasa de Aprobación General</span>
+      </div>
+
+      <!-- Alumnos en Riesgo -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Alumnos con promedio personal menor a 7 a la fecha de corte. Son los casos más urgentes para intervención."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#e2374418;color:#e23744">
+          <mat-icon>warning_amber</mat-icon>
+        </div>
+        <span class="kpi-value kpi-value--alert">{{ alumnosRiesgoTexto }}</span>
+        <span class="kpi-label">Alumnos en Riesgo</span>
+      </div>
+
+      <!-- Exámenes Realizados -->
+      <div class="kpi-card">
+        <button class="kpi-info-btn"
+          matTooltip="Total de archivos de examen habilitados en el período: incluye el original y cada recuperatorio subido por separado."
+          matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+          <mat-icon>info_outline</mat-icon>
+        </button>
+        <div class="kpi-icon-circle" style="background:#1f4e8718;color:#1f4e87">
+          <mat-icon>assignment_turned_in</mat-icon>
+        </div>
+        <span class="kpi-value">{{ dashboard?.examenesRealizados ?? '-' }}</span>
+        <span class="kpi-label">Exámenes Realizados</span>
+      </div>
+
+    </div>
+
+    <!-- ═══ Recuperatorios ══════════════════════════════════════════════════════ -->
+    <div class="chart-card chart-card--recup" *ngIf="dashboard">
+      <div class="chart-header">
+        <h3>Recuperatorios en Exámenes</h3>
+        <div class="chart-header-actions">
+          <button mat-icon-button
+            matTooltip="Distribución de los exámenes según cuántos recuperatorios necesitaron. Cada examen original se cuenta una sola vez, aunque haya tenido recuperatorio."
+            matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+            <mat-icon>info_outline</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="recup-grid">
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeSinRecuperatorio | number:'1.0-1' }}%</span>
+          <span class="recup-label">Exámenes sin recuperatorio</span>
+        </div>
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeConRecuperatorio1 | number:'1.0-1' }}%</span>
+          <span class="recup-label">Con 1 recuperatorio</span>
+        </div>
+        <div class="recup-box">
+          <span class="recup-value">{{ dashboard.porcentajeConRecuperatorio2 | number:'1.0-1' }}%</span>
+          <span class="recup-label">Con 2 recuperatorios</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Gráficos fila 1 — Top5 EC ══════════════════════════════════════════ -->
+    <div class="charts-row charts-row--2" *ngIf="dashboard">
+
+      <!-- Top 5 EC Mayor Tasa de Desaprobación -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Espacios Curriculares con Mayor Tasa de Desaprobación</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Espacios curriculares con mayor porcentaje de exámenes desaprobados."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button *ngIf="dashboard.top5EcMayorDesaprobacion.length"
+              (click)="abrirFullscreen(chartMayorDesap, 'Top 5 Espacios Curriculares con Mayor Tasa de Desaprobación')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-empty-state" *ngIf="!dashboard.top5EcMayorDesaprobacion.length">
+          <mat-icon>bar_chart</mat-icon>
+          <span>Sin datos disponibles</span>
+        </div>
+        <div class="chart-body chart-bar" *ngIf="dashboard.top5EcMayorDesaprobacion.length"
+             echarts [options]="chartMayorDesap" (chartInit)="onChartInit('mayorDesap', $event)"></div>
+      </div>
+
+      <!-- Top 5 EC con Mejor Promedio -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Espacios Curriculares con Mejor Promedio</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Espacios curriculares con el promedio de calificaciones más alto."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button *ngIf="dashboard.top5EcMejorPromedio.length"
+              (click)="abrirFullscreen(chartMejorPromedio, 'Top 5 Espacios Curriculares con Mejor Promedio')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-empty-state" *ngIf="!dashboard.top5EcMejorPromedio.length">
+          <mat-icon>bar_chart</mat-icon>
+          <span>Sin datos disponibles</span>
+        </div>
+        <div class="chart-body chart-bar" *ngIf="dashboard.top5EcMejorPromedio.length"
+             echarts [options]="chartMejorPromedio" (chartInit)="onChartInit('mejorPromedio', $event)"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Gráficos fila 2 — Cursos y Condición ════════════════════════════════ -->
+    <div class="charts-row charts-row--2" *ngIf="dashboard">
+
+      <!-- Top 5 Cursos Mayor Tasa de Desaprobación -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Top 5 Cursos con Mayor Tasa de Desaprobación</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Cursos con mayor porcentaje de exámenes desaprobados."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button *ngIf="dashboard.top5CursosMayorTasa.length"
+              (click)="abrirFullscreen(chartTasaCurso, 'Top 5 Cursos con Mayor Tasa de Desaprobación')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-empty-state" *ngIf="!dashboard.top5CursosMayorTasa.length">
+          <mat-icon>bar_chart</mat-icon>
+          <span>Sin datos disponibles</span>
+        </div>
+        <div class="chart-body chart-bar" *ngIf="dashboard.top5CursosMayorTasa.length"
+             echarts [options]="chartTasaCurso" (chartInit)="onChartInit('tasaCurso', $event)"></div>
+      </div>
+
+      <!-- Condición de los alumnos -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Condición de los alumnos</h3>
+          <div class="chart-header-actions">
+            <button mat-icon-button
+              matTooltip="Distribución de alumnos por condición: Aprobado / Desaprobado por Tema / Desaprobado."
+              matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+            <button mat-icon-button
+              *ngIf="dashboard.distribucionEstados.aprobado + dashboard.distribucionEstados.desaprobado + dashboard.distribucionEstados.desaprobadoPorTema > 0"
+              (click)="abrirFullscreen(chartCondicion, 'Condición de los alumnos')"
+              matTooltip="Pantalla completa">
+              <mat-icon>fullscreen</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="chart-empty-state"
+          *ngIf="dashboard.distribucionEstados.aprobado + dashboard.distribucionEstados.desaprobado + dashboard.distribucionEstados.desaprobadoPorTema === 0">
+          <mat-icon>pie_chart</mat-icon>
+          <span>Sin datos disponibles</span>
+        </div>
+        <div class="chart-body chart-pie"
+          *ngIf="dashboard.distribucionEstados.aprobado + dashboard.distribucionEstados.desaprobado + dashboard.distribucionEstados.desaprobadoPorTema > 0"
+          echarts [options]="chartCondicion" (chartInit)="onChartInit('condicion', $event)"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Tasa de Aprobación por Año ════════════════════════════════════════ -->
+    <div class="chart-card chart-card--wide" *ngIf="yearLabels.length">
+      <div class="chart-header">
+        <h3>Tasa de Aprobación por Año</h3>
+        <div class="chart-header-actions">
+          <button mat-icon-button
+            matTooltip="Porcentaje de alumnos aprobados en cada año lectivo, para detectar niveles con bajo rendimiento."
+            matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+            <mat-icon>info_outline</mat-icon>
+          </button>
+          <button mat-icon-button
+            (click)="abrirFullscreen(chartTasaPorAnio, 'Tasa de Aprobación por Año')"
+            matTooltip="Pantalla completa">
+            <mat-icon>fullscreen</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorAnio" (chartInit)="onChartInit('tasaPorAnio', $event)"></div>
+    </div>
+
+    <!-- ═══ Tasa de Aprobación por Curso ══════════════════════════════════════ -->
+    <div class="chart-card chart-card--wide" *ngIf="courseLabels.length">
+      <div class="chart-header">
+        <h3>Tasa de Aprobación por Curso</h3>
+        <div class="chart-header-actions">
+          <button mat-icon-button
+            matTooltip="Porcentaje de alumnos aprobados en cada curso/división, para ver el detalle dentro de cada año."
+            matTooltipPosition="above" matTooltipClass="kpi-tooltip">
+            <mat-icon>info_outline</mat-icon>
+          </button>
+          <button mat-icon-button
+            (click)="abrirFullscreen(chartTasaPorCurso, 'Tasa de Aprobación por Curso')"
+            matTooltip="Pantalla completa">
+            <mat-icon>fullscreen</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="chart-body chart-bar chart-bar--wide" echarts [options]="chartTasaPorCurso" (chartInit)="onChartInit('tasaPorCurso', $event)"></div>
+    </div>
+
+  </ng-container>
+
+</div>
