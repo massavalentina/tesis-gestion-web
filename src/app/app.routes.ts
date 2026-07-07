@@ -91,6 +91,14 @@ export const routes: Routes = [
         canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW', 'PARTE_DIARIO_R'], ['Docente', 'Equipo Directivo'])],
       },
       {
+        path: 'reporte-retiros',
+        ...withSectionData('reporteRetiros'),
+        loadComponent: () =>
+          import('../app/features/reporte-retiros/components/reporte-retiros/reporte-retiros.component')
+            .then(m => m.ReporteRetirosComponent),
+        canActivate: [authGuard, permisoORolGuard(['ASISTENCIA_MANUAL_RW'], ['Equipo Directivo', 'Secretario'])],
+      },
+      {
         path: 'attendance/scan',
         ...withSectionData('qrScanner'),
         component: PaginaEscanerAsistencia,
@@ -142,6 +150,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
+        canActivate: [authGuard, permisoGuard('FICHA_ALUMNO_R')],
+      },
+      {
+        path: 'ficha-alumno/reporte-calificaciones/:estudianteId',
+        ...withSectionData('fichaAlumno'),
+        loadComponent: () =>
+          import('./features/ficha-alumno/components/reporte-calificaciones-estudiante/reporte-calificaciones-estudiante.component')
+            .then(m => m.ReporteCalificacionesEstudianteComponent),
         canActivate: [authGuard, permisoGuard('FICHA_ALUMNO_R')],
       },
       {
@@ -237,6 +253,22 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../app/features/mis-espacios-curriculares/components/mis-ec-evaluaciones/mis-ec-evaluaciones.component')
             .then(m => m.MisEcEvaluacionesComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/calificaciones/importar',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones-import/mis-ec-calificaciones-import.component')
+            .then(m => m.MisEcCalificacionesImportComponent),
+        canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
+      },
+      {
+        path: 'mis-espacios-curriculares/:idEC/calificaciones/importar/:idImportacion',
+        ...withSectionData('misEspaciosCurriculares'),
+        loadComponent: () =>
+          import('../app/features/mis-espacios-curriculares/components/mis-ec-calificaciones-import/mis-ec-calificaciones-import.component')
+            .then(m => m.MisEcCalificacionesImportComponent),
         canActivate: [authGuard, permisoORolGuard([], ['Docente'])],
       },
       {

@@ -427,6 +427,11 @@ export class SidebarComponent {
         return this.esAdmin || this.authService.tienePermiso('FICHA_ALUMNO_R');
       case 'misEspaciosCurriculares':
         return this.esAdmin || this.authService.tieneRol('Docente');
+      case 'reporteRetiros':
+        return this.esAdmin
+          || this.authService.tienePermiso('ASISTENCIA_MANUAL_RW')
+          || this.authService.tieneRol('Equipo Directivo')
+          || this.authService.tieneRol('Secretario');
       case 'reportesEstrategicosAsistencia':
         return this.esAdmin || this.authService.tieneRol('Equipo Directivo');
       case 'calendario':

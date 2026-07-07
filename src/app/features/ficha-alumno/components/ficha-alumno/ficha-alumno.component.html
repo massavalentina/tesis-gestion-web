@@ -109,7 +109,7 @@
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: RESUMEN
              â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante)">
+        <div class="alumno-detalle" *ngIf="!vistaTutoresIds.has(est.idEstudiante) && !vistaReporteIds.has(est.idEstudiante)">
 
           <div class="ficha-grid">
 
@@ -276,13 +276,14 @@
               <!-- Historial -->
               <div class="historial-placeholder">
                 <span class="historial-titulo">[ HISTORIAL ACADÉMICO ]</span>
-                <span class="historial-sub">Próximamente...</span>
+                <span class="historial-sub">Resumen académico del estudiante</span>
               </div>
 
               <!-- Botón secundario derecho -->
               <div class="col-btn-row">
-                <button mat-stroked-button class="btn-detalle" disabled>
-                  Ver detalle evaluación de habilidades
+                <button mat-stroked-button class="btn-detalle" (click)="verReporteCalificaciones(est)">
+                  <mat-icon>bar_chart</mat-icon>
+                  Ver reporte de calificaciones
                 </button>
               </div>
 
@@ -291,6 +292,23 @@
           </div><!-- /ficha-grid -->
 
         </div><!-- /alumno-detalle (resumen) -->
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             VISTA: REPORTE DE CALIFICACIONES
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <div class="reporte-view" *ngIf="vistaReporteIds.has(est.idEstudiante)">
+          <div class="reporte-view-header">
+            <button class="btn-volver" (click)="volverReporte(est.idEstudiante)">
+              <mat-icon>chevron_left</mat-icon> Volver
+            </button>
+          </div>
+
+          <app-reporte-calificaciones-estudiante
+            [estudianteIdInput]="est.idEstudiante"
+            [cursoIdInput]="cursoSeleccionado?.idCurso ?? ''"
+            [embedded]="true">
+          </app-reporte-calificaciones-estudiante>
+        </div>
 
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: TUTORES

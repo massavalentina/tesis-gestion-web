@@ -12,6 +12,7 @@ import { ComentarioParte } from '../../features/parte-diario-digital/models/come
 import { TurnoParte } from '../../features/parte-diario-digital/models/turno-parte.model';
 import { HorarioClase } from '../../features/parte-diario-digital/models/horario-clase.model';
 import { EstudianteParte } from '../../features/parte-diario-digital/models/estudiante-parte.model';
+import { RetiroReporteItem } from '../../features/reporte-retiros/models/retiro-reporte-item.model';
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
 const VERDE    = [46, 125, 50]    as [number, number, number];
@@ -318,6 +319,59 @@ export interface ProgramaEstructuradoData {
   }[];
 }
 
+export interface ReporteCalificacionesPdfEvaluacion {
+  numero: number;
+  label: string;
+  tieneEstructura: boolean;
+}
+
+export interface ReporteCalificacionesPdfEvaluacionAlumno {
+  numero: number;
+  n: number | null;
+  r1: number | null;
+  r2: number | null;
+  mejorNota: number | null;
+  usoRecuperatorio: boolean;
+  apruebaTema: boolean;
+  sinNotas: boolean;
+  tieneEstructura: boolean;
+}
+
+export interface ReporteCalificacionesPdfAlumno {
+  estudiante: string;
+  documento: string;
+  notaFinal: number | null;
+  estadoFinal: 'aprobado' | 'desaprobado' | 'desaprobado_tema';
+  evaluaciones: ReporteCalificacionesPdfEvaluacionAlumno[];
+}
+
+export interface ReporteCalificacionesPdfSummary {
+  promedioPorEvaluacion: Record<number, number | null>;
+  promedioFinal: number | null;
+  porcentajeRecuperatoriosPorEvaluacion: Record<number, number>;
+  porcentajeRecuperatoriosFinal: number;
+  porcentajeAprobadasPorEvaluacion: Record<number, number>;
+  porcentajeAprobadosFinal: number;
+}
+
+export interface ReporteCalificacionesPdfData {
+  cursoLabel: string;
+  nombreEspacio: string;
+  anioLectivo: number;
+  docenteLabel: string;
+  totalEstudiantes: number;
+  evaluaciones: ReporteCalificacionesPdfEvaluacion[];
+  estudiantes: ReporteCalificacionesPdfAlumno[];
+  summary: ReporteCalificacionesPdfSummary;
+}
+
+export interface ReporteRetirosData {
+  cursoLabel: string;
+  fechaDesde: string | null;
+  fechaHasta: string | null;
+  retiros: RetiroReporteItem[];
+}
+
 export interface DashboardPdfData {
   titulo: string;
   subtitulo: string;
@@ -524,6 +578,285 @@ export class PdfReporteService {
 
     this.dibujarLeyendaDocente(doc);
     doc.save(`reporte-espacio-${data.cursoCodigo}-${data.nombreEspacio.replace(/\s+/g, '-')}-${hoy().replace(/\//g, '-')}.pdf`);
+  }
+
+  async exportarReporteCalificacionesEspacio(data: ReporteCalificacionesPdfData): Promise<void> {
+    const logo = await this.logoPromise;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }) as PdfWithAutoTable;
+    const pageW = doc.internal.pageSize.getWidth();
+
+    const titulo = 'Reporte de Calificaciones por Espacio Curricular';
+    const subtitulo = `Curso: ${data.cursoLabel}  |  Espacio: ${data.nombreEspacio}`;
+    const sections = [
+      { titulo: 'Evaluaciones 1 a 4', numeros: [1, 2, 3, 4] },
+      { titulo: 'Evaluaciones 5 a 8', numeros: [5, 6, 7, 8] },
+    ];
+
+    const formatGrade = (value: number | null): string => value === null ? '—' : String(value);
+    const formatAverage = (value: number | null): string => value === null ? '—' : value.toFixed(2);
+    const formatPercentage = (value: number): string => `${value.toFixed(1)}%`;
+    const estadoLabel = (estado: ReporteCalificacionesPdfAlumno['estadoFinal']): string => {
+      switch (estado) {
+        case 'aprobado':
+          return 'Aprobado';
+        case 'desaprobado_tema':
+          return 'Desaprobado por Tema';
+        default:
+          return 'Desaprobado';
+      }
+    };
+    const estadoStyle = (estado: ReporteCalificacionesPdfAlumno['estadoFinal']) => {
+      switch (estado) {
+        case 'aprobado':
+          return { fill: [223, 247, 229] as [number, number, number], text: [24, 121, 78] as [number, number, number] };
+        case 'desaprobado_tema':
+          return { fill: [255, 230, 231] as [number, number, number], text: [203, 55, 72] as [number, number, number] };
+        default:
+          return { fill: [255, 238, 240] as [number, number, number], text: [209, 67, 67] as [number, number, number] };
+      }
+    };
+
+    sections.forEach((section, sectionIndex) => {
+      if (sectionIndex > 0) {
+        doc.addPage();
+      }
+
+      const sectionEvaluaciones = section.numeros
+        .map(numero => data.evaluaciones.find(evaluacion => evaluacion.numero === numero) ?? {
+          numero,
+          label: `Eval ${numero}`,
+          tieneEstructura: false,
+        });
+      const gradeColumnMeta = sectionEvaluaciones.flatMap(evaluacion => ([
+        { evaluacion: evaluacion.numero, key: 'n' as const },
+        { evaluacion: evaluacion.numero, key: 'r1' as const },
+        { evaluacion: evaluacion.numero, key: 'r2' as const },
+      ]));
+
+      const bodyRows: Array<{
+        kind: 'student' | 'summary';
+        cells: any[];
+        evaluacionesByNumero?: Map<number, ReporteCalificacionesPdfEvaluacionAlumno>;
+        estadoFinal?: ReporteCalificacionesPdfAlumno['estadoFinal'];
+      }> = data.estudiantes.map(estudiante => {
+        const evaluacionesByNumero = new Map(estudiante.evaluaciones.map(evaluacion => [evaluacion.numero, evaluacion]));
+        return {
+          kind: 'student' as const,
+          evaluacionesByNumero,
+          estadoFinal: estudiante.estadoFinal,
+          cells: [
+            estudiante.estudiante,
+            estudiante.documento,
+            ...sectionEvaluaciones.flatMap(evaluacion => {
+              const reporte = evaluacionesByNumero.get(evaluacion.numero);
+              return [
+                formatGrade(reporte?.n ?? null),
+                formatGrade(reporte?.r1 ?? null),
+                formatGrade(reporte?.r2 ?? null),
+              ];
+            }),
+            formatAverage(estudiante.notaFinal),
+            estadoLabel(estudiante.estadoFinal),
+          ],
+        };
+      });
+
+      const summaryFill = {
+        average: [237, 243, 251] as [number, number, number],
+        recovery: [243, 238, 248] as [number, number, number],
+        passing: [235, 248, 240] as [number, number, number],
+      };
+      bodyRows.push(
+        {
+          kind: 'summary' as const,
+          cells: [
+            { content: 'Promedio General', colSpan: 2, styles: { halign: 'left', fillColor: summaryFill.average, fontStyle: 'bold' } },
+            ...sectionEvaluaciones.map(evaluacion => ({
+              content: evaluacion.tieneEstructura
+                ? formatAverage(data.summary.promedioPorEvaluacion[evaluacion.numero] ?? null)
+                : '—',
+              colSpan: 3,
+              styles: { halign: 'center', fillColor: summaryFill.average, fontStyle: 'bold' },
+            })),
+            { content: formatAverage(data.summary.promedioFinal), styles: { halign: 'center', fillColor: summaryFill.average, fontStyle: 'bold' } },
+            { content: '—', styles: { halign: 'center', fillColor: summaryFill.average } },
+          ],
+        },
+        {
+          kind: 'summary' as const,
+          cells: [
+            { content: '% Recuperatorios', colSpan: 2, styles: { halign: 'left', fillColor: summaryFill.recovery, fontStyle: 'bold' } },
+            ...sectionEvaluaciones.map(evaluacion => ({
+              content: evaluacion.tieneEstructura
+                ? formatPercentage(data.summary.porcentajeRecuperatoriosPorEvaluacion[evaluacion.numero] ?? 0)
+                : '—',
+              colSpan: 3,
+              styles: { halign: 'center', fillColor: summaryFill.recovery, fontStyle: 'bold' },
+            })),
+            { content: formatPercentage(data.summary.porcentajeRecuperatoriosFinal), styles: { halign: 'center', fillColor: summaryFill.recovery, fontStyle: 'bold' } },
+            { content: '—', styles: { halign: 'center', fillColor: summaryFill.recovery } },
+          ],
+        },
+        {
+          kind: 'summary' as const,
+          cells: [
+            { content: '% Notas >= 7', colSpan: 2, styles: { halign: 'left', fillColor: summaryFill.passing, fontStyle: 'bold' } },
+            ...sectionEvaluaciones.map(evaluacion => ({
+              content: evaluacion.tieneEstructura
+                ? formatPercentage(data.summary.porcentajeAprobadasPorEvaluacion[evaluacion.numero] ?? 0)
+                : '—',
+              colSpan: 3,
+              styles: { halign: 'center', fillColor: summaryFill.passing, fontStyle: 'bold' },
+            })),
+            { content: formatPercentage(data.summary.porcentajeAprobadosFinal), styles: { halign: 'center', fillColor: summaryFill.passing, fontStyle: 'bold' } },
+            { content: '—', styles: { halign: 'center', fillColor: summaryFill.passing } },
+          ],
+        },
+      );
+
+      const drawSectionHeader = (): number => {
+        const y = drawPageHeader(doc, titulo, subtitulo, logo);
+        doc.setFontSize(8);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Año lectivo: ${data.anioLectivo}`, 14, y + 4);
+        doc.text(`Estudiantes: ${data.totalEstudiantes}`, 14, y + 9);
+        doc.text(`Docente: ${data.docenteLabel}`, 70, y + 4);
+        doc.text(`Emitido: ${hoy()}`, pageW - 14, y + 4, { align: 'right' });
+        doc.setFontSize(10);
+        doc.setTextColor(...HEADER_BG);
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.titulo, 14, y + 15);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        return y + 19;
+      };
+
+      const startY = drawSectionHeader();
+      const headRowTop = [
+        { content: 'Estudiante', rowSpan: 2, styles: { halign: 'left' as const, valign: 'middle' as const } },
+        { content: 'DNI', rowSpan: 2, styles: { halign: 'center' as const, valign: 'middle' as const } },
+        ...sectionEvaluaciones.map(evaluacion => ({
+          content: `IE ${evaluacion.numero}`,
+          colSpan: 3,
+          styles: { halign: 'center' as const },
+        })),
+        { content: 'Nota final', rowSpan: 2, styles: { halign: 'center' as const, valign: 'middle' as const } },
+        { content: 'Estado', rowSpan: 2, styles: { halign: 'center' as const, valign: 'middle' as const } },
+      ];
+      const headRowBottom = sectionEvaluaciones.flatMap(() => ([
+        { content: 'N', styles: { halign: 'center' as const } },
+        { content: 'R1', styles: { halign: 'center' as const } },
+        { content: 'R2', styles: { halign: 'center' as const } },
+      ]));
+
+      autoTable(doc, {
+        startY,
+        margin: { top: HEADER_H + 12, left: 8, right: 8, bottom: 14 },
+        head: [headRowTop, headRowBottom],
+        body: bodyRows.map(row => row.cells),
+        headStyles: {
+          fillColor: HEADER_BG,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 7.5,
+          halign: 'center',
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          valign: 'middle',
+        },
+        alternateRowStyles: {
+          fillColor: [248, 251, 255],
+        },
+        columnStyles: {
+          0: { cellWidth: 56, halign: 'left' },
+          1: { cellWidth: 20, halign: 'center' },
+          ...Object.fromEntries(gradeColumnMeta.map((_, index) => [index + 2, { cellWidth: 9.5, halign: 'center' }])),
+          [gradeColumnMeta.length + 2]: { cellWidth: 17, halign: 'center' },
+          [gradeColumnMeta.length + 3]: { cellWidth: 30, halign: 'center' },
+        },
+        didDrawPage: () => {
+          drawSectionHeader();
+        },
+        didParseCell: hookData => {
+          if (hookData.section === 'head') {
+            if (hookData.row.index === 0) {
+              hookData.cell.styles.fillColor = HEADER_BG;
+              hookData.cell.styles.textColor = [255, 255, 255];
+              hookData.cell.styles.fontStyle = 'bold';
+              hookData.cell.styles.fontSize = 7.8;
+            } else {
+              hookData.cell.styles.fillColor = HEADER_BG;
+              hookData.cell.styles.textColor = [255, 255, 255];
+              hookData.cell.styles.fontStyle = 'bold';
+              hookData.cell.styles.fontSize = 7.1;
+            }
+
+            if (hookData.column.index === 0) {
+              hookData.cell.styles.halign = 'left';
+            }
+            return;
+          }
+
+          if (hookData.section !== 'body') {
+            return;
+          }
+
+          const row = bodyRows[hookData.row.index];
+          if (!row || row.kind !== 'student') {
+            return;
+          }
+
+          if (hookData.column.index === 0) {
+            hookData.cell.styles.halign = 'left';
+          }
+
+          const gradeStartIndex = 2;
+          const gradeEndIndex = gradeStartIndex + gradeColumnMeta.length - 1;
+          const notaFinalColumnIndex = gradeEndIndex + 1;
+          const estadoColumnIndex = notaFinalColumnIndex + 1;
+          const evaluacionesByNumero = row.evaluacionesByNumero;
+
+          if (hookData.column.index >= gradeStartIndex && hookData.column.index <= gradeEndIndex) {
+            if (!evaluacionesByNumero) {
+              return;
+            }
+            const gradeMeta = gradeColumnMeta[hookData.column.index - gradeStartIndex];
+            const evaluacion = evaluacionesByNumero.get(gradeMeta.evaluacion);
+            if (!evaluacion?.tieneEstructura) {
+              hookData.cell.styles.textColor = [140, 148, 166];
+              return;
+            }
+
+            if (!evaluacion.apruebaTema) {
+              hookData.cell.styles.fillColor = [255, 240, 242];
+            } else if (evaluacion.usoRecuperatorio) {
+              hookData.cell.styles.fillColor = [242, 243, 247];
+            } else {
+              hookData.cell.styles.fillColor = [245, 249, 254];
+            }
+          }
+
+          if (hookData.column.index === notaFinalColumnIndex) {
+            hookData.cell.styles.fillColor = [245, 249, 254];
+            hookData.cell.styles.fontStyle = 'bold';
+            hookData.cell.styles.textColor = [22, 58, 97];
+          }
+
+          if (hookData.column.index === estadoColumnIndex) {
+            const style = estadoStyle(row.estadoFinal ?? 'desaprobado');
+            hookData.cell.styles.fillColor = style.fill;
+            hookData.cell.styles.textColor = style.text;
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+
+      this.dibujarLeyendaCalificaciones(doc);
+    });
+
+    const safeEspacio = data.nombreEspacio.replace(/[^\w\s\-]/g, '').trim().replace(/\s+/g, '-');
+    doc.save(`reporte-calificaciones-${data.cursoLabel}-${safeEspacio}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 
   // ── Detalle espacio curricular (docente) ──────────────────────────────────
@@ -1533,6 +1866,28 @@ export class PdfReporteService {
     doc.save(`programa-${safe}-${data.cursoLabel}-${data.anioLectivo}.pdf`);
   }
 
+  private dibujarLeyendaCalificaciones(doc: jsPDF): void {
+    const pageH = doc.internal.pageSize.getHeight();
+    const y = pageH - 8;
+    doc.setFontSize(6.2);
+    const items: [string, [number, number, number]][] = [
+      ['Aprobado', [223, 247, 229]],
+      ['Desaprobado por Tema', [255, 230, 231]],
+      ['Desaprobado', [255, 238, 240]],
+      ['Eval sin 7+', [255, 240, 242]],
+      ['Con recuperatorio', [242, 243, 247]],
+    ];
+    let x = 10;
+    items.forEach(([label, color]) => {
+      doc.setFillColor(...color);
+      doc.roundedRect(x, y - 3.8, 4.2, 4.2, 1, 1, 'F');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, x + 6, y);
+      x += 45;
+    });
+    doc.setTextColor(0, 0, 0);
+  }
+
   private dibujarLeyenda(doc: jsPDF): void {
     const pageH = doc.internal.pageSize.getHeight();
     const y = pageH - 8;
@@ -1865,5 +2220,130 @@ export class PdfReporteService {
     }
 
     doc.save(data.nombreArchivo);
+  }
+
+  // ── Reporte de retiros anticipados ─────────────────────────────────────────
+
+  async exportarReporteRetiros(data: ReporteRetirosData): Promise<void> {
+    const logo  = await this.logoPromise;
+    const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }) as PdfWithAutoTable;
+    const pageW = doc.internal.pageSize.getWidth();
+
+    const titulo    = 'Listado de Retiros Anticipados';
+    const subtitulo = data.cursoLabel === 'Todos los cursos'
+      ? 'Todos los cursos'
+      : `Curso: ${data.cursoLabel}`;
+
+    let y = drawPageHeader(doc, titulo, subtitulo, logo);
+
+    // Metadata
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, y + 4);
+    doc.text(`Total retiros: ${data.retiros.length}`, 14, y + 9);
+    doc.text(`Emitido: ${hoy()}`, pageW - 14, y + 4, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+
+    y += 16;
+
+    const estadoLabel = (etiqueta: string | null): string => {
+      switch (etiqueta) {
+        case 'ConReingreso':     return 'Con Reingreso';
+        case 'Reingresado':      return 'Reingresado';
+        case 'ReingresoVencido': return 'Reingreso Vencido';
+        default:                 return 'Sin Reingreso';
+      }
+    };
+
+    const estadoColor = (etiqueta: string | null): [number, number, number] => {
+      switch (etiqueta) {
+        case 'Reingresado':      return VERDE;
+        case 'ReingresoVencido': return ROJO;
+        case 'ConReingreso':     return AMARILLO;
+        default:                 return GRIS;
+      }
+    };
+
+    const responsableDetalle = (item: RetiroReporteItem): string => {
+      const partes: string[] = [];
+      if (item.apellidoResponsable && item.nombreResponsable) {
+        let nombre = `${item.apellidoResponsable}, ${item.nombreResponsable}`;
+        if (item.idTutor) nombre += ' (Tutor)';
+        partes.push(nombre);
+      }
+      if (item.dniResponsable)      partes.push(`DNI: ${item.dniResponsable}`);
+      if (item.relacionResponsable) partes.push(`Relación: ${item.relacionResponsable}`);
+      if (item.telefonoResponsable) partes.push(`Tel: ${item.telefonoResponsable}`);
+      if (item.correoResponsable)   partes.push(`Email: ${item.correoResponsable}`);
+      return partes.length > 0 ? partes.join('\n') : '—';
+    };
+
+    autoTable(doc, {
+      startY: y,
+      margin: { top: HEADER_H + 2, left: 8, right: 8 },
+      head: [['Estudiante', 'DNI', 'Curso', 'Fecha', 'Turno', 'Tipo', 'Estado', 'Salida', 'Reingr. Est.', 'Reingr. Eft.', 'Responsable', 'Preceptor', 'Motivo']],
+      body: data.retiros.map(item => [
+        `${item.apellido}, ${item.nombre}`,
+        item.documento,
+        item.curso,
+        formatFecha(item.fecha),
+        item.turno === 'MANANA' ? 'Mañana' : 'Tarde',
+        item.tipoRetiro ?? '—',
+        estadoLabel(item.etiquetaEstado),
+        item.horarioRetiro,
+        item.horarioLimiteReingreso ?? '—',
+        item.horarioReingreso ?? '—',
+        responsableDetalle(item),
+        item.nombrePreceptor ?? '—',
+        item.motivo ?? '—',
+      ]),
+      headStyles: {
+        fillColor: HEADER_BG,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize:  7,
+        halign:    'center',
+      },
+      bodyStyles:          { fontSize: 7 },
+      alternateRowStyles:  { fillColor: [245, 248, 255] },
+      columnStyles: {
+        0:  { cellWidth: 34 },                          // Estudiante
+        1:  { cellWidth: 18, halign: 'center' },        // DNI
+        2:  { cellWidth: 12, halign: 'center' },        // Curso
+        3:  { cellWidth: 18, halign: 'center' },        // Fecha
+        4:  { cellWidth: 14, halign: 'center' },        // Turno
+        5:  { cellWidth: 12, halign: 'center' },        // Tipo
+        6:  { cellWidth: 24, halign: 'center' },        // Estado
+        7:  { cellWidth: 14, halign: 'center' },        // Salida
+        8:  { cellWidth: 18, halign: 'center' },        // Reingr Est
+        9:  { cellWidth: 18, halign: 'center' },        // Reingr Eft
+        10: { cellWidth: 40 },                          // Responsable
+        11: { cellWidth: 20 },                          // Preceptor
+        12: { cellWidth: 'auto' },                      // Motivo (ocupa todo el espacio restante)
+      },
+      didDrawPage: (hookData) => {
+        if (hookData.pageNumber > 1) {
+          drawPageHeader(doc, titulo, subtitulo, logo);
+          doc.setFontSize(7);
+          doc.setTextColor(80, 80, 80);
+          doc.text(`Período: ${periodoTexto(data.fechaDesde, data.fechaHasta)}`, 14, HEADER_H + 2);
+          doc.text(`Emitido: ${hoy()}`, pageW - 14, HEADER_H + 2, { align: 'right' });
+          doc.setTextColor(0, 0, 0);
+        }
+      },
+      didParseCell: (hookData) => {
+        // Colorear celda Estado (índice 6)
+        if (hookData.section === 'body' && hookData.column.index === 6) {
+          const item = data.retiros[hookData.row.index];
+          if (item) {
+            const [r, g, b] = estadoColor(item.etiquetaEstado);
+            hookData.cell.styles.textColor = [r, g, b];
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        }
+      },
+    });
+
+    doc.save(`reporte-retiros-${data.cursoLabel.replace(/\s+/g, '-')}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 }
