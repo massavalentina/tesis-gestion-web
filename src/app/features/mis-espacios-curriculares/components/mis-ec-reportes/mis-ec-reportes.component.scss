@@ -600,8 +600,9 @@ $kpi-color:     #0284c7;
 .prog-metric-label {
   font-size: 11.5px;
   color: $label;
-  width: 72px;
+  width: 92px;
   flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .prog-metric-bar {

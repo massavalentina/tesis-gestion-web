@@ -323,24 +323,35 @@
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: REPORTE DE CALIFICACIONES
              â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <div class="reporte-view" *ngIf="vistaReporteIds.has(est.idEstudiante)">
-          <div class="reporte-view-header">
-            <button class="btn-volver" (click)="volverReporte(est.idEstudiante)">
-              <mat-icon>chevron_left</mat-icon> Volver
-            </button>
+        <div *ngIf="vistaReporteIds.has(est.idEstudiante)">
+          <div class="ficha-loading" *ngIf="cargandoReporteLibretaIds.has(est.idEstudiante)">
+            <mat-spinner diameter="32"></mat-spinner>
           </div>
+          <div class="estado-center error" *ngIf="errorReporteLibretaIds.has(est.idEstudiante)">
+            No se pudieron cargar las calificaciones. Intentá de nuevo más tarde.
+          </div>
+          <ng-container *ngIf="!cargandoReporteLibretaIds.has(est.idEstudiante) && !errorReporteLibretaIds.has(est.idEstudiante)">
+            <app-libreta-calificaciones
+              [apellido]="est.apellido"
+              [nombre]="est.nombre"
+              [codigoCurso]="cursoSeleccionado?.codigo ?? ''"
+              [anioLectivo]="2026"
+              [espacios]="getReporteLibreta(est.idEstudiante)"
+              [mostrarResumen]="false"
+              (volver)="volverReporte(est.idEstudiante)">
+            </app-libreta-calificaciones>
 
-          <app-reporte-calificaciones-estudiante
-            [estudianteIdInput]="est.idEstudiante"
-            [cursoIdInput]="cursoSeleccionado?.idCurso ?? ''"
-            [embedded]="true">
-          </app-reporte-calificaciones-estudiante>
+            <app-variacion-calificaciones-estudiante
+              [estudianteId]="est.idEstudiante"
+              [espacios]="getReporteLibreta(est.idEstudiante)">
+            </app-variacion-calificaciones-estudiante>
+          </ng-container>
         </div>
 
         <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              VISTA: TUTORES
              â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-        <div class="tutores-view" *ngIf="vistaTutoresIds.has(est.idEstudiante)">
+        <div class="tutores-view" [id]="'tutores-view-' + est.idEstudiante" *ngIf="vistaTutoresIds.has(est.idEstudiante)">
 
           <div class="tutores-view-header">
             <button class="btn-volver" (click)="volverResumen(est.idEstudiante)">
@@ -404,7 +415,7 @@
               <tbody>
                 <tr *ngFor="let tutor of ficha.tutores"
                     [class.fila-principal]="tutor.esPrincipal">
-                  <td>
+                  <td data-label="Nombre">
                     <div class="td-nombre">
                       <span class="tutor-nombre-texto">{{ tutor.apellido }}, {{ tutor.nombre }}</span>
                       <span class="badge-principal-tabla" *ngIf="tutor.esPrincipal">
@@ -412,16 +423,16 @@
                       </span>
                     </div>
                   </td>
-                  <td class="td-dato">{{ tutor.documento || '-' }}</td>
-                  <td class="td-dato">{{ tutor.relacionEstudiante || '-' }}</td>
-                  <td class="td-dato">{{ tutor.disponibilidad || '-' }}</td>
-                  <td>
+                  <td class="td-dato" data-label="DNI">{{ tutor.documento || '-' }}</td>
+                  <td class="td-dato" data-label="Relación">{{ tutor.relacionEstudiante || '-' }}</td>
+                  <td class="td-dato" data-label="Disponibilidad">{{ tutor.disponibilidad || '-' }}</td>
+                  <td data-label="Contacto">
                     <div class="contacto-cell">
                       <span class="contacto-email">{{ tutor.correo || '-' }}</span>
                       <span class="contacto-tel">{{ tutor.telefono || '-' }}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Acciones">
                     <div class="acciones-cell">
                       <button class="btn-tabla-icono btn-tabla-info"
                               matTooltip="Ver fecha de nacimiento y domicilio"

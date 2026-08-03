@@ -206,15 +206,14 @@ export class MisEcReportesComponent implements OnInit {
 
       const rec2 = califs.find(c => c.tipoCalificacion === 'R2');
       const rec1 = califs.find(c => c.tipoCalificacion === 'R1');
-      const orig = califs.find(c => c.tipoCalificacion === 'N');
-      const final = rec2 ?? rec1 ?? orig;
-      if (!final || final.puntaje === null) continue;
+      // Igual criterio que la libreta de calificaciones: se toma la mejor nota entre N/R1/R2, no la vigente.
+      const mejor = califs.reduce((a, b) => (b.puntaje! > a.puntaje! ? b : a));
 
       resultado.push({
         idIE,
         idEstudiante,
         nro,
-        puntajeFinal: final.puntaje,
+        puntajeFinal: mejor.puntaje!,
         tieneRecuperatorio: !!rec1 || !!rec2,
       });
     }
@@ -472,7 +471,7 @@ export class MisEcReportesComponent implements OnInit {
     this.optionDonutAvance = {
       textStyle: { fontFamily: FONT },
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
-      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' }, selectedMode: false },
       graphic: [
         { type: 'text', left: 'center', top: '34%',
           style: { text: `${pct}%`, fontSize: 22, fontWeight: 700, fill: '#1f4e87', textAlign: 'center' } },
@@ -502,7 +501,7 @@ export class MisEcReportesComponent implements OnInit {
     this.optionDonutEval = {
       textStyle: { fontFamily: FONT },
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
-      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' } },
+      legend: { bottom: 8, icon: 'circle', itemWidth: 9, itemHeight: 9, textStyle: { fontSize: 12, color: '#64748b' }, selectedMode: false },
       graphic: [
         { type: 'text', left: 'center', top: '34%',
           style: { text: `${pct}%`, fontSize: 22, fontWeight: 700, fill: '#1f4e87', textAlign: 'center' } },

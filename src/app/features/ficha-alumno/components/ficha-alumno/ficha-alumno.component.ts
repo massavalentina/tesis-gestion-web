@@ -16,6 +16,7 @@ import { catchError, switchMap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import {
+  EspacioCurricularFicha,
   FichaAlumnoService,
   QrCredentialStatusDto
 } from '../../services/ficha-alumno.service';
@@ -33,7 +34,7 @@ import { LibretaCalificacionesComponent } from '../libreta-calificaciones/libret
 import { PdfReporteService } from '../../../../core/services/pdf-reporte.service';
 import { ReporteAsistenciaService } from '../../../reporte-asistencia/services/reporte-asistencia.service';
 import { LibretaEspacio } from '../../models/libreta-calificaciones.model';
-import { ReporteCalificacionesEstudianteComponent } from '../reporte-calificaciones-estudiante/reporte-calificaciones-estudiante.component';
+import { VariacionCalificacionesEstudianteComponent } from '../variacion-calificaciones-estudiante/variacion-calificaciones-estudiante.component';
 
 function validarMayorDe18(control: AbstractControl): ValidationErrors | null {
   if (!control.value) return null;
@@ -114,7 +115,7 @@ interface ModalCredencialQrState {
     ReactiveFormsModule,
     QrCredentialPreviewCardComponent,
     LibretaCalificacionesComponent,
-    ReporteCalificacionesEstudianteComponent
+    VariacionCalificacionesEstudianteComponent
   ],
   templateUrl: './ficha-alumno.component.html',
   styleUrl: './ficha-alumno.component.css'
@@ -145,6 +146,10 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
   errorFichaIds = new Set<string>();
   vistaTutoresIds = new Set<string>();
   vistaReporteIds = new Set<string>();
+
+  reporteLibretaMap = new Map<string, LibretaEspacio[]>();
+  cargandoReporteLibretaIds = new Set<string>();
+  errorReporteLibretaIds = new Set<string>();
 
   modalEstudiante: ModalEstudianteState | null = null;
   modalTutor: ModalTutorState | null = null;
@@ -217,6 +222,9 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.cargandoLibretaIds.clear();
     this.errorLibretaIds.clear();
     this.vistaReporteIds.clear();
+    this.reporteLibretaMap.clear();
+    this.cargandoReporteLibretaIds.clear();
+    this.errorReporteLibretaIds.clear();
     this.enviandoNotificacionCurso = false;
     this.cargarEstudiantes(this.cursoSeleccionado.idCurso, null);
   }
@@ -296,6 +304,13 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     this.vistaLibretaIds.delete(idEstudiante);
     this.vistaReporteIds.delete(idEstudiante);
     this.vistaTutoresIds.add(idEstudiante);
+    this.scrollToElement('alumno-' + idEstudiante);
+  }
+
+  private scrollToElement(elementId: string): void {
+    setTimeout(() => {
+      document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   volverResumen(idEstudiante: string): void {
@@ -408,10 +423,42 @@ export class FichaAlumnoComponent implements OnInit, OnDestroy {
     }
     this.vistaTutoresIds.delete(est.idEstudiante);
     this.vistaReporteIds.add(est.idEstudiante);
+    if (!this.reporteLibretaMap.has(est.idEstudiante) && !this.cargandoReporteLibretaIds.has(est.idEstudiante)) {
+      this.cargarReporteLibreta(est.idEstudiante);
+    }
   }
 
   volverReporte(idEstudiante: string): void {
     this.vistaReporteIds.delete(idEstudiante);
+  }
+
+  private cargarReporteLibreta(idEstudiante: string): void {
+    const cursoId = this.cursoSeleccionado?.idCurso;
+    if (!cursoId) {
+      return;
+    }
+
+    this.cargandoReporteLibretaIds.add(idEstudiante);
+    this.errorReporteLibretaIds.delete(idEstudiante);
+
+    forkJoin({
+      espaciosDocente: this.fichaService.getEspaciosCurricularesPorCurso(cursoId),
+      libreta: this.fichaService.getLibretaEstudiante(idEstudiante),
+    }).pipe(
+      catchError(() => {
+        this.errorReporteLibretaIds.add(idEstudiante);
+        this.cargandoReporteLibretaIds.delete(idEstudiante);
+        return EMPTY;
+      })
+    ).subscribe(({ espaciosDocente, libreta }: { espaciosDocente: EspacioCurricularFicha[]; libreta: LibretaEspacio[] }) => {
+      const idsDocente = new Set(espaciosDocente.map(e => e.idEC));
+      this.reporteLibretaMap.set(idEstudiante, libreta.filter(esp => idsDocente.has(esp.idEC)));
+      this.cargandoReporteLibretaIds.delete(idEstudiante);
+    });
+  }
+
+  getReporteLibreta(idEstudiante: string): LibretaEspacio[] {
+    return this.reporteLibretaMap.get(idEstudiante) ?? [];
   }
 
   getCredencialLabel(idEstudiante: string): string {

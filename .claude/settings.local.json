@@ -61,7 +61,11 @@
       "Bash(grep -n \"^\\\\\\\\\\\\$\\\\|:root\\\\|^\\\\s*--\" src/app/features/mis-espacios-curriculares/components/mis-ec-calificaciones/mis-ec-calificaciones.component.scss)",
       "Bash(grep -n \"^\\\\\\\\\\\\$\\\\|:root\\\\|^\\\\s*--\" src/app/features/mis-espacios-curriculares/components/mis-ec-programas/mis-ec-programas.component.scss)",
       "Bash(grep -n '^\\\\$primary\\\\|^\\\\$radius-sm' src/app/features/mis-espacios-curriculares/components/mis-ec-calendario/mis-ec-calendario.component.scss)",
-      "Bash(grep -n '^\\\\$bg' src/app/features/mis-espacios-curriculares/components/mis-ec-calificaciones/mis-ec-calificaciones.component.scss src/app/features/mis-espacios-curriculares/components/mis-ec-programas/mis-ec-programas.component.scss)"
+      "Bash(grep -n '^\\\\$bg' src/app/features/mis-espacios-curriculares/components/mis-ec-calificaciones/mis-ec-calificaciones.component.scss src/app/features/mis-espacios-curriculares/components/mis-ec-programas/mis-ec-programas.component.scss)",
+      "Skill(claude-in-chrome)",
+      "Bash(git check-ignore *)",
+      "Bash(npx ng *)",
+      "Read(//tmp/**)"
     ]
   }
 }

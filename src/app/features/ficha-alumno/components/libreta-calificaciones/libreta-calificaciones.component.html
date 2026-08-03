@@ -87,7 +87,7 @@
   </div>
 
   <!-- ── Resumen ── -->
-  <div class="libreta-resumen">
+  <div class="libreta-resumen" *ngIf="mostrarResumen">
     <div class="res-card">
       <div class="res-label">Espacios curriculares aprobados</div>
       <div class="res-value res-verde">{{ contadores.aprob }}</div>

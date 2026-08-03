@@ -1,5 +1,7 @@
 <div class="contenedor">
 
+  <div class="card">
+
   <div class="search-container">
     <div class="search-box">
       <mat-icon class="search-ico">search</mat-icon>
@@ -7,7 +9,7 @@
       <input
         type="text"
         [formControl]="searchCtrl"
-        placeholder="Buscar estudiante (DNI, nombre o apellido)"
+        placeholder="Buscar alumno..."
         autocomplete="off" />
 
       <button
@@ -27,19 +29,46 @@
   </div>
 
   <!-- Hora manual: siempre visible, no depende de que haya alumno seleccionado -->
-  <div class="hora-manual-row">
-    <mat-icon class="hora-ico">schedule</mat-icon>
-    <mat-form-field appearance="outline" class="field-hora-manual">
-      <mat-label>Hora del registro (opcional)</mat-label>
-      <input matInput type="time" [(ngModel)]="horaManual" />
-      <button *ngIf="horaManual" matIconSuffix mat-icon-button
-              aria-label="Quitar hora" (click)="horaManual = null"
-              matTooltip="Usar hora del servidor">
+  <div class="hora-manual-box">
+    <div class="hora-manual-toggle-row">
+      <span class="hora-manual-label">
+        <mat-icon class="hora-ico">schedule</mat-icon>
+        Hora personalizada
+      </span>
+
+      <button type="button"
+              class="hora-toggle"
+              [class.activo]="usarHoraManual"
+              role="switch"
+              [attr.aria-checked]="usarHoraManual"
+              aria-label="Usar hora personalizada"
+              (click)="toggleHoraManual()">
+        <span class="hora-toggle-knob"></span>
+      </button>
+    </div>
+
+    <div class="hora-manual-control" *ngIf="usarHoraManual">
+      <span class="hora-input-label">Hora</span>
+
+      <input
+        type="time"
+        class="hora-input"
+        [(ngModel)]="horaManual" />
+
+      <button
+        *ngIf="horaManual"
+        type="button"
+        class="clear-btn"
+        aria-label="Quitar hora"
+        matTooltip="Usar hora del servidor"
+        (click)="horaManual = null">
         <mat-icon>close</mat-icon>
       </button>
-    </mat-form-field>
-    <span class="hora-hint" *ngIf="!horaManual">Usa la hora del servidor si se deja vacío</span>
-    <span class="hora-hint hora-hint-activa" *ngIf="horaManual">Hora personalizada activa</span>
+    </div>
+
+    <span class="hora-hint" *ngIf="!usarHoraManual">Se usará la hora del servidor</span>
+    <span class="hora-hint" *ngIf="usarHoraManual && !horaManual">Tocá el campo para elegir la hora y los minutos</span>
+    <span class="hora-hint hora-hint-activa" *ngIf="usarHoraManual && horaManual">Hora personalizada activa</span>
   </div>
 
   <div class="spinner" *ngIf="cargando">
@@ -91,6 +120,8 @@
       </button>
 
     </ng-container>
+  </div>
+
   </div>
 
   <div class="confirmacion" *ngIf="alumnoSeleccionado">

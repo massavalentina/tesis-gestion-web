@@ -267,8 +267,8 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
           </div>
         </ng-container>
 
-        <!-- Cuentas — solo Secretario/Admin -->
-        <ng-container *ngIf="puedeGestionarUsuarios">
+        <!-- Cuentas — solo Secretario/Admin (mobile — oculto) -->
+        <ng-container *ngIf="puedeGestionarUsuarios && !isMobile">
           <button class="item parent"
                   type="button"
                   matRipple
