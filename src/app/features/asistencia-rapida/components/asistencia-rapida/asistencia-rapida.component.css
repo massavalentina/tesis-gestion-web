@@ -1,8 +1,5 @@
 :host{
   display: block;
-  height: calc(100vh - 24px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 :host, .contenedor, input, button, mat-select, mat-option {
@@ -494,10 +491,6 @@
 /* RESPONSIVE */
 
 @media (max-width:520px){
-
-  :host{
-    height: calc(100vh - 12px);
-  }
 
   .contenedor{
     padding:14px;

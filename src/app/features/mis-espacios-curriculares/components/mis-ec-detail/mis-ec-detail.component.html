@@ -19,17 +19,24 @@
   <ng-container *ngIf="!loading && !error && espacio">
 
     <!-- Breadcrumb -->
-    <nav class="breadcrumb">
-      <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <span class="crumb-current">{{ formatCurso(espacio.anioNumero, espacio.division) }}</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-      <span class="crumb-current">{{ espacio.nombreMateria }}</span>
-    </nav>
+    <div class="breadcrumb-row">
+      <button class="btn-back-circle" type="button" (click)="volverAlListado()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <nav class="breadcrumb">
+        <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="crumb-current">{{ formatCurso(espacio.anioNumero, espacio.division) }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="crumb-current">{{ espacio.nombreMateria }}</span>
+      </nav>
+    </div>
 
     <!-- Encabezado oscuro -->
     <div class="detail-head">

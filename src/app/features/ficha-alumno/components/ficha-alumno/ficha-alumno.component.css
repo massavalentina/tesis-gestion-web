@@ -569,23 +569,32 @@
 }
 
 .btn-volver {
-  background: none;
-  border: none;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 0.85rem;
-  color: #1976d2;
-  padding: 4px 0;
+  gap: 4px;
+  background: none;
+  border: 1.5px solid #dde4ee;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5a6573;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 
-.btn-volver:hover { text-decoration: underline; }
+.btn-volver:hover {
+  background: #f5f7fa;
+  border-color: #5B9BD5;
+  color: #1565C0;
+}
 
 .btn-volver mat-icon {
-  font-size: 1rem;
-  width: 1rem;
-  height: 1rem;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .tutores-titulo {

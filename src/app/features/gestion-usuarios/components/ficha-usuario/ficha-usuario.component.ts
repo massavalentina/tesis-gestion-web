@@ -619,25 +619,18 @@ export class FichaUsuarioComponent implements OnInit {
   // ── Helpers ───────────────────────────────────────────────────────────
   rolColor(rol: string): string {
     switch (rol.toLowerCase()) {
-      case 'docente':          return 'chip-celeste';
-      case 'preceptor':        return 'chip-violeta';
-      case 'equipo directivo': return 'chip-naranja';
-      case 'admin':            return 'chip-rojo';
-      case 'secretario':       return 'chip-teal';
-      default:                 return 'chip-gris';
+      case 'docente':            return 'chip-celeste';
+      case 'preceptor':          return 'chip-violeta';
+      case 'preceptor delegado': return 'chip-delegado';
+      case 'equipo directivo':   return 'chip-naranja';
+      case 'admin':              return 'chip-rojo';
+      case 'secretario':         return 'chip-teal';
+      default:                   return 'chip-gris';
     }
   }
 
   rolChipClass(nombre: string): string {
-    const mapa: Record<string, string> = {
-      'Docente':            'chip-docente',
-      'Equipo Directivo':   'chip-eq-directivo',
-      'Secretario':         'chip-secretario',
-      'Preceptor':          'chip-preceptor',
-      'Preceptor Delegado': 'chip-preceptor-delegado',
-      'Admin':              'chip-admin',
-    };
-    return mapa[nombre] ?? 'chip-default';
+    return this.rolColor(nombre);
   }
 
   formatCodigoCurso(codigo: string): string {

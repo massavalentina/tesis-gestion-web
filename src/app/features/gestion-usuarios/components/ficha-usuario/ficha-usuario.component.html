@@ -39,7 +39,7 @@
                 class="rol-chip"
                 [ngClass]="u.activo ? rolColor(r) : 'chip-gris'">{{ r }}</span>
           <span *ngIf="tieneRolPreceptor && esDelegado"
-                class="rol-chip chip-delegado-header">Preceptor Delegado</span>
+                class="rol-chip chip-delegado">Preceptor Delegado</span>
         </div>
         <div class="roles-row" *ngIf="u.roles.length === 0">
           <span class="rol-chip chip-gris">Sin rol</span>
@@ -171,7 +171,7 @@
           </span>
 
           <span *ngIf="tieneRolPreceptor && esDelegado"
-                class="gr-chip chip-preceptor-delegado">
+                class="gr-chip chip-delegado">
             Preceptor Delegado
             <button class="gr-chip-remove"
                     [disabled]="actualizandoDelegado() || !!eliminandoRolId()"

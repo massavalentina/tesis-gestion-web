@@ -267,7 +267,7 @@
 
             <div class="hist-head">
               <span class="hist-title">Historial académico</span>
-              <button class="btn-hist-pdf" *ngIf="!esDocente" (click)="exportarLibreta(est)">
+              <button class="btn-hist-pdf" *ngIf="!esDocente || esEquipoDirectivo" (click)="exportarLibreta(est)">
                 <mat-icon class="btn-hist-pdf-icon">description</mat-icon>
                 Exportar boletín PDF
               </button>
@@ -275,7 +275,7 @@
 
             <div class="hist-tiles">
 
-              <ng-container *ngIf="!esDocente">
+              <ng-container *ngIf="!esDocente || esEquipoDirectivo">
                 <button class="hist-tile" (click)="verDetalleFaltas(est)">
                   <div class="hist-tile-ic hist-ic-asis">
                     <mat-icon>bar_chart</mat-icon>
