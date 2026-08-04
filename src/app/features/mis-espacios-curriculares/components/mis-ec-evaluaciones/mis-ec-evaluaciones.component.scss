@@ -55,14 +55,14 @@
   to { transform: rotate(360deg); }
 }
 
-.planif-header {
+.breadcrumb-row {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 22px;
 }
 
-.btn-back {
+.btn-back-circle {
   background: none;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -76,29 +76,32 @@
   flex-shrink: 0;
   transition: background .15s;
   &:hover { background: var(--bg); }
-  .material-icons { font-size: 20px; }
+  svg { width: 18px; height: 18px; }
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 2px;
-  font-size: 13px;
-  flex-wrap: wrap;
-}
-
-.bc-item {
+  gap: 7px;
+  font-size: 13.5px;
   color: var(--muted);
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: color .15s;
-  &:hover { color: var(--accent); }
-  &.bc-root { color: var(--accent); }
-  &.bc-active { color: var(--ink); font-weight: 600; cursor: default; }
+  flex-wrap: wrap;
+
+  svg { width: 13px; height: 13px; flex-shrink: 0; }
 }
 
-.bc-sep { font-size: 16px; color: var(--line); }
+.crumb-link {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: var(--ink);
+}
 
 .estado-banner,
 .banner-inline {

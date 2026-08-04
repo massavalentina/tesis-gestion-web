@@ -294,27 +294,46 @@
 .estado-error { color: #c62828; }
 
 /* ── Cursos asignados ── */
-.asig-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 20px;
+.cursos-card {
+  gap: 16px;
 }
 
-.asig-header {
+.cursos-card__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 14px;
 }
 
-.asig-titulo {
-  font-size: 0.72rem;
+.cursos-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; }
+}
+
+.cursos-card__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cursos-card__titulo {
+  font-size: 1.05rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
+  color: #0f2f4b;
+}
+
+.cursos-card__subtitulo {
+  font-size: 0.82rem;
+  color: #64748b;
 }
 
 .asig-loading {

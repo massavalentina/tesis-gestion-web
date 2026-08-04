@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding-top: 8px;
 }
 
 /* ── Header ── */
@@ -21,10 +22,10 @@
 }
 
 .libreta-titulo {
-  font-size: 0.67rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #9aa5b4;
-  letter-spacing: 0.08em;
+  color: #4a5568;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -343,6 +344,7 @@
   flex-wrap: wrap;
   margin-top: 12px;
   padding-top: 12px;
+  padding-left: 32px;
   border-top: 1px solid #f0f2f5;
   font-size: 0.72rem;
   color: #6b7280;

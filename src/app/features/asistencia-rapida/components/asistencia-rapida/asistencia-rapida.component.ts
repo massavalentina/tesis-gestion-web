@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -48,6 +49,7 @@ import {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTooltipModule,
     MatDialogModule
   ],
   templateUrl: './asistencia-rapida.component.html',
@@ -72,6 +74,7 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
 
   /** Hora manual opcional (HH:MM). Si está seteada, reemplaza la hora del servidor. */
   horaManual: string | null = null;
+  usarHoraManual = false;
 
   tipoSeleccionadoId: string | null = null;
   tipoError = false;
@@ -163,6 +166,13 @@ export class AsistenciaRapidaComponent implements OnInit, OnDestroy {
     this.cargando = false;
     this.sinResultados = alumnos.length === 0;
     this.resultados$ = of(alumnos);
+  }
+
+  toggleHoraManual(): void {
+    this.usarHoraManual = !this.usarHoraManual;
+    if (!this.usarHoraManual) {
+      this.horaManual = null;
+    }
   }
 
   seleccionarAlumno(a: EstudianteBusquedaRapida): void {

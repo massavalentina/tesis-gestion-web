@@ -1,0 +1,20 @@
+<div class="chart-card" *ngIf="cargando || materias.length > 0">
+  <div class="chart-card-head">
+    <div>
+      <span class="chart-eyebrow">VARIACIÓN DE CALIFICACIONES</span>
+    </div>
+    <div class="chart-selector" *ngIf="!cargando && materias.length > 1">
+      <span class="selector-label">Espacio curricular</span>
+      <mat-select [(ngModel)]="materiaActivaId" (ngModelChange)="onMateriaChange($event)">
+        <mat-option *ngFor="let materia of materias" [value]="materia.idEC">{{ materia.nombre }}</mat-option>
+      </mat-select>
+    </div>
+    <div class="chart-note" *ngIf="!cargando && materias.length === 1">Banda de promedio ± desviación estándar</div>
+  </div>
+
+  <div class="estado-center" *ngIf="cargando">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <div class="chart-body" *ngIf="!cargando" echarts [options]="materiaActiva?.chartOptions ?? {}" (chartInit)="onChartInit($event)"></div>
+</div>

@@ -46,6 +46,8 @@ export class LibretaCalificacionesComponent implements OnChanges {
   @Input() anioLectivo = 2026;
   /** Espacios curriculares con sus calificaciones. Vacío = muestra estructura sin notas. */
   @Input() espacios: LibretaEspacio[] = [];
+  /** Los conteos de aprobados/desaprobados solo tienen sentido con la libreta completa del alumno. */
+  @Input() mostrarResumen = true;
   @Output() volver = new EventEmitter<void>();
 
   tabActual: 0 | 1 = 0;

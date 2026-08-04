@@ -1,5 +1,6 @@
 .layout-root {
-  height: 100vh;              /* podés dejarlo así */
+  height: 100vh;               /* fallback para navegadores sin dvh */
+  height: 100dvh;              /* viewport visible real en iOS (evita cortes por la barra de direcciones) */
   display: flex;
   background: #f1f5f9;
   overflow: hidden;           /* importante: el scroll va adentro */

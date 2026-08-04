@@ -33,53 +33,55 @@ import { MatIconModule } from '@angular/material/icon';
     .success-dialog {
       text-align: center;
       padding: 26px 22px 18px;
-      border-radius: 24px;
+      border-radius: 22px;
       background: white;
       max-width: 340px;
     }
 
     .icon-wrap {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 10px;
-      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 12px;
+      border-radius: 18px;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 30% 30%, #d9fbe5, #b7f0cd);
-      border: 1px solid #86efac;
+      background: #eaf7ef;
+      border: 1px solid #c5e7d3;
     }
 
     .icon-wrap mat-icon {
-      font-size: 46px;
+      font-size: 30px;
       color: #2e7d32;
-      width: 46px;
-      height: 46px;
+      width: 30px;
+      height: 30px;
     }
 
     h2 {
       margin: 0 0 8px;
-      color: #2e7d32;
-      font-size: 1.1rem;
-      font-weight: 800;
+      color: #0f172a;
+      font-size: 1.04rem;
+      font-weight: 700;
     }
 
     .mensaje {
       margin: 0 0 8px;
-      font-weight: 600;
-      color: #0f172a;
+      font-weight: 400;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #334155;
     }
 
     .sub {
       margin: 0 0 18px;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: #64748b;
     }
 
     .btn {
       min-width: 128px;
-      border-radius: 999px;
-      font-weight: 700;
-      background: linear-gradient(180deg, #3f88c5 0%, #2f6ea3 100%) !important;
+      border-radius: 10px;
+      font-weight: 600;
+      background: #3c78b4 !important;
       color: #fff !important;
     }
   `]

@@ -1,0 +1,73 @@
+.chart-card {
+  background: #fff;
+  border: 1px solid #dbe5f5;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.chart-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 16px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-bottom: 1px solid #e4ecf7;
+}
+
+.chart-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #2f67b1;
+  text-transform: uppercase;
+}
+
+.chart-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-selector .selector-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5d6a80;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.chart-selector mat-select {
+  min-width: 180px;
+  padding: 6px 10px;
+  border: 1px solid #d8e2f1;
+  border-radius: 10px;
+  background: #f7faff;
+}
+
+.chart-note {
+  border: 1px solid #d9e4f2;
+  background: #f7faff;
+  color: #334155;
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.estado-center {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5d6a80;
+}
+
+.chart-body {
+  padding: 0 12px 12px;
+  min-height: 360px;
+}

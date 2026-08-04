@@ -2,7 +2,7 @@ import { Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
 import { NgIf, NgFor } from '@angular/common';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { LayoutModule } from '@angular/cdk/layout';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap, catchError } from 'rxjs/operators';
 
@@ -36,7 +37,7 @@ import { PROFILE_NAV_ITEM } from '../../../core/navigation/app-navigation.config
   template: `
     <div class="navbar">
 
-      <div class="search-container" #searchContainer>
+      <div class="search-container" #searchContainer *ngIf="!ocultarBusquedaGlobal">
         <div class="search-box">
           <mat-icon>search</mat-icon>
           <input
@@ -65,8 +66,8 @@ import { PROFILE_NAV_ITEM } from '../../../core/navigation/app-navigation.config
               <mat-icon>person</mat-icon>
             </div>
             <div class="result-info">
-              <span class="result-nombre">{{ est.apellido }}, {{ est.nombre }}</span>
-              <span class="result-meta">DNI {{ est.documento }} · Curso {{ est.codigoCurso }}</span>
+              <span class="result-nombre" [innerHTML]="highlight(est.apellido + ', ' + est.nombre)"></span>
+              <span class="result-meta">DNI <span [innerHTML]="highlight(est.documento)"></span> · Curso {{ est.codigoCurso }}</span>
             </div>
           </button>
           <div *ngIf="!buscando && resultados.length === 0" class="search-empty">
@@ -104,6 +105,10 @@ export class NavbarComponent implements OnDestroy {
   readonly profileItem = PROFILE_NAV_ITEM;
   isMobile = false;
 
+  /** Rutas con su propio buscador: se oculta el buscador global de la navbar para no duplicar. */
+  private static readonly RUTAS_SIN_BUSQUEDA_GLOBAL = ['/asistencia-rapida'];
+  ocultarBusquedaGlobal = false;
+
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   resultados: EstudianteBusquedaFicha[] = [];
   buscando = false;
@@ -114,12 +119,14 @@ export class NavbarComponent implements OnDestroy {
   iniciales: string;
 
   private searchSub: Subscription;
+  private routerSub: Subscription;
 
   constructor(
     private breakpointObserver: BreakpointObserver,
     private fichaService: FichaAlumnoService,
     private router: Router,
     private elementRef: ElementRef,
+    private sanitizer: DomSanitizer,
     public authService: AuthService,
   ) {
     const usuario = authService.obtenerUsuario();
@@ -139,17 +146,24 @@ export class NavbarComponent implements OnDestroy {
       this.isMobile = result.matches;
     });
 
+    this.ocultarBusquedaGlobal = this.calcularOcultarBusqueda(this.router.url);
+    this.routerSub = this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(e => {
+      this.ocultarBusquedaGlobal = this.calcularOcultarBusqueda(e.urlAfterRedirects);
+    });
+
     this.searchSub = this.searchCtrl.valueChanges.pipe(
       debounceTime(400),
       distinctUntilChanged(),
       tap(texto => {
-        if (texto.trim().length < 3) {
+        if (texto.trim().length < 1) {
           this.resultados = [];
           this.mostrarResultados = false;
           this.buscando = false;
         }
       }),
-      filter(texto => texto.trim().length >= 3),
+      filter(texto => texto.trim().length >= 1),
       tap(() => {
         this.buscando = true;
         this.mostrarResultados = true;
@@ -173,6 +187,35 @@ export class NavbarComponent implements OnDestroy {
     }
   }
 
+  /** Resalta, dentro de `text`, las palabras que el usuario tipeó en el buscador. */
+  highlight(text: string): SafeHtml {
+    const escaped = this.escapeHtml(text ?? '');
+    const tokens = this.searchCtrl.value
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 0)
+      .map(t => this.escapeRegex(t));
+
+    if (tokens.length === 0) return this.sanitizer.bypassSecurityTrustHtml(escaped);
+
+    const pattern = new RegExp(`(${tokens.join('|')})`, 'gi');
+    const resaltado = escaped.replace(pattern, '<mark class="search-match">$1</mark>');
+    return this.sanitizer.bypassSecurityTrustHtml(resaltado);
+  }
+
+  private escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  private escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private calcularOcultarBusqueda(url: string): boolean {
+    return NavbarComponent.RUTAS_SIN_BUSQUEDA_GLOBAL.some(ruta => url.startsWith(ruta));
+  }
+
   irAFicha(est: EstudianteBusquedaFicha): void {
     this.limpiar();
     this.router.navigate(['/ficha-alumno'], {
@@ -192,5 +235,6 @@ export class NavbarComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.searchSub.unsubscribe();
+    this.routerSub.unsubscribe();
   }
 }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface DetalleRegistroConfirmacion {
   alumno: string;
@@ -10,6 +11,7 @@ export interface DetalleRegistroConfirmacion {
 
 export interface DatosConfirmarRegistro {
   turno: string;
+  detalleHora: string;
   cantidadEscaneados: number;
   detalle: DetalleRegistroConfirmacion[];
 }
@@ -17,24 +19,32 @@ export interface DatosConfirmarRegistro {
 @Component({
   selector: 'app-confirmar-registro-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title class="title">Registrar asistencias</h2>
+    <div class="dialog-head">
+      <div class="dialog-icon-shell">
+        <mat-icon>fact_check</mat-icon>
+      </div>
+      <h2 mat-dialog-title class="title">Registrar asistencias</h2>
+    </div>
 
     <mat-dialog-content>
-      <p class="intro">
-        Se cargarán {{ data.cantidadEscaneados }} registro(s) de asistencia.
-      </p>
+      <div class="summary-card">
+        <p class="intro">
+          Se registrarán {{ data.cantidadEscaneados }} asistencia(s) en este lote.
+        </p>
+
+        <div class="turno-hora">
+          <p>Turno de sesión: <strong>{{ data.turno }}</strong></p>
+          <p>Hora de registro: <strong>{{ data.detalleHora }}</strong></p>
+        </div>
+      </div>
 
       <details class="detalle-box" *ngIf="data.detalle.length > 0">
         <summary>
           <span>Ver detalle</span>
           <span class="caret">▾</span>
         </summary>
-
-        <div class="detalle-turno">
-          Turno de sesión: <strong>{{ data.turno }}</strong>
-        </div>
 
         <div class="detalle-tabla">
           <div class="fila encabezado">
@@ -55,32 +65,82 @@ export interface DatosConfirmarRegistro {
     </mat-dialog-actions>
   `,
   styles: [`
+    .dialog-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .dialog-icon-shell {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf3fb;
+      border: 1px solid #d7e6f4;
+      color: #3c78b4;
+    }
+
+    .dialog-icon-shell mat-icon {
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
+    }
+
     .title {
-      margin-bottom: 4px;
+      margin: 0;
       color: #0f172a;
-      font-size: 1.12rem;
-      font-weight: 800;
+      font-size: 1.04rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .summary-card {
+      border: 1px solid #d7e6f4;
+      border-radius: 14px;
+      background: #f8fbff;
+      padding: 12px 14px;
     }
 
     .intro {
-      margin: 4px 0 0;
-      color: #556172;
-      font-size: 0.82rem;
+      margin: 0;
+      color: #334155;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .turno-hora {
+      margin: 10px 0 0;
+      color: #334155;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .turno-hora p {
+      margin: 0;
+    }
+
+    .turno-hora p + p {
+      margin-top: 4px;
     }
 
     .detalle-box {
-      margin-top: 10px;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      padding: 8px 10px;
+      margin-top: 12px;
+      border-radius: 14px;
+      border: 1px solid #d7e6f4;
+      background: #ffffff;
+      padding: 10px 12px;
     }
 
     .detalle-box summary {
       cursor: pointer;
       color: #1f2937;
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 600;
       user-select: none;
       list-style: none;
       display: flex;
@@ -103,12 +163,6 @@ export interface DatosConfirmarRegistro {
       display: none;
     }
 
-    .detalle-turno {
-      margin: 8px 0;
-      font-size: 0.8rem;
-      color: #334155;
-    }
-
     .detalle-tabla {
       display: flex;
       flex-direction: column;
@@ -120,8 +174,8 @@ export interface DatosConfirmarRegistro {
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 8px;
-      padding: 3px 0;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 6px 0;
+      border-bottom: 1px solid #e8eef5;
     }
 
     .fila:last-child {
@@ -164,22 +218,22 @@ export interface DatosConfirmarRegistro {
     .acciones {
       justify-content: center;
       gap: 10px;
-      padding-top: 8px;
+      padding-top: 12px;
     }
 
     .btn {
       min-width: 122px;
-      border-radius: 999px;
-      font-weight: 700;
+      border-radius: 10px;
+      font-weight: 600;
     }
 
     .btn--ghost {
-      border-color: #94a3b8 !important;
-      color: #334155 !important;
+      border-color: #bfd4e7 !important;
+      color: #3c78b4 !important;
     }
 
     .btn--primary {
-      background: linear-gradient(180deg, #3f88c5 0%, #2f6ea3 100%) !important;
+      background: #3c78b4 !important;
       color: #fff !important;
     }
   `]

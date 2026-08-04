@@ -11,19 +11,27 @@
   </div>
 
   <ng-container *ngIf="!loading && !error && gestion">
-    <div class="planif-header">
-      <button class="btn-back" type="button" (click)="volver()">
-        <span class="material-icons">arrow_back</span>
+    <div class="breadcrumb-row">
+      <button class="btn-back-circle" type="button" (click)="volver()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
       </button>
-      <div class="breadcrumb">
-        <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
-        <span class="material-icons bc-sep">chevron_right</span>
-        <span class="bc-item" (click)="volver()">{{ gestion.nombreCurso }}</span>
-        <span class="material-icons bc-sep">chevron_right</span>
-        <span class="bc-item" (click)="volver()">{{ gestion.nombreMateria }}</span>
-        <span class="material-icons bc-sep">chevron_right</span>
-        <span class="bc-item bc-active">Evaluaciones</span>
-      </div>
+      <nav class="breadcrumb">
+        <a (click)="volverAlListado()" class="crumb-link">Mis espacios curriculares</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <a (click)="volver()" class="crumb-link">{{ gestion.nombreCurso }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <a (click)="volver()" class="crumb-link">{{ gestion.nombreMateria }}</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="crumb-current">Evaluaciones</span>
+      </nav>
     </div>
 
     <div

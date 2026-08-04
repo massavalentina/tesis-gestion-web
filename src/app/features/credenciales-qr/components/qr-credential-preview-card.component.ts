@@ -13,7 +13,7 @@ export interface QrCredentialPreviewMetaItem {
   standalone: true,
   imports: [CommonModule, MatIconModule, MatProgressSpinnerModule],
   template: `
-    <div class="preview-student">{{ nombreCompleto }}</div>
+    <div class="preview-student" *ngIf="mostrarNombre">{{ nombreCompleto }}</div>
 
     <div class="preview-loading" *ngIf="loading">
       <mat-spinner diameter="34"></mat-spinner>
@@ -155,6 +155,7 @@ export interface QrCredentialPreviewMetaItem {
 })
 export class QrCredentialPreviewCardComponent {
   @Input({ required: true }) nombreCompleto = '';
+  @Input() mostrarNombre = true;
   @Input() loading = false;
   @Input() error: string | null = null;
   @Input() imageUrl: string | null = null;

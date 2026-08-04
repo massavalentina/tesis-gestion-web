@@ -47,6 +47,23 @@ export interface RespuestaInicioEnvioQr {
   jobId: string;
 }
 
+export interface TrabajoActivoEnvioQr {
+  jobId: string;
+  idCurso: string;
+  cursoCodigo: string;
+  alcance: AlcanceEnvioQr;
+  estado: 'RUNNING' | 'PAUSING' | 'PAUSED' | 'CANCELLING';
+
+  total: number;
+  procesados: number;
+  enviados: number;
+  omitidos: number;
+  errores: number;
+
+  ultimoMensaje?: string | null;
+  inicio: string;
+}
+
 export interface SolicitudEnvioIndividualQr {
   idCurso: string;
   asunto?: string;

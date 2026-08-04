@@ -81,6 +81,10 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
   }
 
+  volverAlListado(): void {
+    this.router.navigate(['/mis-espacios-curriculares']);
+  }
+
   irACalificaciones(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones']);
   }
