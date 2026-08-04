@@ -6,6 +6,7 @@ import {
   OpcionCurso,
   ProgresoGeneracionQr,
   RespuestaInicioJobQr,
+  RespuestaRegeneracionQr,
   ResumenGeneracionQr,
   SolicitudCancelacionJobQr,
   SolicitudGeneracionQr
@@ -21,6 +22,7 @@ export class ServicioGeneracionCredencialesQr {
   private readonly pauseUrl = `${this.baseUrl}/api/qr-credentials/generation/pause`;
   private readonly resumeUrl = `${this.baseUrl}/api/qr-credentials/generation/resume`;
   private readonly cancelUrl = `${this.baseUrl}/api/qr-credentials/generation/cancel`;
+  private readonly studentUrl = `${this.baseUrl}/api/qr-credentials/student`;
 
   constructor(private http: HttpClient) {}
 
@@ -40,6 +42,13 @@ export class ServicioGeneracionCredencialesQr {
 
   iniciarJob(payload: SolicitudGeneracionQr): Observable<RespuestaInicioJobQr> {
     return this.http.post<RespuestaInicioJobQr>(this.startJobUrl, payload);
+  }
+
+  regenerarAlumno(estudianteId: string): Observable<RespuestaRegeneracionQr> {
+    return this.http.post<RespuestaRegeneracionQr>(
+      `${this.studentUrl}/${estudianteId}/regenerate`,
+      {}
+    );
   }
 
   obtenerProgreso(jobId: string): Observable<ProgresoGeneracionQr> {

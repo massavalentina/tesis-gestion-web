@@ -14,7 +14,8 @@ import {
   FilaEstadoEnvioQr,
   OpcionCursoEnvioQr,
   ProgresoEnvioQr,
-  ResumenEnvioQr
+  ResumenEnvioQr,
+  TrabajoActivoEnvioQr
 } from '../models/qr-credential-delivery.models';
 import { ServicioEnvioCredencialesQr } from '../services/qr-credential-delivery.service';
 import {
@@ -57,10 +58,9 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
       <section class="panel" [class.panel--embedded]="embedded">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Credenciales QR</p>
             <h1>Envío masivo</h1>
             <p class="subtitle">
-              Seleccioná curso, revisá el estado actual y ejecutá el envío de credenciales.
+              Seleccione un curso, revise el estado actual y ejecute el envío de credenciales.
             </p>
           </div>
         </div>
@@ -68,8 +68,12 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
         <div class="controls">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Curso</mat-label>
-            <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
-              <mat-option [value]="null">Seleccioná un curso</mat-option>
+            <mat-select
+              [(ngModel)]="cursoSeleccionadoId"
+              (selectionChange)="alCambiarCurso()"
+              [disabled]="cursosCargando || iniciandoJob || tieneJobActivoSeleccionado()"
+              panelClass="qr-select-panel">
+              <mat-option [value]="null">Seleccione un curso</mat-option>
               <mat-option *ngFor="let curso of cursos" [value]="curso.id">
                 {{ curso.label }}
               </mat-option>
@@ -78,7 +82,12 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Alcance</mat-label>
-            <mat-select [(ngModel)]="alcanceSeleccionado" (selectionChange)="cargarResumen()">
+            <mat-select
+              [(ngModel)]="alcanceSeleccionado"
+              (selectionChange)="cargarResumen()"
+              [disabled]="!cursoSeleccionadoId || iniciandoJob || tieneJobActivoSeleccionado()"
+              panelClass="qr-select-panel">
+              <mat-option [value]="null">Seleccione un alcance</mat-option>
               <mat-option value="PENDIENTES">Solo pendientes</mat-option>
               <mat-option value="TODOS">Pendientes y ya enviados</mat-option>
             </mat-select>
@@ -87,19 +96,26 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
           <button
             mat-raised-button
             color="primary"
-            [disabled]="!puedeIniciarEnvio()"
-            (click)="iniciarEnvio()">
-            Iniciar envío
+            class="primary-action"
+            [disabled]="botonPrincipalDeshabilitado()"
+            (click)="manejarAccionPrincipal()">
+            <span class="button-content">
+              <span class="mini-spinner mini-spinner--button" *ngIf="mostrarSpinnerBotonPrincipal()"></span>
+              {{ obtenerEtiquetaBotonPrincipal() }}
+            </span>
           </button>
         </div>
 
-        <p class="hint" *ngIf="!cursoSeleccionadoId">
-          Para consultar resumen y ejecutar el envío, seleccioná un curso.
+        <div class="inline-loading" *ngIf="cursosCargando || resumenCargando">
+          <span class="mini-spinner"></span>
+          {{ cursosCargando ? 'Cargando cursos...' : 'Consultando resumen de envío...' }}
+        </div>
+
+        <p class="hint" *ngIf="cursoSeleccionadoId && !alcanceSeleccionado && !resumenCargando && !tieneJobActivoSeleccionado()">
+          Seleccione el alcance del envío para habilitar la acción.
         </p>
 
         <p class="error" *ngIf="errorMensaje">{{ errorMensaje }}</p>
-
-        <p class="hint" *ngIf="resumenCargando">Cargando resumen...</p>
 
         <div class="summary-grid">
           <article class="summary-card">
@@ -108,24 +124,16 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
           </article>
 
           <article class="summary-card">
-            <span>QRs pendientes de enviar</span>
+            <span>QR pendientes de enviar</span>
             <strong>{{ resumen?.totalQrPendientesEnvio ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
-            <span>Total QRs enviados</span>
+            <span>Total QR enviados</span>
             <strong>{{ resumen?.totalQrEnviados ?? 0 }}</strong>
           </article>
         </div>
 
-        <div class="recommendation" *ngIf="resumen">
-          <strong>Lectura sugerida:</strong> {{ construirSugerenciaResumen(resumen) }}
-        </div>
-
-        <div class="meta" *ngIf="resumen">
-          Candidatos según alcance: <strong>{{ resumen.totalCandidatosSegunAlcance }}</strong>
-          | Estimación: <strong>{{ resumen.estimacionSegundos }}s</strong>
-        </div>
       </section>
     </div>
   `,
@@ -143,15 +151,21 @@ export class PaginaEnvioCredencialesQr implements OnInit {
 
   cursos: OpcionCursoEnvioQr[] = [];
   cursoSeleccionadoId: string | null = null;
-  alcanceSeleccionado: AlcanceEnvioQr = 'PENDIENTES';
+  alcanceSeleccionado: AlcanceEnvioQr | null = null;
 
   resumen: ResumenEnvioQr | null = null;
+  cursosCargando = false;
   resumenCargando = false;
+  iniciandoJob = false;
   ejecutandoJob = false;
   errorMensaje = '';
 
+  jobsActivos: TrabajoActivoEnvioQr[] = [];
   progreso: ProgresoEnvioQr | null = null;
   currentJobId: string | null = null;
+  currentJobCursoId: string | null = null;
+  currentJobCursoCodigo: string | null = null;
+  currentJobAlcance: AlcanceEnvioQr | null = null;
   enviandoAlumnoIds = new Set<string>();
   cancelacionSolicitada = false;
   pausaSolicitadaParaDecision = false;
@@ -176,27 +190,35 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     this.qrCredentialsSync.generationUpdated$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(cursoId => {
-        if (!this.cursoSeleccionadoId || this.cursoSeleccionadoId !== cursoId) {
+        if (this.cursoSeleccionadoId && this.cursoSeleccionadoId !== cursoId) {
           return;
         }
 
         this.cargarResumen();
-      });
+    });
 
     this.cargarCursos();
+    this.cargarJobsActivos(true);
+    this.cargarResumen();
   }
 
   alCambiarCurso(): void {
     this.errorMensaje = '';
+
+    if (!this.cursoSeleccionadoId) {
+      this.alcanceSeleccionado = null;
+    }
+
+    const jobActivo = this.buscarJobActivoPorCursoSeleccionado();
+    if (jobActivo) {
+      this.alcanceSeleccionado = jobActivo.alcance;
+      this.retomarJobActivo(jobActivo, false);
+    }
+
     this.cargarResumen();
   }
 
   cargarResumen(): void {
-    if (!this.cursoSeleccionadoId) {
-      this.resumen = null;
-      return;
-    }
-
     this.resumenCargando = true;
 
     this.servicio.obtenerResumen(this.cursoSeleccionadoId, this.alcanceSeleccionado)
@@ -215,10 +237,64 @@ export class PaginaEnvioCredencialesQr implements OnInit {
   }
 
   puedeIniciarEnvio(): boolean {
-    return !!this.cursoSeleccionadoId && !!this.resumen?.puedeIniciarEnvio && !this.ejecutandoJob;
+    return !!this.cursoSeleccionadoId
+      && !!this.alcanceSeleccionado
+      && !!this.resumen?.puedeIniciarEnvio
+      && !this.resumenCargando
+      && !this.iniciandoJob
+      && !this.tieneJobActivoSeleccionado();
   }
 
-  iniciarEnvio(): void {
+  botonPrincipalDeshabilitado(): boolean {
+    return this.iniciandoJob || (!this.tieneJobActivoSeleccionado() && !this.puedeIniciarEnvio());
+  }
+
+  mostrarSpinnerBotonPrincipal(): boolean {
+    if (this.iniciandoJob) {
+      return true;
+    }
+
+    return this.tieneJobActivoSeleccionado() && this.progreso?.estado !== 'PAUSED';
+  }
+
+  obtenerEtiquetaBotonPrincipal(): string {
+    if (this.iniciandoJob) {
+      return 'Iniciando envío...';
+    }
+
+    if (!this.tieneJobActivoSeleccionado()) {
+      return 'Iniciar envío';
+    }
+
+    switch (this.progreso?.estado) {
+      case 'PAUSED':
+        return 'Ver envío pausado';
+      case 'CANCELLING':
+        return 'Ver cancelación en curso';
+      default:
+        return 'Ver envío en curso';
+    }
+  }
+
+  manejarAccionPrincipal(): void {
+    const jobActivo = this.buscarJobActivoPorCursoSeleccionado();
+
+    if (jobActivo) {
+      this.retomarJobActivo(jobActivo, true);
+      return;
+    }
+
+    this.iniciarEnvio();
+  }
+
+  tieneJobActivoSeleccionado(): boolean {
+    return !!this.cursoSeleccionadoId
+      && !!this.currentJobId
+      && this.currentJobCursoId === this.cursoSeleccionadoId
+      && this.esEstadoJobActivo(this.progreso?.estado);
+  }
+
+  private iniciarEnvio(): void {
     if (!this.puedeIniciarEnvio() || !this.resumen) {
       return;
     }
@@ -244,68 +320,120 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     }
 
     if (resumen.totalQrPendientesEnvio === 0 && resumen.totalQrEnviados > 0) {
-      return 'No hay pendientes en este momento. Solo se reenviarán credenciales si elegís alcance "Pendientes y ya enviados".';
+      return 'No hay pendientes en este momento. Solo se reenviarán credenciales si elige el alcance "Pendientes y ya enviados".';
     }
 
     if (resumen.totalSinQrGenerado > 0) {
-      return 'Hay estudiantes sin QR generado. Si necesitás un envío completo, primero generá los QR faltantes.';
+      return 'Hay estudiantes sin QR generado. Si necesita un envío completo, primero genere los QR faltantes.';
     }
 
-    return 'Hay credenciales pendientes de envío. Con alcance "Solo pendientes" evitás reenviar las ya enviadas.';
+    return 'Hay credenciales pendientes de envío. Con el alcance "Solo pendientes" se evita reenviar las ya enviadas.';
   }
 
   private cargarCursos(): void {
+    this.cursosCargando = true;
+
     this.servicio.obtenerCursos()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: cursos => {
           this.cursos = cursos;
+          this.cursosCargando = false;
 
           if (this.cursos.length === 0) {
             this.errorMensaje = 'No hay cursos disponibles para enviar credenciales.';
             return;
           }
-
-          if (!this.cursoSeleccionadoId) {
-            this.cursoSeleccionadoId = this.cursos[0].id;
-          }
-
-          this.cargarResumen();
         },
         error: error => {
+          this.cursosCargando = false;
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudieron cargar los cursos.');
         }
       });
   }
 
+  private cargarJobsActivos(reconectar: boolean): void {
+    this.servicio.obtenerJobsActivos()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: jobs => {
+          this.jobsActivos = jobs;
+
+          if (!reconectar) {
+            return;
+          }
+
+          const jobActivo = this.resolverJobActivoParaReconectar(jobs);
+          if (!jobActivo) {
+            return;
+          }
+
+          const debeRecargarResumen = this.cursoSeleccionadoId !== jobActivo.idCurso || this.alcanceSeleccionado !== jobActivo.alcance;
+          this.cursoSeleccionadoId = jobActivo.idCurso;
+          this.alcanceSeleccionado = jobActivo.alcance;
+          this.retomarJobActivo(jobActivo, false);
+
+          if (debeRecargarResumen) {
+            this.cargarResumen();
+          }
+        },
+        error: () => {
+          // Esta consulta solo intenta reenganchar un job existente.
+          // Si falla, el módulo debe seguir usable sin mostrar un error bloqueante.
+          this.jobsActivos = [];
+        }
+      });
+  }
+
   private iniciarJobEnvio(): void {
-    if (!this.cursoSeleccionadoId) {
+    if (!this.cursoSeleccionadoId || !this.alcanceSeleccionado) {
       return;
     }
 
+    const alcance = this.alcanceSeleccionado;
     this.errorMensaje = '';
-    this.ejecutandoJob = true;
-    this.progreso = null;
+    this.iniciandoJob = true;
     this.cancelacionSolicitada = false;
     this.pausaSolicitadaParaDecision = false;
     this.decisionCancelacionPendiente = false;
-    this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
     this.cerrarDialogoCancelacion();
 
     this.servicio.iniciarJob({
       idCurso: this.cursoSeleccionadoId,
-      alcance: this.alcanceSeleccionado
+      alcance
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ jobId }) => {
-          this.currentJobId = jobId;
-          this.abrirDialogoProgreso();
-          this.iniciarPolling(jobId);
+          this.iniciandoJob = false;
+          this.retomarJobActivo({
+            jobId,
+            idCurso: this.cursoSeleccionadoId!,
+            cursoCodigo: this.resumen?.cursoCodigo ?? this.obtenerLabelCursoSeleccionado(),
+            alcance,
+            estado: 'RUNNING',
+            total: this.obtenerTotalIntentosSegunAlcance(alcance),
+            procesados: 0,
+            enviados: 0,
+            omitidos: 0,
+            errores: 0,
+            ultimoMensaje: 'Proceso iniciado.',
+            inicio: new Date().toISOString()
+          }, true);
         },
         error: error => {
-          this.ejecutandoJob = false;
+          this.iniciandoJob = false;
+
+          const jobActivo = this.obtenerJobActivoDesdeConflicto(error);
+          if (jobActivo) {
+            this.jobsActivos = this.reemplazarJobActivo(jobActivo);
+            this.cursoSeleccionadoId = jobActivo.idCurso;
+            this.alcanceSeleccionado = jobActivo.alcance;
+            this.retomarJobActivo(jobActivo, true);
+            return;
+          }
+
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo iniciar el envío.');
         }
       });
@@ -323,6 +451,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       .subscribe({
         next: progreso => {
           this.progreso = progreso;
+          this.actualizarSnapshotJobActivo(progreso);
           this.actualizarDialogoProgreso(progreso);
 
           if (this.decisionCancelacionPendiente && progreso.estado === 'PAUSED') {
@@ -332,23 +461,24 @@ export class PaginaEnvioCredencialesQr implements OnInit {
           if (progreso.estado === 'COMPLETED' || progreso.estado === 'FAILED' || progreso.estado === 'CANCELLED') {
             this.detenerPolling();
             this.ejecutandoJob = false;
-            this.currentJobId = null;
             this.pausaSolicitadaParaDecision = false;
             this.decisionCancelacionPendiente = false;
             this.cerrarDialogoCancelacion();
+            this.limpiarContextoJobActivo();
             this.programarCierreDialogoProgreso(progreso);
           }
         },
         error: error => {
           this.detenerPolling();
+          this.iniciandoJob = false;
           this.ejecutandoJob = false;
-          this.currentJobId = null;
           this.cancelacionSolicitada = false;
           this.pausaSolicitadaParaDecision = false;
           this.decisionCancelacionPendiente = false;
           this.cancelarCierreDialogoProgresoPendiente();
           this.cerrarDialogoCancelacion();
           this.cerrarDialogoProgreso();
+          this.limpiarContextoJobActivo();
           this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del envío.');
         }
       });
@@ -522,6 +652,7 @@ export class PaginaEnvioCredencialesQr implements OnInit {
       this.closeProgressDialogTimeoutId = undefined;
       this.cerrarDialogoProgreso();
       this.cargarResumen();
+      this.cargarJobsActivos(false);
 
       if (this.cursoSeleccionadoId) {
         this.qrCredentialsSync.notifyDeliveryUpdated(this.cursoSeleccionadoId);
@@ -594,29 +725,177 @@ export class PaginaEnvioCredencialesQr implements OnInit {
     return estado === 'RUNNING' || estado === 'PAUSING' || estado === 'PAUSED';
   }
 
+  private esEstadoJobActivo(estado?: ProgresoEnvioQr['estado'] | TrabajoActivoEnvioQr['estado']): boolean {
+    return estado === 'RUNNING' || estado === 'PAUSING' || estado === 'PAUSED' || estado === 'CANCELLING';
+  }
+
+  private buscarJobActivoPorCursoSeleccionado(): TrabajoActivoEnvioQr | null {
+    if (!this.cursoSeleccionadoId) {
+      return null;
+    }
+
+    return this.jobsActivos.find(job => job.idCurso === this.cursoSeleccionadoId) ?? null;
+  }
+
+  private resolverJobActivoParaReconectar(jobs: TrabajoActivoEnvioQr[]): TrabajoActivoEnvioQr | null {
+    if (this.cursoSeleccionadoId) {
+      return jobs.find(job => job.idCurso === this.cursoSeleccionadoId) ?? null;
+    }
+
+    return jobs[0] ?? null;
+  }
+
+  private retomarJobActivo(job: TrabajoActivoEnvioQr, abrirDialogo: boolean): void {
+    const mismoJob = this.currentJobId === job.jobId;
+
+    this.iniciandoJob = false;
+    this.currentJobId = job.jobId;
+    this.currentJobCursoId = job.idCurso;
+    this.currentJobCursoCodigo = job.cursoCodigo;
+    this.currentJobAlcance = job.alcance;
+    this.ejecutandoJob = true;
+    this.progreso = this.crearProgresoDesdeJobActivo(job);
+
+    if (!mismoJob || !this.pollingSubscription) {
+      this.iniciarPolling(job.jobId);
+    }
+
+    if (abrirDialogo) {
+      this.abrirDialogoProgreso();
+    }
+  }
+
+  private crearProgresoDesdeJobActivo(job: TrabajoActivoEnvioQr): ProgresoEnvioQr {
+    return {
+      jobId: job.jobId,
+      estado: job.estado,
+      total: job.total,
+      procesados: job.procesados,
+      enviados: job.enviados,
+      omitidos: job.omitidos,
+      errores: job.errores,
+      ultimoMensaje: job.ultimoMensaje ?? null,
+      ultimoDestino: null,
+      ultimoEstudiante: null,
+      detallesErrores: null,
+      inicio: job.inicio,
+      fin: null
+    };
+  }
+
+  private actualizarSnapshotJobActivo(progreso: ProgresoEnvioQr): void {
+    if (!this.currentJobId || !this.currentJobCursoId || !this.currentJobAlcance) {
+      return;
+    }
+
+    const snapshot: TrabajoActivoEnvioQr = {
+      jobId: progreso.jobId,
+      idCurso: this.currentJobCursoId,
+      cursoCodigo: this.currentJobCursoCodigo ?? this.obtenerLabelCursoSeleccionado(),
+      alcance: this.currentJobAlcance,
+      estado: progreso.estado as TrabajoActivoEnvioQr['estado'],
+      total: progreso.total,
+      procesados: progreso.procesados,
+      enviados: progreso.enviados,
+      omitidos: progreso.omitidos,
+      errores: progreso.errores,
+      ultimoMensaje: progreso.ultimoMensaje ?? null,
+      inicio: progreso.inicio
+    };
+
+    this.jobsActivos = this.jobsActivos.filter(job => job.jobId !== progreso.jobId);
+
+    if (this.esEstadoJobActivo(progreso.estado)) {
+      this.jobsActivos = [snapshot, ...this.jobsActivos];
+    }
+  }
+
+  private limpiarContextoJobActivo(): void {
+    if (this.currentJobId) {
+      this.jobsActivos = this.jobsActivos.filter(job => job.jobId !== this.currentJobId);
+    }
+
+    this.currentJobId = null;
+    this.currentJobCursoId = null;
+    this.currentJobCursoCodigo = null;
+    this.currentJobAlcance = null;
+  }
+
+  private obtenerTotalIntentosSegunAlcance(alcance: AlcanceEnvioQr): number {
+    return alcance === 'TODOS'
+      ? (this.resumen?.totalQrPendientesEnvio ?? 0) + (this.resumen?.totalQrEnviados ?? 0)
+      : this.resumen?.totalQrPendientesEnvio ?? 0;
+  }
+
+  private obtenerJobActivoDesdeConflicto(error: unknown): TrabajoActivoEnvioQr | null {
+    if (!(error instanceof HttpErrorResponse) || error.status !== 409) {
+      return null;
+    }
+
+    return error.error?.activeJob ?? null;
+  }
+
+  private reemplazarJobActivo(jobActivo: TrabajoActivoEnvioQr): TrabajoActivoEnvioQr[] {
+    return [
+      jobActivo,
+      ...this.jobsActivos.filter(job => job.jobId !== jobActivo.jobId)
+    ];
+  }
+
   private construirDatosConfirmacion(): DatosConfirmacionEnvioQr {
+    const { etiquetaIntento, totalIntentos, mensajeAlcance } = this.obtenerResumenIntentoEnvio();
+
     return {
       curso: this.resumen?.cursoCodigo ?? this.obtenerLabelCursoSeleccionado(),
       alcance: this.obtenerLabelAlcance(this.alcanceSeleccionado),
-      totalCandidatos: this.resumen?.totalCandidatosSegunAlcance ?? 0,
-      pendientes: this.resumen?.totalQrPendientesEnvio ?? 0,
-      enviados: this.resumen?.totalQrEnviados ?? 0,
+      etiquetaIntento,
+      totalIntentos,
       sinQr: this.resumen?.totalSinQrGenerado ?? 0,
       sinTutor: this.resumen?.totalSinTutorPrincipal ?? 0,
-      emailInvalido: this.resumen?.totalEmailInvalido ?? 0
+      emailInvalido: this.resumen?.totalEmailInvalido ?? 0,
+      mensajeAlcance
     };
+  }
+
+  private obtenerResumenIntentoEnvio(): {
+    etiquetaIntento: string;
+    totalIntentos: number;
+    mensajeAlcance: string;
+  } {
+    switch (this.alcanceSeleccionado) {
+      case 'TODOS':
+        return {
+          etiquetaIntento: 'Se intentará enviar',
+          totalIntentos: (this.resumen?.totalQrPendientesEnvio ?? 0) + (this.resumen?.totalQrEnviados ?? 0),
+          mensajeAlcance: 'Se enviarán las credenciales pendientes y también las que ya han sido enviadas disponibles.'
+        };
+      case 'PENDIENTES':
+        return {
+          etiquetaIntento: 'Se intentará enviar',
+          totalIntentos: this.resumen?.totalQrPendientesEnvio ?? 0,
+          mensajeAlcance: 'Solo se enviarán las credenciales pendientes. Las ya enviadas no se reenviarán en este alcance.'
+        };
+      default:
+        return {
+          etiquetaIntento: 'Se intentará enviar',
+          totalIntentos: 0,
+          mensajeAlcance: 'Revise el alcance antes de iniciar el envío.'
+        };
+    }
   }
 
   private obtenerLabelCursoSeleccionado(): string {
     return this.cursos.find(curso => curso.id === this.cursoSeleccionadoId)?.label ?? 'Curso seleccionado';
   }
 
-  private obtenerLabelAlcance(alcance: AlcanceEnvioQr): string {
+  private obtenerLabelAlcance(alcance: AlcanceEnvioQr | null): string {
     switch (alcance) {
       case 'TODOS':
         return 'Pendientes y enviados';
       case 'PENDIENTES':
         return 'Solo pendientes';
+      default:
+        return 'Alcance seleccionado';
     }
   }
 

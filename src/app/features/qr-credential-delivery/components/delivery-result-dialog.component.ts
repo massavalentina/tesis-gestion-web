@@ -24,11 +24,6 @@ export interface DatosResultadoEnvioQr {
       <div class="icon" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
         <mat-icon>{{ data.icono }}</mat-icon>
       </div>
-
-      <div class="badge" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
-        {{ data.color === 'warn' ? 'Con incidencias' : 'Proceso finalizado' }}
-      </div>
-
       <h2>{{ data.titulo }}</h2>
       <p class="message">{{ data.mensaje }}</p>
 
@@ -51,26 +46,19 @@ export interface DatosResultadoEnvioQr {
     </div>
   `,
   styles: [`
-    .dlg { text-align: center; padding: 8px 4px 4px; max-width: 92vw; color: #0f2f4b; }
+    .dlg { text-align: center; padding: 8px 4px 4px; max-width: 92vw; color: #0f2f4b; font-family: 'Open Sans', sans-serif; }
     .icon {
-      display: flex; align-items: center; justify-content: center; width: 68px; height: 68px;
-      border-radius: 20px; background: #dff3e8; color: #1f6a5c; margin: 0 auto 12px; border: 1px solid #cae8d8;
+      display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
+      border-radius: 16px; background: #dff3e8; color: #1f6a5c; margin: 0 auto 12px; border: 1px solid #cae8d8;
     }
     .icon.warn { background: #f9e0dd; color: #b3261e; border-color: #efcbc7; }
     .icon.accent { background: #fff1d7; color: #9a6700; border-color: #f4dfb0; }
-    .icon mat-icon { font-size: 34px; width: 34px; height: 34px; }
-    .badge {
-      display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px;
-      background: #f0f8f3; border: 1px solid #cae8d8; color: #1f6a5c; font-size: 12px;
-      font-weight: 900; margin: 0 auto 12px; width: fit-content;
-    }
-    .badge.warn { background: #fff3f1; border-color: #efcbc7; color: #b0473f; }
-    .badge.accent { background: #fff8e7; border-color: #f4dfb0; color: #9a6700; }
-    h2 { margin: 0 0 8px; font-size: 24px; line-height: 1.15; font-weight: 900; letter-spacing: -0.4px; }
-    .message { color: rgba(15, 47, 75, 0.74); margin: 0 0 12px; line-height: 1.45; font-size: 14px; }
+    .icon mat-icon { font-size: 30px; width: 30px; height: 30px; }
+    h2 { margin: 0 0 8px; font-size: 20px; line-height: 1.2; font-weight: 700; }
+    .message { color: #4b647a; margin: 0 0 12px; line-height: 1.45; font-size: 13.5px; }
     .stats {
       margin: 0 0 18px; padding: 12px; border-radius: 14px; border: 1px solid #dce8f3;
-      background: #fff; display: grid; gap: 6px; text-align: left; color: #2f4f6d;
+      background: #f8fbff; display: grid; gap: 6px; text-align: left; color: #2f4f6d; font-size: 13px;
     }
     .error-list {
       margin: 0 0 16px;
@@ -86,7 +74,7 @@ export interface DatosResultadoEnvioQr {
     .error-list__title {
       margin: 0 0 6px;
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 600;
     }
     .error-list ul {
       margin: 0;
@@ -100,10 +88,10 @@ export interface DatosResultadoEnvioQr {
     .actions { display: flex; justify-content: center; }
     .btn-primary {
       background-color: #3c78b4 !important; color: #fff !important; border-radius: 12px !important;
-      font-weight: 900 !important; padding: 10px 18px !important;
+      font-weight: 600 !important; padding: 10px 18px !important;
     }
     @media (max-width: 560px) {
-      h2 { font-size: 20px; }
+      h2 { font-size: 19px; }
     }
   `]
 })

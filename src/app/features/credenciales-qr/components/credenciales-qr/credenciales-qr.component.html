@@ -1,21 +1,51 @@
 <div class="page">
-  <header class="page__header">
+  <header class="page-head">
     <h1>Credenciales QR</h1>
-    <p>Gestiona la generacion y el envio masivo de credenciales desde una sola vista.</p>
-    <p class="page__hint">
-      Para regenerar una credencial de forma individual, ingresá a la ficha del estudiante.
-    </p>
+    <p>Gestione la generación, el envío y el seguimiento de las credenciales QR de los estudiantes.</p>
   </header>
 
-  <section class="section">
-    <app-qr-credential-generation-page [embedded]="true"></app-qr-credential-generation-page>
-  </section>
+  <div class="tabs-shell">
+    <div class="tabs" role="tablist" aria-label="Secciones de Credenciales QR">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="tabActiva === 'OPERACIONES'"
+        [attr.aria-selected]="tabActiva === 'OPERACIONES'"
+        (click)="seleccionarTab('OPERACIONES')">
+        Operaciones
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="tabActiva === 'ESTADO'"
+        [attr.aria-selected]="tabActiva === 'ESTADO'"
+        (click)="seleccionarTab('ESTADO')">
+        Estado
+      </button>
+    </div>
+  </div>
 
-  <section class="section">
-    <app-qr-credential-delivery-page [embedded]="true"></app-qr-credential-delivery-page>
-  </section>
+  <div
+    class="tab-panel"
+    role="tabpanel"
+    [attr.aria-hidden]="tabActiva !== 'OPERACIONES'"
+    [hidden]="tabActiva !== 'OPERACIONES'">
+    <section class="section">
+      <app-qr-credential-generation-page [embedded]="true"></app-qr-credential-generation-page>
+    </section>
 
-  <section class="section">
-    <app-qr-credential-status-table [embedded]="true"></app-qr-credential-status-table>
-  </section>
+    <section class="section">
+      <app-qr-credential-delivery-page [embedded]="true"></app-qr-credential-delivery-page>
+    </section>
+  </div>
+
+  <div
+    class="tab-panel"
+    role="tabpanel"
+    [attr.aria-hidden]="tabActiva !== 'ESTADO'"
+    [hidden]="tabActiva !== 'ESTADO'">
+    <section class="section">
+      <app-qr-credential-status-table [embedded]="true"></app-qr-credential-status-table>
+    </section>
+  </div>
 </div>

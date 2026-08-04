@@ -1,44 +1,38 @@
+import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface DatosConfirmacionGeneracionQr {
   curso: string;
   alcance: string;
-  totalAlumnosActivos: number;
-  totalQrActivos: number;
-  totalPendientesGenerar: number;
+  etiquetaIntento: string;
+  totalIntentos: number;
 }
 
 @Component({
   selector: 'app-confirm-generation-dialog',
   standalone: true,
-  imports: [MatDialogModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <div class="dlg">
-      <div class="dlg__head">
-        <div class="dlg__badge">Generacion QR</div>
-        <h2>Comenzar generacion de credenciales</h2>
-        <p class="dlg__sub">
-          Revisa el alcance antes de iniciar. El proceso se ejecuta en segundo plano.
-        </p>
+      <div class="dlg__icon">
+        <mat-icon>qr_code_2</mat-icon>
       </div>
+
+      <h2>Comenzar generación de credenciales</h2>
+<br/>
 
       <mat-dialog-content class="dlg__content">
         <div class="dlg__panel">
-          <div class="row">
-            <span class="label">Curso</span>
-            <span class="value strong">{{ data.curso }}</span>
-          </div>
-
-          <div class="row">
-            <span class="label">Alcance</span>
-            <span class="value">{{ data.alcance }}</span>
-          </div>
+          <div class="row"><span>Curso</span><strong>{{ data.curso }}</strong></div>
+          <div class="row"><span>Alcance</span><strong>{{ data.alcance }}</strong></div>
+          <div class="row"><span>{{ data.etiquetaIntento }}</span><strong>{{ data.totalIntentos }}</strong></div>
         </div>
 
         <p class="note">
-          Se van a generar solo las credenciales correspondientes al curso seleccionado.
+          El proceso se ejecuta en segundo plano y aplicará el alcance seleccionado.
         </p>
       </mat-dialog-content>
 
@@ -58,85 +52,84 @@ export interface DatosConfirmacionGeneracionQr {
     .dlg {
       color: #0f2f4b;
       max-width: 92vw;
-      padding: 4px;
-    }
-
-    .dlg__head {
+      padding: 8px 4px 4px;
       text-align: center;
-      margin-bottom: 18px;
+      font-family: 'Open Sans', sans-serif;
     }
 
-    .dlg__badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #f0f5fa;
-      border: 1px solid #c7d9eb;
-      color: #86b8ea;
-      font-size: 12px;
-      font-weight: 900;
-      margin-bottom: 12px;
+    .dlg__icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: #eef5fb;
+      color: #3c78b4;
+      border: 1px solid #d7e6f4;
+    }
+
+    .dlg__icon mat-icon {
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
     }
 
     h2 {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.15;
-      font-weight: 900;
-      letter-spacing: -0.4px;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 700;
     }
 
     .dlg__sub {
       margin: 10px 0 0;
-      color: rgba(15, 47, 75, 0.72);
-      font-size: 13px;
-      font-weight: 600;
+      color: #4b647a;
+      font-size: 13.5px;
+      line-height: 1.45;
     }
 
     .dlg__content {
       display: grid;
-      gap: 14px;
+      gap: 12px;
+      margin-top: 16px;
     }
 
     .dlg__panel {
-      padding: 16px;
-      border-radius: 20px;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-      border: 1px solid rgba(199, 217, 235, 0.95);
-      box-shadow: 0 12px 26px rgba(20, 55, 90, 0.08);
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dce8f3;
+      text-align: left;
     }
 
     .row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
     }
 
     .row:last-child {
       margin-bottom: 0;
     }
 
-    .label {
-      color: #5d7c9a;
-      font-weight: 800;
+    .row span {
+      color: #64748b;
+      font-weight: 600;
     }
 
-    .value {
-      text-align: right;
+    .row strong {
       color: #0f2f4b;
-      font-weight: 700;
+      font-weight: 600;
+      text-align: right;
       overflow-wrap: anywhere;
-    }
-
-    .strong {
-      font-weight: 900;
     }
 
     .note {
       margin: 0;
-      color: rgba(15, 47, 75, 0.72);
+      color: #4b647a;
       text-align: center;
       font-size: 13px;
       line-height: 1.45;
@@ -151,20 +144,19 @@ export interface DatosConfirmacionGeneracionQr {
     }
 
     .btn-primary {
-      background-color: #86b8ea !important;
+      background-color: #3c78b4 !important;
       color: #fff !important;
       border-radius: 12px !important;
-      font-weight: 900 !important;
+      font-weight: 600 !important;
       padding: 10px 18px !important;
-      box-shadow: 0 10px 22px rgba(134, 184, 234, 0.34) !important;
     }
 
     .btn-ghost {
       border-color: #c7d9eb !important;
-      color: #86b8ea !important;
+      color: #3c78b4 !important;
       background: #fff !important;
       border-radius: 12px !important;
-      font-weight: 900 !important;
+      font-weight: 600 !important;
       padding: 10px 18px !important;
     }
 
@@ -174,7 +166,7 @@ export interface DatosConfirmacionGeneracionQr {
 
     @media (max-width: 560px) {
       h2 {
-        font-size: 20px;
+        font-size: 19px;
       }
 
       .row {

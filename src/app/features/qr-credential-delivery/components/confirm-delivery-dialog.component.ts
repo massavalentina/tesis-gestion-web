@@ -2,74 +2,97 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface DatosConfirmacionEnvioQr {
   curso: string;
   alcance: string;
-  totalCandidatos: number;
-  pendientes: number;
-  enviados: number;
+  etiquetaIntento: string;
+  totalIntentos: number;
   sinQr: number;
   sinTutor: number;
   emailInvalido: number;
+  mensajeAlcance: string;
 }
 
 @Component({
   selector: 'app-confirm-delivery-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <div class="dlg">
-      <div class="dlg__badge">Envio QR</div>
-      <h2>Confirmar envio de credenciales</h2>
-      <p class="dlg__sub">Se enviaran los correos en segundo plano.</p>
+      <div class="dlg__icon">
+        <mat-icon>send</mat-icon>
+      </div>
+
+      <h2>Confirmar envío de credenciales</h2>
+      <br/>
 
       <mat-dialog-content class="dlg__content">
         <div class="dlg__panel">
           <div class="row"><span>Curso</span><strong>{{ data.curso }}</strong></div>
           <div class="row"><span>Alcance</span><strong>{{ data.alcance }}</strong></div>
-          <div class="row"><span>Candidatos</span><strong>{{ data.totalCandidatos }}</strong></div>
+          <div class="row"><span>{{ data.etiquetaIntento }}</span><strong>{{ data.totalIntentos }}</strong></div>
         </div>
 
-        <ul class="stats">
-          <li>Pendientes de envio: <strong>{{ data.pendientes }}</strong></li>
-          <li>Ya enviados: <strong>{{ data.enviados }}</strong></li>
-          <li>Sin QR: <strong>{{ data.sinQr }}</strong></li>
-          <li>Sin tutor principal: <strong>{{ data.sinTutor }}</strong></li>
-          <li>Email invalido: <strong>{{ data.emailInvalido }}</strong></li>
-        </ul>
+        <div class="dlg__panel dlg__panel--secondary" *ngIf="data.sinQr > 0 || data.sinTutor > 0 || data.emailInvalido > 0">
+          <div class="row" *ngIf="data.sinQr > 0"><span>Sin QR</span><strong>{{ data.sinQr }}</strong></div>
+          <div class="row" *ngIf="data.sinTutor > 0"><span>Sin tutor principal</span><strong>{{ data.sinTutor }}</strong></div>
+          <div class="row" *ngIf="data.emailInvalido > 0"><span>Email inválido</span><strong>{{ data.emailInvalido }}</strong></div>
+        </div>
 
-        <p class="help">
-          Se enviará solo a los alumnos que estén listos para envío. Los demás se omiten.
-        </p>
+        <p class="dlg__sub">{{ data.mensajeAlcance }}</p>
       </mat-dialog-content>
 
       <mat-dialog-actions class="dlg__actions">
         <button mat-stroked-button class="btn-ghost" (click)="cancelar()">Cancelar</button>
-        <button mat-raised-button class="btn-primary" (click)="confirmar()">Iniciar envio</button>
+        <button mat-raised-button class="btn-primary" (click)="confirmar()">Iniciar envío</button>
       </mat-dialog-actions>
     </div>
   `,
   styles: [`
-    .dlg { color: #0f2f4b; max-width: 92vw; padding: 4px; text-align: center; }
-    .dlg__badge {
-      display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px;
-      background: #f0f5fa; border: 1px solid #c7d9eb; color: #3c78b4; font-size: 12px;
-      font-weight: 900; margin-bottom: 12px;
+    .dlg {
+      color: #0f2f4b;
+      max-width: 92vw;
+      padding: 8px 4px 4px;
+      text-align: center;
+      font-family: 'Open Sans', sans-serif;
     }
-    h2 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 900; }
-    .dlg__sub { margin: 10px 0 0; color: rgba(15, 47, 75, 0.74); font-size: 14px; }
+    .dlg__icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: #eef5fb;
+      color: #3c78b4;
+      border: 1px solid #d7e6f4;
+    }
+    .dlg__icon mat-icon {
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+    .dlg__sub { margin: 10px 0 0; color: #4b647a; font-size: 13.5px; line-height: 1.45; }
     .dlg__content { padding: 0 !important; margin-top: 16px; display: grid; gap: 12px; }
     .dlg__panel {
-      padding: 14px; border-radius: 16px; border: 1px solid #dce8f3;
+      padding: 14px; border-radius: 14px; border: 1px solid #dce8f3;
       background: #f8fbff; text-align: left;
     }
-    .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-    .row:last-child { margin-bottom: 0; }
-    .stats {
-      margin: 0; padding: 14px 16px; border-radius: 16px; border: 1px solid #dce8f3;
-      background: #fff; text-align: left; list-style: none; display: grid; gap: 6px;
+    .dlg__panel--secondary {
+      background: #ffffff;
     }
+    .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 13px; }
+    .row:last-child { margin-bottom: 0; }
+    .row span { color: #64748b; font-weight: 600; }
+    .row strong { color: #0f2f4b; font-weight: 600; text-align: right; }
     .help {
       margin: 0;
       padding: 10px 12px;
@@ -79,19 +102,19 @@ export interface DatosConfirmacionEnvioQr {
       color: #2f4f6d;
       text-align: left;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 500;
     }
     .dlg__actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; padding: 0; }
     .btn-primary {
       background-color: #3c78b4 !important; color: #fff !important; border-radius: 12px !important;
-      font-weight: 900 !important; padding: 10px 18px !important;
+      font-weight: 600 !important; padding: 10px 18px !important;
     }
     .btn-ghost {
       border-color: #c7d9eb !important; color: #3c78b4 !important; background: #fff !important;
-      border-radius: 12px !important; font-weight: 900 !important; padding: 10px 18px !important;
+      border-radius: 12px !important; font-weight: 600 !important; padding: 10px 18px !important;
     }
     @media (max-width: 560px) {
-      h2 { font-size: 20px; }
+      h2 { font-size: 19px; }
       .row { flex-direction: column; }
       .dlg__actions { flex-direction: column-reverse; }
       .dlg__actions button { width: 100%; }
