@@ -1,0 +1,64 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.home-container {
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #f0f5fa;
+  border-radius: 16px;
+}
+
+/* No z-index here so img inside can blend with canvas via mix-blend-mode */
+.home-content {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.home-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 18px;
+  object-fit: contain;
+  border-radius: 16px;
+  mix-blend-mode: multiply;
+}
+
+.home-greeting {
+  font-size: 38px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  font-family: inherit;
+}
+
+.home-date {
+  font-size: 16px;
+  color: #64748b;
+  margin: 8px 0 0;
+  font-family: inherit;
+}
+
+@media (max-width: 767px) {
+  .home-logo {
+    width: 80px;
+    margin-bottom: 14px;
+  }
+
+  .home-greeting {
+    font-size: 26px;
+  }
+
+  .home-date {
+    font-size: 13.5px;
+  }
+}

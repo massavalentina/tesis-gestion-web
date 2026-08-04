@@ -1,13 +1,22 @@
 <div class="page-container">
+
+  <canvas #bgCanvas class="balls-canvas"></canvas>
+
   <mat-card class="form-card">
 
     <div class="logo-container">
-      <img src="logo.jpg" alt="Logo" class="logo-img" />
+      <img src="logo.jpg" alt="Gestión Escolar" class="logo-img" />
+    </div>
+
+    <div class="logos-institucionales">
+      <img src="logo-escmb.png" alt="ESCMB" class="logo-inst">
+      <div class="logo-divider"></div>
+      <img src="logo-unc.jpg" alt="UNC" class="logo-inst">
     </div>
 
     <mat-card-header>
       <mat-card-title class="titulo-pagina">Olvidé mi contraseña</mat-card-title>
-      <mat-card-subtitle class="subtitulo-pagina">Ingresá tu email y DNI para recibir el link de restablecimiento</mat-card-subtitle>
+      <mat-card-subtitle class="subtitulo-pagina">Ingrese su mail y DNI para recibir el link de reestablecimiento</mat-card-subtitle>
     </mat-card-header>
 
     <mat-progress-bar *ngIf="loading" mode="indeterminate" />

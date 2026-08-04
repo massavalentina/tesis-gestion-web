@@ -2,7 +2,7 @@
 
   <!-- ── Toolbar ───────────────────────────────────────────────── -->
   <div class="pd-toolbar">
-    <h1 class="pd-title">Parte Diario Digital</h1>
+    <h1 class="pd-title">Parte Diario</h1>
 
     <div class="pd-controls">
       <mat-form-field class="pd-ctrl-field">
@@ -34,7 +34,7 @@
   <!-- ── Empty state ───────────────────────────────────────────── -->
   <div *ngIf="!resumen && !cargando" class="pd-empty">
     <mat-icon>assignment</mat-icon>
-    <p>Seleccioná un curso y una fecha para ver el parte diario.</p>
+    <p>Seleccione un curso y fecha para ver el parte diario.</p>
   </div>
 
   <!-- ── Contenido ─────────────────────────────────────────────── -->
@@ -88,10 +88,14 @@
           <mat-icon>people</mat-icon>
           <span>Estudiantes</span>
           <span class="pd-card-badge">{{ turnoActual?.totalEstudiantes ?? 0 }}</span>
+          <button class="pd-collapse-btn" (click)="estudiantesColapsado = !estudiantesColapsado"
+                  [matTooltip]="estudiantesColapsado ? 'Expandir' : 'Colapsar'">
+            <mat-icon>{{ estudiantesColapsado ? 'expand_more' : 'expand_less' }}</mat-icon>
+          </button>
         </div>
 
         <!-- Sin registro -->
-        <ng-container *ngIf="sinReg.length > 0">
+        <ng-container *ngIf="!estudiantesColapsado && sinReg.length > 0">
           <div class="est-grupo">
             <div class="est-grupo-label est-grupo-label--sin">
               <mat-icon>help_outline</mat-icon> Sin registro ({{ sinReg.length }})
@@ -109,7 +113,7 @@
         </ng-container>
 
         <!-- Presentes -->
-        <ng-container *ngIf="presentes.length > 0">
+        <ng-container *ngIf="!estudiantesColapsado && presentes.length > 0">
           <div class="est-grupo">
             <div class="est-grupo-label est-grupo-label--presente">
               <mat-icon>check_circle</mat-icon> Presentes ({{ presentes.length }})
@@ -127,7 +131,7 @@
         </ng-container>
 
         <!-- Retiros Anticipados -->
-        <ng-container *ngIf="retirados.length > 0">
+        <ng-container *ngIf="!estudiantesColapsado && retirados.length > 0">
           <div class="est-grupo">
             <div class="est-grupo-label est-grupo-label--retirado">
               <mat-icon>exit_to_app</mat-icon> Retiros anticipados ({{ retirados.length }})
@@ -150,7 +154,7 @@
         </ng-container>
 
         <!-- Ausentes -->
-        <ng-container *ngIf="ausentes.length > 0">
+        <ng-container *ngIf="!estudiantesColapsado && ausentes.length > 0">
           <div class="est-grupo">
             <div class="est-grupo-label est-grupo-label--ausente">
               <mat-icon>cancel</mat-icon> Ausentes ({{ ausentes.length }})
@@ -167,7 +171,7 @@
           </div>
         </ng-container>
 
-        <div *ngIf="(turnoActual?.totalEstudiantes ?? 0) === 0" class="est-empty">
+        <div *ngIf="!estudiantesColapsado && (turnoActual?.totalEstudiantes ?? 0) === 0" class="est-empty">
           Sin estudiantes registrados en este turno.
         </div>
       </div>
@@ -196,18 +200,23 @@
               </button>
             </div>
           </ng-container>
+          <button class="pd-collapse-btn" [class.pd-collapse-btn--ml]="esDocente || esEquipoDirectivo"
+                  (click)="horarioColapsado = !horarioColapsado"
+                  [matTooltip]="horarioColapsado ? 'Expandir' : 'Colapsar'">
+            <mat-icon>{{ horarioColapsado ? 'expand_more' : 'expand_less' }}</mat-icon>
+          </button>
         </div>
 
-        <div *ngIf="(turnoActual?.horarioClases?.length ?? 0) === 0" class="est-empty">
+        <div *ngIf="!horarioColapsado && (turnoActual?.horarioClases?.length ?? 0) === 0" class="est-empty">
           Sin clases programadas para este turno.
         </div>
 
-        <div *ngIf="modoEdicionHorario" class="horario-edit-banner">
+        <div *ngIf="!horarioColapsado && modoEdicionHorario" class="horario-edit-banner">
           <mat-icon>info_outline</mat-icon>
           <span>Ajustá el horario de este curso para este día en particular, colocando la duración de cada clase.</span>
         </div>
 
-        <div *ngFor="let clase of (modoEdicionHorario ? horarioPendiente : turnoActual?.horarioClases); let i = index; let last = last"
+        <div *ngFor="let clase of (!horarioColapsado ? (modoEdicionHorario ? horarioPendiente : turnoActual?.horarioClases) : []); let i = index; let last = last"
              class="clase-item"
              [class.clase-item--movida]="clase.horaEntradaOriginal && !modoEdicionHorario">
           <div class="clase-hora">
@@ -282,9 +291,13 @@
       <div class="pd-card-header">
         <mat-icon>table_rows</mat-icon>
         <span>Lista completa</span>
+        <button class="pd-collapse-btn" style="margin-left:auto" (click)="listaColapsada = !listaColapsada"
+                [matTooltip]="listaColapsada ? 'Expandir' : 'Colapsar'">
+          <mat-icon>{{ listaColapsada ? 'expand_more' : 'expand_less' }}</mat-icon>
+        </button>
       </div>
 
-      <div class="tabla-wrap">
+      <div *ngIf="!listaColapsada" class="tabla-wrap">
         <table class="pd-tabla">
           <thead>
             <tr>

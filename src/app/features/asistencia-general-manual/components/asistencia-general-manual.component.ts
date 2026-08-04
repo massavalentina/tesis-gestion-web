@@ -119,7 +119,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
     if (d.getDay() === 6) d.setDate(d.getDate() - 1);
     return d;
   }
-  fechaHoy  = this.dateToString(new Date());
+  fechaHoy  = this.dateToString(AsistenciaGeneralManualComponent.ultimoDiaLaboral());
 
   // ── Tab: 0 = Mañana · 1 = Tarde ──────────────────────────────────────────
   tabActivo        = 0;
@@ -737,7 +737,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   aplicarEstadoATodos(): void {
     this.confirmarAplicar = false;
-    if (!this.tipoMasivoId) { this.notify('Seleccioná un estado antes de aplicar.', 'OK'); return; }
+    if (!this.tipoMasivoId) { this.notify('Seleccione un estado antes de aplicar.', 'OK'); return; }
     const desc = this.tipos.find(t => t.id === this.tipoMasivoId)?.descripcion ?? '';
     this.filas.forEach(f => {
       if (this.turnoMasivo === 'MANANA') {

@@ -3,17 +3,29 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #dde3ea;
+  background-color: #f0f5fa;
+  position: relative;
+  overflow: hidden;
+}
+
+.balls-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .login-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 420px;
   padding: 8px;
   background: #ffffff !important;
-  border: 1.5px solid #7dd3fc !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 24px rgba(2, 132, 199, 0.10) !important;
+  border: 1.5px solid rgba(199, 217, 235, 0.95) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 50px -18px rgba(2, 53, 84, 0.18) !important;
 }
 
 .logo-container {
@@ -23,15 +35,37 @@
 }
 
 .logo-img {
-  width: 120px;
-  height: 120px;
+  width: 80px;
+  height: auto;
   object-fit: contain;
-  border-radius: 16px;
+  border-radius: 12px;
+}
+
+.logos-institucionales {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 24px 0;
+}
+
+.logo-inst {
+  height: 44px;
+  width: auto;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.logo-divider {
+  width: 1px;
+  height: 34px;
+  background: #e2e8f0;
+  flex-shrink: 0;
 }
 
 .titulo-login {
   color: #0284c7 !important;
-  font-size: 1.4rem !important;
+  font-size: 1.1rem !important;
   font-weight: 600 !important;
   text-align: center;
   width: 100%;
@@ -120,5 +154,29 @@
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+@media (max-width: 767px) {
+  .login-card {
+    max-width: 300px;
+    margin: 0 20px;
+  }
+
+  .logo-img {
+    width: 60px;
+  }
+
+  .logo-inst {
+    height: 32px;
+  }
+
+  .logo-divider {
+    height: 26px;
+  }
+
+  .logos-institucionales {
+    gap: 12px;
+    padding: 10px 20px 0;
   }
 }

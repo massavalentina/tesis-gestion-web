@@ -1300,7 +1300,7 @@ export class PdfReporteService {
     const tableTopMargin = HEADER_H + 16;
     const titleTopGap = 3;
 
-    const titulo = 'Parte Diario Digital';
+    const titulo = 'Parte Diario';
     const subtitulo = `Curso: ${data.cursoLabel}`;
 
     const renderPageChrome = (): number => {

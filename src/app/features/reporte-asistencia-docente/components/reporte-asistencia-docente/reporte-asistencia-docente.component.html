@@ -102,14 +102,14 @@
   <!-- Placeholder: sin curso -->
   <div class="estado-center muted" *ngIf="!cursoSeleccionado && !cargando && !errorCursos">
     <mat-icon>bar_chart</mat-icon>
-    <span>Seleccioná un curso para ver los espacios curriculares disponibles.</span>
+    <span>Seleccione un curso para ver los espacios curriculares disponibles.</span>
   </div>
 
   <!-- Placeholder: sin espacio -->
   <div class="estado-center muted"
        *ngIf="cursoSeleccionado && !espacioSeleccionado && !cargando && !errorEspacios && espacios.length > 0">
     <mat-icon>school</mat-icon>
-    <span>Seleccioná un espacio curricular para ver el reporte.</span>
+    <span>Seleccione un espacio curricular para ver el reporte.</span>
   </div>
 
   <!-- Título del espacio y datos clave -->
