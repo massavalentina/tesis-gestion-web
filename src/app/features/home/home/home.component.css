@@ -24,6 +24,20 @@
   box-sizing: border-box;
 }
 
+.app-nombre {
+  margin: 0 0 12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-style: italic;
+  text-transform: uppercase;
+  color: #295FA6;
+  letter-spacing: -0.01em;
+  transform: scaleX(1.22);
+  transform-origin: center;
+  text-align: center;
+}
+
 .home-logo {
   width: 120px;
   height: auto;
@@ -49,6 +63,10 @@
 }
 
 @media (max-width: 767px) {
+  .app-nombre {
+    font-size: 1.35rem;
+  }
+
   .home-logo {
     width: 80px;
     margin-bottom: 14px;
