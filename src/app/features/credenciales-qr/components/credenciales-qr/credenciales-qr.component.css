@@ -1,48 +1,107 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: #ecf3f8;
+  min-height: 100%;
+  background: transparent;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .page {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 28px 60px;
   display: grid;
   gap: 18px;
 }
 
-.page__header h1 {
+.page-head {
+  margin-bottom: 6px;
+}
+
+.page-head h1 {
   margin: 0;
-  color: #0f2f4b;
-  font-size: clamp(28px, 3.4vw, 36px);
-  line-height: 1.05;
-  letter-spacing: -0.8px;
-  font-weight: 900;
+  color: #000000;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
 }
 
-.page__header p {
-  margin: 8px 0 0;
-  color: rgba(15, 47, 75, 0.76);
-  font-size: 14px;
-}
-
-.page__hint {
-  margin-top: 10px !important;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #c7d9eb;
-  background: #f4f9ff;
-  color: #365977 !important;
-  font-size: 13px !important;
+.page-head p {
+  margin: 5px 0 0;
+  color: #5b6b7d;
+  font-size: 14.5px;
 }
 
 .section {
   display: block;
 }
 
+.tab-panel {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.tab-panel[hidden] {
+  display: none !important;
+}
+
+.tabs-shell {
+  display: block;
+  margin-top: -2px;
+}
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 6px;
+  border-bottom: 1px solid #d7e6f4;
+  width: 100%;
+}
+
+.tab {
+  appearance: none;
+  border: 1px solid #d7e6f4;
+  border-bottom: 0;
+  background: #eef5fb;
+  color: #58718a;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 12px 18px 11px;
+  border-radius: 12px 12px 0 0;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.tab:hover {
+  background: #e5f0f8;
+  color: #3c78b4;
+}
+
+.tab--active {
+  background: #ffffff;
+  color: #3c78b4;
+  border-color: #d7e6f4;
+  position: relative;
+  top: 1px;
+}
+
 @media (max-width: 640px) {
   .page {
-    padding: 12px;
+    padding: 24px 16px 44px;
+  }
+
+  .tabs {
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .tab {
+    white-space: nowrap;
+    padding-inline: 16px;
   }
 }

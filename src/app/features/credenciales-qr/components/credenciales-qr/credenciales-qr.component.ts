@@ -4,6 +4,8 @@ import { PaginaGeneracionCredencialesQr } from '../../../qr-credential-generatio
 import { PaginaEnvioCredencialesQr } from '../../../qr-credential-delivery/pages/qr-credential-delivery.page';
 import { QrCredentialStatusTableComponent } from '../qr-credential-status-table.component';
 
+type TabCredencialesQr = 'OPERACIONES' | 'ESTADO';
+
 @Component({
   selector: 'app-credenciales-qr',
   standalone: true,
@@ -11,4 +13,10 @@ import { QrCredentialStatusTableComponent } from '../qr-credential-status-table.
   templateUrl: './credenciales-qr.component.html',
   styleUrls: ['./credenciales-qr.component.css']
 })
-export class CredencialesQrComponent {}
+export class CredencialesQrComponent {
+  tabActiva: TabCredencialesQr = 'ESTADO';
+
+  seleccionarTab(tab: TabCredencialesQr): void {
+    this.tabActiva = tab;
+  }
+}

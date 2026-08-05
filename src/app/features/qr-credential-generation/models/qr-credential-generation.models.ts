@@ -22,6 +22,14 @@ export interface RespuestaInicioJobQr {
   jobId: string;
 }
 
+export interface RespuestaRegeneracionQr {
+  idEstudiante: string;
+  idQr: string;
+  codigoQr: string;
+  credencialesDesactivadas: number;
+  mensaje: string;
+}
+
 export interface SolicitudCancelacionJobQr {
   mantenerGenerados: boolean;
 }

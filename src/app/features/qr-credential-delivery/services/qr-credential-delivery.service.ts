@@ -14,7 +14,8 @@ import {
   RespuestaInicioEnvioQr,
   ResumenEnvioQr,
   SolicitudEnvioIndividualQr,
-  SolicitudInicioEnvioQr
+  SolicitudInicioEnvioQr,
+  TrabajoActivoEnvioQr
 } from '../models/qr-credential-delivery.models';
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,7 @@ export class ServicioEnvioCredencialesQr {
   private readonly cursosUrl = `${this.baseUrl}/api/asistencia/cursos`;
   private readonly summaryUrl = `${this.baseUrl}/api/qr-credentials/delivery/summary`;
   private readonly startJobUrl = `${this.baseUrl}/api/qr-credentials/delivery/start-job`;
+  private readonly activeJobsUrl = `${this.baseUrl}/api/qr-credentials/delivery/active-jobs`;
   private readonly progressUrl = `${this.baseUrl}/api/qr-credentials/delivery/progress`;
   private readonly pauseUrl = `${this.baseUrl}/api/qr-credentials/delivery/pause`;
   private readonly resumeUrl = `${this.baseUrl}/api/qr-credentials/delivery/resume`;
@@ -36,16 +38,32 @@ export class ServicioEnvioCredencialesQr {
     return this.http.get<OpcionCursoEnvioQr[]>(this.cursosUrl);
   }
 
-  obtenerResumen(idCurso: string, alcance: AlcanceEnvioQr): Observable<ResumenEnvioQr> {
-    const params = new HttpParams()
-      .set('cursoId', idCurso)
-      .set('alcance', alcance);
+  obtenerResumen(idCurso?: string | null, alcance?: AlcanceEnvioQr | null): Observable<ResumenEnvioQr> {
+    let params = new HttpParams();
+
+    if (idCurso) {
+      params = params.set('cursoId', idCurso);
+    }
+
+    if (alcance) {
+      params = params.set('alcance', alcance);
+    }
 
     return this.http.get<ResumenEnvioQr>(this.summaryUrl, { params });
   }
 
   iniciarJob(payload: SolicitudInicioEnvioQr): Observable<RespuestaInicioEnvioQr> {
     return this.http.post<RespuestaInicioEnvioQr>(this.startJobUrl, payload);
+  }
+
+  obtenerJobsActivos(cursoId?: string | null): Observable<TrabajoActivoEnvioQr[]> {
+    let params = new HttpParams();
+
+    if (cursoId) {
+      params = params.set('cursoId', cursoId);
+    }
+
+    return this.http.get<TrabajoActivoEnvioQr[]>(this.activeJobsUrl, { params });
   }
 
   obtenerProgreso(jobId: string): Observable<ProgresoEnvioQr> {

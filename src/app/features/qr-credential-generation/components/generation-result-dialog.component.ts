@@ -23,11 +23,6 @@ export interface DatosResultadoGeneracionQr {
       <div class="icon" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
         <mat-icon>{{ data.icono }}</mat-icon>
       </div>
-
-      <div class="badge" [class.warn]="data.color === 'warn'" [class.accent]="data.color === 'accent'">
-        {{ data.color === 'warn' ? 'Con incidencias' : 'Proceso finalizado' }}
-      </div>
-
       <h2>{{ data.titulo }}</h2>
       <p class="message">{{ data.mensaje }}</p>
 
@@ -63,15 +58,16 @@ export interface DatosResultadoGeneracionQr {
       padding: 8px 4px 4px;
       max-width: 92vw;
       color: #0f2f4b;
+      font-family: 'Open Sans', sans-serif;
     }
 
     .icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
       background: #dff3e8;
       color: #1f6a5c;
       margin: 0 auto 12px;
@@ -91,51 +87,23 @@ export interface DatosResultadoGeneracionQr {
     }
 
     .icon mat-icon {
-      font-size: 34px;
-      width: 34px;
-      height: 34px;
-    }
-
-    .badge {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #f0f8f3;
-      border: 1px solid #cae8d8;
-      color: #1f6a5c;
-      font-size: 12px;
-      font-weight: 900;
-      margin: 0 auto 12px;
-      width: fit-content;
-    }
-
-    .badge.warn {
-      background: #fff3f1;
-      border-color: #efcbc7;
-      color: #b0473f;
-    }
-
-    .badge.accent {
-      background: #fff8e7;
-      border-color: #f4dfb0;
-      color: #9a6700;
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
     }
 
     h2 {
       margin: 0 0 8px;
-      font-size: 24px;
-      line-height: 1.15;
-      font-weight: 900;
-      letter-spacing: -0.4px;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 700;
     }
 
     .message {
-      color: rgba(15, 47, 75, 0.74);
+      color: #4b647a;
       margin: 0 0 14px;
       line-height: 1.45;
-      font-size: 14px;
+      font-size: 13.5px;
     }
 
     .summary {
@@ -158,13 +126,13 @@ export interface DatosResultadoGeneracionQr {
     .summary__item span {
       color: #63809c;
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 600;
     }
 
     .summary__item strong {
       color: #22435f;
       font-size: 15px;
-      font-weight: 900;
+      font-weight: 600;
     }
 
     .actions {
@@ -173,17 +141,16 @@ export interface DatosResultadoGeneracionQr {
     }
 
     .btn-primary {
-      background-color: #86b8ea !important;
+      background-color: #3c78b4 !important;
       color: #fff !important;
       border-radius: 12px !important;
-      font-weight: 900 !important;
+      font-weight: 600 !important;
       padding: 10px 18px !important;
-      box-shadow: 0 10px 22px rgba(134, 184, 234, 0.34) !important;
     }
 
     @media (max-width: 560px) {
       h2 {
-        font-size: 20px;
+        font-size: 19px;
       }
 
       .summary {

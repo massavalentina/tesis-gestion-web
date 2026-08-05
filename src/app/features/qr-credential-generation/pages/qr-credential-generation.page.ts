@@ -53,10 +53,9 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
       <section class="panel" [class.panel--embedded]="embedded">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Credenciales QR</p>
             <h1>Generación masiva</h1>
             <p class="subtitle">
-              Seleccioná un curso, revisá el estado actual y ejecutá la generación.
+              Seleccione un curso, revise el estado actual y ejecute la generación.
             </p>
           </div>
         </div>
@@ -64,8 +63,12 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
         <div class="controls">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Curso</mat-label>
-            <mat-select [(ngModel)]="cursoSeleccionadoId" (selectionChange)="alCambiarCurso()">
-              <mat-option [value]="null">Seleccioná un curso</mat-option>
+            <mat-select
+              [(ngModel)]="cursoSeleccionadoId"
+              (selectionChange)="alCambiarCurso()"
+              [disabled]="cursosCargando || ejecutandoJob"
+              panelClass="qr-select-panel">
+              <mat-option [value]="null">Seleccione un curso</mat-option>
               <mat-option *ngFor="let curso of cursos" [value]="curso.id">
                 {{ curso.label }}
               </mat-option>
@@ -74,7 +77,8 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label>Alcance</mat-label>
-            <mat-select [(ngModel)]="alcanceSeleccionado">
+            <mat-select [(ngModel)]="alcanceSeleccionado" [disabled]="ejecutandoJob" panelClass="qr-select-panel">
+              <mat-option [value]="null">Seleccione un alcance</mat-option>
               <mat-option value="ACTIVOS">Estudiantes activos</mat-option>
               <mat-option value="SIN_QR">Estudiantes sin QR</mat-option>
               <mat-option value="TODOS">Generar a todos</mat-option>
@@ -84,37 +88,42 @@ import { QrCredentialsSyncService } from '../../../core/services/qr-credentials-
           <button
             mat-raised-button
             color="primary"
+            class="primary-action"
             [disabled]="!puedeGenerar()"
             (click)="iniciarGeneracion()">
-            Generar credenciales
+            <span class="button-content">
+              <span class="mini-spinner mini-spinner--button" *ngIf="ejecutandoJob"></span>
+              {{ ejecutandoJob ? 'Iniciando generación...' : 'Generar credenciales' }}
+            </span>
           </button>
         </div>
 
-        <p class="hint" *ngIf="!cursoSeleccionadoId">
-          Seleccioná un curso para ver el resumen y ejecutar la generación.
+        <div class="inline-loading" *ngIf="cursosCargando || cargandoResumen">
+          <span class="mini-spinner"></span>
+          {{ cursosCargando ? 'Cargando cursos...' : 'Consultando resumen de generación...' }}
+        </div>
+
+        <p class="hint" *ngIf="cursoSeleccionadoId && !alcanceSeleccionado">
+          Seleccione el alcance de generación para habilitar la acción.
         </p>
 
         <p class="error" *ngIf="errorMensaje">{{ errorMensaje }}</p>
 
-        <div class="summary-grid" *ngIf="resumen">
+        <div class="summary-grid">
           <article class="summary-card">
-            <span>Total alumnos activos</span>
-            <strong>{{ resumen.totalAlumnosActivos }}</strong>
+            <span>Total estudiantes activos</span>
+            <strong>{{ resumen?.totalAlumnosActivos ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
             <span>Total QR creados</span>
-            <strong>{{ resumen.totalQrActivos }}</strong>
+            <strong>{{ resumen?.totalQrActivos ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
             <span>Pendientes de generar</span>
-            <strong>{{ resumen.totalPendientesGenerar }}</strong>
+            <strong>{{ resumen?.totalPendientesGenerar ?? 0 }}</strong>
           </article>
-        </div>
-
-        <div class="recommendation" *ngIf="resumen">
-          <strong>Lectura sugerida:</strong> {{ construirSugerenciaResumen(resumen) }}
         </div>
 
       </section>
@@ -136,10 +145,11 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
   cursos: OpcionCurso[] = [];
   cursoSeleccionadoId: string | null = null;
-  alcanceSeleccionado: AlcanceGeneracionQr = 'SIN_QR';
+  alcanceSeleccionado: AlcanceGeneracionQr | null = null;
   resumen: ResumenGeneracionQr | null = null;
   progreso: ProgresoGeneracionQr | null = null;
   errorMensaje = '';
+  cursosCargando = false;
   cargandoResumen = false;
   ejecutandoJob = false;
   pausaSolicitadaParaCancelacion = false;
@@ -160,13 +170,17 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   ngOnInit(): void {
+    this.cursosCargando = true;
+
     this.servicio.obtenerCursos()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: cursos => {
           this.cursos = cursos;
+          this.cursosCargando = false;
         },
         error: () => {
+          this.cursosCargando = false;
           this.errorMensaje = 'No se pudieron cargar los cursos.';
         }
       });
@@ -205,7 +219,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   iniciarGeneracion(): void {
-    if (!this.cursoSeleccionadoId || this.ejecutandoJob || !this.resumen) {
+    if (!this.cursoSeleccionadoId || !this.alcanceSeleccionado || this.ejecutandoJob || !this.resumen) {
       return;
     }
 
@@ -225,10 +239,11 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   iniciarJobGeneracion(): void {
-    if (!this.cursoSeleccionadoId || this.ejecutandoJob) {
+    if (!this.cursoSeleccionadoId || !this.alcanceSeleccionado || this.ejecutandoJob) {
       return;
     }
 
+    const alcance = this.alcanceSeleccionado;
     this.errorMensaje = '';
     this.detenerPolling();
     this.cancelarCierreDialogoProgresoPendiente();
@@ -239,7 +254,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
 
     this.servicio.iniciarJob({
       idCurso: this.cursoSeleccionadoId,
-      alcance: this.alcanceSeleccionado
+      alcance
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -299,13 +314,16 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
           this.cerrarDialogoCancelacion();
           this.cerrarDialogoFeedback();
           this.cerrarDialogoProgreso();
-          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del job.');
+          this.errorMensaje = this.obtenerMensajeError(error, 'No se pudo consultar el progreso del proceso.');
         }
       });
   }
 
   puedeGenerar(): boolean {
-    return !!this.cursoSeleccionadoId && !this.ejecutandoJob;
+    return !!this.cursoSeleccionadoId
+      && !!this.alcanceSeleccionado
+      && !this.ejecutandoJob
+      && !this.cargandoResumen;
   }
 
   construirSugerenciaResumen(resumen: ResumenGeneracionQr): string {
@@ -314,14 +332,14 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     }
 
     if (resumen.totalQrActivos === 0) {
-      return 'No existen QRs creados. El alcance "Estudiantes activos" o "Estudiantes sin QR" debería cubrir el caso inicial.';
+      return 'No existen QR creados. El alcance "Estudiantes activos" o "Estudiantes sin QR" debería cubrir el caso inicial.';
     }
 
     if (resumen.totalPendientesGenerar === 0) {
-      return 'Todos los estudiantes activos ya tienen un QR creado. Usá "Generar a todos" solo si necesitás regenerarlos.';
+      return 'Todos los estudiantes activos ya tienen un QR creado. Utilice "Generar a todos" solo si necesita regenerarlos.';
     }
 
-    return 'Hay alumnos con y sin QR creado. "Estudiantes sin QR" evita regenerar los ya vigentes; "Generar a todos" reemplaza los actuales.';
+    return 'Hay estudiantes con y sin QR creado. "Estudiantes sin QR" evita regenerar los ya vigentes; "Generar a todos" reemplaza los actuales.';
   }
 
   private obtenerMensajeError(error: unknown, fallback: string): string {
@@ -338,13 +356,39 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
   }
 
   private construirDatosConfirmacion(): DatosConfirmacionGeneracionQr {
+    const { etiquetaIntento, totalIntentos } = this.obtenerResumenIntentoGeneracion();
+
     return {
       curso: this.resumen?.cursoCodigo ?? this.obtenerLabelCursoSeleccionado(),
       alcance: this.obtenerLabelAlcance(this.alcanceSeleccionado),
-      totalAlumnosActivos: this.resumen?.totalAlumnosActivos ?? 0,
-      totalQrActivos: this.resumen?.totalQrActivos ?? 0,
-      totalPendientesGenerar: this.resumen?.totalPendientesGenerar ?? 0
+      etiquetaIntento,
+      totalIntentos
     };
+  }
+
+  private obtenerResumenIntentoGeneracion(): { etiquetaIntento: string; totalIntentos: number } {
+    switch (this.alcanceSeleccionado) {
+      case 'ACTIVOS':
+        return {
+          etiquetaIntento: 'Credenciales a generar',
+          totalIntentos: this.resumen?.totalAlumnosActivos ?? 0
+        };
+      case 'SIN_QR':
+        return {
+          etiquetaIntento: 'Credenciales a generar',
+          totalIntentos: this.resumen?.totalPendientesGenerar ?? 0
+        };
+      case 'TODOS':
+        return {
+          etiquetaIntento: 'Credenciales a generar',
+          totalIntentos: this.resumen?.totalAlumnosActivos ?? 0
+        };
+      default:
+        return {
+          etiquetaIntento: 'Credenciales a generar',
+          totalIntentos: 0
+        };
+    }
   }
 
   private abrirDialogoProgreso(): void {
@@ -444,7 +488,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
               titulo: 'No pudimos reanudar el proceso',
               mensaje: this.obtenerMensajeError(
                 error,
-                'Ocurrió un problema al intentar continuar la generación. Podés volver a intentarlo.'
+                'Ocurrió un problema al intentar continuar la generación. Puede volver a intentarlo.'
               ),
               modo: 'error'
             } satisfies DatosFeedbackGeneracionQr,
@@ -522,7 +566,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
             titulo: 'Proceso cancelado',
             mensaje: progreso.ultimoMensaje
               ?? (progreso.procesados >= progreso.total
-                ? 'La solicitud de detención llegó cuando el proceso ya estaba finalizando. Revisá el resumen final para confirmar el resultado.'
+                ? 'La solicitud de detención llegó cuando el proceso ya estaba finalizando. Revise el resumen final para confirmar el resultado.'
                 : 'La generación se detuvo antes de completarse.'),
             icono: 'info',
             color: 'accent' as const
@@ -572,8 +616,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     this.abrirDialogoFeedback({
       titulo: 'Estamos deteniendo la generación',
       mensaje: mantenerGenerados
-        ? 'Se completará el alumno en curso y se conservarán los QR generados hasta la última actualización.'
-        : 'Se completará el alumno en curso y luego se revertirán los QR generados hasta la última actualización.',
+        ? 'Se completará el estudiante en curso y se conservarán los QR generados hasta la última actualización.'
+        : 'Se completará el estudiante en curso y luego se revertirán los QR generados hasta la última actualización.',
       modo: 'loading'
     });
 
@@ -593,7 +637,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
               titulo: 'No pudimos cancelar el proceso',
               mensaje: this.obtenerMensajeError(
                 error,
-                'Ocurrió un problema al intentar detener la generación. Podés volver a intentarlo.'
+                'Ocurrió un problema al intentar detener la generación. Puede volver a intentarlo.'
               ),
               modo: 'error'
             } satisfies DatosFeedbackGeneracionQr,
@@ -655,7 +699,7 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
     return this.cursos.find(curso => curso.id === this.cursoSeleccionadoId)?.label ?? 'Curso seleccionado';
   }
 
-  private obtenerLabelAlcance(alcance: AlcanceGeneracionQr): string {
+  private obtenerLabelAlcance(alcance: AlcanceGeneracionQr | null): string {
     switch (alcance) {
       case 'ACTIVOS':
         return 'Estudiantes activos';
@@ -663,6 +707,8 @@ export class PaginaGeneracionCredencialesQr implements OnInit {
         return 'Estudiantes sin QR';
       case 'TODOS':
         return 'Generar a todos';
+      default:
+        return 'Alcance seleccionado';
     }
   }
 }

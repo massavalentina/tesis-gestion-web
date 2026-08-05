@@ -2,22 +2,24 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models';
 
 @Component({
   selector: 'app-generation-progress-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatProgressBarModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatProgressBarModule, MatButtonModule, MatIconModule],
   template: `
     <div class="dlg">
-      <div class="dlg__head">
-        <div class="dlg__badge">Generando</div>
-        <h2>Generando credenciales QR</h2>
-        <p class="dlg__sub">
-          {{ descripcionEstado() }}
-        </p>
+      <div class="dlg__icon">
+        <mat-icon>autorenew</mat-icon>
       </div>
+
+      <h2>Generando credenciales QR</h2>
+      <p class="dlg__sub">
+        {{ descripcionEstado() }}
+      </p>
 
       <mat-dialog-content class="progress-content">
         <div class="progress-card">
@@ -63,12 +65,12 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
 
       <mat-dialog-actions class="dlg__actions" *ngIf="puedeSolicitarCancelacion()">
         <button mat-stroked-button class="btn-cancel" (click)="solicitarCancelacion.emit()">
-          Detener generacion
+          Detener generación
         </button>
       </mat-dialog-actions>
 
       <p class="cancel-hint" *ngIf="puedeSolicitarCancelacion()">
-        Si detenes el proceso, se completa primero el estudiante en curso y luego se aplicara tu decision.
+        Si detiene el proceso, se completa primero el estudiante en curso y luego se aplicará su decisión.
       </p>
     </div>
   `,
@@ -94,54 +96,55 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
     .dlg {
       color: #0f2f4b;
       max-width: 92vw;
-      padding: 4px;
-    }
-
-    .dlg__head {
+      padding: 8px 4px 4px;
       text-align: center;
-      margin-bottom: 18px;
+      font-family: 'Open Sans', sans-serif;
     }
 
-    .dlg__badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #f0f5fa;
-      border: 1px solid #c7d9eb;
-      color: #86b8ea;
-      font-size: 12px;
-      font-weight: 900;
-      margin-bottom: 12px;
+    .dlg__icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: #eef5fb;
+      color: #3c78b4;
+      border: 1px solid #d7e6f4;
+    }
+
+    .dlg__icon mat-icon {
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
     }
 
     h2 {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.15;
-      font-weight: 900;
-      letter-spacing: -0.4px;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 700;
     }
 
     .dlg__sub {
       margin: 10px 0 0;
-      color: rgba(15, 47, 75, 0.72);
-      font-size: 13px;
-      font-weight: 600;
+      color: #4b647a;
+      font-size: 13.5px;
+      line-height: 1.45;
     }
 
     .progress-content {
       min-width: 420px;
       display: grid;
-      gap: 14px;
+      gap: 12px;
+      margin-top: 16px;
     }
 
     .progress-card {
-      padding: 16px;
-      border-radius: 20px;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-      border: 1px solid rgba(199, 217, 235, 0.95);
-      box-shadow: 0 12px 26px rgba(20, 55, 90, 0.08);
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dce8f3;
     }
 
     .progress-row {
@@ -153,14 +156,14 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
     }
 
     .progress-label {
-      color: #5d7c9a;
-      font-weight: 800;
+      color: #64748b;
+      font-weight: 600;
     }
 
     .progress-row strong {
-      color: #86b8ea;
-      font-size: 18px;
-      font-weight: 900;
+      color: #3c78b4;
+      font-size: 17px;
+      font-weight: 700;
     }
 
     .progress-track-labels {
@@ -169,7 +172,7 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
       margin-top: 8px;
       color: #7b97b4;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .last-message {
@@ -202,13 +205,13 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
     .summary-item span {
       color: #6f89a2;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .summary-item strong {
       color: #345571;
       font-size: 14px;
-      font-weight: 900;
+      font-weight: 600;
     }
 
     .dlg__actions {
@@ -222,7 +225,7 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
       border-color: #d8a8a1 !important;
       color: #b05447 !important;
       border-radius: 12px !important;
-      font-weight: 900 !important;
+      font-weight: 600 !important;
       padding: 10px 18px !important;
     }
 
@@ -240,7 +243,7 @@ import { ProgresoGeneracionQr } from '../models/qr-credential-generation.models'
       }
 
       h2 {
-        font-size: 20px;
+        font-size: 19px;
       }
 
       .summary-grid {

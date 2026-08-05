@@ -2,17 +2,21 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
 
 @Component({
   selector: 'app-delivery-progress-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatProgressBarModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatProgressBarModule, MatButtonModule, MatIconModule],
   template: `
     <div class="dlg">
-      <div class="dlg__badge">Enviando</div>
-      <h2>Envio de credenciales QR</h2>
+      <div class="dlg__icon">
+        <mat-icon>forward_to_inbox</mat-icon>
+      </div>
+
+      <h2>Envío de credenciales QR</h2>
       <p class="dlg__sub">{{ descripcionEstado() }}</p>
 
       <mat-dialog-content class="content">
@@ -35,7 +39,7 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
           <div>Enviados: <strong>{{ progress.enviados }}</strong></div>
           <div>Omitidos: <strong>{{ progress.omitidos }}</strong></div>
           <div>Errores: <strong>{{ progress.errores }}</strong></div>
-          <div *ngIf="progress.ultimoDestino">Ultimo destino: <strong>{{ progress.ultimoDestino }}</strong></div>
+          <div *ngIf="progress.ultimoDestino">Último destino: <strong>{{ progress.ultimoDestino }}</strong></div>
         </div>
 
         <p class="last" *ngIf="progress?.ultimoMensaje">
@@ -51,33 +55,51 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
     </div>
   `,
   styles: [`
-    .dlg { color: #0f2f4b; max-width: 92vw; padding: 4px; text-align: center; }
-    .dlg__badge {
-      display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px;
-      background: #f0f5fa; border: 1px solid #c7d9eb; color: #3c78b4; font-size: 12px;
-      font-weight: 900; margin-bottom: 12px;
+    .dlg {
+      color: #0f2f4b;
+      max-width: 92vw;
+      padding: 8px 4px 4px;
+      text-align: center;
+      font-family: 'Open Sans', sans-serif;
     }
-    h2 { margin: 0; font-size: 24px; line-height: 1.15; font-weight: 900; }
-    .dlg__sub { margin: 10px 0 0; color: rgba(15, 47, 75, 0.74); font-size: 13px; }
+    .dlg__icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: #eef5fb;
+      color: #3c78b4;
+      border: 1px solid #d7e6f4;
+    }
+    .dlg__icon mat-icon {
+      font-size: 30px;
+      width: 30px;
+      height: 30px;
+    }
+    h2 { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 700; }
+    .dlg__sub { margin: 10px 0 0; color: #4b647a; font-size: 13.5px; line-height: 1.45; }
     .content { min-width: 430px; display: grid; gap: 12px; padding: 0 !important; margin-top: 16px; }
     .card {
-      padding: 16px; border-radius: 18px; border: 1px solid #dce8f3;
+      padding: 14px; border-radius: 14px; border: 1px solid #dce8f3;
       background: #f8fbff; text-align: left;
     }
-    .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-    .row strong { color: #3c78b4; }
+    .row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 13px; }
+    .row span { color: #64748b; font-weight: 600; }
+    .row strong { color: #3c78b4; font-weight: 700; }
     .labels {
       display: flex; justify-content: space-between; margin-top: 8px;
-      color: #6f86a0; font-size: 12px; font-weight: 700;
+      color: #6f86a0; font-size: 12px; font-weight: 600;
     }
     .summary {
       padding: 12px 14px; border-radius: 14px; border: 1px solid #dce8f3;
-      background: #fff; text-align: left; display: grid; gap: 4px;
+      background: #f8fbff; text-align: left; display: grid; gap: 6px;
       color: #2f4f6d; font-size: 13px;
     }
     .last {
       margin: 0; padding: 12px 14px; border-radius: 14px; border: 1px solid #dce8f3;
-      background: #fff; text-align: left; color: #2f4f6d; font-size: 13px;
+      background: #fff; text-align: left; color: #2f4f6d; font-size: 13px; line-height: 1.45;
     }
     .dlg__actions {
       display: flex;
@@ -89,12 +111,12 @@ import { ProgresoEnvioQr } from '../models/qr-credential-delivery.models';
       border-color: #d8a8a1 !important;
       color: #b05447 !important;
       border-radius: 12px !important;
-      font-weight: 900 !important;
+      font-weight: 600 !important;
       padding: 10px 18px !important;
     }
     @media (max-width: 540px) {
       .content { min-width: 0; }
-      h2 { font-size: 20px; }
+      h2 { font-size: 19px; }
     }
   `]
 })
@@ -112,19 +134,19 @@ export class DialogoProgresoEnvioQrComponent {
 
   descripcionEstado(): string {
     if (!this.progress) {
-      return 'Preparando envio.';
+      return 'Preparando envío.';
     }
 
     if (this.progress.estado === 'PAUSING') {
-      return 'Pausa solicitada. Se completara el envio en curso antes de mostrar las opciones.';
+      return 'Pausa solicitada. Se completará el envío en curso antes de mostrar las opciones.';
     }
 
     if (this.progress.estado === 'PAUSED') {
-      return 'Proceso en pausa. Elegi si queres continuarlo o cancelar pendientes.';
+      return 'Proceso en pausa. Elija si desea continuarlo o cancelar pendientes.';
     }
 
     if (this.progress.estado === 'CANCELLING') {
-      return 'Cancelacion solicitada. Se detendra al terminar el envio en curso.';
+      return 'Cancelación solicitada. Se detendrá al terminar el envío en curso.';
     }
 
     if (this.progress.estado === 'CANCELLED') {
@@ -132,7 +154,7 @@ export class DialogoProgresoEnvioQrComponent {
     }
 
     if (this.progress.estado === 'FAILED') {
-      return 'El proceso finalizo con error.';
+      return 'El proceso finalizó con error.';
     }
 
     if (this.progress.estado === 'COMPLETED') {
@@ -148,7 +170,7 @@ export class DialogoProgresoEnvioQrComponent {
 
   textoAccionDecision(): string {
     return this.progress?.estado === 'PAUSED'
-      ? 'Elegir accion'
-      : 'Cancelar envio';
+      ? 'Elegir acción'
+      : 'Cancelar envío';
   }
 }
