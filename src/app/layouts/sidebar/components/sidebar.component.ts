@@ -68,7 +68,7 @@ const EXPAND_COLLAPSE = trigger('expandCollapse', [
 
         <!-- Logo / Home -->
         <a class="logo-item" matRipple routerLink="/">
-          <img src="logo.jpg" alt="Logo" class="logo-img" />
+          <img src="logo2.jpg" alt="Logo" class="logo-img" />
         </a>
 
         <!-- Inicio -->

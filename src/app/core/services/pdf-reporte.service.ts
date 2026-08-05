@@ -430,7 +430,7 @@ export class PdfReporteService {
         resolve(canvas.toDataURL('image/jpeg'));
       };
       img.onerror = () => resolve(null);
-      img.src = 'logo.jpg';
+      img.src = 'logo2.jpg';
     });
   }
 
