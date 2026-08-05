@@ -60,6 +60,11 @@ export interface ConfirmarAsistenciaItemPayload {
   turno: string;
 }
 
+export interface ConfirmarAsistenciaLotePayload {
+  items: ConfirmarAsistenciaItemPayload[];
+  hora?: string | null;
+}
+
 export interface ErrorConfirmacionDetalle {
   studentId: string;
   code: string;

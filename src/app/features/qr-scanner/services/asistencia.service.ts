@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
-  ConfirmarAsistenciaItemPayload,
+  ConfirmarAsistenciaLotePayload,
   RespuestaVistaPreviaAsistencia,
   SolicitudVistaPreviaAsistencia,
   TurnoSesionResponse
@@ -35,7 +35,7 @@ export class ServicioAsistencia {
     return this.http.get<TurnoSesionResponse>(url);
   }
 
-  confirmar(payload: { items: ConfirmarAsistenciaItemPayload[] }): Observable<void> {
+  confirmar(payload: ConfirmarAsistenciaLotePayload): Observable<void> {
     return this.http.post<void>(
       `${this.urlBase}/confirm`,
       payload

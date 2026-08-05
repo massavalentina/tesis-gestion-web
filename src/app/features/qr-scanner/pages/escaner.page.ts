@@ -17,6 +17,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -29,6 +30,7 @@ import {
   OpcionSeleccion,
   RespuestaVistaPreviaAsistencia
 } from '../models/escaner.models';
+import { ScannerCameraOption, ScannerCameraSession } from '../models/scanner-camera.model';
 import { ServicioEscanerQr } from '../services/escaner-qr.service';
 import { ServicioAsistencia } from '../services/asistencia.service';
 import { ServicioTipoAsistencia } from '../services/tipoasistencia.service';
@@ -43,7 +45,6 @@ import { ScannerUiStateService } from '../../../core/services/scanner-ui-state.s
 import { UiPlatformService } from '../../../core/services/ui-platform.service';
 
 type TipoAsistenciaUi = OpcionSeleccion & { code: string };
-
 @Component({
   selector: 'app-escaner-asistencia-page',
   standalone: true,
@@ -55,6 +56,7 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     MatSlideToggleModule,
     MatSnackBarModule
@@ -64,8 +66,8 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
       <section class="scanner-shell">
         <div class="scanner-copy">
           <div class="scanner-badge">Escaneo QR</div>
-          <h1>Toma de asistencia por escaneo QR</h1>
-          <p>Turno y tipo inicial son opcionales. El turno puede resolverse automáticamente por hora de servidor.</p>
+          <h1>Asistencia mediante escáner QR</h1>
+          <p>Registre asistencias mediante escaneo QR. El turno y el tipo inicial son opcionales.</p>
         </div>
 
         <div class="config">
@@ -97,6 +99,19 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
             </mat-select>
           </mat-form-field>
 
+          <mat-form-field appearance="fill" class="pill">
+            <mat-label>Hora</mat-label>
+            <input
+              matInput
+              type="time"
+              class="time-input"
+              [ngModel]="horaSeleccionada ?? ''"
+              (ngModelChange)="actualizarHoraManual($event)" />
+          </mat-form-field>
+          <span class="hora-hint">
+            Si no selecciona una hora, se usará la hora del primer escaneo válido de la sesión.
+          </span>
+
           <mat-slide-toggle class="rafaga-toggle" [(ngModel)]="modoRafaga">
             Modo Ráfaga
           </mat-slide-toggle>
@@ -106,7 +121,7 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
         </div>
 
         <div class="scan-counter" *ngIf="cantidadPendiente > 0 && !escanerActivo">
-          {{ cantidadPendiente }} registro(s) pendiente(s) de cargar
+          {{ cantidadPendiente }} registro(s) pendiente(s) de registrar
         </div>
 
         <div class="pending-actions" *ngIf="mostrarAccionesPendientes && cantidadPendiente > 0 && !escanerActivo">
@@ -114,7 +129,7 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
             Registrar pendientes
           </button>
           <button mat-stroked-button class="pending-btn pending-btn--ghost" (click)="resetearPendientes()">
-            Resetear
+            Restablecer
           </button>
         </div>
 
@@ -129,7 +144,20 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
 
       <div class="feedback-flash" *ngIf="flashEstado" [class.success]="flashEstado === 'success'" [class.error]="flashEstado === 'error'"></div>
 
-      <button class="close-scanner" (click)="cerrarEscaner()">✕</button>
+      <button class="close-scanner" (click)="cerrarEscaner()" aria-label="Cerrar escáner">
+        <mat-icon>close</mat-icon>
+      </button>
+
+      <button
+        *ngIf="camarasDisponibles.length > 1"
+        class="switch-camera"
+        [disabled]="cambiandoCamara"
+        (click)="cambiarCamara()"
+        aria-label="Cambiar cámara">
+        <mat-icon [class.switch-camera__icon--spin]="cambiandoCamara">
+          {{ cambiandoCamara ? 'autorenew' : 'cameraswitch' }}
+        </mat-icon>
+      </button>
 
       <div class="overlay-footer">
         <div class="scan-counter scan-counter--overlay" [class.scan-counter--ghost]="cantidadPendiente === 0">
@@ -171,11 +199,11 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
       </button>
 
       <div class="scan-warning" *ngIf="mostrarAdvertenciaEscaneo">
-        Cargá catálogos y configuración para comenzar
+        Cargue catálogos y configuración para comenzar.
       </div>
 
       <div class="scan-status" [class.scan-status--ready]="puedeIniciarEscaneo()">
-        {{ puedeIniciarEscaneo() ? 'Escáner habilitado' : 'Esperando catálogos para habilitar escáner' }}
+        {{ puedeIniciarEscaneo() ? 'Escáner disponible' : 'Cargue catálogos para habilitar el escáner' }}
       </div>
     </div>
 
@@ -200,8 +228,12 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
   turnoSeleccionadoManual: string | null = null;
   turnoSesion: string | null = null;
   tipoSeleccionadoId: string | null = null;
+  horaSeleccionada: string | null = null;
   turnos: OpcionSeleccion[] = [];
   tiposAsistencia: TipoAsistenciaUi[] = [];
+  camarasDisponibles: ScannerCameraOption[] = [];
+  camaraActivaId: string | null = null;
+  cambiandoCamara = false;
   flashEstado: 'success' | 'error' | null = null;
 
   private inicioPendiente = false;
@@ -209,6 +241,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
   private ultimaLecturaMs = 0;
   private readonly antiRelecturaMs = 1000;
   private readonly colaPorTurno = new Map<string, AlumnoEscaneado>();
+  private horaSesionLote: string | null = null;
   private flashTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
@@ -239,7 +272,10 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
       tipos: this.servicioTipoAsistencia.obtenerTipos()
     }).subscribe({
       next: ({ turnos, tipos }) => {
-        this.turnos = turnos;
+        this.turnos = turnos.map(turno => ({
+          ...turno,
+          label: this.formatearTurnoVisible(turno.label)
+        }));
         this.tiposAsistencia = tipos.map(tipo => ({
           ...tipo,
           code: this.inferirCodigoTipo(tipo.label)
@@ -369,7 +405,9 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     }
 
     try {
-      await this.servicioEscanerQr.iniciar(this.video, qr => this.alEscanearQr(qr));
+      const session = await this.servicioEscanerQr.iniciar(this.video, qr => this.alEscanearQr(qr));
+      this.aplicarSesionCamara(session);
+      this.errorEscaner = '';
     } catch {
       this.detenerEscaner();
       this.errorEscaner = 'No se pudo abrir la cámara. Revisá permisos del navegador e intentá nuevamente.';
@@ -381,7 +419,42 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     this.escanerActivo = false;
     this.inicioPendiente = false;
     this.procesando = false;
+    this.cambiandoCamara = false;
+    this.camarasDisponibles = [];
+    this.camaraActivaId = null;
     this.scannerUiStateService.setScannerActive(false);
+  }
+
+  async cambiarCamara(): Promise<void> {
+    if (!this.video || this.cambiandoCamara) return;
+
+    const siguienteCamara = this.servicioEscanerQr.obtenerSiguienteCamara(
+      this.camarasDisponibles,
+      this.camaraActivaId
+    );
+
+    if (!siguienteCamara) return;
+
+    this.cambiandoCamara = true;
+    this.procesando = false;
+    this.ultimoQr = '';
+    this.ultimaLecturaMs = 0;
+
+    try {
+      const session = await this.servicioEscanerQr.cambiarCamara(
+        this.video,
+        qr => this.alEscanearQr(qr),
+        siguienteCamara.deviceId
+      );
+
+      this.aplicarSesionCamara(session);
+      this.errorEscaner = '';
+    } catch {
+      this.mostrarFlash('error');
+      this.errorEscaner = 'No se pudo cambiar de cámara. Intente nuevamente.';
+    } finally {
+      this.cambiandoCamara = false;
+    }
   }
 
   private alEscanearQr(qr: string): void {
@@ -437,6 +510,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     const tipoAnterior = registroPrevio?.attendanceTypeCode ?? tipoAnteriorPersistido;
 
     if (this.modoRafaga) {
+      this.registrarHoraSesionSiCorresponde(respuesta.attendance?.time);
       const reemplazoLocal = this.upsertRegistro(respuesta, turnoRegistro, tipoActual);
       const reemplazo = reemplazoLocal || yaRegistradoEnTurno;
       this.procesando = false;
@@ -457,7 +531,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
         apellido: respuesta.student.lastName,
         curso: respuesta.student.course,
         fotoEstudiante: respuesta.student.profileImagePath ?? null,
-        turno: turnoRegistro,
+        turno: this.formatearTurnoVisible(turnoRegistro),
         tipoAsistencia: tipoActual.code,
         esReemplazo: !!registroPrevio || yaRegistradoEnTurno,
         tipoAnterior: tipoAnterior ?? '—'
@@ -468,6 +542,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
       if (aceptado) {
         const tipoConfirmado = this.obtenerTipoActivo();
         if (tipoConfirmado) {
+          this.registrarHoraSesionSiCorresponde(respuesta.attendance?.time);
           const reemplazoLocal = this.upsertRegistro(respuesta, turnoRegistro, tipoConfirmado);
           const reemplazo = reemplazoLocal || yaRegistradoEnTurno;
           this.mostrarFlash('success');
@@ -520,6 +595,11 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     return `chip-${(code ?? '').toLowerCase()}`;
   }
 
+  actualizarHoraManual(valor: string | null): void {
+    const hora = (valor ?? '').trim();
+    this.horaSeleccionada = /^\d{2}:\d{2}$/.test(hora) ? hora : null;
+  }
+
   colorByCode(code?: string): string {
     switch ((code ?? '').toUpperCase()) {
       case 'P':
@@ -542,7 +622,8 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
       disableClose: true,
       panelClass: 'scanner-dialog-panel',
       data: {
-        turno: this.turnoSesion ?? '-',
+        turno: this.formatearTurnoVisible(this.turnoSesion ?? '-'),
+        detalleHora: this.obtenerDetalleHoraLote(),
         cantidadEscaneados: this.cantidadPendiente,
         detalle: this.alumnosEscaneados.map(item => ({
           alumno: `${item.apellido}, ${item.nombre}`,
@@ -567,7 +648,10 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
       turno: item.turno
     }));
 
-    this.servicioAsistencia.confirmar({ items }).subscribe({
+    this.servicioAsistencia.confirmar({
+      items,
+      hora: this.obtenerHoraLoteParaConfirmacion()
+    }).subscribe({
       next: () => {
         const cantidad = this.cantidadPendiente;
         this.descartarPendientes();
@@ -615,6 +699,7 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     this.colaPorTurno.clear();
     this.mostrarAccionesPendientes = false;
     this.turnoSesion = null;
+    this.horaSesionLote = null;
   }
 
   private mostrarAdvertenciaTemporal(): void {
@@ -680,5 +765,77 @@ export class PaginaEscanerAsistencia implements OnInit, AfterViewChecked, OnDest
     }
 
     return this.inferirCodigoTipo(etiqueta);
+  }
+
+  private obtenerDetalleHoraLote(): string {
+    if (this.horaSeleccionada) {
+      return `${this.formatearHoraVisible(this.horaSeleccionada)} (manual)`;
+    }
+
+    if (this.horaSesionLote) {
+      return `${this.formatearHoraVisible(this.horaSesionLote)} (inicio de sesión)`;
+    }
+
+    return 'Hora actual al confirmar';
+  }
+
+  private obtenerHoraLoteParaConfirmacion(): string | null {
+    if (this.horaSeleccionada) {
+      return `${this.horaSeleccionada}:00`;
+    }
+
+    if (this.horaSesionLote) {
+      return this.horaSesionLote;
+    }
+
+    return null;
+  }
+
+  private registrarHoraSesionSiCorresponde(hora?: string | null): void {
+    if (this.horaSesionLote || this.horaSeleccionada) {
+      return;
+    }
+
+    const horaNormalizada = this.normalizarHoraServidor(hora);
+    if (horaNormalizada) {
+      this.horaSesionLote = horaNormalizada;
+    }
+  }
+
+  private normalizarHoraServidor(hora?: string | null): string | null {
+    const valor = (hora ?? '').trim();
+    if (!valor) {
+      return null;
+    }
+
+    if (/^\d{2}:\d{2}$/.test(valor)) {
+      return `${valor}:00`;
+    }
+
+    if (/^\d{2}:\d{2}:\d{2}$/.test(valor)) {
+      return valor;
+    }
+
+    return null;
+  }
+
+  private formatearHoraVisible(hora: string): string {
+    return hora.slice(0, 5);
+  }
+
+  private formatearTurnoVisible(turno: string): string {
+    const valor = this.normalizar(turno);
+
+    if (valor === 'MANANA') return 'Mañana';
+    if (valor === 'TARDE') return 'Tarde';
+    if (!turno?.trim()) return '-';
+
+    const texto = turno.trim().toLocaleLowerCase('es-AR');
+    return texto.charAt(0).toLocaleUpperCase('es-AR') + texto.slice(1);
+  }
+
+  private aplicarSesionCamara(session: ScannerCameraSession): void {
+    this.camarasDisponibles = session.devices;
+    this.camaraActivaId = session.activeDeviceId;
   }
 }
