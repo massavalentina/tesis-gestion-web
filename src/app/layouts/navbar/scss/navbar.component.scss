@@ -44,7 +44,8 @@
   outline: none;
   background: transparent;
   width: 100%;
-  font-size: 0.95rem;
+  /* 16px minimo: por debajo de eso, Safari/Chrome mobile hacen zoom automatico al enfocar el input */
+  font-size: 16px;
 }
 
 .clear-btn {

@@ -18,7 +18,7 @@
                   [(ngModel)]="cursoSeleccionado"
                   (ngModelChange)="onCursoChange()"
                   [disabled]="cargandoCursos"
-                  placeholder="Elegí un curso...">
+                  placeholder="Seleccione un curso...">
         <mat-option *ngFor="let c of cursos" [value]="c">{{ c.codigo }}</mat-option>
       </mat-select>
     </div>
@@ -53,7 +53,7 @@
   <!-- Placeholder sin curso -->
   <div class="estado-center muted" *ngIf="!cursoSeleccionado && !cargandoCursos && !errorCursos">
     <mat-icon>school</mat-icon>
-    <span>Seleccioná un curso para ver los estudiantes.</span>
+    <span>Seleccione un curso para ver los estudiantes.</span>
   </div>
 
   <!-- Cargando alumnos -->
