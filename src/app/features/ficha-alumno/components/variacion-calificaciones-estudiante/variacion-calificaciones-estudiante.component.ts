@@ -33,7 +33,13 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const TOTAL_INSTANCIAS = 8;
+
+const ORIGEN_NOTA_LABEL: Record<TipoCalificacion, string> = {
+  N: 'Nota original',
+  R1: 'Recuperatorio 1',
+  R2: 'Recuperatorio 2',
+};
 
 interface MateriaVariacion {
   idEC: string;
@@ -99,11 +105,6 @@ export class VariacionCalificacionesEstudianteComponent implements OnChanges {
     return `${String(parsed.getDate()).padStart(2, '0')}/${String(parsed.getMonth() + 1).padStart(2, '0')}/${parsed.getFullYear()}`;
   }
 
-  formatMonth(date: string): string {
-    const parsed = new Date(date);
-    return `${MESES[parsed.getMonth()]}`;
-  }
-
   private cargar(): void {
     this.cargando = true;
 
@@ -144,32 +145,34 @@ export class VariacionCalificacionesEstudianteComponent implements OnChanges {
 
   private buildChartOptions(materia: MateriaVariacion): EChartsOption {
     const serie = materia.variacion?.seriesByStudentId[this.estudianteId];
-    const puntos = serie?.puntos ?? [];
+    const puntoPorEvaluacion = new Map((serie?.puntos ?? []).map(punto => [punto.evaluacionNumero, punto]));
 
-    const year = puntos[0] ? new Date(puntos[0].fechaTimestamp).getFullYear() : new Date().getFullYear();
-    const minDate = Date.UTC(year, 2, 1);
-    const maxDate = Date.UTC(year, 10, 30);
+    const categories = Array.from({ length: TOTAL_INSTANCIAS }, (_, index) => `IE ${index + 1}`);
 
-    const studentData = puntos.map(punto => ({
-      value: [punto.fechaTimestamp, punto.valor],
-      nombre: punto.etiqueta,
-      fecha: punto.fecha,
-      tipoOrigen: punto.tipoOrigen,
-      evaluacionNumero: punto.evaluacionNumero,
-    }));
+    const studentData = categories.map((_, index) => {
+      const numero = index + 1;
+      const punto = puntoPorEvaluacion.get(numero);
+      return {
+        value: punto?.valor ?? null,
+        fecha: punto?.fecha ?? null,
+        tipoOrigen: punto?.tipoOrigen ?? null,
+      };
+    });
 
-    const bandLower: Array<[number, number]> = [];
-    const bandDelta: Array<[number, number]> = [];
-    const avgData: Array<[number, number | null]> = [];
-    for (let nro = 1; nro <= 8; nro++) {
-      const ts = materia.variacion?.fechaTimestampPorEvaluacion[nro] ?? null;
+    const bandLower: Array<number | null> = [];
+    const bandDelta: Array<number | null> = [];
+    const avgData: Array<number | null> = [];
+    for (let nro = 1; nro <= TOTAL_INSTANCIAS; nro++) {
       const promedio = materia.variacion?.promedioPorEvaluacion[nro] ?? null;
       const inferior = materia.variacion?.bandaInferiorPorEvaluacion[nro] ?? null;
       const superior = materia.variacion?.bandaSuperiorPorEvaluacion[nro] ?? null;
-      if (ts !== null && promedio !== null && inferior !== null && superior !== null) {
-        avgData.push([ts, promedio]);
-        bandLower.push([ts, inferior]);
-        bandDelta.push([ts, superior - inferior]);
+      avgData.push(promedio);
+      if (inferior !== null && superior !== null) {
+        bandLower.push(inferior);
+        bandDelta.push(superior - inferior);
+      } else {
+        bandLower.push(null);
+        bandDelta.push(null);
       }
     }
 
@@ -180,7 +183,9 @@ export class VariacionCalificacionesEstudianteComponent implements OnChanges {
       legend: {
         data: ['Estudiante', 'Promedio', 'Banda de promedio'],
         bottom: 0,
+        left: 'center',
         icon: 'circle',
+        itemGap: 24,
         textStyle: { color: '#2f3b52', fontSize: 12 },
       },
       tooltip: {
@@ -193,31 +198,29 @@ export class VariacionCalificacionesEstudianteComponent implements OnChanges {
         formatter: params => {
           const items = Array.isArray(params) ? params : [params];
           const first = items[0];
-          const firstValue = Array.isArray(first?.value) ? first.value as [number, number] : null;
-          const fecha = firstValue ? new Date(firstValue[0]) : null;
-          const header = fecha
-            ? `<div style="margin-bottom:6px;font-weight:600;">${this.formatDate(fecha.toISOString())} (${this.formatMonth(fecha.toISOString())})</div>`
-            : '';
-          const body = items
-            .filter(item => item.seriesName === 'Estudiante')
-            .map(item => {
-              const nota = Array.isArray(item.value) ? item.value[1] : item.value;
-              const meta = item.data as { nombre?: string; tipoOrigen?: TipoCalificacion; evaluacionNumero?: number } | undefined;
-              return `<div><b>${meta?.nombre ?? 'Estudiante'}</b><br/>IE ${meta?.evaluacionNumero ?? ''} / ${meta?.tipoOrigen ?? ''}: ${Number(nota).toFixed(2)}</div>`;
-            })
-            .filter(Boolean)
-            .join('<div style="height:6px"></div>');
-          return header + body;
+          const index = typeof first?.dataIndex === 'number' ? first.dataIndex : 0;
+          const numero = index + 1;
+
+          const estudianteData = items.find(item => item.seriesName === 'Estudiante')?.data as
+            { value: number | null; fecha?: string | null; tipoOrigen?: TipoCalificacion | null } | undefined;
+
+          const lines = [
+            `<strong>Instancia Evaluativa ${numero}</strong>`,
+            !estudianteData || estudianteData.value === null
+              ? 'Nota del alumno: sin nota cargada'
+              : `Nota del alumno: ${estudianteData.value.toFixed(2)}`,
+            estudianteData?.tipoOrigen ? `Origen: ${ORIGEN_NOTA_LABEL[estudianteData.tipoOrigen]}` : '',
+            estudianteData?.fecha ? `Fecha: ${this.formatDate(estudianteData.fecha)}` : '',
+          ].filter(Boolean);
+
+          return lines.join('<br/>');
         },
       },
       xAxis: {
-        type: 'time',
-        min: minDate,
-        max: maxDate,
-        axisLabel: {
-          color: '#5b6b84',
-          formatter: (value: number) => `${MESES[new Date(value).getMonth()]}`,
-        },
+        type: 'category',
+        data: categories,
+        boundaryGap: true,
+        axisLabel: { color: '#5b6b84' },
       },
       yAxis: {
         type: 'value',
