@@ -68,6 +68,7 @@
   color: #555;
   font-size: 0.95rem;
 }
+.estado-center mat-icon { flex-shrink: 0; }
 
 .estado-center.muted { color: #999; }
 .estado-center.error { color: #c62828; }
@@ -128,8 +129,8 @@
 .detalle-panel {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  padding: 16px 20px;
+  gap: 16px;
+  padding: 14px 16px;
   background: #fafafa;
   border-top: 1px solid #e0e0e0;
   border-bottom: 2px solid #1976d2;
@@ -144,9 +145,9 @@
   align-items: center;
   gap: 6px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #1976d2;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .detalle-titulo mat-icon {
@@ -168,7 +169,7 @@
 .detalle-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .detalle-campo {
@@ -204,14 +205,24 @@
 .badge-rojo   { background-color: #c62828; color: #fff; }
 .badge-gris   { background-color: #9e9e9e; color: #fff; }
 
+/* ── Ocultar en desktop cuando no hay reingresos ── */
+.col-hide-desktop { display: none; }
+
+/* ── Mobile-only sections (hidden on desktop, shown on mobile) ── */
+.mobile-only { display: none; }
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-titulo { font-size: 1.1rem; }
   .filtros-row { flex-direction: column; }
   .filtro-fecha, .filtro-curso { flex: 1 1 100%; }
-  .col-hide-mobile { display: none; }
-  .detalle-panel { flex-direction: column; }
+  .col-hide-mobile { display: none !important; }
+  .detalle-panel { flex-direction: column; gap: 12px; padding: 10px 12px; }
   .btn-export { display: none; }
+  .mobile-only { display: block; }
+
+  .reporte-table td, .reporte-table th { font-size: 0.82rem; }
+  .badge { font-size: 0.72rem; padding: 2px 7px; }
 
   /* Paginación alineada a la izquierda en mobile */
   ::ng-deep .mat-mdc-paginator-container {

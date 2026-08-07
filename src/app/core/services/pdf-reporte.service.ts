@@ -430,7 +430,7 @@ export class PdfReporteService {
         resolve(canvas.toDataURL('image/jpeg'));
       };
       img.onerror = () => resolve(null);
-      img.src = 'logo.jpg';
+      img.src = 'logo2.jpg';
     });
   }
 
@@ -1300,7 +1300,7 @@ export class PdfReporteService {
     const tableTopMargin = HEADER_H + 16;
     const titleTopGap = 3;
 
-    const titulo = 'Parte Diario Digital';
+    const titulo = 'Parte Diario';
     const subtitulo = `Curso: ${data.cursoLabel}`;
 
     const renderPageChrome = (): number => {

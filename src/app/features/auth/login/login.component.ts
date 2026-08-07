@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, NgZone, OnInit, AfterViewInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../services/auth.service';
+import { startBallsAnimation } from '../../../core/utils/balls-canvas.util';
 
 @Component({
   selector: 'app-login',
@@ -27,7 +28,7 @@ import { AuthService } from '../services/auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   form: FormGroup;
   loading = false;
   error: string | null = null;
@@ -35,10 +36,15 @@ export class LoginComponent implements OnInit {
   capsLockOn = false;
   provisoriaEnviada = false;
 
+  @ViewChild('bgCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+
+  private stopAnimation?: () => void;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private ngZone: NgZone,
   ) {
     this.form = this.fb.group({
       identificador: ['', Validators.required],
@@ -50,6 +56,16 @@ export class LoginComponent implements OnInit {
     if (this.authService.isAuthenticated) {
       this.router.navigate(['/']);
     }
+  }
+
+  ngAfterViewInit(): void {
+    this.ngZone.runOutsideAngular(() => {
+      this.stopAnimation = startBallsAnimation(this.canvasRef.nativeElement, 14);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stopAnimation?.();
   }
 
   checkCapsLock(event: KeyboardEvent): void {
