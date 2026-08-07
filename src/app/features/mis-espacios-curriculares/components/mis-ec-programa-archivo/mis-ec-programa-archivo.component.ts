@@ -231,7 +231,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
 
     this.confirmar(
       'Confirmar carga del programa',
-      `¿Querés subir "${this.archivoNombre}" como programa de ${this.espacio.nombreMateria} para el año ${this.anioLectivo}?`,
+      `¿Confirma que desea cargar "${this.archivoNombre}" como programa de ${this.espacio.nombreMateria} para el año ${this.anioLectivo}?`,
       false,
       () => this.ejecutarGuardar(),
     );
@@ -260,7 +260,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
       },
       error: (err) => {
         this.guardando = false;
-        this.errorGuardar = typeof err.error === 'string' ? err.error : 'Error al guardar el programa. Intentá de nuevo.';
+        this.errorGuardar = typeof err.error === 'string' ? err.error : 'Error al guardar el programa. Inténtelo nuevamente.';
       },
     });
   }
@@ -304,12 +304,12 @@ export class MisEcProgramaArchivoComponent implements OnInit {
         const vigente = programas.find(p => p.estado === 'Vigente');
         const mensaje = vigente
           ? `El programa "${vigente.titulo}" del ${vigente.anioLectivo}, creado por ${vigente.nombreDocente} el ${this.formatFecha(vigente.fechaCreacion)}, será reemplazado por el programa seleccionado.`
-          : '¿Confirmás que querés establecer este programa como vigente?';
+          : '¿Confirma que desea establecer este programa como vigente?';
         this.confirmar('Establecer como Vigente', mensaje, false, () => this.ejecutarCambioEstado('Vigente'));
       },
       error: () => this.confirmar(
         'Establecer como Vigente',
-        '¿Confirmás que querés establecer este programa como vigente?',
+        '¿Confirma que desea establecer este programa como vigente?',
         false,
         () => this.ejecutarCambioEstado('Vigente'),
       ),
@@ -319,7 +319,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
   establecerComoConfirmado(): void {
     this.confirmar(
       'Establecer como Confirmado',
-      'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirmás la acción?',
+      'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirma la acción?',
       false,
       () => this.ejecutarCambioEstado('Confirmado'),
     );
@@ -337,7 +337,7 @@ export class MisEcProgramaArchivoComponent implements OnInit {
   eliminar(): void {
     this.confirmar(
       'Eliminar programa',
-      '¿Seguro que querés eliminar este programa? Esta acción no se puede deshacer.',
+      '¿Confirma que desea eliminar este programa? Esta acción no se puede deshacer.',
       true,
       () => this.ejecutarEliminar(),
     );

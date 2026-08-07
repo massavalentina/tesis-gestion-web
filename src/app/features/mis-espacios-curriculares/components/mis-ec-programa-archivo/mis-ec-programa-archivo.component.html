@@ -23,7 +23,7 @@
     <!-- ===== FORMULARIO ===== -->
     <div class="card" *ngIf="vista === 'form'">
       <h1>Cargar programa por archivo</h1>
-      <p class="sub">Subí un PDF ya elaborado y completá los datos del programa.</p>
+      <p class="sub">Suba un PDF ya elaborado y complete los datos del programa.</p>
 
       <!-- Zona drag & drop -->
       <div
@@ -40,7 +40,7 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </div>
-        <p class="drop-title">Arrastrá el PDF acá o importalo</p>
+        <p class="drop-title">Arrastre el PDF aquí o impórtelo</p>
         <small class="drop-hint">Solo PDF · máximo 50 MB</small>
         <button class="btn-import" type="button" (click)="abrirSelector(); $event.stopPropagation()">
           Importar PDF
@@ -56,7 +56,7 @@
         (change)="onFileSelected($event)">
 
       <!-- Validación archivo -->
-      <small class="field-hint" *ngIf="intentoGuardar && !archivoSeleccionado">Seleccioná un archivo PDF antes de continuar.</small>
+      <small class="field-hint" *ngIf="intentoGuardar && !archivoSeleccionado">Seleccione un archivo PDF antes de continuar.</small>
 
       <!-- Archivo seleccionado -->
       <div class="file-selected" *ngIf="archivoSeleccionado">
@@ -202,7 +202,7 @@
           </span>
           <div class="pdf-card-body">
             <span class="pdf-card-name">{{ programaCargado.titulo }}</span>
-            <span class="pdf-card-hint">PDF · Tocá para ver</span>
+            <span class="pdf-card-hint">PDF · Seleccione para ver</span>
           </div>
           <div class="pdf-card-actions" (click)="$event.stopPropagation()">
             <button class="btn-ver-pdf" type="button" (click)="abrirPdf()">

@@ -42,6 +42,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
 
   drawerVisible = false;
   drawerModo: 'crear' | 'detalle' | 'editar' = 'crear';
+  drawerPaso = 1;
   slotActual: InstanciaEvaluativaSlot | null = null;
   tipoActual: TipoCalificacion = 'N';
   archivoActual: ArchivoIEGestion | null = null;
@@ -89,8 +90,71 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones']);
   }
 
+  mostrarResumenProgramaEvaluado(): boolean {
+    return !!this.gestion && !this.gestion.sinPrograma && this.gestion.trazabilidadDisponible;
+  }
+
+  totalTemasPrograma(): number {
+    return this.gestion?.unidades.reduce((acc, unidad) => acc + unidad.temas.length, 0) ?? 0;
+  }
+
+  temasProgramaEvaluados(): number {
+    if (!this.gestion) {
+      return 0;
+    }
+
+    const idsPrograma = new Set<string>();
+    this.gestion.unidades.forEach(unidad => unidad.temas.forEach(tema => idsPrograma.add(tema.idBloquePrograma)));
+
+    const idsEvaluados = new Set<string>();
+    this.gestion.instancias.forEach(slot => {
+      [slot.notaOriginal, slot.recuperatorio1, slot.recuperatorio2].forEach(archivo => {
+        archivo?.idBloquesTema.forEach(id => {
+          if (idsPrograma.has(id)) {
+            idsEvaluados.add(id);
+          }
+        });
+      });
+    });
+
+    return idsEvaluados.size;
+  }
+
+  porcentajeProgramaEvaluado(): number {
+    const total = this.totalTemasPrograma();
+    return total === 0 ? 0 : Math.round(this.temasProgramaEvaluados() / total * 100);
+  }
+
+  temasSeleccionadosCount(): number {
+    return this.selectedBloques.size;
+  }
+
   navegarProgramas(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas']);
+  }
+
+  mensajeTrazabilidadFormal(): string {
+    if (this.gestion?.sinPrograma) {
+      return 'No hay programa vigente. Primero cargue un programa desde la sección Programas para habilitar las instancias evaluativas.';
+    }
+
+    const mensaje = this.gestion?.mensajeTrazabilidad?.trim();
+    if (!mensaje) {
+      return 'No se puede abrir esta instancia evaluativa.';
+    }
+
+    return mensaje
+      .replace(/\bcargá\b/gi, 'cargue')
+      .replace(/\bsubí\b/gi, 'suba')
+      .replace(/\bseleccioná\b/gi, 'seleccione')
+      .replace(/\bcreá\b/gi, 'cree')
+      .replace(/\bpodés\b/gi, 'puede')
+      .replace(/\btenés\b/gi, 'debe')
+      .replace(/\bvinculalo\b/gi, 'vincúlelo')
+      .replace(/\bacá\b/gi, 'aquí')
+      .replace(/\bprimero\b/gi, 'Primero')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   cargarGestion(): void {
@@ -140,6 +204,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
   cerrarDrawer(): void {
     this.drawerVisible = false;
     this.drawerModo = 'crear';
+    this.drawerPaso = 1;
     this.slotActual = null;
     this.archivoActual = null;
     this.formError = '';
@@ -160,6 +225,26 @@ export class MisEcEvaluacionesComponent implements OnInit {
     const file = input.files?.[0] ?? null;
     this.archivoSeleccionado = file;
     this.archivoNombre = file?.name ?? '';
+  }
+
+  irAPasoDrawer(paso: number): void {
+    if (paso < 1 || paso > 2) {
+      return;
+    }
+
+    this.drawerPaso = paso;
+  }
+
+  avanzarPasoDrawer(): void {
+    this.irAPasoDrawer(this.drawerPaso + 1);
+  }
+
+  retrocederPasoDrawer(): void {
+    this.irAPasoDrawer(this.drawerPaso - 1);
+  }
+
+  esUltimoPasoDrawer(): boolean {
+    return this.drawerPaso === 2;
   }
 
   toggleUnidad(idBloqueUnidad: string): void {
@@ -325,7 +410,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     }
 
     if (this.drawerModo === 'crear' && !this.archivoSeleccionado) {
-      this.formError = 'Para crear el archivo tenés que adjuntar un PDF.';
+      this.formError = 'Para crear el archivo debe adjuntar un PDF.';
       return;
     }
 
@@ -422,7 +507,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     const ref = this.dialog.open(ConfirmarAccionDialogComponent, {
       data: {
         titulo: 'Eliminar archivo',
-        mensaje: `Vas a eliminar ${tipo} de la IE ${slot.nro}. Si este archivo no tiene notas, la operación se puede deshacer solo re-cargando una nueva versión.`,
+        mensaje: `Se eliminará ${tipo} de la IE ${slot.nro}. Si este archivo no tiene notas, la operación solo se podrá revertir cargando una nueva versión.`,
         textoConfirmar: 'Eliminar',
         color: 'warn',
       },
@@ -476,12 +561,12 @@ export class MisEcEvaluacionesComponent implements OnInit {
 
   motivoCarga(slot: InstanciaEvaluativaSlot, tipo: TipoCalificacion): string {
     if (this.gestion?.sinPrograma) {
-      return this.gestion.mensajeTrazabilidad || 'No podés cargar instancias evaluativas sin un programa vigente.';
+      return this.mensajeTrazabilidadFormal() || 'No puede cargar instancias evaluativas sin un programa vigente.';
     }
 
     if (tipo === 'N') return '';
-    if (tipo === 'R1' && !slot.notaOriginal) return 'Primero tenés que cargar la Nota Original.';
-    if (tipo === 'R2' && !slot.recuperatorio1) return 'Primero tenés que cargar el Recuperatorio 1.';
+    if (tipo === 'R1' && !slot.notaOriginal) return 'Primero debe cargar la Nota Original.';
+    if (tipo === 'R2' && !slot.recuperatorio1) return 'Primero debe cargar el Recuperatorio 1.';
     return '';
   }
 
@@ -517,7 +602,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return 'Detalle del archivo';
     }
 
-    return 'Editar archivo';
+    return 'Edición del archivo';
   }
 
   subtituloDrawer(): string {
@@ -526,26 +611,26 @@ export class MisEcEvaluacionesComponent implements OnInit {
     }
 
     if (this.drawerModo === 'crear') {
-      return 'Cargá el PDF y, si aplica, vinculalo al programa.';
+      return 'Cargue el PDF y, si corresponde, vincúlelo al programa.';
     }
 
     if (this.drawerModo === 'detalle') {
-      return 'Revisá los datos del archivo y su trazabilidad.';
+      return 'Revise los datos del archivo y su trazabilidad.';
     }
 
-    return 'Editá los datos del archivo y su trazabilidad.';
+    return 'Edite los datos del archivo y su trazabilidad.';
   }
 
   nombreTipoIE(tipo: TipoIE): string {
     switch (tipo) {
       case 'EvaluacionEscrita':
-        return 'Evaluación Escrita';
+        return 'Evaluación escrita';
       case 'EvaluacionOral':
-        return 'Evaluación Oral';
+        return 'Evaluación oral';
       case 'Entrega':
         return 'Entrega';
       case 'TPI':
-        return 'TPI';
+        return 'Trabajo práctico integrador';
     }
 
     return tipo;
@@ -729,6 +814,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     archivo: ArchivoIEGestion | null,
   ): void {
     this.drawerModo = modo;
+    this.drawerPaso = 1;
     this.slotActual = slot;
     this.tipoActual = tipo;
     this.archivoActual = archivo;
@@ -751,7 +837,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     const ref = this.dialog.open(ConfirmarEstadoIEDialogComponent, {
       data: {
         titulo: 'Fecha en el pasado',
-        mensaje: 'La nueva fecha de ejecución queda en el pasado. ¿Querés marcar esta instancia evaluativa como evaluada o mantener su estado actual?',
+        mensaje: 'La nueva fecha de ejecución queda en el pasado. ¿Desea marcar esta instancia evaluativa como evaluada o mantener su estado actual?',
         textoEvaluada: 'Marcar como evaluada',
         textoMantener: 'Mantener estado actual',
       },

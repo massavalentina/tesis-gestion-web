@@ -24,7 +24,7 @@ $radius: 16px;
 
 /* ─── Encabezado ─── */
 .page-head {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 
   h1 {
     font-size: 28px;
@@ -46,9 +46,16 @@ $radius: 16px;
   background: $surface;
   border: 1px solid $border;
   border-radius: $radius;
-  padding: 18px 20px;
-  margin-bottom: 24px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
   box-shadow: $shadow;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .filter-label {
@@ -60,7 +67,8 @@ $radius: 16px;
   text-transform: uppercase;
   letter-spacing: .7px;
   color: $text-muted;
-  margin-bottom: 12px;
+  margin-bottom: 0;
+  flex-shrink: 0;
 
   svg {
     width: 13px;
@@ -72,14 +80,14 @@ $radius: 16px;
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pill {
   font-family: 'Open Sans', sans-serif;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 7px 16px;
+  padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid $border;
   background: $surface;
@@ -104,13 +112,14 @@ $radius: 16px;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   color: $text-muted;
-  margin-top: 12px;
+  margin-top: 7px;
+  line-height: 1.3;
 
   svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
   }
 }
@@ -119,7 +128,7 @@ $radius: 16px;
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 /* ─── Card ─── */
@@ -127,7 +136,7 @@ $radius: 16px;
   background: $surface;
   border: 1px solid $border;
   border-radius: $radius;
-  padding: 22px;
+  padding: 18px 18px 16px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -135,6 +144,9 @@ $radius: 16px;
   animation: fadeUp .45s both;
   transition: transform .2s, box-shadow .2s, border-color .2s;
   outline: none;
+  min-height: 226px;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: translateY(-4px);
@@ -167,27 +179,27 @@ $radius: 16px;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .subject-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   background: rgba(60,120,180,.1);
   color: $primary;
   flex-shrink: 0;
 
-  svg { width: 22px; height: 22px; }
+  svg { width: 21px; height: 21px; }
 }
 
 .badge {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  padding: 5px 11px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 7px;
   background: #1e3a5f;
   color: #fff;
   letter-spacing: .3px;
@@ -195,10 +207,10 @@ $radius: 16px;
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: $text;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   line-height: 1.25;
 }
 
@@ -206,49 +218,51 @@ $radius: 16px;
 .horarios-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
+  gap: 5px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid $border;
+  min-height: 72px;
 }
 
 .horario-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .dias {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 
 .day-chip {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 700;
   background: $primary;
   color: #fff;
-  padding: 3px 9px;
+  padding: 3px 8px;
   border-radius: 6px;
 }
 
 .hora-texto {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 12.5px;
   font-weight: 600;
   color: $text;
 
-  svg { width: 14px; height: 14px; color: $primary; }
+  svg { width: 13px; height: 13px; color: $primary; }
 }
 
 /* ─── Meta ─── */
 .card-meta {
   display: flex;
-  gap: 20px;
+  gap: 18px;
+  margin-top: 6px;
 }
 
 .meta-item {
@@ -258,21 +272,21 @@ $radius: 16px;
 }
 
 .meta-value {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: $text;
 }
 
 .meta-label {
-  font-size: 12px;
+  font-size: 11.5px;
   color: $text-muted;
 }
 
 /* ─── Flecha ─── */
 .card-arrow {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
+  right: 16px;
+  bottom: 16px;
   color: $primary;
   opacity: 0;
   transform: translateX(-6px);

@@ -16,7 +16,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 54px 18px 106px;
+  padding: 28px 18px 96px;
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -33,7 +33,7 @@
 .scanner-copy {
   width: 100%;
   text-align: center;
-  margin: 24px 0 8px;
+  margin: 8px 0 6px;
 }
 
 .scanner-copy h1 {
@@ -62,7 +62,7 @@
   gap: 8px;
   width: 100%;
   align-items: center;
-  margin-top: 32px;
+  margin-top: 22px;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -162,7 +162,7 @@
 .hora-hint {
   width: min(100%, 284px);
   margin-top: -4px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   text-align: left;
   font-size: 11px;
   color: #5b6b7d;
@@ -173,7 +173,7 @@
   width: min(100%, 280px);
   display: flex;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 10px;
   transform: scale(0.93);
   transform-origin: center;
 }
@@ -231,8 +231,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  min-height: 108px;
-  padding: 14px 20px 18px;
+  min-height: 92px;
+  padding: 10px 20px 14px;
   background: rgba(248, 251, 255, 0.96);
   display: flex;
   flex-direction: column;
@@ -258,8 +258,8 @@
 }
 
 .scan-btn {
-  width: 68px;
-  height: 68px;
+  width: 62px;
+  height: 62px;
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
@@ -302,7 +302,7 @@
 }
 
 .scan-status {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #6b7c8f;
   text-align: center;
@@ -552,5 +552,54 @@
   .pending-actions {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 760px) {
+  .page-content {
+    padding: 18px 16px 84px;
+  }
+
+  .scanner-copy {
+    margin: 2px 0 4px;
+  }
+
+  .scanner-copy h1 {
+    font-size: 23px;
+  }
+
+  .scanner-copy p {
+    margin-top: 6px;
+    font-size: 13px;
+  }
+
+  .config {
+    margin-top: 16px;
+    gap: 6px;
+  }
+
+  .hora-hint {
+    margin-bottom: 4px;
+    font-size: 10.5px;
+  }
+
+  :host ::ng-deep .rafaga-toggle {
+    margin-top: 6px;
+    transform: scale(0.9);
+  }
+
+  .bottom-bar {
+    min-height: 86px;
+    padding: 8px 18px 12px;
+    gap: 6px;
+  }
+
+  .scan-btn {
+    width: 58px;
+    height: 58px;
+  }
+
+  .scan-status {
+    font-size: 11px;
   }
 }
