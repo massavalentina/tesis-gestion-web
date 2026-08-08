@@ -325,6 +325,7 @@
                     {{ a.tipoOperacion }}
                   </span>
                 </div>
+                <div class="audit-evento">{{ a.tituloEvento }}</div>
                 <div class="audit-detalle" *ngIf="parsearDetalle(a).length > 0">
                   <div class="audit-linea" *ngFor="let linea of parsearDetalle(a)">{{ linea }}</div>
                 </div>

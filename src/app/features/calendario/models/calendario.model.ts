@@ -38,6 +38,7 @@ export interface AuditoriaEvento {
   nombreUsuario: string;
   apellidoUsuario: string;
   fechaRegistro: string;
+  tituloEvento: string;
 }
 
 export interface TipoEvento {
