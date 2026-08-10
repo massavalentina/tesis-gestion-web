@@ -72,6 +72,8 @@ interface CalificacionAuditChange {
   tipo: TipoCalificacion;
   valorAnterior: number | null;
   valorNuevo: number | null;
+  resultadoOperacion: string;
+  avisoBreve: string | null;
 }
 
 interface CalificacionAuditSession {
@@ -164,6 +166,7 @@ export class MisEcCalificacionesComponent implements OnInit {
   viewMode: ViewMode = 'read';
   pageSize = 10;
   pageIndex = 0;
+  auditPageIndex = 0;
 
   totalColumnasTabla = 14;
   totalPaginas = 1;
@@ -241,18 +244,6 @@ export class MisEcCalificacionesComponent implements OnInit {
     return this.viewMode === 'report';
   }
 
-  get modeLabel(): string {
-    if (this.modoEdicion) {
-      return 'Edicion activa';
-    }
-
-    if (this.modoReporte) {
-      return 'Vista reporte';
-    }
-
-    return 'Solo consulta';
-  }
-
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {
     if (!this.tieneCambiosSinGuardar()) {
@@ -264,11 +255,34 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   get sesionesAuditoriaVisibles(): CalificacionAuditSession[] {
-    return this.auditoria;
+    const start = this.auditPageIndex * this.auditSessionPageSize;
+    return this.auditoria.slice(start, start + this.auditSessionPageSize);
   }
 
-  get hayMasSesionesAuditoria(): boolean {
-    return this.hasMoreAuditSessions;
+  get auditTotalPages(): number {
+    return Math.max(1, Math.ceil(this.totalAuditSessions / this.auditSessionPageSize));
+  }
+
+  get auditRangeLabel(): string {
+    if (this.totalAuditSessions === 0) {
+      return 'Sin resultados';
+    }
+
+    const start = this.auditPageIndex * this.auditSessionPageSize + 1;
+    const end = Math.min(start + this.sesionesAuditoriaVisibles.length - 1, this.totalAuditSessions);
+    return `Mostrando ${start}-${end} de ${this.totalAuditSessions}`;
+  }
+
+  get canGoToNextAuditPage(): boolean {
+    if (this.auditLoadingMore) {
+      return false;
+    }
+
+    if (this.auditPageIndex < this.auditTotalPages - 1) {
+      return true;
+    }
+
+    return false;
   }
 
   get docenteActualLabel(): string {
@@ -287,23 +301,34 @@ export class MisEcCalificacionesComponent implements OnInit {
   }
 
   formatTimestamp(timestamp: string): string {
-    return new Date(timestamp).toLocaleString('es-AR');
+    return new Intl.DateTimeFormat('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(timestamp));
   }
 
   formatAuditValue(value: number | null): string {
     return value === null ? '—' : String(value);
   }
 
-  getAuditChangeLabel(change: CalificacionAuditChange): string {
-    if (change.valorAnterior === null && change.valorNuevo !== null) {
-      return 'Primera carga';
-    }
+  getAuditChangeLabel(change: CalificacionAuditChange, origen: string): string {
+    const isImportacion = origen === 'Importacion';
 
-    if (change.valorAnterior !== null && change.valorNuevo === null) {
-      return 'Nota quitada';
+    switch (change.resultadoOperacion) {
+      case 'Alta':
+        return isImportacion ? 'Nota nueva' : 'Primera carga';
+      case 'Baja':
+        return 'Nota quitada';
+      case 'ConservadaConflicto':
+        return 'Nota del sistema conservada';
+      case 'Reemplazo':
+        return isImportacion ? 'Nota CiDi aplicada' : 'Corrección';
+      default:
+        return 'Corrección';
     }
-
-    return 'Correccion';
   }
 
   volverAlListado(): void {
@@ -316,6 +341,15 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   navegarImportador(): void {
     this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'calificaciones', 'importar']);
+  }
+
+  toggleModoReporte(): void {
+    if (this.modoReporte) {
+      this.volverAVistaNormal();
+      return;
+    }
+
+    void this.activarReporte();
   }
 
   setFiltro(filtro: FiltroEstado): void {
@@ -368,30 +402,32 @@ export class MisEcCalificacionesComponent implements OnInit {
     return this.expandedAuditSessions[sessionId] === true;
   }
 
-  showMoreAuditSessions(): void {
-    if (this.auditLoadingMore || !this.hasMoreAuditSessions) {
+  goToPreviousAuditPage(): void {
+    if (this.auditPageIndex === 0 || this.auditLoadingMore) {
       return;
     }
 
-    this.auditLoadingMore = true;
-    this.auditWarning = '';
+    this.auditPageIndex -= 1;
+  }
 
-    this.calificacionesService.getAuditoria(
-      this.idEC,
-      this.auditoria.length,
-      this.auditSessionPageSize,
-    ).pipe(
-      finalize(() => {
-        this.auditLoadingMore = false;
-      }),
-    ).subscribe({
-      next: response => {
-        this.applyAuditResponse(response, true);
-      },
-      error: () => {
-        this.auditWarning = 'No se pudo cargar mas historial de cambios.';
-      },
-    });
+  async goToNextAuditPage(): Promise<void> {
+    if (!this.canGoToNextAuditPage) {
+      return;
+    }
+
+    const nextPageIndex = this.auditPageIndex + 1;
+    const requiredLoadedItems = (nextPageIndex + 1) * this.auditSessionPageSize;
+
+    if (this.auditoria.length < requiredLoadedItems && this.hasMoreAuditSessions) {
+      const loaded = await this.loadMoreAuditSessions();
+      if (!loaded && this.auditoria.length < requiredLoadedItems) {
+        return;
+      }
+    }
+
+    if (nextPageIndex < this.auditTotalPages) {
+      this.auditPageIndex = nextPageIndex;
+    }
   }
 
   activarEdicion(): void {
@@ -768,7 +804,7 @@ export class MisEcCalificacionesComponent implements OnInit {
       calificaciones: this.calificacionesService.getCalificacionesVigentes(this.idEC),
       auditoria: this.calificacionesService.getAuditoria(this.idEC, 0, this.auditSessionPageSize).pipe(
         catchError(() => {
-          this.auditWarning = 'No se pudo cargar la auditoria persistida. Podes trabajar igual con la tabla.';
+          this.auditWarning = 'No se pudo cargar la auditoría persistida. Puede continuar trabajando con la tabla.';
           return of<AuditoriaCalificacionesResponse | null>(null);
         }),
       ),
@@ -839,9 +875,9 @@ export class MisEcCalificacionesComponent implements OnInit {
         return;
       }
 
-      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'N')] = instancia.archivos.notaOriginal !== null;
-      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R1')] = instancia.archivos.recuperatorio1 !== null;
-      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R2')] = instancia.archivos.recuperatorio2 !== null;
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'N')] = instancia.archivos.notaOriginal?.puedeCargarNotas === true;
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R1')] = instancia.archivos.recuperatorio1?.puedeCargarNotas === true;
+      this.slotEnabledMap[this.slotKey(evaluacion.numero, 'R2')] = instancia.archivos.recuperatorio2?.puedeCargarNotas === true;
     });
 
     this.refreshVisibleEvaluaciones();
@@ -1163,7 +1199,13 @@ export class MisEcCalificacionesComponent implements OnInit {
     this.hayNotasInvalidas = hayNotasInvalidas;
     this.canSave = this.modoEdicion && !this.saving && hasAnyDraftChanges && !hayNotasInvalidas;
     this.updatedAtLabel = this.lastUpdatedAt
-      ? `Ultima actualizacion ${new Date(this.lastUpdatedAt).toLocaleString('es-AR')}`
+      ? `Última actualización ${new Intl.DateTimeFormat('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(new Date(this.lastUpdatedAt))}`
       : 'Sin notas persistidas';
   }
 
@@ -1222,6 +1264,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     };
     this.totalAuditSessions = response.totalSesiones;
     this.hasMoreAuditSessions = response.hasMore;
+    this.auditPageIndex = Math.min(this.auditPageIndex, Math.max(0, this.auditTotalPages - 1));
   }
 
   private applySaveResponse(
@@ -1251,12 +1294,38 @@ export class MisEcCalificacionesComponent implements OnInit {
     }
 
     this.feedbackGuardado = response.cambiosAplicados === 1
-      ? 'Se guardo 1 cambio en la base de datos.'
+      ? 'Se guardó 1 cambio en la base de datos.'
       : `Se guardaron ${response.cambiosAplicados} cambios en la base de datos.`;
     this.viewMode = 'read';
     this.draftCells = {};
     if (this.filtroActivo === 'changed') {
       this.filtroActivo = 'all';
+    }
+  }
+
+  private async loadMoreAuditSessions(): Promise<boolean> {
+    if (this.auditLoadingMore || !this.hasMoreAuditSessions) {
+      return false;
+    }
+
+    this.auditLoadingMore = true;
+    this.auditWarning = '';
+
+    try {
+      const response = await lastValueFrom(
+        this.calificacionesService.getAuditoria(
+          this.idEC,
+          this.auditoria.length,
+          this.auditSessionPageSize,
+        ),
+      );
+      this.applyAuditResponse(response, true);
+      return true;
+    } catch {
+      this.auditWarning = 'No se pudo cargar más historial de cambios.';
+      return false;
+    } finally {
+      this.auditLoadingMore = false;
     }
   }
 
@@ -1326,10 +1395,10 @@ export class MisEcCalificacionesComponent implements OnInit {
 
   private recomputeEstadoAvisos(): void {
     const pendientesConNotas = this.instancias.filter(instancia =>
-      instancia.estado !== 'Evaluada' && this.instanciaTieneNotas(instancia),
+      (instancia.estadoGeneralIe ?? instancia.estado) !== 'Evaluada' && this.instanciaTieneNotas(instancia),
     ).length;
     const evaluadasSinNotas = this.instancias.filter(instancia =>
-      instancia.estado === 'Evaluada' && !this.instanciaTieneNotas(instancia),
+      (instancia.estadoGeneralIe ?? instancia.estado) === 'Evaluada' && !this.instanciaTieneNotas(instancia),
     ).length;
 
     this.estadoAvisoPendienteConNotas = pendientesConNotas > 0
@@ -1429,6 +1498,8 @@ export class MisEcCalificacionesComponent implements OnInit {
         tipo: change.tipoCalificacion,
         valorAnterior: change.valorAnterior,
         valorNuevo: change.valorNuevo,
+        resultadoOperacion: change.resultadoOperacion,
+        avisoBreve: change.avisoBreve,
       })),
     };
   }

@@ -1,17 +1,15 @@
-export interface ImportacionCalificacionesDetalle {
-  idImportacionCalificaciones: string;
+export interface ImportacionAnalisis {
   estado: string;
   nombreArchivoOriginal: string;
-  rutaArchivoFinal: string | null;
-  fechaCreacion: string;
-  fechaUltimaActualizacion: string;
-  fechaConfirmacion: string | null;
-  tieneSesionPendiente: boolean;
-  puedeRevisar: boolean;
-  puedeConfirmar: boolean;
+  hashArchivoSha256: string;
   contexto: ImportacionContexto;
   resumen: ImportacionAnalisisResumen;
   bloqueos: ImportacionIssue[];
+  estudiantesCurso: ImportacionStudentOption[];
+  slots: ImportacionSlot[];
+  rows: ImportacionRevisionRow[];
+  resumenConfirmacionInicial: ImportacionConfirmacionResumen;
+  puedeConfirmar: boolean;
 }
 
 export interface ImportacionContexto {
@@ -38,20 +36,9 @@ export interface ImportacionAnalisisResumen {
 
 export interface ImportacionIssue {
   codigo: string;
-  severidad: 'clean' | 'review' | 'blocking' | string;
+  severidad: 'clean' | 'info' | 'review' | 'blocking' | string;
   mensaje: string;
   slotKey: string | null;
-}
-
-export interface ImportacionRevision {
-  idImportacionCalificaciones: string;
-  estado: string;
-  resumen: ImportacionAnalisisResumen;
-  bloqueos: ImportacionIssue[];
-  estudiantesCurso: ImportacionStudentOption[];
-  slots: ImportacionSlot[];
-  rows: ImportacionRevisionRow[];
-  puedeConfirmar: boolean;
 }
 
 export interface ImportacionStudentOption {
@@ -68,6 +55,7 @@ export interface ImportacionSlot {
   label: string;
   tieneNotasImportadas: boolean;
   tieneEstructuraPrevia: boolean;
+  admiteCargaNotas: boolean;
 }
 
 export interface ImportacionRevisionRow {
@@ -77,7 +65,7 @@ export interface ImportacionRevisionRow {
   estado: 'clean' | 'review' | 'blocking' | string;
   mensaje: string | null;
   estudianteAsociadoId: string | null;
-  omitida: boolean;
+  requiereAsociacionManual: boolean;
   candidatosEstudianteIds: string[];
   issues: ImportacionIssue[];
   cells: ImportacionRevisionCell[];
@@ -85,6 +73,7 @@ export interface ImportacionRevisionRow {
 
 export interface ImportacionRevisionCell {
   slotKey: string;
+  idCalificacionBase: string | null;
   evaluacionNumero: number;
   tipoCalificacion: 'N' | 'R1' | 'R2' | string;
   valorImportadoRaw: string | null;
@@ -92,34 +81,25 @@ export interface ImportacionRevisionCell {
   valorDb: number | null;
   valorFinal: number | null;
   estado: 'clean' | 'review' | 'blocking' | string;
-  resolucion: 'omit' | 'keep_db' | 'use_imported' | 'manual_edit' | 'pending' | string;
+  resolucion: 'keep_db' | 'use_imported' | 'clear_db' | 'pending' | string;
   mensaje: string | null;
-  editable: boolean;
 }
 
-export interface ActualizarImportacionRevisionRequest {
-  rows: ActualizarImportacionRevisionRow[];
+export interface ConfirmarImportacionPayload {
+  hashArchivoSha256: string;
+  rows: ConfirmarImportacionRow[];
 }
 
-export interface ActualizarImportacionRevisionRow {
+export interface ConfirmarImportacionRow {
   rowId: string;
   estudianteAsociadoId: string | null;
-  omitida: boolean;
-  cells: ActualizarImportacionRevisionCell[];
+  cells: ConfirmarImportacionCell[];
 }
 
-export interface ActualizarImportacionRevisionCell {
+export interface ConfirmarImportacionCell {
   slotKey: string;
   resolucion: string;
-  valorFinal: number | null;
-}
-
-export interface ImportacionConfirmacion {
-  idImportacionCalificaciones: string;
-  estado: string;
-  resumen: ImportacionConfirmacionResumen;
-  puedeConfirmar: boolean;
-  bloqueos: ImportacionIssue[];
+  idCalificacionBase: string | null;
 }
 
 export interface ImportacionConfirmacionResumen {
@@ -127,8 +107,7 @@ export interface ImportacionConfirmacionResumen {
   notasNuevas: number;
   notasExistentesMantenidas: number;
   notasReemplazadas: number;
-  correccionesManuales: number;
-  notasOmitidas: number;
+  notasQuitadas: number;
 }
 
 export interface ConfirmarImportacionResponse {

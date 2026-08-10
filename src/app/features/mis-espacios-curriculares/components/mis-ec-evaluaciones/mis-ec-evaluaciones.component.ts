@@ -3,12 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { lastValueFrom } from 'rxjs';
 import { ConfirmarAccionDialogComponent } from '../confirmar-accion-dialog/confirmar-accion-dialog.component';
-import {
-  ConfirmarEstadoIEDialogComponent,
-  ConfirmarEstadoIEResult,
-} from '../confirmar-estado-ie-dialog/confirmar-estado-ie-dialog.component';
 import { EvaluacionesService } from '../../services/evaluaciones.service';
 import { TemaArbolDto } from '../../models/planificacion.model';
 import {
@@ -61,6 +56,8 @@ export class MisEcEvaluacionesComponent implements OnInit {
   expandedUnidades = new Set<string>();
   avisoSlotVisibleNro: number | null = null;
   avisoSlotPersistenteNro: number | null = null;
+  avisoArchivoVisibleId: string | null = null;
+  avisoArchivoPersistenteId: string | null = null;
 
   guardando = false;
   eliminando = false;
@@ -108,12 +105,14 @@ export class MisEcEvaluacionesComponent implements OnInit {
 
     const idsEvaluados = new Set<string>();
     this.gestion.instancias.forEach(slot => {
-      [slot.notaOriginal, slot.recuperatorio1, slot.recuperatorio2].forEach(archivo => {
-        archivo?.idBloquesTema.forEach(id => {
-          if (idsPrograma.has(id)) {
-            idsEvaluados.add(id);
-          }
-        });
+      if ((slot.estadoGeneralIe ?? slot.estado) !== 'Evaluada' || !slot.notaOriginal) {
+        return;
+      }
+
+      slot.notaOriginal.idBloquesTema.forEach(id => {
+        if (idsPrograma.has(id)) {
+          idsEvaluados.add(id);
+        }
       });
     });
 
@@ -193,12 +192,15 @@ export class MisEcEvaluacionesComponent implements OnInit {
   }
 
   abrirEditar(slot: InstanciaEvaluativaSlot, tipo: TipoCalificacion, archivo: ArchivoIEGestion): void {
-    if (!archivo.puedeEditar) {
+    if (!archivo.puedeEditar && !archivo.puedeCompletarVinculacion) {
       this.mostrarBanner('warn', `No se puede editar ${tipo}`, this.motivoBloqueoAccion(archivo, 'editar'));
       return;
     }
 
     this.prepararDrawer('editar', slot, tipo, archivo);
+    if (!archivo.puedeEditar && archivo.puedeCompletarVinculacion) {
+      this.drawerPaso = 2;
+    }
   }
 
   cerrarDrawer(): void {
@@ -218,6 +220,8 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.expandedUnidades = new Set<string>();
     this.avisoSlotVisibleNro = null;
     this.avisoSlotPersistenteNro = null;
+    this.avisoArchivoVisibleId = null;
+    this.avisoArchivoPersistenteId = null;
   }
 
   onArchivoSeleccionado(event: Event): void {
@@ -344,6 +348,26 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.avisoSlotVisibleNro = this.avisoSlotPersistenteNro;
   }
 
+  avisoArchivoActivo(idArchivoIE: string): boolean {
+    return this.avisoArchivoVisibleId === idArchivoIE || this.avisoArchivoPersistenteId === idArchivoIE;
+  }
+
+  mostrarAvisoArchivo(idArchivoIE: string): void {
+    this.avisoArchivoVisibleId = idArchivoIE;
+  }
+
+  ocultarAvisoArchivo(idArchivoIE: string): void {
+    if (this.avisoArchivoVisibleId === idArchivoIE) {
+      this.avisoArchivoVisibleId = null;
+    }
+  }
+
+  alternarAvisoArchivo(idArchivoIE: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.avisoArchivoPersistenteId = this.avisoArchivoPersistenteId === idArchivoIE ? null : idArchivoIE;
+    this.avisoArchivoVisibleId = this.avisoArchivoPersistenteId;
+  }
+
   slotBloqueado(): boolean {
     return !!this.gestion?.sinPrograma;
   }
@@ -353,7 +377,8 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return 'Bloqueado';
     }
 
-    return slot.estado === 'SinCarga' ? 'Sin carga' : slot.estado;
+    const estado = slot.estadoGeneralIe ?? slot.estado;
+    return estado === 'SinCarga' ? 'Sin carga' : estado;
   }
 
   avisoEstadoSlot(slot: InstanciaEvaluativaSlot): string {
@@ -362,12 +387,23 @@ export class MisEcEvaluacionesComponent implements OnInit {
     }
 
     const tieneNotas = this.slotTieneNotas(slot);
-    if (slot.estado !== 'Evaluada' && tieneNotas) {
+    const estado = slot.estadoGeneralIe ?? slot.estado;
+    const totalEstudiantesActivos = this.gestion?.totalEstudiantesActivos ?? 0;
+    const cantidadNotasNotaOriginal = slot.notaOriginal?.cantidadCalificaciones ?? 0;
+
+    if (estado !== 'Evaluada' && tieneNotas) {
       return 'Tiene notas cargadas pero la IE sigue pendiente.';
     }
 
-    if (slot.estado === 'Evaluada' && !tieneNotas) {
+    if (estado === 'Evaluada' && !tieneNotas) {
       return 'La IE está evaluada pero todavía no tiene notas asociadas.';
+    }
+
+    if (estado === 'Evaluada'
+      && totalEstudiantesActivos > 0
+      && cantidadNotasNotaOriginal > 0
+      && cantidadNotasNotaOriginal < totalEstudiantesActivos) {
+      return `La IE está evaluada pero aún quedan estudiantes sin notas cargadas.`;
     }
 
     return '';
@@ -375,6 +411,11 @@ export class MisEcEvaluacionesComponent implements OnInit {
 
   async guardar(): Promise<void> {
     if (!this.slotActual) {
+      return;
+    }
+
+    if (this.soloVinculacionActual()) {
+      this.guardarSoloTrazabilidad();
       return;
     }
 
@@ -414,32 +455,21 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return;
     }
 
-    if (
-      this.drawerModo === 'editar' &&
-      this.fechaEjecucionOriginal &&
-      !this.esFechaPasada(this.fechaEjecucionOriginal) &&
-      this.esFechaPasada(this.fechaEjecucionInput) &&
-      this.estadoIEActual !== 'Evaluada'
-    ) {
-      const decision = await this.confirmarEstadoPorFecha();
-      if (decision === 'cancelar') {
-        return;
-      }
+    const estadoAEnviar: 'Pendiente' | 'Evaluada' =
+      this.drawerModo === 'crear' && this.esFechaPasada(this.fechaEjecucionInput)
+        ? 'Pendiente'
+        : this.estadoIEActual;
 
-      if (decision === 'evaluada') {
-        this.estadoIEActual = 'Evaluada';
-      }
-    }
-
-    if (this.drawerModo === 'crear' && this.esFechaPasada(this.fechaEjecucionInput)) {
-      this.estadoIEActual = 'Evaluada';
+    if (this.requiereVinculacionMinima(estadoAEnviar) && this.selectedBloques.size === 0) {
+      this.formError = 'Debe vincular al menos un tema o una unidad antes de marcar la evaluación como evaluada.';
+      return;
     }
 
     const form = new FormData();
     form.append('titulo', this.titulo.trim());
     form.append('tipoIE', this.tipoIE);
     form.append('fechaEjecucion', fechaParsed.toISOString().slice(0, 10));
-    form.append('estado', this.estadoIEActual);
+    form.append('estado', estadoAEnviar);
     this.selectedBloques.forEach(id => form.append('idBloquesTema', id));
     form.append('visibleEnCalendario', this.visibleEnCalendario.toString());
     if (this.archivoSeleccionado) {
@@ -468,14 +498,19 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return;
     }
 
-    if (this.estadoIEActual === this.estadoIEOriginal) {
+    if (!this.archivoActual.puedeCambiarEstado || this.estadoIEActual === this.estadoIEOriginal) {
+      return;
+    }
+
+    if (this.requiereVinculacionMinima(this.estadoIEActual) && this.selectedBloques.size === 0) {
+      this.formError = 'Debe vincular al menos un tema o una unidad antes de marcar la evaluación como evaluada.';
       return;
     }
 
     this.guardando = true;
     this.formError = '';
 
-    this.service.cambiarEstado(this.idEC, this.slotActual.nro, this.estadoIEActual).subscribe({
+    this.service.cambiarEstado(this.idEC, this.slotActual.nro, this.tipoActual, this.estadoIEActual).subscribe({
       next: () => {
         this.guardando = false;
         this.cerrarDrawer();
@@ -490,11 +525,14 @@ export class MisEcEvaluacionesComponent implements OnInit {
   }
 
   editarDesdeDetalle(): void {
-    if (!this.slotActual || !this.archivoActual || !this.archivoActual.puedeEditar) {
+    if (!this.slotActual || !this.archivoActual || (!this.archivoActual.puedeEditar && !this.archivoActual.puedeCompletarVinculacion)) {
       return;
     }
 
     this.drawerModo = 'editar';
+    if (!this.archivoActual.puedeEditar && this.archivoActual.puedeCompletarVinculacion) {
+      this.drawerPaso = 2;
+    }
     this.formError = '';
   }
 
@@ -571,7 +609,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
   }
 
   bloqueInfo(archivo: ArchivoIEGestion): string {
-    return archivo.motivoBloqueo ?? (archivo.tieneCalificaciones ? 'Este archivo tiene calificaciones vinculadas.' : '');
+    return archivo.motivoBloqueo ?? (archivo.tieneHistorialCalificaciones ? 'Este archivo tiene calificaciones vinculadas.' : '');
   }
 
   motivoBloqueoAccion(archivo: ArchivoIEGestion, accion: 'editar' | 'eliminar'): string {
@@ -579,7 +617,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return archivo.motivoBloqueo;
     }
 
-    if (archivo.tieneCalificaciones) {
+    if (archivo.tieneHistorialCalificaciones) {
       return 'Este archivo tiene calificaciones vinculadas. Debe permanecer sin cambios.';
     }
 
@@ -591,6 +629,10 @@ export class MisEcEvaluacionesComponent implements OnInit {
   subtituloSlot(slot: InstanciaEvaluativaSlot): string {
     const cargados = [slot.notaOriginal, slot.recuperatorio1, slot.recuperatorio2].filter(Boolean).length;
     return cargados === 0 ? '' : `${cargados} archivo${cargados === 1 ? '' : 's'} cargado${cargados === 1 ? '' : 's'}`;
+  }
+
+  estadoArchivo(archivo: ArchivoIEGestion): string {
+    return archivo.esVencida ? 'Pendiente vencida' : archivo.estado;
   }
 
   tituloDrawer(): string {
@@ -672,6 +714,10 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return `La fecha de ejecución debe pertenecer al año lectivo ${this.gestion?.anioLectivo ?? ''}.`;
     }
 
+    if (this.drawerModo === 'crear' && this.esFechaPasada(valor) && this.estadoIEActual === 'Evaluada') {
+      return '';
+    }
+
     const errorOrden = this.errorOrdenFechasEjecucion(fecha);
     if (errorOrden) {
       return errorOrden;
@@ -737,20 +783,23 @@ export class MisEcEvaluacionesComponent implements OnInit {
       return '';
     }
 
+    if (this.tipoActual === 'N') {
+      const errorNotasOriginales = this.errorOrdenNotasOriginalesEntreInstancias(fechaObjetivo);
+      if (errorNotasOriginales) {
+        return errorNotasOriginales;
+      }
+    }
+
     const fechaN = this.fechaExamenParaValidacion('N', fechaObjetivo);
     const fechaR1 = this.fechaExamenParaValidacion('R1', fechaObjetivo);
     const fechaR2 = this.fechaExamenParaValidacion('R2', fechaObjetivo);
 
-    if (fechaN && fechaR1 && fechaR1.getTime() < fechaN.getTime()) {
-      return 'La fecha de R1 no puede ser anterior a la de N.';
+    if (fechaN && fechaR1 && fechaR1.getTime() <= fechaN.getTime()) {
+      return 'La fecha de R1 debe ser posterior a la de N.';
     }
 
-    if (fechaN && fechaR2 && fechaR2.getTime() < fechaN.getTime()) {
-      return 'La fecha de R2 no puede ser anterior a la de N.';
-    }
-
-    if (fechaR1 && fechaR2 && fechaR2.getTime() < fechaR1.getTime()) {
-      return 'La fecha de R2 no puede ser anterior a la de R1.';
+    if (fechaR1 && fechaR2 && fechaR2.getTime() <= fechaR1.getTime()) {
+      return 'La fecha de R2 debe ser posterior a la de R1.';
     }
 
     return '';
@@ -822,29 +871,15 @@ export class MisEcEvaluacionesComponent implements OnInit {
     this.tipoIE = archivo?.tipoIE ?? 'EvaluacionEscrita';
     this.fechaEjecucionInput = archivo ? this.formatoFechaCorta(archivo.fechaEjecucion) : '';
     this.fechaEjecucionOriginal = this.fechaEjecucionInput;
-    this.estadoIEActual = this.estadoDesdeTexto(slot.estado);
+    this.estadoIEActual = this.estadoDesdeTexto(archivo?.estado ?? slot.estadoGeneralIe ?? slot.estado);
     this.estadoIEOriginal = this.estadoIEActual;
     this.archivoSeleccionado = null;
     this.archivoNombre = archivo?.nombreArchivo ?? '';
     this.visibleEnCalendario = archivo?.visibleEnCalendario ?? false;
-    this.selectedBloques = new Set<string>(archivo?.idBloquesTema ?? []);
+    this.selectedBloques = new Set<string>(archivo?.idBloquesTema ?? (tipo === 'N' ? [] : slot.notaOriginal?.idBloquesTema ?? []));
     this.expandedUnidades = archivo ? this.expandirUnidadesSegunBloques(archivo.idBloquesTema) : new Set<string>();
     this.formError = '';
     this.drawerVisible = true;
-  }
-
-  private async confirmarEstadoPorFecha(): Promise<ConfirmarEstadoIEResult> {
-    const ref = this.dialog.open(ConfirmarEstadoIEDialogComponent, {
-      data: {
-        titulo: 'Fecha en el pasado',
-        mensaje: 'La nueva fecha de ejecución queda en el pasado. ¿Desea marcar esta instancia evaluativa como evaluada o mantener su estado actual?',
-        textoEvaluada: 'Marcar como evaluada',
-        textoMantener: 'Mantener estado actual',
-      },
-      width: '480px',
-    });
-
-    return (await lastValueFrom(ref.afterClosed())) ?? 'cancelar';
   }
 
   private estadoDesdeTexto(valor?: string | null): 'Pendiente' | 'Evaluada' {
@@ -855,7 +890,7 @@ export class MisEcEvaluacionesComponent implements OnInit {
     return !!this.gestion && fecha.getUTCFullYear() === this.gestion.anioLectivo;
   }
 
-  private esFechaPasada(valor: string): boolean {
+  esFechaPasada(valor: string): boolean {
     const fecha = this.parseFechaInput(valor);
     if (!fecha) {
       return false;
@@ -867,6 +902,94 @@ export class MisEcEvaluacionesComponent implements OnInit {
 
   private slotTieneNotas(slot: InstanciaEvaluativaSlot): boolean {
     return [slot.notaOriginal, slot.recuperatorio1, slot.recuperatorio2].some(archivo => archivo?.tieneCalificaciones);
+  }
+
+  puedeEditarCamposOperativosActual(): boolean {
+    if (this.drawerModo === 'detalle') {
+      return false;
+    }
+
+    if (this.drawerModo === 'crear') {
+      return true;
+    }
+
+    return !!this.archivoActual?.puedeEditar;
+  }
+
+  puedeEditarTrazabilidadActual(): boolean {
+    if (this.drawerModo === 'detalle' || this.tipoActual !== 'N') {
+      return false;
+    }
+
+    if (this.drawerModo === 'crear') {
+      return true;
+    }
+
+    return !!this.archivoActual?.puedeEditar || !!this.archivoActual?.puedeCompletarVinculacion;
+  }
+
+  soloVinculacionActual(): boolean {
+    return this.drawerModo === 'editar'
+      && !this.puedeEditarCamposOperativosActual()
+      && this.puedeEditarTrazabilidadActual();
+  }
+
+  private requiereVinculacionMinima(estado: 'Pendiente' | 'Evaluada'): boolean {
+    return estado === 'Evaluada' && this.gestion?.trazabilidadDisponible === true && this.tipoActual === 'N';
+  }
+
+  private errorOrdenNotasOriginalesEntreInstancias(fechaObjetivo: Date): string {
+    if (!this.gestion || !this.slotActual || this.tipoActual !== 'N') {
+      return '';
+    }
+
+    const anteriores = this.gestion.instancias
+      .filter(slot => slot.nro < this.slotActual!.nro && !!slot.notaOriginal)
+      .sort((a, b) => b.nro - a.nro);
+
+    const siguiente = this.gestion.instancias
+      .filter(slot => slot.nro > this.slotActual!.nro && !!slot.notaOriginal)
+      .sort((a, b) => a.nro - b.nro)[0];
+
+    const anterior = anteriores[0];
+    const fechaAnterior = this.parseFechaServidor(anterior?.notaOriginal?.fechaEjecucion);
+    if (fechaAnterior && fechaObjetivo.getTime() <= fechaAnterior.getTime()) {
+      return `La fecha de N debe ser posterior a la Nota Original de la IE ${anterior.nro}.`;
+    }
+
+    const fechaSiguiente = this.parseFechaServidor(siguiente?.notaOriginal?.fechaEjecucion);
+    if (fechaSiguiente && fechaObjetivo.getTime() >= fechaSiguiente.getTime()) {
+      return `La fecha de N debe ser anterior a la Nota Original de la IE ${siguiente.nro}.`;
+    }
+
+    return '';
+  }
+
+  private guardarSoloTrazabilidad(): void {
+    if (!this.slotActual) {
+      return;
+    }
+
+    if (this.selectedBloques.size === 0) {
+      this.formError = 'Debe seleccionar al menos un tema o una unidad antes de guardar la vinculación al programa.';
+      return;
+    }
+
+    this.guardando = true;
+    this.formError = '';
+
+    this.service.actualizarTrazabilidad(this.idEC, this.slotActual.nro, this.tipoActual, [...this.selectedBloques]).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.cerrarDrawer();
+        this.mostrarBanner('ok', 'Vinculación actualizada', 'La vinculación con el programa se actualizó correctamente.');
+        this.cargarGestion();
+      },
+      error: err => {
+        this.guardando = false;
+        this.formError = this.extractErrorMessage(err, 'No se pudo actualizar la vinculación al programa.');
+      },
+    });
   }
 
   private expandirUnidadesSegunBloques(idsBloqueTema: string[]): Set<string> {

@@ -10,11 +10,19 @@ export interface ArchivoIEGestion {
   titulo: string;
   nombreArchivo: string;
   urlArchivo?: string | null;
+  estado: string;
+  esVencida: boolean;
   fechaEjecucion: string;
   fechaCarga: string;
   tieneCalificaciones: boolean;
+  cantidadCalificaciones: number;
+  tieneHistorialCalificaciones: boolean;
   puedeEditar: boolean;
   puedeEliminar: boolean;
+  puedeCompletarVinculacion: boolean;
+  puedeCambiarEstado: boolean;
+  puedeCargarNotas: boolean;
+  motivoBloqueoNotas?: string | null;
   motivoBloqueo?: string | null;
   idBloquesTema: string[];
   visibleEnCalendario: boolean;
@@ -25,6 +33,7 @@ export interface InstanciaEvaluativaSlot {
   nro: number;
   existe: boolean;
   estado: string;
+  estadoGeneralIe?: string;
   notaOriginal: ArchivoIEGestion | null;
   recuperatorio1: ArchivoIEGestion | null;
   recuperatorio2: ArchivoIEGestion | null;
@@ -42,6 +51,7 @@ export interface GestionEvaluaciones {
   nombreDocente: string;
   nombreCurso: string;
   anioLectivo: number;
+  totalEstudiantesActivos: number;
   unidades: UnidadArbolDto[];
   instancias: InstanciaEvaluativaSlot[];
 }

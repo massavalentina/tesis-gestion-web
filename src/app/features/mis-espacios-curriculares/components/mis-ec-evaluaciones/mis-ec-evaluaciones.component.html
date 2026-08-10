@@ -102,7 +102,7 @@
       </div>
     </section>
 
-    <div class="banner-inline" *ngIf="bannerVisible" [class.banner-inline--ok]="bannerTipo === 'ok'" [class.banner-inline--warn]="bannerTipo === 'warn'" [class.banner-inline--info]="bannerTipo === 'info'">
+    <div class="banner-inline banner-inline--stacked" *ngIf="bannerVisible" [class.banner-inline--ok]="bannerTipo === 'ok'" [class.banner-inline--warn]="bannerTipo === 'warn'" [class.banner-inline--info]="bannerTipo === 'info'">
       <span class="material-icons banner-inline-icon">
         {{ bannerTipo === 'ok' ? 'check_circle' : bannerTipo === 'warn' ? 'warning' : 'info' }}
       </span>
@@ -120,7 +120,7 @@
         <div
           class="slot-head"
           [class.slot-head--locked]="slotBloqueado()"
-          [title]="slotBloqueado() ? mensajeTrazabilidadFormal() : 'Desplegar instancia'"
+          [title]="slotBloqueado() ? mensajeTrazabilidadFormal() : ''"
           role="button"
           tabindex="0"
           (click)="toggleSlot(slot.nro)"
@@ -139,7 +139,6 @@
               type="button"
               [class.is-open]="avisoSlotActivo(slot.nro)"
               [attr.aria-label]="avisoEstadoSlot(slot)"
-              [title]="avisoEstadoSlot(slot)"
               (mouseenter)="mostrarAvisoSlot(slot.nro)"
               (mouseleave)="ocultarAvisoSlot(slot.nro)"
               (focus)="mostrarAvisoSlot(slot.nro)"
@@ -166,13 +165,40 @@
                     <span>{{ tipo }}</span>
                   </div>
                   <div class="archivo-info">
-                    <strong>{{ archivo.titulo }}</strong>
-                    <span>{{ nombreTipoIE(archivo.tipoIE) }} · {{ formatoFecha(archivo.fechaEjecucion) }}</span>
+                    <div class="archivo-info-title">
+                      <strong>{{ archivo.titulo }}</strong>
+                      <button
+                        *ngIf="archivo.esVencida"
+                        class="slot-warning"
+                        type="button"
+                        [attr.aria-label]="'Este examen está pendiente y su fecha de ejecución ya quedó en el pasado.'"
+                        (mouseenter)="mostrarAvisoArchivo(archivo.idArchivoIE)"
+                        (mouseleave)="ocultarAvisoArchivo(archivo.idArchivoIE)"
+                        (focus)="mostrarAvisoArchivo(archivo.idArchivoIE)"
+                        (blur)="ocultarAvisoArchivo(archivo.idArchivoIE)"
+                        (click)="alternarAvisoArchivo(archivo.idArchivoIE, $event)">
+                        <span class="material-icons">priority_high</span>
+                        <span class="slot-warning-popover" *ngIf="avisoArchivoActivo(archivo.idArchivoIE)">
+                          Este examen está pendiente y su fecha de ejecución ya quedó en el pasado.
+                        </span>
+                      </button>
+                    </div>
+                    <span>
+                      {{ nombreTipoIE(archivo.tipoIE) }} · {{ formatoFecha(archivo.fechaEjecucion) }} ·
+                      <span class="archivo-estado">{{ estadoArchivo(archivo) }}</span>
+                    </span>
                     <small>{{ archivo.nombreArchivo }}</small>
                   </div>
                   <div class="archivo-actions">
                     <button class="mini-btn" type="button" *ngIf="archivo.urlArchivo" (click)="abrirPdf(archivo.urlArchivo)">
                       Ver PDF
+                    </button>
+                    <button
+                      class="mini-btn"
+                      type="button"
+                      *ngIf="archivo.puedeEditar || archivo.puedeCompletarVinculacion"
+                      (click)="abrirEditar(slot, tipo, archivo)">
+                      {{ archivo.puedeEditar ? 'Editar' : 'Vincular' }}
                     </button>
                     <button class="mini-btn" type="button" (click)="abrirDetalle(slot, tipo, archivo)">Detalle</button>
                     <div class="action-tip-wrap" [class.is-disabled]="!archivo.puedeEliminar">
@@ -264,13 +290,13 @@
         <div class="drawer-step-panel">
           <div class="form-field">
             <label>Título</label>
-            <input type="text" [(ngModel)]="titulo" [readonly]="drawerModo === 'detalle'" placeholder="Ej: Examen integrador unidad 3" />
+            <input type="text" [(ngModel)]="titulo" [readonly]="!puedeEditarCamposOperativosActual()" placeholder="Ej: Examen integrador unidad 3" />
           </div>
 
           <div class="form-grid">
             <div class="form-field">
               <label>Tipo de IE</label>
-              <select [(ngModel)]="tipoIE" [disabled]="drawerModo === 'detalle'">
+              <select [(ngModel)]="tipoIE" [disabled]="!puedeEditarCamposOperativosActual()">
                 <option *ngFor="let tipo of tiposIE" [value]="tipo">{{ nombreTipoIE(tipo) }}</option>
               </select>
             </div>
@@ -280,20 +306,23 @@
               <input
                 type="text"
                 [(ngModel)]="fechaEjecucionInput"
-                [readonly]="drawerModo === 'detalle'"
+                [readonly]="!puedeEditarCamposOperativosActual()"
                 placeholder="dd/mm/aaaa"
                 inputmode="numeric"
                 maxlength="10" />
               <div class="field-feedback">
                 <small class="field-error" *ngIf="drawerModo !== 'detalle' && errorFechaEjecucion()">{{ errorFechaEjecucion() }}</small>
+                <small class="helper-text" *ngIf="drawerModo !== 'detalle' && !errorFechaEjecucion() && esFechaPasada(fechaEjecucionInput) && estadoIEActual === 'Pendiente'">
+                  La fecha ingresada ya quedó en el pasado. Se guardará como evaluación vencida y mantendrá su aviso hasta que sea marcada como evaluada.
+                </small>
               </div>
             </div>
           </div>
 
           <div class="form-grid form-grid--details">
             <div class="form-field">
-              <label>Estado de la IE</label>
-              <select [(ngModel)]="estadoIEActual">
+              <label>Estado del examen</label>
+              <select [(ngModel)]="estadoIEActual" [disabled]="!puedeEditarCamposOperativosActual()">
                 <option value="Pendiente">Pendiente de evaluación</option>
                 <option value="Evaluada">Evaluada</option>
               </select>
@@ -306,7 +335,7 @@
                 <div class="toggle-row toggle-row--single">
                   <span class="toggle-inline-label">Activo</span>
                   <label class="toggle-switch sm">
-                    <input type="checkbox" [(ngModel)]="visibleEnCalendario" />
+                    <input type="checkbox" [(ngModel)]="visibleEnCalendario" [disabled]="!puedeEditarCamposOperativosActual()" />
                     <span class="slider"></span>
                   </label>
                 </div>
@@ -328,7 +357,7 @@
 
           <div class="form-field">
             <label>Archivo PDF</label>
-            <ng-container *ngIf="drawerModo !== 'detalle'; else archivoSoloLectura">
+            <ng-container *ngIf="puedeEditarCamposOperativosActual(); else archivoSoloLectura">
               <input type="file" accept="application/pdf" (change)="onArchivoSeleccionado($event)" />
               <small class="helper-text" *ngIf="archivoNombre">{{ archivoNombre }}</small>
               <small class="helper-text" *ngIf="drawerModo === 'editar' && !archivoSeleccionado">
@@ -356,7 +385,10 @@
             <div class="trace-head">
               <div>
                 <strong>Vinculación al programa</strong>
-                <p>Seleccione los temas que correspondan. Al seleccionar una unidad, se incluirán todos sus temas.</p>
+                <p *ngIf="tipoActual === 'N'; else trazabilidadHeredada">Seleccione los temas que correspondan. Al seleccionar una unidad, se incluirán todos sus temas.</p>
+                <ng-template #trazabilidadHeredada>
+                  <p>Este recuperatorio hereda automáticamente la misma vinculación al programa que la Nota Original.</p>
+                </ng-template>
               </div>
             </div>
 
@@ -373,7 +405,7 @@
                         type="checkbox"
                         [checked]="unidadSeleccionada(unidad.idBloquePrograma)"
                         [indeterminate]="unidadParcial(unidad.idBloquePrograma)"
-                        [disabled]="drawerModo === 'detalle'"
+                        [disabled]="!puedeEditarTrazabilidadActual()"
                         (change)="toggleUnidad(unidad.idBloquePrograma)" />
                       <span></span>
                     </label>
@@ -386,7 +418,7 @@
                     <input
                       type="checkbox"
                       [checked]="temaSeleccionado(tema.idBloquePrograma)"
-                      [disabled]="drawerModo === 'detalle'"
+                      [disabled]="!puedeEditarTrazabilidadActual()"
                       (change)="toggleTema(tema.idBloquePrograma)" />
                     <span class="theme-copy">
                       <strong>Tema {{ tema.nro }}</strong>
@@ -431,21 +463,30 @@
       <ng-template #accionesPasoFinal>
         <ng-container *ngIf="drawerModo === 'detalle'; else accionesEdicion">
           <div class="action-tip-wrap" [class.is-disabled]="!archivoActual?.puedeEditar">
-            <button class="btn-primary drawer-nav-btn drawer-nav-btn--primary" type="button" [disabled]="!archivoActual?.puedeEditar" (click)="editarDesdeDetalle()">
-              Editar
+            <button
+              class="btn-primary drawer-nav-btn drawer-nav-btn--primary"
+              type="button"
+              [disabled]="!(archivoActual?.puedeEditar || archivoActual?.puedeCompletarVinculacion)"
+              (click)="editarDesdeDetalle()">
+              {{ archivoActual?.puedeEditar ? 'Editar' : 'Completar vinculación' }}
             </button>
-            <span class="action-tip" *ngIf="archivoActual && !archivoActual.puedeEditar">
+            <span class="action-tip" *ngIf="archivoActual && !archivoActual.puedeEditar && !archivoActual.puedeCompletarVinculacion">
               {{ motivoBloqueoAccion(archivoActual, 'editar') }}
             </span>
           </div>
-          <button class="btn-primary drawer-nav-btn drawer-nav-btn--primary" type="button" [disabled]="guardando || estadoIEActual === estadoIEOriginal" (click)="guardarEstado()">
+          <button
+            *ngIf="archivoActual?.puedeCambiarEstado"
+            class="btn-primary drawer-nav-btn drawer-nav-btn--primary"
+            type="button"
+            [disabled]="guardando || estadoIEActual === estadoIEOriginal"
+            (click)="guardarEstado()">
             {{ guardando ? 'Guardando...' : 'Guardar estado' }}
           </button>
         </ng-container>
 
         <ng-template #accionesEdicion>
           <button class="btn-primary drawer-nav-btn drawer-nav-btn--primary" type="button" (click)="guardar()" [disabled]="guardando || !!errorFechaEjecucion()">
-            {{ guardando ? 'Guardando...' : (drawerModo === 'editar' ? 'Guardar cambios' : 'Guardar evaluación') }}
+            {{ guardando ? 'Guardando...' : (soloVinculacionActual() ? 'Guardar vinculación' : (drawerModo === 'editar' ? 'Guardar cambios' : 'Guardar evaluación')) }}
           </button>
         </ng-template>
       </ng-template>
