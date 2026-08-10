@@ -125,7 +125,6 @@ export class EventoDialogComponent implements OnInit {
       tipoEvento: [null, Validators.required],
       fechaInicio: [null, Validators.required],
       fechaFin: [null, Validators.required],
-      contabilizaAsistencia: [true],
       cambioActividad: [false],
       comentarioCambioActividad: ['', [Validators.maxLength(2000)]],
       cursoIds: [[] as string[]],
@@ -139,7 +138,6 @@ export class EventoDialogComponent implements OnInit {
         tipoEvento: e.tipoEvento,
         fechaInicio: this.parseDateOnly(e.fechaInicio),
         fechaFin: this.parseDateOnly(e.fechaFin),
-        contabilizaAsistencia: e.contabilizaAsistencia,
         cambioActividad: e.cambioActividad,
         comentarioCambioActividad: e.comentarioCambioActividad ?? '',
         cursoIds: e.cursos.map(c => c.idCurso),
@@ -171,10 +169,6 @@ export class EventoDialogComponent implements OnInit {
 
   get esFeriado(): boolean {
     return this.form.get('tipoEvento')!.value === 4;
-  }
-
-  get contabilizaDeshabilitado(): boolean {
-    return this.esPeriodoClases || this.esFeriado || this.esPeriodoEvaluacion;
   }
 
   get cambioActividadDeshabilitado(): boolean {
@@ -224,24 +218,17 @@ export class EventoDialogComponent implements OnInit {
 
     if (tipo === 5) {
       // Período de Clases
-      this.form.get('contabilizaAsistencia')!.setValue(true);
-      this.form.get('contabilizaAsistencia')!.disable();
       this.form.get('cambioActividad')!.setValue(false);
       this.form.get('cambioActividad')!.disable();
       this.form.get('cursoIds')!.setValue([]);
     } else if (tipo === 6) {
       // Período de Evaluación
-      this.form.get('contabilizaAsistencia')!.setValue(true);
-      this.form.get('contabilizaAsistencia')!.disable();
       this.form.get('cambioActividad')!.setValue(false);
       this.form.get('cambioActividad')!.disable();
     } else if (tipo === 4) {
       // Feriado
-      this.form.get('contabilizaAsistencia')!.setValue(false);
-      this.form.get('contabilizaAsistencia')!.disable();
       this.form.get('cambioActividad')!.enable();
     } else {
-      this.form.get('contabilizaAsistencia')!.enable();
       this.form.get('cambioActividad')!.enable();
     }
   }
@@ -389,7 +376,6 @@ export class EventoDialogComponent implements OnInit {
       TipoEvento: 'Tipo',
       FechaInicio: 'Fecha inicio',
       FechaFin: 'Fecha fin',
-      ContabilizaAsistencia: 'Contabiliza asistencia',
       CambioActividad: 'Cambio de actividad',
       ComentarioCambioActividad: 'Comentario cambio',
       CursoIds: 'Cursos',
@@ -420,7 +406,7 @@ export class EventoDialogComponent implements OnInit {
       tipoEvento: v.tipoEvento,
       fechaInicio: this.toDateString(v.fechaInicio),
       fechaFin: this.toDateString(v.fechaFin),
-      contabilizaAsistencia: v.contabilizaAsistencia,
+      contabilizaAsistencia: v.tipoEvento !== 4,
       cambioActividad: v.cambioActividad,
       comentarioCambioActividad: v.cambioActividad ? v.comentarioCambioActividad : undefined,
       cursoIds: v.cursoIds?.length > 0 ? v.cursoIds : undefined,
