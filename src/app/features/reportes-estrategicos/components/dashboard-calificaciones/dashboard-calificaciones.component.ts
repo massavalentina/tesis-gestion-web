@@ -384,13 +384,15 @@ export class DashboardCalificacionesComponent implements OnInit {
     if (!data.length) return;
     const blueScale = [NAVY, MID, BLUE, '#7ba9d6', BLUEL];
     this.chartMejorPromedio = {
-      grid: { left: 16, right: 40, top: 10, bottom: 0, containLabel: true },
+      grid: { left: 16, right: 40, top: 10, bottom: 12, containLabel: true },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       xAxis: {
         type: 'value',
+        min: 1,
         max: 10,
+        interval: 1,
         splitLine: { lineStyle: { color: '#f1f5f9' } },
-        axisLabel: { color: '#94a3b8' },
+        axisLabel: { color: '#94a3b8', margin: 12 },
       },
       yAxis: {
         type: 'category',
@@ -463,11 +465,12 @@ export class DashboardCalificacionesComponent implements OnInit {
     this.chartCondicion = {
       tooltip: { trigger: 'item', formatter: (p: any) => `${p.name}: ${p.percent}%` },
       legend: {
-        bottom: 0,
+        bottom: 12,
         icon: 'circle',
         itemWidth: 9,
         itemHeight: 9,
         textStyle: { fontSize: 12, color: MUTED },
+        selectedMode: false,
       },
       series: [{
         type: 'pie',

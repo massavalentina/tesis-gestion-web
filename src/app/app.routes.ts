@@ -11,6 +11,7 @@ import { calificacionesCambiosPendientesGuard } from './features/mis-espacios-cu
 import { colaPendienteGuard } from './features/qr-scanner/guards/cola-pendiente.guard';
 import { PaginaEscanerAsistencia } from './features/qr-scanner/pages/escaner.page';
 import { credencialesQrGuard } from './core/auth/guards/credenciales-qr.guard';
+import { plataformaGuard } from './core/auth/guards/plataforma.guard';
 import { AppSectionId, buildSectionRouteData } from './core/navigation/platform-visibility.config';
 
 const withSectionData = (
@@ -46,7 +47,7 @@ export const routes: Routes = [
     path: 'qr-credentials/generation',
     ...withSectionData('credencialesQr'),
     component: PaginaGeneracionCredencialesQr,
-    canActivate: [authGuard, credencialesQrGuard],
+    canActivate: [authGuard, plataformaGuard, credencialesQrGuard],
   },
   {
     path: 'sin-permiso',
@@ -54,9 +55,16 @@ export const routes: Routes = [
       import('./features/sin-permiso/sin-permiso.component').then(m => m.SinPermisoComponent),
   },
   {
+    path: 'dispositivo-no-permitido',
+    loadComponent: () =>
+      import('./features/dispositivo-no-permitido/dispositivo-no-permitido.component')
+        .then(m => m.DispositivoNoPermitidoComponent),
+  },
+  {
     path: '',
     component: LayoutComponent,
     canActivate: [authGuard],
+    canActivateChild: [plataformaGuard],
     children: [
       {
         path: '',
@@ -147,7 +155,7 @@ export const routes: Routes = [
       },
       {
         path: 'ficha-alumno/detalle/:estudianteId',
-        ...withSectionData('fichaAlumno'),
+        ...withSectionData('fichaAlumnoDetalleAsistencia'),
         loadComponent: () =>
           import('../app/features/reporte-asistencia/components/detalle-asistencia-estudiante/detalle-asistencia-estudiante.component')
             .then(m => m.DetalleAsistenciaEstudianteComponent),
@@ -155,7 +163,7 @@ export const routes: Routes = [
       },
       {
         path: 'ficha-alumno/reporte-calificaciones/:estudianteId',
-        ...withSectionData('fichaAlumno'),
+        ...withSectionData('fichaAlumnoDetalleCalificaciones'),
         loadComponent: () =>
           import('./features/ficha-alumno/components/reporte-calificaciones-estudiante/reporte-calificaciones-estudiante.component')
             .then(m => m.ReporteCalificacionesEstudianteComponent),
@@ -195,6 +203,7 @@ export const routes: Routes = [
       },
       {
         path: 'gestion-usuarios',
+        ...withSectionData('gestionUsuarios'),
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/gestion-usuarios/gestion-usuarios.component')
             .then(m => m.GestionUsuariosComponent),
@@ -202,6 +211,7 @@ export const routes: Routes = [
       },
       {
         path: 'gestion-usuarios/:id',
+        ...withSectionData('gestionUsuarios'),
         loadComponent: () =>
           import('../app/features/gestion-usuarios/components/ficha-usuario/ficha-usuario.component')
             .then(m => m.FichaUsuarioComponent),

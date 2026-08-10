@@ -139,15 +139,15 @@
 
     </div>
 
-    <!-- Cursos asignados (solo visible para Preceptores) -->
-    <div class="card cursos-card" *ngIf="esPreceptor">
+    <!-- Cursos asignados (solo visible para Preceptores, y solo en desktop) -->
+    <div class="card cursos-card" *ngIf="esPreceptor && !isMobile">
       <div class="cursos-card__header">
         <div class="cursos-card__icon">
           <mat-icon>school</mat-icon>
         </div>
         <div class="cursos-card__texto">
           <span class="cursos-card__titulo">Cursos asignados</span>
-          <span class="cursos-card__subtitulo">Cursos donde actualmente cumplís función de preceptor</span>
+          <span class="cursos-card__subtitulo">Cursos en los que actualmente cumple funciones de preceptor</span>
         </div>
       </div>
 

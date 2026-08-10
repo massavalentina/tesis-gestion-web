@@ -1,4 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder, FormGroup, FormControl, ReactiveFormsModule,
@@ -15,6 +16,7 @@ import { PerfilService, PerfilUsuario } from './services/perfil.service';
 import { GestionUsuariosService } from '../gestion-usuarios/services/gestion-usuarios.service';
 import { AsignacionService } from '../gestion-usuarios/services/asignacion.service';
 import { PreceptorCursoActivo, PreceptorCursoHistorial } from '../gestion-usuarios/models/asignacion.model';
+import { UiPlatformService } from '../../core/services/ui-platform.service';
 
 function soloLetrasMin2(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -62,12 +64,17 @@ export class PerfilComponent implements OnInit {
   datosSaved = false;
   editandoDatos = false;
 
+  isMobile = false;
+
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private perfilService: PerfilService,
     private gestionService: GestionUsuariosService,
     private asignacionService: AsignacionService,
+    private uiPlatformService: UiPlatformService,
   ) {
     this.formDatos = this.fb.group({
       nombre:   ['', [Validators.required, soloLetrasMin2()]],
@@ -75,6 +82,10 @@ export class PerfilComponent implements OnInit {
       email:    new FormControl('', { validators: [Validators.required, emailMinValidator()] }),
       telefono: ['', Validators.pattern(/^\d*$/)],
     });
+
+    this.uiPlatformService.isMobile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => this.isMobile = result);
   }
 
   ngOnInit(): void {

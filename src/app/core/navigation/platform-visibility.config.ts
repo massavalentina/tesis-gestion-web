@@ -13,11 +13,14 @@ export const APP_SECTION_VISIBILITY = {
   calendario: 'desktop',
   credencialesQr: 'desktop',
   fichaAlumno: 'all',
+  fichaAlumnoDetalleAsistencia: 'desktop',
+  fichaAlumnoDetalleCalificaciones: 'desktop',
   perfil: 'all',
   misEspaciosCurriculares: 'desktop',
   reportesEstrategicosAsistencia: 'desktop',
   reportesEstrategicosCalificaciones: 'desktop',
   reporteRetiros: 'all',
+  gestionUsuarios: 'desktop',
 } as const satisfies Record<string, PlatformVisibility>;
 
 export type AppSectionId = keyof typeof APP_SECTION_VISIBILITY;
