@@ -72,7 +72,6 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
         </div>
 
         <div class="scanner-copy">
-          <div class="scanner-badge">Escaneo QR</div>
           <h1>Escáner de credenciales QR</h1>
         </div>
 
