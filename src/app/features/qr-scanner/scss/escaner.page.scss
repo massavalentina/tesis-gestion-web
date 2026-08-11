@@ -72,10 +72,14 @@
 .scanner-copy h1 {
   margin: 0;
   color: #071f55;
-  font-size: clamp(1.82rem, 7.6vw, 2rem);
-  line-height: 1.06;
+  font-size: clamp(1.78rem, 7.2vw, 1.96rem);
+  line-height: 1.08;
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.026em;
+}
+
+.scanner-copy h1 span {
+  display: block;
 }
 
 .config {
@@ -624,7 +628,7 @@
   }
 
   .scanner-copy h1 {
-    font-size: clamp(1.62rem, 7.2vw, 1.84rem);
+    font-size: clamp(1.58rem, 6.8vw, 1.78rem);
   }
 
   .config {
