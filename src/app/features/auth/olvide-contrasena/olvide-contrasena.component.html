@@ -1,24 +1,19 @@
-<div class="page-container">
-
+<div class="auth-container">
   <canvas #bgCanvas class="balls-canvas"></canvas>
 
-  <mat-card class="form-card">
-
-    <div class="logo-container">
-      <p class="app-nombre">Robles 360</p>
-      <img src="logo.jpg" alt="Gestión Escolar" class="logo-img" />
+  <mat-card class="auth-card">
+    <div class="brand-mark">
+      <img src="logo.jpg" alt="Escudo Robles" class="brand-shield" />
+      <span class="brand-divider"></span>
+      <span class="brand-wordmark">
+        <img src="robles360-auth.png" alt="Robles 360" />
+      </span>
     </div>
 
-    <div class="logos-institucionales">
-      <img src="logo-escmb.png" alt="ESCMB" class="logo-inst">
-      <div class="logo-divider"></div>
-      <img src="logo-unc.jpg" alt="UNC" class="logo-inst">
-    </div>
-
-    <mat-card-header>
-      <mat-card-title class="titulo-pagina">Olvidé mi contraseña</mat-card-title>
-      <mat-card-subtitle class="subtitulo-pagina">Ingrese su mail y DNI para recibir el link de reestablecimiento</mat-card-subtitle>
-    </mat-card-header>
+    <header class="auth-heading">
+      <mat-card-title class="titulo-pagina">Recuperar contraseña</mat-card-title>
+      <p *ngIf="!enviado">Ingrese su email y DNI para recibir el enlace de restablecimiento.</p>
+    </header>
 
     <mat-progress-bar *ngIf="loading" mode="indeterminate" />
 
@@ -26,44 +21,64 @@
 
       <!-- Éxito -->
       <div *ngIf="enviado" class="success-message">
-        <mat-icon color="primary">mark_email_read</mat-icon>
-        <p>Si los datos son correctos, recibirás un correo con el link de restablecimiento.</p>
-        <p class="hint">Revisá tu bandeja de entrada y la carpeta de spam.</p>
-        <a mat-stroked-button routerLink="/login">Volver al login</a>
+        <mat-icon>mark_email_read</mat-icon>
+        <p>Si los datos son correctos, recibirá un correo con el enlace de restablecimiento.</p>
+        <p class="hint">Revise su bandeja de entrada y la carpeta de spam.</p>
+        <a class="auth-secondary-link" routerLink="/login">Volver al inicio de sesión</a>
       </div>
 
       <!-- Formulario -->
       <form *ngIf="!enviado" [formGroup]="form" (ngSubmit)="submit()">
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" autocomplete="email" />
-          <mat-error *ngIf="form.get('email')?.hasError('required')">El email es obligatorio.</mat-error>
-          <mat-error *ngIf="form.get('email')?.hasError('email')">Ingresá un email válido.</mat-error>
-        </mat-form-field>
+        <div class="auth-field-group">
+          <label class="auth-label" for="forgot-email">Email</label>
+          <mat-form-field appearance="outline" class="auth-field">
+            <input
+              id="forgot-email"
+              matInput
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="Ingrese su email" />
+            <mat-error *ngIf="form.get('email')?.hasError('required')">El email es obligatorio.</mat-error>
+            <mat-error *ngIf="form.get('email')?.hasError('email')">Ingrese un email válido.</mat-error>
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>DNI</mat-label>
-          <input matInput formControlName="documento" autocomplete="off" />
-          <mat-error *ngIf="form.get('documento')?.hasError('required')">El DNI es obligatorio.</mat-error>
-        </mat-form-field>
+        <div class="auth-field-group">
+          <label class="auth-label" for="forgot-documento">DNI</label>
+          <mat-form-field appearance="outline" class="auth-field">
+            <input
+              id="forgot-documento"
+              matInput
+              formControlName="documento"
+              autocomplete="off"
+              placeholder="Ingrese su DNI" />
+            <mat-error *ngIf="form.get('documento')?.hasError('required')">El DNI es obligatorio.</mat-error>
+          </mat-form-field>
+        </div>
 
         <div *ngIf="error" class="error-message">{{ error }}</div>
 
         <button
           mat-flat-button
-          color="primary"
           type="submit"
-          class="full-width"
+          class="auth-submit"
           [disabled]="loading">
-          Enviar link
+          Enviar enlace
         </button>
 
         <div class="back-link">
-          <a routerLink="/login">Volver al login</a>
+          <a routerLink="/login">Volver al inicio de sesión</a>
         </div>
       </form>
 
     </mat-card-content>
+
+    <div class="logos-institucionales" aria-label="Logos institucionales">
+      <img src="logo-escmb.png" alt="Pregrado" class="logo-inst logo-inst--pregrado" />
+      <div class="logo-divider"></div>
+      <img src="logo-unc.jpg" alt="UNC" class="logo-inst logo-inst--unc" />
+    </div>
   </mat-card>
 </div>

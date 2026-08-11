@@ -139,7 +139,7 @@ export class RestablecerContrasenaComponent implements OnInit, AfterViewInit, On
       },
       error: err => {
         this.loading = false;
-        this.error   = err?.error?.error ?? 'El link es inválido o ya expiró. Solicitá uno nuevo.';
+        this.error   = err?.error?.error ?? 'El enlace es inválido o ya expiró. Solicite uno nuevo.';
       },
     });
   }

@@ -124,13 +124,13 @@ import { ObjectUrlRegistry } from '../../../utils/object-url-registry';
           </article>
 
           <article class="summary-card">
-            <span>QR pendientes de enviar</span>
-            <strong>{{ resumen?.totalQrPendientesEnvio ?? 0 }}</strong>
+            <span>Total QR enviados</span>
+            <strong>{{ resumen?.totalQrEnviados ?? 0 }}</strong>
           </article>
 
           <article class="summary-card">
-            <span>Total QR enviados</span>
-            <strong>{{ resumen?.totalQrEnviados ?? 0 }}</strong>
+            <span>Pendientes de enviar</span>
+            <strong>{{ resumen?.totalQrPendientesEnvio ?? 0 }}</strong>
           </article>
         </div>
 

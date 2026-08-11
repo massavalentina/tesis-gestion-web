@@ -12,8 +12,8 @@ import { MatButtonModule } from '@angular/material/button';
       <mat-icon style="font-size:64px;width:64px;height:64px;color:#e53935">lock</mat-icon>
       <h2 style="margin:0;color:#333">Sin permiso</h2>
       <p style="margin:0;color:#666;text-align:center;max-width:320px">
-        No tenés permisos para acceder a esta sección.<br>
-        Contactá al administrador si creés que es un error.
+        No tiene permisos para acceder a esta sección.<br>
+        Contacte a personal de secretaría si cree que es un error.
       </p>
       <button mat-stroked-button (click)="volver()">Volver al inicio</button>
     </div>

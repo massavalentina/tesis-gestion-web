@@ -64,10 +64,16 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
   template: `
     <div class="page-content">
       <section class="scanner-shell">
+        <div class="scanner-brand" aria-label="Robles 360">
+          <img src="logo.jpg" alt="Escudo Robles" class="scanner-brand__shield" />
+          <span class="scanner-brand__wordmark">
+            <img src="robles360-auth.png" alt="Robles 360" />
+          </span>
+        </div>
+
         <div class="scanner-copy">
           <div class="scanner-badge">Escaneo QR</div>
-          <h1>Asistencia mediante escáner QR</h1>
-          <p>Registre asistencias mediante escaneo QR. El turno y el tipo inicial son opcionales.</p>
+          <h1>Escáner de credenciales QR</h1>
         </div>
 
         <div class="config">
@@ -108,9 +114,10 @@ type TipoAsistenciaUi = OpcionSeleccion & { code: string };
               [ngModel]="horaSeleccionada ?? ''"
               (ngModelChange)="actualizarHoraManual($event)" />
           </mat-form-field>
-          <span class="hora-hint">
-            Si no selecciona una hora, se usará la hora del primer escaneo válido de la sesión.
-          </span>
+          <div class="hora-hint">
+            <mat-icon aria-hidden="true">info_outline</mat-icon>
+            <span>Si no selecciona una hora, se usará la hora del primer escaneo válido de la sesión.</span>
+          </div>
 
           <mat-slide-toggle class="rafaga-toggle" [(ngModel)]="modoRafaga">
             Modo Ráfaga

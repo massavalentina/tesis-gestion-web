@@ -16,32 +16,68 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 28px 18px 96px;
+  padding: 38px 18px 120px;
   box-sizing: border-box;
   overflow-y: auto;
+  background:
+    radial-gradient(circle at 9% 45%, rgba(60, 120, 180, 0.18) 0 2.5%, transparent 8%),
+    radial-gradient(circle at 43% 81%, rgba(60, 120, 180, 0.14) 0 2.4%, transparent 7%),
+    radial-gradient(circle at 93% 29%, rgba(60, 120, 180, 0.12) 0 2%, transparent 7%),
+    linear-gradient(132deg, #f7fbff 0%, #eef6fd 46%, #fafdff 100%);
 }
 
 .scanner-shell {
-  width: min(100%, 400px);
+  width: min(100%, 412px);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: 0;
   margin: 0 auto;
 }
 
-.scanner-copy {
+.scanner-brand {
+  width: min(100%, 326px);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin: 0 auto 42px;
+}
+
+.scanner-brand__shield {
+  width: 78px;
+  height: 88px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.scanner-brand__wordmark {
+  width: 196px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.scanner-brand__wordmark img {
   width: 100%;
-  text-align: center;
-  margin: 8px 0 6px;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.scanner-copy {
+  width: min(100%, 326px);
+  text-align: left;
+  margin: 0 auto 30px;
 }
 
 .scanner-copy h1 {
   margin: 0;
-  color: #102a43;
-  font-size: 25px;
-  line-height: 1.2;
-  font-weight: 700;
+  color: #071f55;
+  font-size: clamp(2rem, 9vw, 2.65rem);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.035em;
 }
 
 .scanner-copy p {
@@ -59,10 +95,10 @@
 .config {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  align-items: center;
-  margin-top: 22px;
+  gap: 18px;
+  width: min(100%, 326px);
+  align-items: stretch;
+  margin: 0 auto;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -71,14 +107,15 @@
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill {
-  width: min(100%, 284px);
+  width: 100%;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-text-field {
-  border-radius: 11px !important;
-  background-color: #fff;
-  border: 1px solid #d7e1eb;
+  border-radius: 18px !important;
+  background-color: rgba(255, 255, 255, 0.88);
+  border: 1px solid #cbdced;
   overflow: hidden;
+  box-shadow: 0 10px 24px rgba(7, 31, 85, 0.06);
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-line-ripple {
@@ -86,39 +123,44 @@
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-select__anchor {
-  min-height: 44px;
-  padding: 8px 12px 4px;
+  min-height: 66px;
+  padding: 13px 18px 8px;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-floating-label {
-  top: 19px;
+  top: 25px;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-floating-label,
 :host ::ng-deep .mat-mdc-form-field.pill .mat-mdc-select-arrow {
-  color: #58718a !important;
+  color: #1f4e87 !important;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-floating-label {
-  font-size: 0.81rem !important;
+  font-size: 1rem !important;
+  font-weight: 600;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mdc-select__selected-text {
   color: #334155;
   font-style: normal;
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 1rem;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill .mat-mdc-form-field-infix {
-  min-height: 44px;
-  padding-top: 14px;
-  padding-bottom: 6px;
+  min-height: 66px;
+  padding-top: 24px;
+  padding-bottom: 8px;
+}
+
+:host ::ng-deep .mat-mdc-form-field.pill .mat-mdc-form-field-subscript-wrapper {
+  display: none;
 }
 
 :host ::ng-deep .mat-mdc-form-field.pill input.mat-mdc-input-element.time-input {
   color: #334155;
-  font-size: 0.84rem;
+  font-size: 1rem;
   font-weight: 600;
   font-family: 'Open Sans', monospace, sans-serif;
 }
@@ -133,16 +175,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
+  min-width: 54px;
   border-radius: 10px;
-  padding: 1px 8px;
-  font-size: 0.68rem;
+  padding: 4px 14px;
+  font-size: 0.94rem;
   font-weight: 700;
   border: 1px solid transparent;
 }
 
 .code-pill--trigger {
-  min-width: 40px;
+  min-width: 64px;
 }
 
 .chip-p { background: rgba(21, 128, 61, .12); color: #15803d; border-color: #bbf7d0; }
@@ -150,49 +192,59 @@
 .chip-anc { background: rgba(2, 132, 199, .12); color: #0369a1; border-color: #bae6fd; }
 .chip-llt, .chip-llte, .chip-lltc { background: rgba(194, 65, 12, .12); color: #c2410c; border-color: #fed7aa; }
 
-.rafaga-hint {
-  width: min(100%, 308px);
-  margin-top: -4px;
-  text-align: center;
-  font-size: 0.76rem;
-  color: #64748b;
-  font-style: italic;
+.hora-hint {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 8px;
+  padding: 18px 18px;
+  box-sizing: border-box;
+  border: 1px solid #d7e2ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  text-align: left;
+  color: #2d5a8a;
+  line-height: 1.25;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.03);
 }
 
-.hora-hint {
-  width: min(100%, 284px);
-  margin-top: -4px;
-  margin-bottom: 6px;
-  text-align: left;
-  font-size: 11px;
-  color: #5b6b7d;
-  line-height: 1.35;
+.hora-hint mat-icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  color: #3c78b4;
+}
+
+.hora-hint span {
+  font-size: 0.93rem;
+  font-weight: 600;
 }
 
 :host ::ng-deep .rafaga-toggle {
-  width: min(100%, 280px);
+  width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   margin-top: 10px;
-  transform: scale(0.93);
-  transform-origin: center;
-}
-
-:host ::ng-deep .rafaga-toggle .mdc-form-field {
-  margin: 0 auto;
+  transform: none;
+  transform-origin: left center;
 }
 
 :host ::ng-deep .rafaga-toggle .mdc-form-field > label,
 :host ::ng-deep .rafaga-toggle .mdc-label {
-  font-size: 0.86rem;
-  color: #334155;
+  font-size: 1rem;
+  color: #071f55;
+  font-weight: 600;
 }
 
 .rafaga-hint {
-  width: min(100%, 280px);
+  width: 100%;
   margin-top: -6px;
-  text-align: center;
+  text-align: left;
   font-size: 0.71rem;
+  color: #64748b;
+  font-style: italic;
   line-height: 1.35;
 }
 
@@ -231,14 +283,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  min-height: 92px;
-  padding: 10px 20px 14px;
+  min-height: 128px;
+  padding: 18px 20px 22px;
   background: rgba(248, 251, 255, 0.96);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   box-shadow: 0 -10px 24px rgba(34, 56, 78, 0.07);
   z-index: 10;
   backdrop-filter: blur(12px);
@@ -258,9 +310,16 @@
 }
 
 .scan-btn {
-  width: 62px;
-  height: 62px;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px !important;
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.scan-btn mat-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 32px;
 }
 
 .scan-btn--ready {
@@ -302,8 +361,8 @@
 }
 
 .scan-status {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #6b7c8f;
   text-align: center;
 }
@@ -557,15 +616,29 @@
 
 @media (max-width: 767px) and (max-height: 760px) {
   .page-content {
-    padding: 18px 16px 84px;
+    padding: 20px 16px 104px;
+  }
+
+  .scanner-brand {
+    margin-bottom: 24px;
+  }
+
+  .scanner-brand__shield {
+    width: 64px;
+    height: 72px;
+  }
+
+  .scanner-brand__wordmark {
+    width: 166px;
+    height: 46px;
   }
 
   .scanner-copy {
-    margin: 2px 0 4px;
+    margin: 0 auto 20px;
   }
 
   .scanner-copy h1 {
-    font-size: 23px;
+    font-size: clamp(1.72rem, 8vw, 2.1rem);
   }
 
   .scanner-copy p {
@@ -574,32 +647,52 @@
   }
 
   .config {
-    margin-top: 16px;
-    gap: 6px;
+    margin: 0 auto;
+    gap: 12px;
+  }
+
+  :host ::ng-deep .mat-mdc-form-field.pill .mdc-select__anchor {
+    min-height: 58px;
+    padding: 11px 16px 7px;
+  }
+
+  :host ::ng-deep .mat-mdc-form-field.pill .mat-mdc-form-field-infix {
+    min-height: 58px;
+    padding-top: 20px;
+  }
+
+  :host ::ng-deep .mat-mdc-form-field.pill .mdc-floating-label {
+    font-size: 0.9rem !important;
   }
 
   .hora-hint {
-    margin-bottom: 4px;
-    font-size: 10.5px;
+    margin: 2px 0 4px;
+    padding: 14px;
   }
 
   :host ::ng-deep .rafaga-toggle {
     margin-top: 6px;
-    transform: scale(0.9);
   }
 
   .bottom-bar {
-    min-height: 86px;
-    padding: 8px 18px 12px;
+    min-height: 104px;
+    padding: 10px 18px 14px;
     gap: 6px;
   }
 
   .scan-btn {
-    width: 58px;
-    height: 58px;
+    width: 60px;
+    height: 60px;
+    border-radius: 18px !important;
+  }
+
+  .scan-btn mat-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 28px;
   }
 
   .scan-status {
-    font-size: 11px;
+    font-size: 0.84rem;
   }
 }
