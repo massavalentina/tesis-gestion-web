@@ -1561,7 +1561,7 @@ export class MisEcCalificacionesComponent implements OnInit {
     if (contexto === 'cancel-edit') {
       return {
         titulo: 'Salir de edición',
-        mensaje: `${mensajeBase} Si salís ahora, perderás lo editado.`,
+        mensaje: `${mensajeBase} Si sale ahora, perderá lo editado.`,
         textoDescartar: 'Salir sin guardar',
         permitirGuardar,
       };
@@ -1578,7 +1578,7 @@ export class MisEcCalificacionesComponent implements OnInit {
 
     return {
       titulo: 'Salir de la pantalla',
-      mensaje: `${mensajeBase} Si salís ahora, perderás lo editado.`,
+      mensaje: `${mensajeBase} Si sale ahora, perderá lo editado.`,
       textoDescartar: 'Descartar cambios',
       permitirGuardar,
     };
