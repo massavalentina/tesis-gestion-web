@@ -311,11 +311,11 @@
             <span class="opt" *ngIf="claseEstado !== 'Dado'">(opcional)</span>
           </label>
           <input type="date" [(ngModel)]="claseFechaHasta" [disabled]="claseEstado !== 'Dado'"
-                 [min]="fechaMinAnio" [max]="fechaMaxAnio"
+                 [min]="fechaMinAnio" [max]="fechaMaxHoy"
                  (change)="claseFechaDictadaInvalida = false; claseFechaHastaAnioInvalido = false" />
           <small class="field-hint" *ngIf="claseEstado !== 'Dado'">Se puede indicar una vez que la clase esté marcada como dictada.</small>
           <small class="field-error" *ngIf="claseFechaDictadaInvalida">La fecha de dictado es obligatoria.</small>
-          <small class="field-error" *ngIf="claseFechaHastaAnioInvalido">La fecha debe ser del año lectivo en curso.</small>
+          <small class="field-error" *ngIf="claseFechaHastaAnioInvalido">La fecha debe estar entre el 1/01 del año en curso y hoy.</small>
         </div>
 
         <!-- Error -->
@@ -406,10 +406,10 @@
            [class.invalid]="fechaDictadaInputInvalida || fechaDictadaInputAnioInvalido">
         <label>Fecha dictada <span class="req">*</span></label>
         <input type="date" [(ngModel)]="fechaDictadaInput"
-               [min]="fechaMinAnio" [max]="fechaMaxAnio"
+               [min]="fechaMinAnio" [max]="fechaMaxHoy"
                (change)="fechaDictadaInputInvalida = false; fechaDictadaInputAnioInvalido = false" />
         <small class="field-error" *ngIf="fechaDictadaInputInvalida">La fecha es obligatoria.</small>
-        <small class="field-error" *ngIf="fechaDictadaInputAnioInvalido">La fecha debe ser del año lectivo en curso.</small>
+        <small class="field-error" *ngIf="fechaDictadaInputAnioInvalido">La fecha debe estar entre el 1/01 del año en curso y hoy.</small>
       </div>
       <div class="modal-actions" style="margin-top:16px">
         <button class="btn-secondary" (click)="cancelarFechaDictada()">Cancelar</button>

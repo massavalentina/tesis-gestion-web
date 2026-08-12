@@ -58,6 +58,7 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   readonly fechaMinAnio = `${new Date().getFullYear()}-01-01`;
   readonly fechaMaxAnio = `${new Date().getFullYear()}-12-31`;
+  readonly fechaMaxHoy = this.toFechaLocal(new Date());
 
   // ─── Drawer: item (unidad / tema) — solo para programas de origen Archivo ──
   drawerItem = false;
@@ -249,7 +250,7 @@ export class MisEcPlanificacionComponent implements OnInit {
     this.claseTituloInvalido = !this.claseTitulo.trim();
     this.claseFechaDictadaInvalida = this.claseEstado === 'Dado' && !this.claseFechaHasta;
     this.claseFechaDesdeInvalida = !!this.claseFechaDesde && !this.esFechaAnioActual(this.claseFechaDesde);
-    this.claseFechaHastaAnioInvalido = !!this.claseFechaHasta && !this.esFechaAnioActual(this.claseFechaHasta);
+    this.claseFechaHastaAnioInvalido = !!this.claseFechaHasta && !this.esFechaDictadaValida(this.claseFechaHasta);
     if (this.claseTituloInvalido || this.claseFechaDictadaInvalida ||
         this.claseFechaDesdeInvalida || this.claseFechaHastaAnioInvalido) return;
 
@@ -340,7 +341,7 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   avanzarConfirmDictada(): void {
     this.fechaDictadaInputInvalida = !this.fechaDictadaInput;
-    this.fechaDictadaInputAnioInvalido = !!this.fechaDictadaInput && !this.esFechaAnioActual(this.fechaDictadaInput);
+    this.fechaDictadaInputAnioInvalido = !!this.fechaDictadaInput && !this.esFechaDictadaValida(this.fechaDictadaInput);
     if (this.fechaDictadaInputInvalida || this.fechaDictadaInputAnioInvalido) return;
     this.modalFechaDictada = false;
     this.modalConfirmDictada = true;
@@ -523,6 +524,17 @@ export class MisEcPlanificacionComponent implements OnInit {
 
   private esFechaAnioActual(fecha: string): boolean {
     return parseInt(fecha.split('-')[0], 10) === new Date().getFullYear();
+  }
+
+  private esFechaDictadaValida(fecha: string): boolean {
+    return this.esFechaAnioActual(fecha) && fecha <= this.fechaMaxHoy;
+  }
+
+  private toFechaLocal(fecha: Date): string {
+    const y = fecha.getFullYear();
+    const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const d = fecha.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   claseEsDada(clase: ClasePlanificacionDto): boolean { return clase.estado === 'Dado'; }

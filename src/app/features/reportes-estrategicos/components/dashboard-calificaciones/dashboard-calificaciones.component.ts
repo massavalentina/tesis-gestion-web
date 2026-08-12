@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { DateAdapter, MAT_DATE_FORMATS, NativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
 import * as echarts from 'echarts/core';
@@ -83,6 +83,7 @@ const DESAP_SCALE = [DARK, '#27568c', MID, '#6f9ec9', BLUEL];
   ],
   providers: [
     provideEchartsCore({ echarts }),
+    { provide: MAT_DATE_LOCALE, useValue: 'es-AR' },
     { provide: DateAdapter, useClass: DdMmYyyyAdapter },
     { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMATS },
   ],
