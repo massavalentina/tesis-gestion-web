@@ -15,6 +15,7 @@ import { catchError, map } from 'rxjs/operators';
 import { GestionUsuariosService } from '../../services/gestion-usuarios.service';
 import { GestionRolesService } from '../../../gestion-roles/services/gestion-roles.service';
 import { AsignacionService } from '../../services/asignacion.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { Usuario } from '../../models/usuario.model';
 import { DocenteECActivo, DocenteECHistorial, HorarioInfo, PreceptorCursoActivo, PreceptorCursoHistorial } from '../../models/asignacion.model';
 import { Rol } from '../../../gestion-roles/models/rol.model';
@@ -134,6 +135,7 @@ export class FichaUsuarioComponent implements OnInit {
     private service:          GestionUsuariosService,
     private rolesService:     GestionRolesService,
     private asignacionService: AsignacionService,
+    private authService:      AuthService,
     private dialog:           MatDialog,
     private snack:            MatSnackBar,
     private fb:               FormBuilder,
@@ -208,6 +210,11 @@ export class FichaUsuarioComponent implements OnInit {
     return !!this.usuario()?.idPreceptor;
   }
 
+  /** El rol Admin solo puede asignarlo el propio Admin (sigue siendo visible para todos). */
+  get esAdmin(): boolean {
+    return this.authService.currentUser?.esAdmin === true;
+  }
+
   get rolesConObjeto(): Rol[] {
     const u = this.usuario();
     if (!u) return [];
@@ -220,7 +227,10 @@ export class FichaUsuarioComponent implements OnInit {
     const u = this.usuario();
     if (!u) return [];
     const asignados = new Set(u.roles.map(r => r.toLowerCase()));
-    const reales = this.rolesDisponibles.filter(r => !asignados.has(r.nombre.toLowerCase()));
+    let reales = this.rolesDisponibles.filter(r => !asignados.has(r.nombre.toLowerCase()));
+    if (!this.esAdmin) {
+      reales = reales.filter(r => r.nombre.toLowerCase() !== 'admin');
+    }
     if (this.tieneRolPreceptor && !u.esDelegado) {
       return [...reales, ROL_PRECEPTOR_DELEGADO];
     }
@@ -367,6 +377,7 @@ export class FichaUsuarioComponent implements OnInit {
 
   quitarRol(rol: Rol): void {
     if (this.eliminandoRolId()) return;
+    if (rol.nombre.toLowerCase() === 'admin' && !this.esAdmin) return;
     const u = this.usuario()!;
     const nombre = `${u.apellido}, ${u.nombre}`;
     const esRolConAsignaciones = ['docente', 'preceptor'].includes(rol.nombre.toLowerCase());

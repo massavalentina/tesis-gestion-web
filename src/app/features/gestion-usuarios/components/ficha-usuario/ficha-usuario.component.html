@@ -161,7 +161,8 @@
                 class="gr-chip"
                 [ngClass]="rolChipClass(rol.nombre)">
             {{ rol.nombre }}
-            <button class="gr-chip-remove"
+            <button *ngIf="esAdmin || rol.nombre.toLowerCase() !== 'admin'"
+                    class="gr-chip-remove"
                     [disabled]="!!eliminandoRolId() || actualizandoDelegado()"
                     [matTooltip]="'Quitar ' + rol.nombre"
                     (click)="quitarRol(rol)">
