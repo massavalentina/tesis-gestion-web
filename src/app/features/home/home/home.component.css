@@ -1,0 +1,130 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.home-container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 9% 45%, rgba(60, 120, 180, 0.18) 0 2.5%, transparent 8%),
+    radial-gradient(circle at 43% 81%, rgba(60, 120, 180, 0.14) 0 2.4%, transparent 7%),
+    radial-gradient(circle at 93% 29%, rgba(60, 120, 180, 0.12) 0 2%, transparent 7%),
+    linear-gradient(132deg, #f7fbff 0%, #eef6fd 46%, #fafdff 100%);
+}
+
+.home-container::before,
+.home-container::after {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.home-container::before {
+  width: 460px;
+  height: 460px;
+  left: -140px;
+  bottom: -160px;
+  background: radial-gradient(circle, rgba(60, 120, 180, 0.16), transparent 68%);
+  filter: blur(16px);
+}
+
+.home-container::after {
+  width: 500px;
+  height: 500px;
+  right: -170px;
+  top: -150px;
+  background: radial-gradient(circle, rgba(90, 185, 239, 0.13), transparent 70%);
+  filter: blur(18px);
+}
+
+.home-container canvas {
+  opacity: 0.38;
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.home-wordmark {
+  width: 220px;
+  height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.home-wordmark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-logo {
+  width: 108px;
+  height: 120px;
+  margin-bottom: 22px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.home-greeting {
+  margin: 0;
+  color: #071f55;
+  font-size: clamp(2rem, 4vw, 2.35rem);
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.home-date {
+  margin: 12px 0 0;
+  color: #7183a2;
+  font-size: 0.94rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .home-content {
+    padding: 28px 18px;
+  }
+
+  .home-wordmark {
+    width: 174px;
+    height: 48px;
+    margin-bottom: 14px;
+  }
+
+  .home-logo {
+    width: 82px;
+    height: 92px;
+    margin-bottom: 18px;
+  }
+
+  .home-greeting {
+    font-size: 1.68rem;
+  }
+
+  .home-date {
+    margin-top: 9px;
+    font-size: 0.82rem;
+  }
+}

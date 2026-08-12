@@ -48,40 +48,12 @@
       </div>
 
       <div class="detail-info">
-        <div class="eyebrow">Gestion manual de calificaciones</div>
         <h2>{{ espacio.nombreMateria }}</h2>
         <p>
           Curso {{ formatCurso(espacio.anioNumero, espacio.division) }} ·
           Año lectivo {{ espacio.anioLectivo }} ·
           {{ estudiantes.length }} estudiantes
         </p>
-      </div>
-
-      <div
-        class="mode-card"
-        [class.mode-card--editing]="modoEdicion"
-        [class.mode-card--report]="modoReporte">
-        <span class="mode-label">{{ modeLabel }}</span>
-        <small>{{ updatedAtLabel }}</small>
-      </div>
-    </div>
-
-    <div class="context-grid">
-      <div class="context-item">
-        <span class="context-label">Curso</span>
-        <strong>{{ formatCurso(espacio.anioNumero, espacio.division) }}</strong>
-      </div>
-      <div class="context-item">
-        <span class="context-label">Sin notas</span>
-        <strong>{{ cantidadSinNotas }}</strong>
-      </div>
-      <div class="context-item">
-        <span class="context-label">Notas vigentes</span>
-        <strong>{{ cantidadNotasPersistidas }}</strong>
-      </div>
-      <div class="context-item">
-        <span class="context-label">Vista</span>
-        <strong>{{ tabActivo === 1 ? 'Eval 1 a 4' : 'Eval 5 a 8' }}</strong>
       </div>
     </div>
 
@@ -151,12 +123,20 @@
         </label>
 
         <div class="action-group">
-          <button class="action-btn action-btn--ghost" type="button" [class.action-btn--selected]="!modoReporte" (click)="volverAVistaNormal()">
-            Vista normal
-          </button>
-          <button class="action-btn action-btn--ghost" type="button" [class.action-btn--selected]="modoReporte" (click)="activarReporte()">
-            Vista reporte
-          </button>
+          <label class="view-switch" [class.view-switch--report]="modoReporte">
+            <span>Normal</span>
+            <button
+              class="view-switch-control"
+              type="button"
+              role="switch"
+              [attr.aria-checked]="modoReporte"
+              [attr.aria-label]="modoReporte ? 'Cambiar a vista normal' : 'Cambiar a vista de reporte'"
+              (click)="toggleModoReporte()">
+              <span class="view-switch-track"></span>
+              <span class="view-switch-thumb"></span>
+            </button>
+            <span>Reporte</span>
+          </label>
           <button class="action-btn action-btn--secondary" type="button" (click)="navegarImportador()">
             Importar PDF CiDi
           </button>
@@ -187,9 +167,9 @@
 
       <div class="summary-strip" [class.summary-strip--report]="modoReporte">
         <div>
-          <strong>{{ cantidadFiltrada }} de {{ estudiantes.length }} estudiantes visibles</strong>
-          <span *ngIf="!modoReporte">La nomina corresponde al curso oficial del espacio curricular.</span>
-          <span *ngIf="modoReporte">El reporte calcula promedios y porcentajes sobre toda la nomina del curso.</span>
+
+          <span *ngIf="!modoReporte">{{ cantidadFiltrada }} de {{ estudiantes.length }} estudiantes visibles</span>
+          <span *ngIf="modoReporte">{{ cantidadFiltrada }} de {{ estudiantes.length }} estudiantes visibles</span>
         </div>
         <div class="summary-meta">
           <span *ngIf="modoEdicion && hayNotasInvalidas">Hay notas invalidas. Solo se permiten enteros de 1 a 10.</span>
@@ -245,7 +225,7 @@
               <td class="student-col sticky-col">
                 <div class="student-cell">
                   <div class="student-cell-head">
-                    <strong>{{ estudiante.nombreCompleto }}</strong>
+                    <strong [attr.title]="estudiante.nombreCompleto">{{ estudiante.nombreCompleto }}</strong>
                     <span
                       *ngIf="modoReporte"
                       class="report-student-dot"
@@ -255,9 +235,6 @@
                     </span>
                   </div>
                   <div class="student-badges">
-                    <span class="student-badge student-badge--empty" *ngIf="!rowHasAnyValue(estudiante.idEstudiante)">
-                      Sin notas
-                    </span>
                     <span class="student-badge student-badge--changed" *ngIf="modoEdicion && rowHasChanges(estudiante.idEstudiante)">
                       Editado
                     </span>
@@ -309,7 +286,7 @@
 
             <tr *ngIf="filasPaginadas.length === 0">
               <td class="empty-row" [attr.colspan]="totalColumnasTabla">
-                No hay estudiantes que coincidan con la busqueda o el filtro seleccionado.
+                No hay estudiantes que coincidan con la búsqueda o el filtro seleccionado.
               </td>
             </tr>
 
@@ -411,24 +388,30 @@
     <div class="audit-card">
       <div class="audit-head">
         <div>
-          <span class="audit-eyebrow">Auditoria persistida</span>
           <h3>Registro de cambios sobre calificaciones</h3>
           <p>
-            Cada guardado confirmado en la base genera una sesion de actividad. Dentro de cada sesion se listan las notas modificadas y su cambio puntual.
+            Cada guardado registrado genera una sesión de actividad. Dentro de cada sesión se listan los cambios realizados.
           </p>
         </div>
-        <span class="audit-total">{{ totalAuditSessions }} sesion{{ totalAuditSessions !== 1 ? 'es' : '' }}</span>
+        <span class="audit-total">{{ totalAuditSessions }} sesión{{ totalAuditSessions !== 1 ? 'es' : '' }}</span>
       </div>
 
       <div class="audit-empty" *ngIf="auditoria.length === 0">
-        Todavia no hay cambios guardados para este espacio curricular.
+        Todavía no hay cambios guardados para este espacio curricular.
       </div>
 
       <div class="audit-feed" *ngIf="auditoria.length > 0">
         <article class="audit-session" *ngFor="let session of sesionesAuditoriaVisibles; trackBy: trackByAuditSessionId">
           <div
             class="audit-session-head"
-            [attr.data-expanded]="isAuditSessionExpanded(session.id)">
+            [attr.data-expanded]="isAuditSessionExpanded(session.id)"
+            role="button"
+            tabindex="0"
+            (click)="toggleAuditSession(session.id)"
+            (keydown.enter)="toggleAuditSession(session.id)"
+            (keydown.space)="toggleAuditSession(session.id)"
+            [attr.aria-expanded]="isAuditSessionExpanded(session.id)"
+            [attr.aria-label]="isAuditSessionExpanded(session.id) ? 'Ocultar sesión' : 'Desplegar sesión'">
             <div class="audit-session-main">
               <div class="audit-session-topline">
                 <span class="audit-origin">{{ session.origen }}</span>
@@ -449,27 +432,20 @@
               <strong>{{ formatTimestamp(session.timestamp) }}</strong>
               <span class="audit-session-teacher">{{ session.docente }}</span>
             </div>
-            <button
-              class="audit-session-toggle"
-              type="button"
-              (click)="toggleAuditSession(session.id)"
-              [attr.aria-expanded]="isAuditSessionExpanded(session.id)">
-              <span class="audit-session-toggle-label">
-                {{ isAuditSessionExpanded(session.id) ? 'Ocultar detalle' : 'Ver detalle' }}
-              </span>
-              <span class="audit-session-chevron" [class.audit-session-chevron--open]="isAuditSessionExpanded(session.id)">⌄</span>
-            </button>
           </div>
 
           <div class="audit-session-body" *ngIf="isAuditSessionExpanded(session.id)">
             <article class="audit-change-card" *ngFor="let change of session.cambios; trackBy: trackByAuditChangeId">
               <div class="audit-change-top">
                 <strong>{{ change.estudiante }}</strong>
-                <span>{{ change.documento }}</span>
+                <span>DNI alumno: {{ change.documento }}</span>
               </div>
               <div class="audit-change-meta">
                 <span>{{ change.evaluacion }} · {{ change.tipo }}</span>
-                <span>{{ getAuditChangeLabel(change) }}</span>
+                <span>{{ getAuditChangeLabel(change, session.origen) }}</span>
+              </div>
+              <div class="audit-change-meta" *ngIf="change.avisoBreve">
+                <span>{{ change.avisoBreve }}</span>
               </div>
               <div class="audit-change-values">
                 <span>{{ formatAuditValue(change.valorAnterior) }}</span>
@@ -481,14 +457,20 @@
         </article>
       </div>
 
-      <div class="audit-footer" *ngIf="hayMasSesionesAuditoria">
-        <button
-          class="action-btn action-btn--ghost"
-          type="button"
-          [disabled]="auditLoadingMore"
-          (click)="showMoreAuditSessions()">
-          {{ auditLoadingMore ? 'Cargando...' : 'Ver mas sesiones' }}
-        </button>
+      <div class="audit-footer" *ngIf="auditoria.length > 0">
+        <div class="audit-pagination-meta">
+          <strong>{{ auditRangeLabel }}</strong>
+          <span>{{ auditTotalPages }} página{{ auditTotalPages !== 1 ? 's' : '' }}</span>
+        </div>
+        <div class="page-nav">
+          <button class="page-btn" type="button" [disabled]="auditPageIndex === 0 || auditLoadingMore" (click)="goToPreviousAuditPage()">
+            Anterior
+          </button>
+          <span class="page-index">Página {{ auditPageIndex + 1 }} / {{ auditTotalPages }}</span>
+          <button class="page-btn" type="button" [disabled]="!canGoToNextAuditPage || auditLoadingMore" (click)="goToNextAuditPage()">
+            {{ auditLoadingMore ? 'Cargando...' : 'Siguiente' }}
+          </button>
+        </div>
       </div>
     </div>
   </ng-container>

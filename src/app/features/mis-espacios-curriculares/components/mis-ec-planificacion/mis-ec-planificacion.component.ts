@@ -557,6 +557,6 @@ export class MisEcPlanificacionComponent implements OnInit {
   countClasesTema(tema: TemaArbolDto): string {
     const dadas = tema.clases.filter(c => c.estado === 'Dado').length;
     const total = tema.clases.length;
-    return total ? `${dadas}/${total} clases dictadas` : 'sin clases';
+    return total ? `${dadas}/${total} clases dictadas` : 'Sin clases planificadas';
   }
 }

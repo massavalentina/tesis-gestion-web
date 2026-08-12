@@ -5,6 +5,9 @@ export interface ArchivoIEResumen {
   tipoCalificacion: TipoCalificacion;
   tipoIE: string;
   titulo: string;
+  estado: string;
+  esVencida: boolean;
+  puedeCargarNotas: boolean;
   fechaEjecucion: string;
   fechaCarga: string;
   nombreArchivo: string;
@@ -21,6 +24,7 @@ export interface InstanciaEvaluativaResumen {
   idEC: string;
   nro: number;
   estado: string;
+  estadoGeneralIe?: string;
   archivos: InstanciaEvaluativaArchivos;
 }
 
@@ -72,6 +76,8 @@ export interface AuditoriaCalificacionDetalle {
   tipoCalificacion: TipoCalificacion;
   valorAnterior: number | null;
   valorNuevo: number | null;
+  resultadoOperacion: string;
+  avisoBreve: string | null;
 }
 
 export interface AuditoriaCalificacionSesion {

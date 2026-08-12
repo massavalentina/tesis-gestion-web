@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface DatosConfirmarAsistencia {
   nombre: string;
@@ -17,14 +18,14 @@ export interface DatosConfirmarAsistencia {
 @Component({
   selector: 'app-confirmar-asistencia-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <div class="dialog-card" [class.dialog-card--warning]="data.esReemplazo">
       <header class="dialog-head">
-        <div class="dialog-title-group" [class.dialog-title-group--warning]="data.esReemplazo">
-          <span class="dialog-icon" *ngIf="data.esReemplazo">!</span>
-          <h2>{{ data.esReemplazo ? 'Alumno ya registrado en el turno' : 'Registrar asistencia' }}</h2>
+        <div class="dialog-icon-shell" [class.dialog-icon-shell--warning]="data.esReemplazo">
+          <mat-icon>{{ data.esReemplazo ? 'sync_alt' : 'qr_code_2' }}</mat-icon>
         </div>
+        <h2>{{ data.esReemplazo ? 'Alumno ya registrado en el turno' : 'Registrar asistencia' }}</h2>
       </header>
 
       <div class="student-photo">
@@ -34,33 +35,35 @@ export interface DatosConfirmarAsistencia {
           (error)="manejarErrorImagen()">
       </div>
 
-      <div class="contenido">
-        <p><strong>Alumno:</strong> {{ data.apellido }}, {{ data.nombre }}</p>
-        <p><strong>Curso:</strong> {{ data.curso }}</p>
-        <p><strong>Turno:</strong> {{ data.turno }}</p>
+      <div class="details-card">
+        <div class="contenido">
+          <p><strong>Alumno:</strong> {{ data.apellido }}, {{ data.nombre }}</p>
+          <p><strong>Curso:</strong> {{ data.curso }}</p>
+          <p><strong>Turno:</strong> {{ data.turno }}</p>
 
-        <ng-container *ngIf="!data.esReemplazo">
-          <div class="tipo-inline">
-            <p class="label-tipo"><strong>Tipo seleccionado:</strong></p>
-            <span class="code-pill" [class]="chipClass(data.tipoAsistencia)">
-              {{ data.tipoAsistencia }}
-            </span>
-          </div>
-        </ng-container>
+          <ng-container *ngIf="!data.esReemplazo">
+            <div class="tipo-inline">
+              <p class="label-tipo"><strong>Tipo seleccionado:</strong></p>
+              <span class="code-pill" [class]="chipClass(data.tipoAsistencia)">
+                {{ data.tipoAsistencia }}
+              </span>
+            </div>
+          </ng-container>
 
-        <ng-container *ngIf="data.esReemplazo">
-          <p class="pregunta">¿Desea reemplazar el registro?</p>
+          <ng-container *ngIf="data.esReemplazo">
+            <p class="pregunta">¿Desea reemplazar el registro existente?</p>
 
-          <div class="cambio-row">
-            <span class="code-pill" [class]="chipClass(data.tipoAnterior)">
-              {{ data.tipoAnterior }}
-            </span>
-            <span class="arrow">→</span>
-            <span class="code-pill" [class]="chipClass(data.tipoAsistencia)">
-              {{ data.tipoAsistencia }}
-            </span>
-          </div>
-        </ng-container>
+            <div class="cambio-row">
+              <span class="code-pill" [class]="chipClass(data.tipoAnterior)">
+                {{ data.tipoAnterior }}
+              </span>
+              <span class="arrow">→</span>
+              <span class="code-pill" [class]="chipClass(data.tipoAsistencia)">
+                {{ data.tipoAsistencia }}
+              </span>
+            </div>
+          </ng-container>
+        </div>
       </div>
 
       <mat-dialog-actions align="center" class="acciones">
@@ -75,50 +78,49 @@ export interface DatosConfirmarAsistencia {
     .dialog-card {
       min-width: 286px;
       max-width: 350px;
-      padding: 2px 2px 0;
+      padding: 4px 2px 0;
     }
 
     .dialog-head {
       display: flex;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
-
-    .dialog-title-group {
-      display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      max-width: 100%;
+      margin-bottom: 12px;
     }
 
-    .dialog-title-group--warning {
-      align-items: flex-start;
-    }
-
-    .dialog-icon {
-      flex: 0 0 22px;
-      margin-top: 2px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #fef3c7;
-      border: 1px solid #fdba74;
-      color: #b45309;
+    .dialog-icon-shell {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.84rem;
-      font-weight: 800;
+      background: #eaf3fb;
+      border: 1px solid #d7e6f4;
+      color: #3c78b4;
+    }
+
+    .dialog-icon-shell--warning {
+      background: #fff5ea;
+      border-color: #f4c796;
+      color: #c26a00;
+    }
+
+    .dialog-icon-shell mat-icon {
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
     }
 
     .dialog-head h2 {
       min-width: 0;
       margin: 0;
-      font-size: 1.12rem;
-      font-weight: 800;
+      font-size: 1.04rem;
+      font-weight: 700;
       color: #0f172a;
-      line-height: 1.18;
+      line-height: 1.24;
       text-align: center;
       white-space: normal;
       overflow-wrap: anywhere;
@@ -135,19 +137,27 @@ export interface DatosConfirmarAsistencia {
     }
 
     .student-photo img {
-      width: 220px;
-      height: 220px;
+      width: 206px;
+      height: 206px;
       object-fit: cover;
-      border-radius: 18px;
-      border: 3px solid #e2e8f0;
+      border-radius: 16px;
+      border: 2px solid #d7e6f4;
       background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    .details-card {
+      border: 1px solid #d7e6f4;
+      border-radius: 14px;
+      background: #f8fbff;
+      padding: 12px 14px;
     }
 
     .contenido p {
       margin: 6px 0;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       color: #334155;
+      line-height: 1.45;
     }
 
     .label-tipo {
@@ -165,8 +175,8 @@ export interface DatosConfirmarAsistencia {
     .pregunta {
       margin-top: 10px;
       margin-bottom: 2px;
-      font-size: 0.95rem;
-      font-weight: 800;
+      font-size: 0.9rem;
+      font-weight: 700;
       color: #1f2937;
     }
 
@@ -209,17 +219,17 @@ export interface DatosConfirmarAsistencia {
 
     .btn {
       min-width: 122px;
-      border-radius: 999px;
-      font-weight: 700;
+      border-radius: 10px;
+      font-weight: 600;
     }
 
     .btn--ghost {
-      border-color: #94a3b8 !important;
-      color: #334155 !important;
+      border-color: #bfd4e7 !important;
+      color: #3c78b4 !important;
     }
 
     .btn--primary {
-      background: linear-gradient(180deg, #3f88c5 0%, #2f6ea3 100%) !important;
+      background: #3c78b4 !important;
       color: #fff !important;
     }
   `]

@@ -20,8 +20,15 @@ export class EvaluacionesService {
     );
   }
 
-  cambiarEstado(idEC: string, nro: number, estado: string): Observable<InstanciaEvaluativaSlot> {
-    return this.http.put<InstanciaEvaluativaSlot>(`${this.base}/ec/${idEC}/instancias/${nro}/estado`, { estado });
+  cambiarEstado(idEC: string, nro: number, tipo: string, estado: string): Observable<InstanciaEvaluativaSlot> {
+    return this.http.put<InstanciaEvaluativaSlot>(`${this.base}/ec/${idEC}/instancias/${nro}/archivos/${tipo}/estado`, { estado });
+  }
+
+  actualizarTrazabilidad(idEC: string, nro: number, tipo: string, idBloquesTema: string[]): Observable<InstanciaEvaluativaSlot> {
+    return this.http.put<InstanciaEvaluativaSlot>(
+      `${this.base}/ec/${idEC}/instancias/${nro}/archivos/${tipo}/trazabilidad`,
+      { idBloquesTema },
+    );
   }
 
   eliminarArchivo(idEC: string, nro: number, tipo: string): Observable<void> {

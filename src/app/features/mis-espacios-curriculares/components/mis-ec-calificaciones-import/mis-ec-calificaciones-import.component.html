@@ -24,39 +24,24 @@
             </p>
           </div>
           <div class="header-actions">
-            <button class="btn secondary" type="button" (click)="volverACalificaciones()">Cerrar</button>
+            <button class="icon-btn" type="button" aria-label="Cerrar importador" (click)="volverACalificaciones()">
+              <span class="material-icons" aria-hidden="true">close</span>
+            </button>
           </div>
         </header>
 
         <div class="wizard-strip">
           <div class="wizard-step" [class.active]="stageIndex >= 1">1. Carga</div>
           <div class="wizard-step" [class.active]="stageIndex >= 3">2. Análisis</div>
-          <div class="wizard-step" [class.active]="stageIndex >= 4">3. Revisión</div>
+          <div class="wizard-step" [class.active]="stageIndex >= 4">3. Preview</div>
           <div class="wizard-step" [class.active]="stageIndex >= 5">4. Confirmación</div>
         </div>
 
         <div class="importer-modal__body">
-
-          <div class="feedback" *ngIf="feedback">{{ feedback }}</div>
+          <div class="feedback" [class.feedback--error]="feedbackError" *ngIf="feedback">{{ feedback }}</div>
           <div class="feedback feedback--error" *ngIf="analyzeError">{{ analyzeError }}</div>
 
           <section class="card card--load" *ngIf="stage === 'load'">
-            <h3> </h3>
-            <div class="context-grid context-grid--load">
-              <div class="context-card">
-                <span class="label">Curso</span>
-                <strong>{{ espacio.anioNumero }}.º {{ espacio.division }}</strong>
-              </div>
-              <div class="context-card">
-                <span class="label">Espacio curricular</span>
-                <strong>{{ espacio.nombreMateria }}</strong>
-              </div>
-              <div class="context-card">
-                <span class="label">Año lectivo</span>
-                <strong>{{ espacio.anioLectivo }}</strong>
-              </div>
-            </div>
-
             <div class="load-stage__content">
               <label class="upload-box">
                 <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" />
@@ -68,7 +53,7 @@
                 <span class="upload-box__subtitle">
                   {{ selectedFileName
                     ? selectedFileName
-                    : 'Solo se admite el archivo PDF estándar exportado desde CiDi.' }}
+                    : 'La importación no se guarda como borrador. Si salís antes de confirmar, vas a tener que volver a analizar el archivo.' }}
                 </span>
               </label>
 
@@ -84,17 +69,11 @@
           <section class="analysis-stage" *ngIf="stage === 'analysis'">
             <div class="analysis-panel">
               <div class="analysis-panel__header">
-                <small>2. Análisis del documento</small>
-                <h3>{{ detail ? 'Resultado del análisis' : 'Analizando documento…' }}</h3>
-                <p>
-                  {{ detail
-                    ? 'El sistema terminó de procesar el PDF y contrastó estudiantes, evaluaciones y notas.'
-                    : 'Validando estructura del archivo antes de mostrar resultados.' }}
-                </p>
+                <h3>{{ analysis ? 'Resultado del análisis' : 'Analizando documento…' }}</h3>
               </div>
 
               <div class="analysis-panel__body">
-                <div class="analysis-spinner" *ngIf="actionLoading || !detail"></div>
+                <div class="analysis-spinner" *ngIf="actionLoading || !analysis"></div>
 
                 <div class="analysis-checklist">
                   <div
@@ -110,37 +89,37 @@
                   </div>
                 </div>
 
-                <div class="metric-grid analysis-metrics" *ngIf="detail">
+                <div class="metric-grid analysis-metrics" *ngIf="analysis">
                   <div class="metric">
-                    <strong>{{ detail.resumen.estudiantesDetectados }}</strong>
+                    <strong>{{ analysis.resumen.estudiantesDetectados }}</strong>
                     <span>Estudiantes detectados</span>
                   </div>
                   <div class="metric">
-                    <strong>{{ detail.resumen.evaluacionesDetectadasConNotas }}</strong>
+                    <strong>{{ analysis.resumen.evaluacionesDetectadasConNotas }}</strong>
                     <span>Slots con notas</span>
                   </div>
                   <div class="metric">
-                    <strong>{{ detail.resumen.conflictosDeNotas }}</strong>
+                    <strong>{{ analysis.resumen.conflictosDeNotas }}</strong>
                     <span>Conflictos de notas</span>
                   </div>
                   <div class="metric">
-                    <strong>{{ detail.resumen.notasInvalidas }}</strong>
+                    <strong>{{ analysis.resumen.notasInvalidas }}</strong>
                     <span>Notas inválidas</span>
                   </div>
                 </div>
 
-                <div class="issue-list" *ngIf="detail && detail.bloqueos.length > 0">
-                  <div class="issue issue--blocking" *ngFor="let issue of detail.bloqueos">
-                    <strong>{{ issue.slotKey || 'Bloqueo' }}</strong>
+                <div class="issue-list" *ngIf="analysis && analysis.bloqueos.length > 0">
+                  <div class="issue issue--blocking" *ngFor="let issue of analysis.bloqueos">
+                    <strong>{{ formatIssueSlot(issue) || 'Bloqueo' }}</strong>
                     <span>{{ issue.mensaje }}</span>
                   </div>
                 </div>
 
-                <p class="analysis-hint" *ngIf="detail && detail.bloqueos.length > 0">
-                  Corregí estos puntos y volvé a analizar el archivo para continuar con la importación.
+                <p class="analysis-hint" *ngIf="analysis && analysis.bloqueos.length > 0">
+                  Corrija estos bloqueos en Evaluaciones o en el PDF y vuelva a analizar para continuar.
                 </p>
 
-                <p class="analysis-hint" *ngIf="analyzeError && !detail">
+                <p class="analysis-hint" *ngIf="analyzeError && !analysis">
                   {{ analyzeError }}
                 </p>
               </div>
@@ -150,14 +129,15 @@
                 <button
                   class="btn secondary"
                   type="button"
-                  *ngIf="analysisHasFailure"
+                  *ngIf="selectedFile"
                   (click)="reanalizar()">
                   Reanalizar
                 </button>
                 <button
                   class="btn primary"
                   type="button"
-                  *ngIf="analysisAwaitingContinue && detail"
+                  *ngIf="analysisAwaitingContinue && analysis"
+                  [disabled]="analysis.bloqueos.length > 0"
                   (click)="continueAfterAnalysis()">
                   {{ analysisContinueLabel }}
                 </button>
@@ -165,28 +145,38 @@
             </div>
           </section>
 
-          <section class="review-shell card--wide" *ngIf="stage === 'review' && revision">
-            <div class="review-head">
-              <div>
+          <section class="review-shell card--wide" *ngIf="stage === 'review' && analysis">
+            <div class="review-topbar">
+              <div class="review-topbar__copy">
+                <h3>Preview y revisión</h3>
+                <p>Revise asociaciones, conflictos y celdas antes de continuar.</p>
+              </div>
+
+              <div class="review-topbar__controls">
+                <div class="review-topbar__filters">
+                  <div class="pill-group">
+                    <button class="pill" [class.active]="reviewFilter === 'all'" (click)="setFilter('all')" type="button">Todos</button>
+                    <button class="pill" [class.active]="reviewFilter === 'clean'" (click)="setFilter('clean')" type="button">Sin conflictos</button>
+                    <button class="pill" [class.active]="reviewFilter === 'conflict'" (click)="setFilter('conflict')" type="button">Con conflictos</button>
+                  </div>
+                  <label class="search-field">
+                    <span class="search-field__icon" aria-hidden="true">⌕</span>
+                    <input class="search" type="text" [(ngModel)]="reviewSearch" placeholder="Buscar por estudiante o conflicto" />
+                  </label>
                 </div>
-              <div class="head-actions">
-                <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="reanalizar()">Reanalizar</button>
-                <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="guardarRevision()">Guardar revisión</button>
-                <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="cancelarYReiniciar()">Cancelar importación</button>
-                <button class="btn primary" type="button" [disabled]="!canOpenConfirm || actionLoading" (click)="abrirConfirmacion()">Seguir con importación</button>
+                <div class="head-actions">
+                  <button class="btn secondary" type="button" [disabled]="actionLoading || !selectedFile" (click)="reanalizar()">Reanalizar</button>
+                  <button class="btn secondary" type="button" [disabled]="actionLoading" (click)="cancelarYReiniciar()">Cancelar importación</button>
+                  <button class="btn primary" type="button" [disabled]="!canOpenConfirm || actionLoading" (click)="abrirConfirmacion()">Seguir con importación</button>
+                </div>
               </div>
             </div>
 
-            <div class="toolbar">
-              <div class="pill-group">
-                <button class="pill" [class.active]="reviewFilter === 'all'" (click)="setFilter('all')" type="button">Todos</button>
-                <button class="pill" [class.active]="reviewFilter === 'clean'" (click)="setFilter('clean')" type="button">Sin conflictos</button>
-                <button class="pill" [class.active]="reviewFilter === 'conflict'" (click)="setFilter('conflict')" type="button">Con conflictos</button>
+            <div class="issue-list issue-list--inline" *ngIf="analysis.bloqueos.length > 0">
+              <div class="issue issue--blocking" *ngFor="let issue of analysis.bloqueos">
+                <strong>{{ formatIssueSlot(issue) || 'Bloqueo' }}</strong>
+                <span>{{ issue.mensaje }}</span>
               </div>
-              <label class="search-field">
-                <span class="search-field__icon" aria-hidden="true">⌕</span>
-                <input class="search" type="text" [(ngModel)]="reviewSearch" placeholder="Buscar por estudiante o conflicto" />
-              </label>
             </div>
 
             <div class="tabs tabs--preview">
@@ -201,7 +191,6 @@
                     <th rowspan="2" class="sticky-col col-valid">Valid.</th>
                     <th rowspan="2" class="sticky-col-2">Estudiante PDF</th>
                     <th rowspan="2" class="col-assoc">Estudiante asociado</th>
-                    <th rowspan="2" class="grade-col-head col-omit">Omitir</th>
                     <th class="group-head grade-group-head" *ngFor="let group of stageSlotGroups; trackBy: trackBySlotGroup" [attr.colspan]="group.slots.length">
                       IE {{ group.evaluacionNumero }}
                     </th>
@@ -223,26 +212,23 @@
                       </span>
                     </td>
                     <td class="sticky-col-2">
-                      <strong>{{ row.estudiantePdf }}</strong>
+                      <strong [title]="row.estudiantePdf">{{ row.estudiantePdf }}</strong>
                       <small *ngIf="showRowMessage(row)">{{ row.mensaje }}</small>
                     </td>
                     <td class="col-assoc">
                       <select
                         [(ngModel)]="row.estudianteAsociadoId"
                         (ngModelChange)="onRowStateChange()"
-                        [disabled]="row.omitida"
+                        [disabled]="!canEditStudentAssociation(row)"
                         [title]="getStudentLabel(row.estudianteAsociadoId)">
                         <option [ngValue]="null">Sin asociar</option>
                         <option
-                          *ngFor="let option of studentOptions"
+                          *ngFor="let option of getStudentOptionsForRow(row)"
                           [ngValue]="option.idEstudiante"
                           [title]="getStudentOptionTitle(option)">
                           {{ getStudentOptionText(option) }}
                         </option>
                       </select>
-                    </td>
-                    <td class="omit-col">
-                      <input type="checkbox" [(ngModel)]="row.omitida" (ngModelChange)="onRowStateChange()" />
                     </td>
 
                     <td class="grade-col" *ngFor="let cell of getRowCells(row)">
@@ -250,42 +236,31 @@
                         class="cell-card"
                         [class.cell-card--review]="cell.estado === 'review'"
                         [class.cell-card--blocking]="cell.estado === 'blocking'"
-                        [class.cell-card--invalid]="isManualValueInvalid(cell)"
-                        [title]="'PDF: ' + (cell.valorImportadoRaw ?? '—') + ' | Sistema: ' + (cell.valorDb ?? '—') + (cell.mensaje ? ' | ' + cell.mensaje : '')">
+                        [title]="'CiDi: ' + (cell.valorImportadoRaw ?? '—') + ' | Sistema: ' + (cell.valorDb ?? '—') + (cell.mensaje ? ' | ' + cell.mensaje : '')">
                         <div class="grade-display-row">
                           <div
                             class="grade-value"
                             [class.grade-value--empty]="getCellDisplayValue(cell) === null"
                             [class.grade-value--review]="cell.estado === 'review'"
-                            [class.grade-value--blocking]="cell.estado === 'blocking' || isManualValueInvalid(cell)">
+                            [class.grade-value--blocking]="cell.estado === 'blocking'">
                             {{ getCellDisplayValue(cell) ?? '—' }}
                           </div>
                           <select
                             class="grade-action"
                             [(ngModel)]="cell.resolucion"
                             (ngModelChange)="onResolutionChange(cell)"
-                            [disabled]="row.omitida">
+                            [disabled]="!canEditCellResolution(row, cell)">
                             <option *ngFor="let option of getCellResolutionOptions(cell)" [ngValue]="option.value">
                               {{ option.label }}
                             </option>
                           </select>
                         </div>
-                        <input
-                          *ngIf="isManualEdit(cell)"
-                          class="grade-input grade-input--manual"
-                          type="number"
-                          min="1"
-                          max="10"
-                          [ngModel]="cell.valorFinal"
-                          (ngModelChange)="onManualValueChange(cell, $event)"
-                          [class.input-invalid]="isManualValueInvalid(cell)"
-                          [disabled]="row.omitida" />
                       </div>
                     </td>
                   </tr>
 
                   <tr *ngIf="filteredRows.length === 0">
-                    <td [attr.colspan]="4 + stageSlots.length" class="empty-row">
+                    <td [attr.colspan]="3 + stageSlots.length" class="empty-row">
                       No hay filas que coincidan con el filtro actual.
                     </td>
                   </tr>
@@ -294,38 +269,38 @@
             </div>
 
             <div class="footer-status">
-              <span id="summaryText">Pendientes: {{ revision.resumen.pendientesDeRevision }} filas. </span>
-              <span id="footerText end">Revisá los conflictos antes de confirmar la importación.</span>
+              <span>Pendientes: {{ analysis.resumen.pendientesDeRevision }}.</span>
+              <span>Revise asociaciones manuales, conflictos y celdas bloqueadas antes de confirmar.</span>
             </div>
           </section>
 
-          <section class="card" *ngIf="stage === 'confirm' && confirmacion">
+          <section class="card" *ngIf="stage === 'confirm' && confirmacionResumen">
             <h3>Confirmación de importación</h3>
             <p class="confirm-intro">
-              Este es el último paso. Revisá el resumen y, si está correcto, confirmá la importación para cargar las notas en el sistema.
+              Este es el último paso. Revise el resumen y, si está correcto, confirme la importación para cargar las notas en el sistema.
             </p>
             <div class="metric-grid metric-grid--review">
               <div class="metric">
-                <strong>{{ confirmacion.resumen.estudiantesValidados }}</strong>
-                <span>Estudiantes validados</span>
-              </div>
-              <div class="metric">
-                <strong>{{ confirmacion.resumen.notasNuevas }}</strong>
+                <strong>{{ confirmacionResumen.notasNuevas }}</strong>
                 <span>Notas nuevas</span>
               </div>
               <div class="metric">
-                <strong>{{ confirmacion.resumen.notasReemplazadas }}</strong>
+                <strong>{{ confirmacionResumen.notasReemplazadas }}</strong>
                 <span>Notas reemplazadas</span>
               </div>
               <div class="metric">
-                <strong>{{ confirmacion.resumen.correccionesManuales }}</strong>
-                <span>Correcciones manuales</span>
+                <strong>{{ confirmacionResumen.notasExistentesMantenidas }}</strong>
+                <span>Valores del sistema conservados</span>
+              </div>
+              <div class="metric">
+                <strong>{{ confirmacionResumen.notasQuitadas }}</strong>
+                <span>Notas quitadas</span>
               </div>
             </div>
 
-            <div class="issue-list" *ngIf="confirmacion.bloqueos.length > 0">
-              <div class="issue issue--blocking" *ngFor="let issue of confirmacion.bloqueos">
-                <strong>{{ issue.slotKey || 'Conflicto' }}</strong>
+            <div class="issue-list" *ngIf="analysis && analysis.bloqueos.length > 0">
+              <div class="issue issue--blocking" *ngFor="let issue of analysis.bloqueos">
+                <strong>{{ formatIssueSlot(issue) || 'Conflicto' }}</strong>
                 <span>{{ issue.mensaje }}</span>
               </div>
             </div>
@@ -333,7 +308,7 @@
             <div class="actions">
               <button class="btn secondary" type="button" (click)="cancelarYReiniciar()">Cancelar y volver a cero</button>
               <button class="btn secondary" type="button" (click)="stage = 'review'">Volver a revisar</button>
-              <button class="btn primary" type="button" [disabled]="!confirmacion.puedeConfirmar || actionLoading" (click)="confirmarImportacion()">
+              <button class="btn primary" type="button" [disabled]="!analysis?.puedeConfirmar || actionLoading" (click)="confirmarImportacion()">
                 {{ actionLoading ? 'Importando…' : 'Confirmar importación' }}
               </button>
             </div>

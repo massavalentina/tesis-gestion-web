@@ -302,8 +302,8 @@ export class ProgramaFormComponent implements OnInit {
 
     const titulo = this.modoEdicion ? 'Confirmar edición' : 'Confirmar creación';
     const mensaje = this.modoEdicion
-      ? `¿Confirmás que querés guardar los cambios en "${val.titulo.trim()}"?`
-      : `¿Confirmás la creación del programa "${val.titulo.trim()}" para el año ${val.anioLectivo}?`;
+      ? `¿Confirma que desea guardar los cambios en "${val.titulo.trim()}"?`
+      : `¿Confirma la creación del programa "${val.titulo.trim()}" para el año ${val.anioLectivo}?`;
 
     this.dialog.open(ConfirmarAccionDialogComponent, {
       data: { titulo, mensaje, textoConfirmar: this.modoEdicion ? 'Guardar cambios' : 'Crear programa', color: 'primary' } as ConfirmarAccionData,
@@ -341,6 +341,15 @@ export class ProgramaFormComponent implements OnInit {
     } else {
       this.router.navigate(['/mis-espacios-curriculares', this.idEC, 'programas']);
     }
+  }
+
+  volverAMisEspacios(): void {
+    this.router.navigate(['/mis-espacios-curriculares']);
+  }
+
+  volverAEspacio(): void {
+    if (!this.idEC) return;
+    this.router.navigate(['/mis-espacios-curriculares', this.idEC]);
   }
 
   formatCurso(anio: number, division: string): string {

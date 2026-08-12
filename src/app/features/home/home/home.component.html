@@ -1,4 +1,10 @@
-<div class="card">
-  <h2>Home</h2>
+<div class="home-container" #container>
+  <div class="home-content">
+    <span class="home-wordmark">
+      <img src="robles360-auth.png" alt="Robles 360" />
+    </span>
+    <img src="logo.jpg" class="home-logo" alt="Escudo Robles">
+    <h1 class="home-greeting">Hola, {{ userName }}</h1>
+    <p class="home-date">{{ formattedDate }}</p>
+  </div>
 </div>
-

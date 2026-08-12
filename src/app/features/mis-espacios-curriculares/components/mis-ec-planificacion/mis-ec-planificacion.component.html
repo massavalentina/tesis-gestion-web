@@ -22,12 +22,18 @@
       </button>
       <div class="breadcrumb">
         <span class="bc-item bc-root" (click)="volver()">Mis espacios curriculares</span>
-        <span class="material-icons bc-sep">chevron_right</span>
+        <svg class="bc-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
         <ng-container *ngIf="espacio">
           <span class="bc-item" (click)="volver()">{{ cursoLabel }}</span>
-          <span class="material-icons bc-sep">chevron_right</span>
+          <svg class="bc-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
           <span class="bc-item" (click)="volver()">{{ espacio.nombreMateria }}</span>
-          <span class="material-icons bc-sep">chevron_right</span>
+          <svg class="bc-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
         </ng-container>
         <span class="bc-item bc-active">Planificación</span>
       </div>
@@ -51,7 +57,7 @@
       <span class="material-icons">info</span>
       <div>
         <strong>Sin programa vigente</strong>
-        <p>Este espacio curricular no tiene un programa vigente. Primero cargá el programa desde la sección "Programas".</p>
+        <p>Este espacio curricular no tiene un programa vigente. Primero cargue el programa desde la sección "Programas".</p>
       </div>
     </div>
 
@@ -59,44 +65,50 @@
     <ng-container *ngIf="!arbol.bloqueado && !arbol.sinPrograma">
 
       <!-- Card resumen del programa -->
-      <div class="prog-card">
-        <div class="prog-card-left">
-          <div class="prog-tag">Programa {{ arbol.anioLectivo }}</div>
-          <h2 class="prog-titulo">{{ arbol.tituloPrograma }}</h2>
-          <div class="prog-meta">
-            <span class="material-icons prog-meta-icon">school</span>
-            {{ arbol.nombreMateria }}
+      <section class="prog-hero">
+        <div class="prog-hero-left">
+          <div class="prog-hero-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5V4.6a.6.6 0 0 1 .6-.6h10.4" />
+              <path d="M8 7h8" />
+              <path d="M8 11h8" />
+              <path d="M8 15h5" />
+              <path d="M17 3v6" />
+              <path d="M14 6h6" />
+            </svg>
           </div>
-          <div class="prog-meta prog-estado">
-            <span class="material-icons prog-meta-icon">check_circle</span>
-            {{ arbol.estadoPrograma }}
-          </div>
-          <div class="prog-meta">
-            <span class="material-icons prog-meta-icon">person</span>
-            Diseñado por {{ arbol.nombreDocente }}
+          <div class="prog-hero-copy">
+            <h2 class="prog-hero-title">Planificación del Espacio</h2>
+            <div class="prog-hero-sub">
+              <div class="prog-meta">
+                {{ arbol.tituloPrograma }} — {{ arbol.estadoPrograma }}
+              </div>
+            </div>
           </div>
         </div>
-        <div class="prog-card-right">
-          <div class="avance-wrap">
-            <div class="avance-header">
-              <span class="avance-label">Avance del programa</span>
-              <span class="avance-pct">{{ avancePorcentaje }}%</span>
+        <div class="prog-hero-right">
+          <div class="hero-progress">
+            <div class="hero-progress-head">
+              <span class="hero-progress-label">Avance del programa</span>
+              <strong class="hero-progress-value">{{ avancePorcentaje }}%</strong>
             </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" [style.width.%]="avancePorcentaje"></div>
+            <div class="hero-progress-bar">
+              <div class="hero-progress-fill" [style.width.%]="avancePorcentaje"></div>
             </div>
-            <div class="avance-sub">{{ arbol.temasCompletos }} / {{ arbol.totalTemas }} temas dictados</div>
+            <div class="hero-progress-meta">{{ arbol.temasCompletos }} / {{ arbol.totalTemas }} temas dictados</div>
+            <div class="hero-progress-actions">
+              <button class="btn-ver-pdf" *ngIf="arbol.urlPrograma" (click)="abrirPdfPrograma()">
+                <span class="material-icons">picture_as_pdf</span>
+                Ver PDF del programa
+              </button>
+              <button class="btn-ir-programas" (click)="navegarAPrograma()">
+                <span class="material-icons">menu_book</span>
+                Ver programas del espacio
+              </button>
+            </div>
           </div>
-          <button class="btn-ver-pdf" *ngIf="arbol.urlPrograma" (click)="abrirPdfPrograma()">
-            <span class="material-icons">picture_as_pdf</span>
-            Ver PDF del programa
-          </button>
-          <button class="btn-ir-programas" (click)="navegarAPrograma()">
-            <span class="material-icons">menu_book</span>
-            Ver programas del espacio
-          </button>
         </div>
-      </div>
+      </section>
 
       <!-- ─── Árbol ─── -->
       <div class="arbol-wrap">
@@ -132,7 +144,7 @@
             <div class="tema-empty" *ngIf="unidad.temas.length === 0">
               <span class="material-icons" style="font-size:18px;opacity:.4">topic</span>
               <span>Sin temas. </span>
-              <button class="link-btn" *ngIf="arbol.permiteCrearItems" (click)="abrirCrearTema(unidad)">Agregá el primero</button>
+              <button class="link-btn" *ngIf="arbol.permiteCrearItems" (click)="abrirCrearTema(unidad)">Agregue el primero</button>
             </div>
 
             <!-- Temas -->

@@ -17,6 +17,10 @@ export interface DatosPreviewQrAlumno {
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, QrCredentialPreviewCardComponent],
   template: `
     <div class="dlg">
+      <button class="close-btn" type="button" aria-label="Cerrar" (click)="cerrar()">
+        <mat-icon>close</mat-icon>
+      </button>
+
       <div class="dlg__icon">
         <mat-icon>visibility</mat-icon>
       </div>
@@ -30,49 +34,95 @@ export interface DatosPreviewQrAlumno {
         [mostrarNombre]="false"
         [imageUrl]="data.imageUrl">
       </app-qr-credential-preview-card>
-
-      <mat-dialog-actions class="dlg__actions">
-        <button mat-raised-button class="btn-primary" (click)="cerrar()">Cerrar</button>
-      </mat-dialog-actions>
     </div>
   `,
   styles: [`
     .dlg {
+      position: relative;
       color: #0f2f4b;
       max-width: 92vw;
-      padding: 8px 4px 4px;
+      padding: 6px 2px 2px;
       text-align: center;
       font-family: 'Open Sans', sans-serif;
     }
+
+    .close-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #d6e4f1;
+      border-radius: 12px;
+      background: #f2f7fc;
+      color: #47698b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background .16s, border-color .16s, color .16s;
+    }
+
+    .close-btn:hover {
+      background: #e7f1fb;
+      border-color: #bdd6ec;
+      color: #1e4f83;
+    }
+
+    .close-btn mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
     .dlg__icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 12px;
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 10px;
       display: grid;
       place-items: center;
-      border-radius: 16px;
+      border-radius: 15px;
       background: #eef5fb;
       color: #3c78b4;
       border: 1px solid #d7e6f4;
     }
     .dlg__icon mat-icon {
-      font-size: 30px;
-      width: 30px;
-      height: 30px;
+      font-size: 27px;
+      width: 27px;
+      height: 27px;
     }
     h2 {
       margin: 0;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       line-height: 1.2;
       color: #0f2f4b;
     }
     .dlg__sub {
-      margin: 10px 0 0;
+      margin: 8px 0 0;
       color: #4b647a;
       font-size: 13.5px;
       line-height: 1.45;
     }
+
+    br {
+      display: none;
+    }
+
+    app-qr-credential-preview-card {
+      display: block;
+      margin-top: 16px;
+    }
+
+    :host ::ng-deep app-qr-credential-preview-card .preview-image-wrap {
+      padding: 10px;
+    }
+
+    :host ::ng-deep app-qr-credential-preview-card .preview-image-wrap img {
+      width: min(100%, 215px);
+      padding: 5px;
+    }
+
     .dlg__content {
       padding: 0 !important;
       margin-top: 16px;
@@ -104,24 +154,14 @@ export interface DatosPreviewQrAlumno {
       font-weight: 600;
       text-align: right;
     }
-    .dlg__actions {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 18px;
-      padding: 0;
-    }
-    .btn-primary {
-      background-color: #3c78b4 !important;
-      color: #fff !important;
-      border-radius: 12px !important;
-      font-weight: 600 !important;
-      padding: 10px 18px !important;
-    }
     @media (max-width: 560px) {
       h2 { font-size: 19px; }
       .row { flex-direction: column; }
-      .dlg__actions button { width: 100%; }
+
+      .close-btn {
+        top: -6px;
+        right: -6px;
+      }
     }
   `]
 })

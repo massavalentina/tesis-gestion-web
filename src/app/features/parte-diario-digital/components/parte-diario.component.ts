@@ -152,6 +152,11 @@ export class ParteDiarioComponent implements OnInit {
 
   turnoActivo: 'manana' | 'tarde' = 'manana';
 
+  // ── Colapso de secciones ──────────────────────────────────────────────────
+  estudiantesColapsado = true;
+  horarioColapsado     = true;
+  listaColapsada       = true;
+
   // ── Edit mode horario ─────────────────────────────────────────────────────
   modoEdicionHorario  = false;
   guardandoHorario    = false;
@@ -396,10 +401,13 @@ export class ParteDiarioComponent implements OnInit {
 
   private _ejecutarCarga(): void {
     const cursoId = this.cursoCtrl.value;
-    if (!cursoId) { this.snack.open('Seleccioná un curso.', '', { duration: 2500 }); return; }
+    if (!cursoId) { this.snack.open('Seleccione un curso.', '', { duration: 2500 }); return; }
 
     this.cargando = true;
     this.resumen  = null;
+    this.estudiantesColapsado = true;
+    this.horarioColapsado     = true;
+    this.listaColapsada       = true;
 
     forkJoin([
       this.service.getResumen(cursoId, this.fechaString),

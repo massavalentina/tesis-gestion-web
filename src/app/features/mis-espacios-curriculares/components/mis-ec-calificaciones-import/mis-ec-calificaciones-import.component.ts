@@ -1,17 +1,16 @@
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, finalize, of, switchMap } from 'rxjs';
+import { catchError, finalize, of } from 'rxjs';
 import { MisEcItem } from '../../models/mis-ec.model';
 import {
-  ActualizarImportacionRevisionRequest,
+  ConfirmarImportacionPayload,
   ConfirmarImportacionResponse,
-  ImportacionCalificacionesDetalle,
-  ImportacionConfirmacion,
+  ImportacionAnalisis,
+  ImportacionConfirmacionResumen,
   ImportacionIssue,
-  ImportacionRevision,
   ImportacionRevisionCell,
   ImportacionRevisionRow,
   ImportacionSlot,
@@ -34,24 +33,23 @@ type AnalysisStepStatus = 'pending' | 'active' | 'done' | 'error';
 })
 export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   idEC = '';
-  idImportacion: string | null = null;
   espacio: MisEcItem | null = null;
 
   loading = true;
   actionLoading = false;
   error = false;
-  errorMessage = 'No pudimos abrir el importador de calificaciones.';
+  errorMessage = 'No se pudo abrir el importador de calificaciones.';
 
   stage: WizardStage = 'load';
-  detail: ImportacionCalificacionesDetalle | null = null;
-  revision: ImportacionRevision | null = null;
-  confirmacion: ImportacionConfirmacion | null = null;
+  analysis: ImportacionAnalisis | null = null;
+  confirmacionResumen: ImportacionConfirmacionResumen | null = null;
   success: ConfirmarImportacionResponse | null = null;
 
   selectedFile: File | null = null;
   selectedFileName = '';
   analyzeError = '';
   feedback = '';
+  feedbackError = false;
 
   reviewFilter: ReviewFilter = 'all';
   reviewTab: ReviewTab = 1;
@@ -73,19 +71,17 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly location: Location,
     private readonly misEcService: MisEspaciosCurricularesService,
     private readonly importService: CalificacionesImportacionService,
   ) {}
 
   ngOnInit(): void {
     this.idEC = this.route.snapshot.paramMap.get('idEC') ?? '';
-    this.idImportacion = this.route.snapshot.paramMap.get('idImportacion');
 
     if (!this.idEC) {
       this.error = true;
       this.loading = false;
-      this.errorMessage = 'No se encontró el espacio curricular desde el que querés importar.';
+      this.errorMessage = 'No se encontró el espacio curricular desde el que desea importar.';
       return;
     }
 
@@ -113,9 +109,8 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       case 'analysis':
         return '2. Análisis';
       case 'review':
-        return '3. Revisión';
+        return '3. Preview y revisión';
       case 'confirm':
-        return '4. Confirmación';
       case 'success':
         return '4. Confirmación';
       default:
@@ -124,8 +119,8 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   }
 
   get stageSlots(): ImportacionSlot[] {
-    if (!this.revision) return [];
-    return this.revision.slots.filter(slot =>
+    if (!this.analysis) return [];
+    return this.analysis.slots.filter(slot =>
       this.reviewTab === 1 ? slot.evaluacionNumero <= 4 : slot.evaluacionNumero >= 5,
     );
   }
@@ -145,17 +140,17 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   }
 
   get studentOptions(): ImportacionStudentOption[] {
-    return this.revision?.estudiantesCurso ?? [];
+    return this.analysis?.estudiantesCurso ?? [];
   }
 
   get filteredRows(): ImportacionRevisionRow[] {
-    if (!this.revision) return [];
+    if (!this.analysis) return [];
     const query = this.reviewSearch.trim().toLowerCase();
 
-    return this.revision.rows.filter(row => {
+    return this.analysis.rows.filter(row => {
       const filterOk = this.reviewFilter === 'all'
         || (this.reviewFilter === 'clean' && row.estado === 'clean')
-        || (this.reviewFilter === 'conflict' && (row.estado === 'review' || row.estado === 'blocking'));
+        || (this.reviewFilter === 'conflict' && row.estado !== 'clean');
       if (!filterOk) return false;
 
       if (!query) return true;
@@ -170,7 +165,7 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   }
 
   get canOpenConfirm(): boolean {
-    return !!this.revision?.puedeConfirmar && !this.hasInvalidManualGrades();
+    return !!this.analysis?.puedeConfirmar;
   }
 
   get analysisHasFailure(): boolean {
@@ -186,26 +181,7 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   }
 
   get analysisContinueLabel(): string {
-    if (this.detail?.puedeConfirmar) {
-      return 'Ver resumen final';
-    }
-
-    return 'Ir a tabla editable';
-  }
-
-  get allReviewRowsPayload(): ActualizarImportacionRevisionRequest {
-    return {
-      rows: (this.revision?.rows ?? []).map(row => ({
-        rowId: row.rowId,
-        estudianteAsociadoId: row.estudianteAsociadoId,
-        omitida: row.omitida,
-        cells: row.cells.map(cell => ({
-          slotKey: cell.slotKey,
-          resolucion: cell.resolucion,
-          valorFinal: cell.valorFinal,
-        })),
-      })),
-    };
+    return 'Ver preview';
   }
 
   setTab(tab: ReviewTab): void {
@@ -226,7 +202,7 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
 
   startAnalysis(): void {
     if (!this.selectedFile) {
-      this.analyzeError = 'Seleccioná un PDF exportado desde CiDi.';
+      this.analyzeError = 'Seleccione un PDF exportado desde CiDi.';
       return;
     }
 
@@ -235,131 +211,90 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     this.actionLoading = true;
     this.analyzeError = '';
     this.feedback = '';
+    this.feedbackError = false;
 
     this.importService.analizar(this.idEC, this.selectedFile).pipe(
       finalize(() => {
         this.actionLoading = false;
       }),
     ).subscribe({
-      next: detail => {
-        this.idImportacion = detail.idImportacionCalificaciones;
-        this.replaceImportSessionUrl(detail.idImportacionCalificaciones);
-        this.finishAnalysisSuccess(detail);
+      next: analysis => {
+        this.finishAnalysisSuccess(analysis);
       },
       error: error => {
         this.finishAnalysisError(this.extractErrorMessage(
           error,
-          'No pudimos analizar el PDF.',
+          'No se pudo analizar el PDF.',
         ));
       },
     });
   }
 
   reanalizar(): void {
-    if (!this.idImportacion) return;
+    if (!this.selectedFile) {
+      this.feedback = 'Seleccione nuevamente el PDF de CiDi para reanalizar.';
+      this.feedbackError = true;
+      this.resetToLoadStage();
+      return;
+    }
 
     this.stage = 'analysis';
     this.startAnalysisAnimation();
     this.actionLoading = true;
     this.feedback = '';
+    this.feedbackError = false;
     this.analyzeError = '';
 
-    this.importService.reanalizar(this.idImportacion).pipe(
+    this.importService.analizar(this.idEC, this.selectedFile).pipe(
       finalize(() => {
         this.actionLoading = false;
       }),
     ).subscribe({
-      next: detail => {
-        this.finishAnalysisSuccess(detail);
+      next: analysis => {
+        this.finishAnalysisSuccess(analysis);
       },
       error: error => {
         this.finishAnalysisError(this.extractErrorMessage(
           error,
-          'No pudimos volver a analizar el PDF.',
+          'No se pudo volver a analizar el PDF.',
         ));
       },
     });
   }
 
-  guardarRevision(): void {
-    if (!this.idImportacion || !this.revision) return;
-    if (this.hasInvalidManualGrades()) {
-      this.feedback = 'Revisá las notas editadas manualmente: solo se permiten números enteros del 1 al 10.';
-      return;
-    }
-
-    this.actionLoading = true;
-    this.feedback = '';
-
-    this.importService.guardarRevision(this.idImportacion, this.allReviewRowsPayload).pipe(
-      finalize(() => {
-        this.actionLoading = false;
-      }),
-    ).subscribe({
-      next: revision => {
-        this.revision = revision;
-        this.feedback = revision.puedeConfirmar
-          ? 'La revisión quedó lista para confirmar.'
-          : 'La revisión se guardó.';
-      },
-      error: error => {
-        this.feedback = this.extractErrorMessage(
-          error,
-          'No pudimos guardar los cambios realizados en la revisión.',
-        );
-      },
-    });
-  }
-
   abrirConfirmacion(): void {
-    if (!this.idImportacion || !this.revision) return;
-    if (this.hasInvalidManualGrades()) {
-      this.feedback = 'Revisá las notas editadas manualmente: solo se permiten números enteros del 1 al 10.';
+    if (!this.analysis) return;
+
+    this.recomputeAnalysisStateLocally();
+    if (!this.analysis.puedeConfirmar) {
+      this.stage = 'review';
+      this.feedback = 'Todavía quedan decisiones pendientes en la tabla. Revise las celdas marcadas antes de continuar.';
+      this.feedbackError = true;
       return;
     }
 
-    this.actionLoading = true;
+    this.confirmacionResumen = this.analysis.resumenConfirmacionInicial;
     this.feedback = '';
-
-    this.importService.guardarRevision(this.idImportacion, this.allReviewRowsPayload).pipe(
-      switchMap(revision => {
-        this.revision = revision;
-        if (!revision.puedeConfirmar) {
-          this.stage = 'review';
-          this.feedback = 'Todavía quedan decisiones pendientes en la tabla. Revisá las celdas marcadas antes de continuar.';
-          return of(null);
-        }
-
-        return this.importService.getConfirmacion(this.idImportacion!);
-      }),
-      finalize(() => {
-        this.actionLoading = false;
-      }),
-    ).subscribe({
-      next: confirmacion => {
-        if (!confirmacion) {
-          return;
-        }
-
-        this.confirmacion = confirmacion;
-        this.stage = 'confirm';
-      },
-      error: error => {
-        this.feedback = this.extractErrorMessage(
-          error,
-          'No pudimos preparar el resumen final de la importación.',
-        );
-      },
-    });
+    this.feedbackError = false;
+    this.stage = 'confirm';
   }
 
   confirmarImportacion(): void {
-    if (!this.idImportacion) return;
+    if (!this.analysis || !this.selectedFile) return;
+
+    this.recomputeAnalysisStateLocally();
+    if (!this.analysis.puedeConfirmar) {
+      this.feedback = 'Todavía quedan conflictos o asociaciones pendientes por resolver.';
+      this.feedbackError = true;
+      this.stage = 'review';
+      return;
+    }
 
     this.actionLoading = true;
     this.feedback = '';
+    this.feedbackError = false;
 
-    this.importService.confirmar(this.idImportacion).pipe(
+    this.importService.confirmar(this.idEC, this.selectedFile, this.buildConfirmPayload()).pipe(
       finalize(() => {
         this.actionLoading = false;
       }),
@@ -371,38 +306,19 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       error: error => {
         this.feedback = this.extractErrorMessage(
           error,
-          'No pudimos completar la importación.',
+          'No se pudo completar la importación.',
         );
+        this.feedbackError = true;
       },
     });
   }
 
   cancelarImportacion(): void {
-    if (!this.idImportacion) {
-      this.resetToLoadStage();
-      return;
-    }
-
-    this.actionLoading = true;
-    this.importService.cancelar(this.idImportacion).pipe(
-      finalize(() => {
-        this.actionLoading = false;
-      }),
-    ).subscribe({
-      next: () => {
-        this.resetToLoadStage();
-      },
-      error: error => {
-        this.feedback = this.extractErrorMessage(
-          error,
-          'No pudimos cancelar la importación.',
-        );
-      },
-    });
+    this.resetToLoadStage();
   }
 
   cancelarYReiniciar(): void {
-    this.cancelarImportacion();
+    this.resetToLoadStage();
   }
 
   volverACalificaciones(): void {
@@ -410,8 +326,8 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
   }
 
   getStudentLabel(studentId: string | null): string {
-    if (!studentId || !this.revision) return 'Sin asociar';
-    return this.revision.estudiantesCurso.find(option => option.idEstudiante === studentId)?.label ?? 'Sin asociar';
+    if (!studentId || !this.analysis) return 'Sin asociar';
+    return this.analysis.estudiantesCurso.find(option => option.idEstudiante === studentId)?.label ?? 'Sin asociar';
   }
 
   getStudentOptionText(option: ImportacionStudentOption): string {
@@ -422,13 +338,25 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     return `${option.label} · DNI ${option.documento}`;
   }
 
+  formatIssueSlot(issue: ImportacionIssue): string {
+    return this.formatSlotKey(issue.slotKey);
+  }
+
   continueAfterAnalysis(): void {
-    if (!this.detail) {
+    if (!this.analysis) {
+      return;
+    }
+
+    if (this.analysis.bloqueos.length > 0) {
+      this.feedback = 'Corrija los bloqueos detectados y vuelva a analizar el PDF antes de continuar.';
+      this.feedbackError = true;
       return;
     }
 
     this.analysisAwaitingContinue = false;
-    this.handleDetail(this.detail, false);
+    this.stage = 'review';
+    this.feedback = '';
+    this.feedbackError = false;
   }
 
   getChecklistSymbol(status: AnalysisStepStatus): string {
@@ -450,15 +378,20 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     return row.cells.filter(cell => visibleSlotKeys.has(cell.slotKey));
   }
 
-  isManualValueInvalid(cell: ImportacionRevisionCell): boolean {
-    if (cell.resolucion !== 'manual_edit') {
-      return false;
+  getStudentOptionsForRow(row: ImportacionRevisionRow): ImportacionStudentOption[] {
+    if (!this.analysis) return [];
+    if (!row.requiereAsociacionManual) {
+      return row.estudianteAsociadoId
+        ? this.analysis.estudiantesCurso.filter(option => option.idEstudiante === row.estudianteAsociadoId)
+        : [];
     }
 
-    return typeof cell.valorFinal !== 'number'
-      || !Number.isInteger(cell.valorFinal)
-      || cell.valorFinal < 1
-      || cell.valorFinal > 10;
+    const candidateIds = new Set(row.candidatosEstudianteIds);
+    return this.analysis.estudiantesCurso.filter(option => candidateIds.has(option.idEstudiante));
+  }
+
+  canEditStudentAssociation(row: ImportacionRevisionRow): boolean {
+    return row.requiereAsociacionManual && this.getStudentOptionsForRow(row).length > 0;
   }
 
   getRowStatusClass(row: ImportacionRevisionRow): 'ok' | 'warn' | 'danger' {
@@ -482,7 +415,7 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       case 'clean':
         return 'Fila lista para importar';
       case 'review':
-        return 'Fila con observaciones';
+        return 'Fila con revisión pendiente';
       case 'blocking':
       default:
         return 'Fila con bloqueo pendiente';
@@ -517,45 +450,51 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
 
   showRowMessage(row: ImportacionRevisionRow): boolean {
     return !!row.mensaje
-      && row.mensaje.trim().toLowerCase() !== 'la fila requiere revisión antes de confirmar.';
+      && row.mensaje.trim().toLowerCase() !== 'esta fila necesita revisión.';
   }
 
   getCellResolutionOptions(cell: ImportacionRevisionCell): Array<{ value: string; label: string }> {
     const options: Array<{ value: string; label: string }> = [];
+    const current = (cell.resolucion?.trim().toLowerCase() ?? '');
 
-    if ((cell.resolucion?.trim().toLowerCase() ?? '') === 'pending') {
+    if (current === 'pending') {
       options.push({ value: 'pending', label: 'Elegir' });
     }
 
-    if (cell.valorImportado !== null) {
-      options.push({ value: 'use_imported', label: 'PDF' });
+    if (cell.valorImportado !== null && (cell.valorDb === null || cell.valorImportado !== cell.valorDb)) {
+      options.push({ value: 'use_imported', label: 'CiDi' });
     }
 
     if (cell.valorDb !== null) {
       options.push({ value: 'keep_db', label: 'Sistema' });
     }
 
-    options.push({ value: 'manual_edit', label: 'Manual' });
-    options.push({ value: 'omit', label: 'Omitir' });
+    if (cell.valorImportado === null && cell.valorDb !== null) {
+      options.push({ value: 'clear_db', label: 'Quitar' });
+    }
+
+    if (options.length === 0 && cell.valorDb === null && cell.valorImportado === null) {
+      options.push({ value: 'keep_db', label: 'Sin cambios' });
+    }
+
     return options;
   }
 
-  isManualEdit(cell: ImportacionRevisionCell): boolean {
-    return cell.resolucion === 'manual_edit';
+  canEditCellResolution(row: ImportacionRevisionRow, cell: ImportacionRevisionCell): boolean {
+    if (!this.analysis) return false;
+    if (!row.estudianteAsociadoId) return false;
+    if (cell.estado === 'blocking') return false;
+    return this.getCellResolutionOptions(cell).length > 1 || cell.resolucion === 'pending';
   }
 
   getCellDisplayValue(cell: ImportacionRevisionCell): number | null {
-    const resolution = cell.resolucion?.trim().toLowerCase();
-
-    switch (resolution) {
+    switch (cell.resolucion?.trim().toLowerCase()) {
       case 'keep_db':
         return cell.valorDb;
       case 'use_imported':
         return cell.valorImportado;
-      case 'omit':
+      case 'clear_db':
         return null;
-      case 'manual_edit':
-        return cell.valorFinal;
       default:
         return cell.valorFinal ?? cell.valorImportado ?? cell.valorDb ?? null;
     }
@@ -569,33 +508,18 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       case 'use_imported':
         cell.valorFinal = cell.valorImportado;
         break;
-      case 'omit':
+      case 'clear_db':
         cell.valorFinal = null;
-        break;
-      case 'manual_edit':
-        cell.valorFinal ??= cell.valorImportado ?? cell.valorDb ?? null;
         break;
       default:
         break;
     }
 
-    this.recomputeRevisionStateLocally();
-  }
-
-  onManualValueChange(cell: ImportacionRevisionCell, value: number | string | null): void {
-    if (value === '' || value === null || value === undefined) {
-      cell.valorFinal = null;
-      this.recomputeRevisionStateLocally();
-      return;
-    }
-
-    const parsed = Number(value);
-    cell.valorFinal = Number.isNaN(parsed) ? parsed : parsed;
-    this.recomputeRevisionStateLocally();
+    this.recomputeAnalysisStateLocally();
   }
 
   onRowStateChange(): void {
-    this.recomputeRevisionStateLocally();
+    this.recomputeAnalysisStateLocally();
   }
 
   trackByRowId(_: number, row: ImportacionRevisionRow): string {
@@ -610,80 +534,175 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     return group.evaluacionNumero;
   }
 
-  private hasInvalidManualGrades(): boolean {
-    return (this.revision?.rows ?? []).some(row =>
-      row.cells.some(cell => this.isManualValueInvalid(cell)),
-    );
+  private buildConfirmPayload(): ConfirmarImportacionPayload {
+    return {
+      hashArchivoSha256: this.analysis?.hashArchivoSha256 ?? '',
+      rows: (this.analysis?.rows ?? []).map(row => ({
+        rowId: row.rowId,
+        estudianteAsociadoId: row.estudianteAsociadoId,
+        cells: row.cells.map(cell => ({
+          slotKey: cell.slotKey,
+          resolucion: cell.resolucion,
+          idCalificacionBase: cell.idCalificacionBase,
+        })),
+      })),
+    };
   }
 
-  private recomputeRevisionStateLocally(): void {
-    if (!this.revision) {
+  private recomputeAnalysisStateLocally(): void {
+    if (!this.analysis) {
       return;
     }
 
-    for (const row of this.revision.rows) {
+    for (const row of this.analysis.rows) {
       for (const cell of row.cells) {
-        this.applyLocalDecision(cell);
+        this.recomputeCellLocally(row, cell);
       }
     }
 
-    this.applyLocalDuplicateConflicts(this.revision.rows);
-    this.recomputeLocalRowStates(this.revision.rows);
-    this.revision.resumen = this.buildLocalResumen(this.revision.rows, this.revision.slots);
-    this.revision.puedeConfirmar = this.revision.bloqueos.length === 0 && !this.hasPendingRowsLocally(this.revision.rows);
+    this.applyLocalDuplicateConflicts(this.analysis.rows);
+    this.recomputeLocalRowStates(this.analysis.rows);
+    this.analysis.resumen = this.buildLocalResumen(this.analysis.rows, this.analysis.slots);
+    this.analysis.resumenConfirmacionInicial = this.buildLocalConfirmacionResumen(this.analysis.rows);
+    this.analysis.puedeConfirmar = this.analysis.bloqueos.length === 0 && !this.hasPendingRowsLocally(this.analysis.rows);
+    this.confirmacionResumen = this.analysis.resumenConfirmacionInicial;
   }
 
-  private applyLocalDecision(cell: ImportacionRevisionCell): void {
-    const resolution = cell.resolucion?.trim().toLowerCase() ?? '';
+  private recomputeCellLocally(row: ImportacionRevisionRow, cell: ImportacionRevisionCell): void {
+    const slot = this.analysis?.slots.find(item => item.slotKey === cell.slotKey) ?? null;
 
-    switch (resolution) {
+    if (!!cell.valorImportadoRaw && cell.valorImportado === null) {
+      cell.estado = 'blocking';
+      cell.resolucion = 'pending';
+      cell.mensaje = `El valor '${cell.valorImportadoRaw}' no se pudo interpretar como una nota válida.`;
+      return;
+    }
+
+    if (!slot?.tieneEstructuraPrevia) {
+      if (cell.valorImportado !== null) {
+        cell.estado = 'blocking';
+        cell.resolucion = 'pending';
+        cell.mensaje = 'Antes de importar esta nota, debe cargar la evaluación correspondiente en la sección Evaluaciones.';
+      } else {
+        cell.estado = 'clean';
+        cell.resolucion = 'keep_db';
+        cell.valorFinal = cell.valorDb;
+        cell.mensaje = null;
+      }
+      return;
+    }
+
+    if (!row.estudianteAsociadoId) {
+      if (row.requiereAsociacionManual) {
+        cell.estado = (cell.valorImportado !== null || cell.valorDb !== null) ? 'review' : 'clean';
+        cell.resolucion = cell.estado === 'review' ? 'pending' : 'keep_db';
+        cell.valorFinal = cell.valorImportado ?? cell.valorDb;
+        cell.mensaje = cell.estado === 'review'
+          ? 'Seleccione cuál de los homónimos del curso corresponde a esta fila.'
+          : null;
+      } else {
+        cell.estado = (cell.valorImportado !== null || cell.valorDb !== null) ? 'blocking' : 'clean';
+        cell.resolucion = cell.estado === 'blocking' ? 'pending' : 'keep_db';
+        cell.valorFinal = cell.valorImportado ?? cell.valorDb;
+        cell.mensaje = cell.estado === 'blocking'
+          ? 'No se puede continuar con esta fila porque el estudiante del PDF no pertenece al curso.'
+          : null;
+      }
+      return;
+    }
+
+    if (cell.valorImportado === null && cell.valorDb === null) {
+      cell.estado = 'clean';
+      cell.resolucion = 'keep_db';
+      cell.valorFinal = null;
+      cell.mensaje = null;
+      return;
+    }
+
+    if (!slot.admiteCargaNotas && cell.valorImportado !== null) {
+      if (cell.valorDb === cell.valorImportado) {
+        cell.estado = 'clean';
+        cell.resolucion = 'keep_db';
+        cell.valorFinal = cell.valorDb;
+        cell.mensaje = null;
+      } else {
+        cell.estado = 'blocking';
+        cell.resolucion = 'pending';
+        cell.valorFinal = cell.valorImportado;
+        cell.mensaje = 'Antes de importar esta nota, debe marcar ese examen como evaluado en la sección Evaluaciones.';
+      }
+      return;
+    }
+
+    if (cell.valorImportado === null && cell.valorDb !== null) {
+      switch (cell.resolucion) {
+        case 'keep_db':
+          cell.estado = 'clean';
+          cell.valorFinal = cell.valorDb;
+          cell.mensaje = null;
+          break;
+        case 'clear_db':
+          cell.estado = 'clean';
+          cell.valorFinal = null;
+          cell.mensaje = null;
+          break;
+        default:
+          cell.estado = 'review';
+          cell.resolucion = 'pending';
+          cell.valorFinal = cell.valorDb;
+          cell.mensaje = 'CiDi no trae nota en esta celda y el sistema sí tiene una nota vigente.';
+          break;
+      }
+      return;
+    }
+
+    if (cell.valorImportado !== null && cell.valorDb === null) {
+      cell.estado = 'clean';
+      cell.resolucion = 'use_imported';
+      cell.valorFinal = cell.valorImportado;
+      cell.mensaje = null;
+      return;
+    }
+
+    if (cell.valorImportado === cell.valorDb) {
+      cell.estado = 'clean';
+      cell.resolucion = 'keep_db';
+      cell.valorFinal = cell.valorDb;
+      cell.mensaje = null;
+      return;
+    }
+
+    switch (cell.resolucion) {
       case 'keep_db':
         cell.estado = 'clean';
         cell.valorFinal = cell.valorDb;
         cell.mensaje = null;
-        return;
-      case 'omit':
-        cell.estado = 'clean';
-        cell.valorFinal = null;
-        cell.mensaje = null;
-        return;
+        break;
       case 'use_imported':
-        if (cell.valorImportado === null) {
-          cell.estado = 'review';
-          cell.resolucion = 'pending';
-          cell.mensaje = 'Tenés que decidir qué hacer con esta nota antes de continuar.';
-          return;
-        }
-
         cell.estado = 'clean';
         cell.valorFinal = cell.valorImportado;
         cell.mensaje = null;
-        return;
-      case 'manual_edit':
-        if (cell.valorFinal === null || !Number.isInteger(cell.valorFinal) || cell.valorFinal < 1 || cell.valorFinal > 10) {
-          cell.estado = 'blocking';
-          cell.resolucion = 'pending';
-          cell.mensaje = 'Ingresá una nota válida del 1 al 10.';
-          return;
-        }
-
-        cell.estado = 'clean';
-        cell.mensaje = null;
-        return;
+        break;
       default:
-        cell.estado = cell.valorDb !== null || cell.valorImportado !== null ? 'review' : 'clean';
-        cell.resolucion = cell.estado === 'review' ? 'pending' : 'omit';
-        cell.mensaje = cell.estado === 'review'
-          ? 'Tenés que decidir qué hacer con esta nota antes de continuar.'
-          : null;
+        cell.estado = 'review';
+        cell.resolucion = 'pending';
+        cell.valorFinal = cell.valorImportado;
+        cell.mensaje = `CiDi trae ${cell.valorImportado} y en el sistema ya hay cargado un ${cell.valorDb}.`;
+        break;
     }
   }
 
   private applyLocalDuplicateConflicts(rows: ImportacionRevisionRow[]): void {
+    for (const row of rows) {
+      row.issues = row.issues.filter(issue =>
+        issue.codigo !== 'student_duplicate_pdf_consistent' && issue.codigo !== 'student_duplicate_pdf_conflict',
+      );
+    }
+
     const duplicatedGroups = new Map<string, ImportacionRevisionRow[]>();
 
     for (const row of rows) {
-      if (row.omitida || !row.estudianteAsociadoId) {
+      if (!row.estudianteAsociadoId) {
         continue;
       }
 
@@ -697,14 +716,11 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
         continue;
       }
 
+      let hasConsistentDuplicate = false;
       const slotGroups = new Map<string, Array<{ row: ImportacionRevisionRow; cell: ImportacionRevisionCell }>>();
 
       for (const row of group) {
         for (const cell of row.cells) {
-          if (String(cell.resolucion).toLowerCase() === 'omit') {
-            continue;
-          }
-
           const items = slotGroups.get(cell.slotKey) ?? [];
           items.push({ row, cell });
           slotGroups.set(cell.slotKey, items);
@@ -712,34 +728,64 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       }
 
       for (const items of slotGroups.values()) {
-        const finalValues = Array.from(new Set(
-          items
-            .map(item => item.cell.resolucion === 'keep_db' ? item.cell.valorDb : item.cell.valorFinal)
-            .filter(value => value !== null),
-        ));
+        const hasImportedValueInGroup = items.some(item => this.hasPdfValue(item.cell));
+        if (!hasImportedValueInGroup) {
+          continue;
+        }
+
+        const finalValues = Array.from(new Set(items.map(item => this.getPdfDuplicateValue(item.cell))));
 
         if (finalValues.length > 1) {
           for (const item of items) {
             item.cell.estado = 'blocking';
             item.cell.resolucion = 'pending';
-            item.cell.mensaje = 'Este estudiante aparece repetido en el PDF con notas distintas para la misma evaluación.';
+            item.cell.mensaje = 'El mismo estudiante aparece repetido en el PDF con valores distintos para esta evaluación.';
           }
+
+          for (const row of group) {
+            row.issues.push({
+              codigo: 'student_duplicate_pdf_conflict',
+              severidad: 'blocking',
+              mensaje: 'El mismo estudiante aparece repetido en el PDF con notas distintas para la misma evaluación.',
+              slotKey: null,
+            });
+          }
+        } else if (items.length > 1 && finalValues.length === 1 && finalValues[0] !== null) {
+          hasConsistentDuplicate = true;
+        }
+      }
+
+      if (hasConsistentDuplicate) {
+        for (const row of group) {
+          row.issues.push({
+            codigo: 'student_duplicate_pdf_consistent',
+            severidad: 'info',
+            mensaje: 'El mismo estudiante aparece repetido en el PDF con el mismo valor. Se consolidará automáticamente al confirmar.',
+            slotKey: null,
+          });
         }
       }
     }
   }
 
+  private hasPdfValue(cell: ImportacionRevisionCell): boolean {
+    return !!cell.valorImportadoRaw?.trim() || cell.valorImportado !== null;
+  }
+
+  private getPdfDuplicateValue(cell: ImportacionRevisionCell): number | null {
+    return this.hasPdfValue(cell) ? cell.valorImportado : null;
+  }
+
   private recomputeLocalRowStates(rows: ImportacionRevisionRow[]): void {
     for (const row of rows) {
-      if (row.omitida) {
-        row.estado = 'clean';
-        row.mensaje = 'Esta fila fue omitida en la importación.';
-        continue;
-      }
-
       if (!row.estudianteAsociadoId) {
-        row.estado = 'blocking';
-        row.mensaje = 'Tenés que elegir a qué estudiante corresponde esta fila o bien omitirla.';
+        const hasBlockingIssue = (row.issues ?? []).some(issue => issue.severidad === 'blocking');
+        row.estado = hasBlockingIssue ? 'blocking' : row.requiereAsociacionManual ? 'review' : 'blocking';
+        row.mensaje = hasBlockingIssue
+          ? ''
+          : row.requiereAsociacionManual
+            ? 'Debe seleccionar a cuál de los homónimos del curso corresponde esta fila.'
+            : 'No se pudo asociar esta fila a un estudiante del curso.';
         continue;
       }
 
@@ -748,24 +794,18 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
 
       if (hasBlockingIssue) {
         row.estado = 'blocking';
-        row.mensaje = 'Esta fila tiene un problema que tenés que resolver antes de continuar.';
+        row.mensaje = '';
         continue;
       }
 
-      const hasReviewIssue = (row.issues ?? []).some(issue => issue.severidad === 'review')
-        || row.cells.some(cell => cell.resolucion === 'pending' || cell.estado === 'review');
-
+      const hasReviewIssue = row.cells.some(cell => cell.resolucion === 'pending' || cell.estado === 'review');
       row.estado = hasReviewIssue ? 'review' : 'clean';
       row.mensaje = hasReviewIssue ? 'Esta fila necesita revisión.' : null;
     }
   }
 
   private hasPendingRowsLocally(rows: ImportacionRevisionRow[]): boolean {
-    return rows.some(row =>
-      !row.omitida
-      && (row.estado !== 'clean'
-        || row.cells.some(cell => cell.resolucion === 'pending' || cell.estado === 'blocking')),
-    );
+    return rows.some(row => row.estado !== 'clean');
   }
 
   private buildLocalResumen(rows: ImportacionRevisionRow[], slots: ImportacionSlot[]) {
@@ -776,11 +816,28 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       estudiantesSinConflicto: rows.filter(row => row.estado === 'clean').length,
       estudiantesConConflicto: rows.filter(row => row.estado !== 'clean').length,
       evaluacionesDetectadasConNotas: slots.filter(slot => slot.tieneNotasImportadas).length,
-      notasNuevas: noteCells.filter(item => !item.row.omitida && item.cell.valorImportado !== null && item.cell.valorDb === null).length,
-      notasYaExistentes: noteCells.filter(item => !item.row.omitida && item.cell.valorDb !== null).length,
-      conflictosDeNotas: noteCells.filter(item => item.cell.estado !== 'clean' && item.cell.valorImportadoRaw !== null).length,
+      notasNuevas: noteCells.filter(item => item.cell.valorImportado !== null && item.cell.valorDb === null).length,
+      notasYaExistentes: noteCells.filter(item => item.cell.valorDb !== null).length,
+      conflictosDeNotas: noteCells.filter(item => item.cell.estado !== 'clean' && (item.cell.valorImportado !== null || item.cell.valorDb !== null)).length,
       notasInvalidas: noteCells.filter(item => !!item.cell.valorImportadoRaw && item.cell.valorImportado === null).length,
       pendientesDeRevision: noteCells.filter(item => item.cell.resolucion === 'pending').length + rows.filter(row => row.estado === 'blocking').length,
+    };
+  }
+
+  private buildLocalConfirmacionResumen(rows: ImportacionRevisionRow[]): ImportacionConfirmacionResumen {
+    const noteCells = rows
+      .filter(row => !!row.estudianteAsociadoId)
+      .flatMap(row => row.cells);
+
+    return {
+      estudiantesValidados: rows.filter(row => !!row.estudianteAsociadoId).length,
+      notasNuevas: noteCells.filter(cell => cell.resolucion === 'use_imported' && cell.valorDb === null && cell.valorImportado !== null).length,
+      notasExistentesMantenidas: noteCells.filter(cell =>
+        cell.resolucion === 'keep_db'
+        && cell.valorDb !== null
+        && (cell.valorImportado === null || cell.valorImportado !== cell.valorDb)).length,
+      notasReemplazadas: noteCells.filter(cell => cell.resolucion === 'use_imported' && cell.valorDb !== null && cell.valorImportado !== null && cell.valorImportado !== cell.valorDb).length,
+      notasQuitadas: noteCells.filter(cell => cell.resolucion === 'clear_db' && cell.valorDb !== null).length,
     };
   }
 
@@ -800,141 +857,25 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
         return;
       }
 
-      if (this.idImportacion) {
-        this.loadExistingSession(this.idImportacion);
-        return;
-      }
-
-      this.importService.getActiva(this.idEC).subscribe({
-        next: detail => {
-          if (detail) {
-            this.idImportacion = detail.idImportacionCalificaciones;
-            this.handleDetail(detail, true);
-            return;
-          }
-
-          this.stage = 'load';
-        },
-        error: () => {
-          this.stage = 'load';
-        },
-      });
+      this.stage = 'load';
     });
-  }
-
-  private loadExistingSession(idImportacion: string): void {
-    this.loading = true;
-    this.importService.getDetalle(idImportacion).pipe(
-      finalize(() => {
-        this.loading = false;
-      }),
-    ).subscribe({
-      next: detail => {
-        this.handleDetail(detail, true);
-      },
-      error: error => {
-        this.error = true;
-        this.errorMessage = this.extractErrorMessage(
-          error,
-          'No pudimos recuperar la importación que habías dejado pendiente.',
-        );
-      },
-    });
-  }
-
-  private handleDetail(detail: ImportacionCalificacionesDetalle, showResumeMessage = false): void {
-    this.detail = detail;
-    this.idImportacion = detail.idImportacionCalificaciones;
-    this.analyzeError = '';
-    this.feedback = showResumeMessage && detail.tieneSesionPendiente
-      ? 'Se retomó una importación que había quedado pendiente.'
-      : '';
-    this.analysisAwaitingContinue = false;
-
-    if (detail.bloqueos.length > 0 && !detail.puedeRevisar) {
-      this.stage = 'analysis';
-      this.revision = null;
-      this.confirmacion = null;
-      return;
-    }
-
-    if (detail.puedeConfirmar) {
-      this.importService.getConfirmacion(detail.idImportacionCalificaciones).subscribe({
-        next: confirmacion => {
-          this.confirmacion = confirmacion;
-          this.stage = 'confirm';
-        },
-        error: () => {
-          this.loadRevision(detail.idImportacionCalificaciones);
-        },
-      });
-      return;
-    }
-
-    if (detail.puedeRevisar) {
-      this.loadRevision(detail.idImportacionCalificaciones);
-      return;
-    }
-
-    this.stage = 'analysis';
-  }
-
-  private loadRevision(idImportacion: string): void {
-    this.loading = true;
-    this.importService.getRevision(idImportacion).pipe(
-      finalize(() => {
-        this.loading = false;
-      }),
-    ).subscribe({
-      next: revision => {
-        this.revision = revision;
-        this.confirmacion = null;
-        this.stage = 'review';
-      },
-      error: error => {
-        this.error = true;
-        this.errorMessage = this.extractErrorMessage(
-          error,
-          'No pudimos cargar la revisión de la importación.',
-        );
-      },
-    });
-  }
-
-  private navigateToSession(idImportacion: string): void {
-    this.router.navigate(
-      ['/mis-espacios-curriculares', this.idEC, 'calificaciones', 'importar', idImportacion],
-      { replaceUrl: true },
-    );
-    this.loadExistingSession(idImportacion);
   }
 
   private resetToLoadStage(): void {
     this.clearAnalysisAnimation();
-    this.idImportacion = null;
-    this.detail = null;
-    this.revision = null;
-    this.confirmacion = null;
+    this.analysis = null;
+    this.confirmacionResumen = null;
     this.success = null;
     this.stage = 'load';
     this.selectedFile = null;
     this.selectedFileName = '';
     this.analyzeError = '';
     this.feedback = '';
+    this.feedbackError = false;
     this.analysisAwaitingContinue = false;
     this.reviewFilter = 'all';
     this.reviewTab = 1;
     this.reviewSearch = '';
-    this.router.navigate(
-      ['/mis-espacios-curriculares', this.idEC, 'calificaciones', 'importar'],
-      { replaceUrl: true },
-    );
-  }
-
-  private replaceImportSessionUrl(idImportacion: string): void {
-    this.location.replaceState(
-      `/mis-espacios-curriculares/${this.idEC}/calificaciones/importar/${idImportacion}`,
-    );
   }
 
   private startAnalysisAnimation(): void {
@@ -961,23 +902,21 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     this.analysisChecklist = this.analysisChecklist.map(item => ({ ...item, status: 'pending' as AnalysisStepStatus }));
   }
 
-  private finishAnalysisSuccess(detail: ImportacionCalificacionesDetalle): void {
+  private finishAnalysisSuccess(analysis: ImportacionAnalisis): void {
     const waitMs = Math.max(0, this.analysisMinDurationMs - (Date.now() - this.analysisStartedAt));
 
     const timer = setTimeout(() => {
-      this.detail = detail;
-      this.idImportacion = detail.idImportacionCalificaciones;
+      this.analysis = analysis;
+      this.confirmacionResumen = analysis.resumenConfirmacionInicial;
       this.analyzeError = '';
 
-      const failureStep = this.getFailureStepIndexFromDetail(detail);
+      const failureStep = this.getFailureStepIndexFromDetail(analysis);
       if (failureStep !== null) {
         this.setChecklistError(failureStep);
-        this.analysisAwaitingContinue = false;
-        this.handleDetail(detail, false);
-        return;
+      } else {
+        this.markChecklistDone();
       }
 
-      this.markChecklistDone();
       this.analysisAwaitingContinue = true;
       this.stage = 'analysis';
     }, waitMs);
@@ -991,9 +930,8 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     const timer = setTimeout(() => {
       this.setChecklistError(this.getFailureStepIndexFromMessage(message));
       this.analyzeError = message;
-      this.detail = null;
-      this.revision = null;
-      this.confirmacion = null;
+      this.analysis = null;
+      this.confirmacionResumen = null;
       this.analysisAwaitingContinue = false;
       this.stage = 'analysis';
     }, waitMs);
@@ -1043,12 +981,12 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
     this.analysisTimers = [];
   }
 
-  private getFailureStepIndexFromDetail(detail: ImportacionCalificacionesDetalle): number | null {
-    if (!detail.bloqueos.length) {
+  private getFailureStepIndexFromDetail(analysis: ImportacionAnalisis): number | null {
+    if (!analysis.bloqueos.length) {
       return null;
     }
 
-    const joinedMessages = detail.bloqueos
+    const joinedMessages = analysis.bloqueos
       .map(issue => `${issue.slotKey ?? ''} ${issue.mensaje}`)
       .join(' ')
       .toLowerCase();
@@ -1073,11 +1011,22 @@ export class MisEcCalificacionesImportComponent implements OnInit, OnDestroy {
       return 2;
     }
 
-    if (/(evaluacion|evaluación|eval|nota invalida|nota inválida|columna|r1|r2|n\\b)/.test(text)) {
+    if (/(evaluacion|evaluación|eval|nota invalida|nota inválida|columna|r1|r2|n\b)/.test(text)) {
       return 3;
     }
 
     return 4;
+  }
+
+  private formatSlotKey(slotKey: string | null): string {
+    if (!slotKey) return '';
+
+    const match = slotKey.match(/^E?(\d+)[_\-\s>]+(N|R1|R2)$/i);
+    if (match) {
+      return `E${match[1]} > ${match[2].toUpperCase()}`;
+    }
+
+    return slotKey.replace(/_/g, ' > ');
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {

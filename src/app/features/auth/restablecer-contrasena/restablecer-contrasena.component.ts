@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, NgZone, OnInit, AfterViewInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {
@@ -17,6 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../services/auth.service';
+import { startBallsAnimation } from '../../../core/utils/balls-canvas.util';
 
 function contieneMayuscula(): ValidatorFn {
   return (c: AbstractControl): ValidationErrors | null =>
@@ -53,7 +54,7 @@ function coincideContrasenaNueva(otra: string): ValidatorFn {
   templateUrl: './restablecer-contrasena.component.html',
   styleUrl: './restablecer-contrasena.component.scss',
 })
-export class RestablecerContrasenaComponent implements OnInit {
+export class RestablecerContrasenaComponent implements OnInit, AfterViewInit, OnDestroy {
   form: FormGroup;
   loading = false;
   listo = false;
@@ -62,6 +63,12 @@ export class RestablecerContrasenaComponent implements OnInit {
 
   mostrarNueva = false;
   mostrarConfirm = false;
+
+  @ViewChild('bgCanvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+
+  private stopAnimation?: () => void;
+  private token = '';
+  private documento = '';
 
   get errorNueva(): string | null {
     const c = this.form.get('contrasenaNueva');
@@ -73,14 +80,12 @@ export class RestablecerContrasenaComponent implements OnInit {
     return null;
   }
 
-  private token = '';
-  private documento = '';
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
+    private ngZone: NgZone,
   ) {
     this.form = this.fb.group({
       contrasenaNueva: ['', [
@@ -105,6 +110,16 @@ export class RestablecerContrasenaComponent implements OnInit {
     }
   }
 
+  ngAfterViewInit(): void {
+    this.ngZone.runOutsideAngular(() => {
+      this.stopAnimation = startBallsAnimation(this.canvasRef.nativeElement, 14);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stopAnimation?.();
+  }
+
   submit(): void {
     if (this.form.invalid) return;
 
@@ -124,7 +139,7 @@ export class RestablecerContrasenaComponent implements OnInit {
       },
       error: err => {
         this.loading = false;
-        this.error   = err?.error?.error ?? 'El link es inválido o ya expiró. Solicitá uno nuevo.';
+        this.error   = err?.error?.error ?? 'El enlace es inválido o ya expiró. Solicite uno nuevo.';
       },
     });
   }

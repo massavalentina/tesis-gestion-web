@@ -108,7 +108,7 @@ export class ProgramaDetalleComponent implements OnInit {
         titulo: 'Confirmar programa',
         mensaje:
           'Al confirmar, el programa ya no podrá ser editado. ' +
-          'Asegurate de que el contenido esté completo antes de continuar.',
+          'Asegúrese de que el contenido esté completo antes de continuar.',
         textoConfirmar: 'Confirmar',
         color: 'primary',
       },
@@ -122,7 +122,7 @@ export class ProgramaDetalleComponent implements OnInit {
         const vigente = programas.find(p => p.estado === 'Vigente');
         const mensaje = vigente
           ? `El programa "${vigente.titulo}" del ${vigente.anioLectivo}, creado por ${vigente.nombreDocente} el ${this.formatFecha(vigente.fechaCreacion)}, será reemplazado por el programa seleccionado.`
-          : '¿Confirmás que querés establecer este programa como vigente?';
+          : '¿Confirma que desea establecer este programa como vigente?';
         this.abrirDialogo(
           { titulo: 'Establecer como Vigente', mensaje, textoConfirmar: 'Establecer como Vigente', color: 'primary' },
           () => this.ejecutarCambioEstado('Vigente', 'Programa establecido como vigente.'),
@@ -131,7 +131,7 @@ export class ProgramaDetalleComponent implements OnInit {
       error: () => this.abrirDialogo(
         {
           titulo: 'Establecer como Vigente',
-          mensaje: '¿Confirmás que querés establecer este programa como vigente?',
+          mensaje: '¿Confirma que desea establecer este programa como vigente?',
           textoConfirmar: 'Establecer como Vigente',
           color: 'primary',
         },
@@ -144,7 +144,7 @@ export class ProgramaDetalleComponent implements OnInit {
     this.abrirDialogo(
       {
         titulo: 'Establecer como Confirmado',
-        mensaje: 'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirmás la acción?',
+        mensaje: 'El programa dejará de estar vigente y volverá al estado Confirmado. ¿Confirma la acción?',
         textoConfirmar: 'Establecer como Confirmado',
         color: 'primary',
       },

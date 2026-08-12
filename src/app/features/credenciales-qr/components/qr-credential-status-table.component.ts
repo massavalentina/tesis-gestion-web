@@ -627,7 +627,7 @@ export class QrCredentialStatusTableComponent implements OnInit {
           this.previsualizandoAlumnoIds.delete(row.idEstudiante);
           const imageUrl = this.crearObjectUrl(blob);
           const dialogRef = this.dialog.open(DialogoPreviewQrAlumnoComponent, {
-            width: '460px',
+            width: '390px',
             panelClass: 'qr-generation-dialog',
             data: {
               nombreCompleto: row.nombreCompleto,

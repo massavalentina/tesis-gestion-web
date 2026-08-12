@@ -1,71 +1,94 @@
-<div class="page-container">
-  <mat-card class="form-card">
+<div class="auth-container">
+  <canvas #bgCanvas class="balls-canvas"></canvas>
 
-    <div class="logo-container">
-      <img src="logo.jpg" alt="Logo" class="logo-img" />
+  <mat-card class="auth-card">
+    <div class="brand-mark">
+      <img src="logo.jpg" alt="Escudo Robles" class="brand-shield" />
+      <span class="brand-divider"></span>
+      <span class="brand-wordmark">
+        <img src="robles360-auth.png" alt="Robles 360" />
+      </span>
     </div>
 
-    <mat-card-header>
+    <header class="auth-heading">
       <mat-card-title class="titulo-pagina">Restablecer contraseña</mat-card-title>
-      <mat-card-subtitle class="subtitulo-pagina" *ngIf="!tokenInvalido && !listo">
-        Creá tu nueva contraseña
-      </mat-card-subtitle>
-    </mat-card-header>
+      <p *ngIf="!tokenInvalido && !listo">Cree su nueva contraseña.</p>
+    </header>
 
     <mat-progress-bar *ngIf="loading" mode="indeterminate" />
 
     <mat-card-content class="card-content">
 
-      <!-- Link inválido -->
+      <!-- Enlace inválido -->
       <div *ngIf="tokenInvalido" class="info-message warn">
-        <mat-icon color="warn">error_outline</mat-icon>
-        <p>El link de restablecimiento es inválido o ya fue utilizado.</p>
-        <a mat-stroked-button routerLink="/olvide-contrasena">Solicitar nuevo link</a>
+        <mat-icon>error_outline</mat-icon>
+        <p>El enlace de restablecimiento es inválido o ya fue utilizado.</p>
+        <a class="auth-secondary-link" routerLink="/olvide-contrasena">Solicitar nuevo enlace</a>
       </div>
 
       <!-- Éxito -->
       <div *ngIf="listo" class="info-message success">
-        <mat-icon color="primary">check_circle_outline</mat-icon>
-        <p>¡Contraseña actualizada correctamente! Redirigiendo...</p>
+        <mat-icon>check_circle_outline</mat-icon>
+        <p>La contraseña fue actualizada correctamente.</p>
+        <p class="hint">Será redirigido al inicio.</p>
       </div>
 
       <!-- Formulario -->
       <form *ngIf="!tokenInvalido && !listo" [formGroup]="form" (ngSubmit)="submit()">
 
-        <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
-          <mat-label>Nueva contraseña</mat-label>
-          <input
-            matInput
-            [type]="mostrarNueva ? 'text' : 'password'"
-            formControlName="contrasenaNueva"
-            autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button" (click)="mostrarNueva = !mostrarNueva">
-            <mat-icon>{{ mostrarNueva ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="errorNueva">{{ errorNueva }}</mat-error>
-        </mat-form-field>
+        <div class="auth-field-group">
+          <label class="auth-label" for="reset-password">Nueva contraseña</label>
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <input
+              id="reset-password"
+              matInput
+              [type]="mostrarNueva ? 'text' : 'password'"
+              formControlName="contrasenaNueva"
+              autocomplete="new-password"
+              placeholder="Ingrese su nueva contraseña" />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              class="password-toggle"
+              (click)="mostrarNueva = !mostrarNueva"
+              aria-label="Mostrar u ocultar nueva contraseña">
+              <mat-icon>{{ mostrarNueva ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="errorNueva">{{ errorNueva }}</mat-error>
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
-          <mat-label>Confirmar contraseña</mat-label>
-          <input
-            matInput
-            [type]="mostrarConfirm ? 'text' : 'password'"
-            formControlName="confirmacionContrasenaNueva"
-            autocomplete="new-password" />
-          <button mat-icon-button matSuffix type="button" (click)="mostrarConfirm = !mostrarConfirm">
-            <mat-icon>{{ mostrarConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('required')">La confirmación es obligatoria.</mat-error>
-          <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('noCoincide') && !form.get('confirmacionContrasenaNueva')?.hasError('required')">Las contraseñas no coinciden.</mat-error>
-        </mat-form-field>
+        <div class="auth-field-group">
+          <label class="auth-label" for="reset-password-confirm">Confirmar contraseña</label>
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <input
+              id="reset-password-confirm"
+              matInput
+              [type]="mostrarConfirm ? 'text' : 'password'"
+              formControlName="confirmacionContrasenaNueva"
+              autocomplete="new-password"
+              placeholder="Confirme su nueva contraseña" />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              class="password-toggle"
+              (click)="mostrarConfirm = !mostrarConfirm"
+              aria-label="Mostrar u ocultar confirmación de contraseña">
+              <mat-icon>{{ mostrarConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('required')">La confirmación es obligatoria.</mat-error>
+            <mat-error *ngIf="form.get('confirmacionContrasenaNueva')?.hasError('noCoincide') && !form.get('confirmacionContrasenaNueva')?.hasError('required')">Las contraseñas no coinciden.</mat-error>
+          </mat-form-field>
+        </div>
 
         <div *ngIf="error" class="error-message">{{ error }}</div>
 
         <button
           mat-flat-button
-          color="primary"
           type="submit"
-          class="full-width submit-btn"
+          class="auth-submit"
           [disabled]="loading">
           Guardar contraseña
         </button>
@@ -73,5 +96,11 @@
       </form>
 
     </mat-card-content>
+
+    <div class="logos-institucionales" aria-label="Logos institucionales">
+      <img src="logo-escmb.png" alt="Pregrado" class="logo-inst logo-inst--pregrado" />
+      <div class="logo-divider"></div>
+      <img src="logo-unc.jpg" alt="UNC" class="logo-inst logo-inst--unc" />
+    </div>
   </mat-card>
 </div>

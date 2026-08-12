@@ -9,6 +9,16 @@
 
     <!-- Breadcrumb -->
     <nav class="breadcrumb">
+      <a (click)="volverAMisEspacios()" class="crumb-link">Mis espacios curriculares</a>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <a *ngIf="espacio" (click)="volverAEspacio()" class="crumb-link">
+        {{ espacio.nombreMateria }} ({{ formatCurso(espacio.anioNumero, espacio.division) }})
+      </a>
+      <svg *ngIf="espacio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
       <a (click)="cancelar()" class="crumb-link">Programas</a>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="9 18 15 12 9 6"/>
@@ -49,7 +59,7 @@
               <option *ngFor="let a of aniosDisponibles" [ngValue]="a">{{ a }}</option>
             </select>
             <small class="dg-error" *ngIf="form.get('anioLectivo')?.invalid && form.get('anioLectivo')?.touched">
-              Seleccioná un año lectivo.
+              Seleccione un año lectivo.
             </small>
           </div>
 

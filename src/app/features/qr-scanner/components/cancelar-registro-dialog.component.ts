@@ -1,23 +1,32 @@
 import { Component } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-cancelar-registro-dialog',
   standalone: true,
   imports: [
     MatDialogModule,
-    MatButtonModule
+    MatButtonModule,
+    MatIconModule
   ],
   template: `
-    <h2 mat-dialog-title class="title">Cancelar registro</h2>
+    <div class="dialog-head">
+      <div class="dialog-icon-shell">
+        <mat-icon>delete_sweep</mat-icon>
+      </div>
+      <h2 mat-dialog-title class="title">Cancelar registro</h2>
+    </div>
 
     <mat-dialog-content class="contenido">
-      <p class="texto">
-        Se perderán <strong>todas las asistencias escaneadas</strong>.
-        <br />
-        ¿Deseás continuar?
-      </p>
+      <div class="message-card">
+        <p class="texto">
+          Se descartarán <strong>todas las asistencias escaneadas</strong>.
+          <br />
+          ¿Desea continuar?
+        </p>
+      </div>
     </mat-dialog-content>
 
     <mat-dialog-actions align="center" class="acciones">
@@ -28,22 +37,56 @@ import { MatButtonModule } from '@angular/material/button';
     </mat-dialog-actions>
   `,
   styles: [`
+    .dialog-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .dialog-icon-shell {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff5ea;
+      border: 1px solid #f4c796;
+      color: #c26a00;
+    }
+
+    .dialog-icon-shell mat-icon {
+      width: 30px;
+      height: 30px;
+      font-size: 30px;
+    }
+
     .title {
-      margin-bottom: 4px;
+      margin: 0;
       color: #0f172a;
-      font-size: 1.1rem;
-      font-weight: 800;
+      font-size: 1.04rem;
+      font-weight: 700;
+      text-align: center;
     }
 
     .contenido {
       padding-top: 0;
     }
 
+    .message-card {
+      border: 1px solid #d7e6f4;
+      border-radius: 14px;
+      background: #f8fbff;
+      padding: 12px 14px;
+    }
+
     .texto {
       margin: 0;
       color: #334155;
-      font-size: 0.9rem;
-      line-height: 1.4;
+      font-size: 0.86rem;
+      line-height: 1.45;
     }
 
     .acciones {
@@ -54,17 +97,17 @@ import { MatButtonModule } from '@angular/material/button';
 
     .btn {
       min-width: 126px;
-      border-radius: 999px;
-      font-weight: 700;
+      border-radius: 10px;
+      font-weight: 600;
     }
 
     .btn--ghost {
-      border-color: #94a3b8 !important;
-      color: #334155 !important;
+      border-color: #bfd4e7 !important;
+      color: #3c78b4 !important;
     }
 
     .btn--warn {
-      background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%) !important;
+      background: #c26a00 !important;
       color: #fff !important;
     }
   `]

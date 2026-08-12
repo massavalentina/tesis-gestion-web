@@ -533,6 +533,16 @@ export interface DetalleDialogData {
       white-space: nowrap;
     }
 
+    @media (max-width: 480px) {
+      .audit-wrap { padding: 12px 12px 16px; }
+      .audit-item { gap: 6px; padding: 7px 8px; }
+      .audit-tipo { padding: 2px 5px; font-size: 0.62rem; }
+      .chip-min   { padding: 1px 4px; font-size: 0.62rem; }
+      .audit-materia { font-size: 0.75rem; }
+      .audit-hora    { font-size: 0.72rem; }
+      .audit-user    { font-size: 0.62rem; }
+    }
+
     /* ── Footer ────────────────────────────────────────────────────────── */
     .det-footer {
       display: flex;

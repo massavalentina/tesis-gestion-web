@@ -1,77 +1,153 @@
 <div class="login-container">
-  <mat-card class="login-card">
+  <canvas #bgCanvas class="balls-canvas"></canvas>
 
-    <div class="logo-container">
-      <img src="logo.jpg" alt="Logo" class="logo-img" />
-    </div>
+  <main class="auth-layout">
+    <section class="brand-panel" aria-label="Robles 360">
+      <div class="brand-mark brand-mark--hero">
+        <img src="logo.jpg" alt="Escudo Robles" class="brand-shield" />
+        <span class="brand-divider"></span>
+        <span class="brand-wordmark brand-wordmark--hero">
+          <img src="robles360-auth.png" alt="Robles 360" />
+        </span>
+      </div>
 
-    <mat-card-header>
-      <mat-card-title class="titulo-login">Iniciar sesión</mat-card-title>
-    </mat-card-header>
+      <span class="brand-line"></span>
 
-    <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+      <h2>
+        Gestión académica<br />
+        en un <strong>solo lugar</strong>
+      </h2>
 
-    <!-- Estado: contraseña provisoria — link enviado -->
-    <mat-card-content *ngIf="provisoriaEnviada" class="provisoria-container">
-      <mat-icon class="provisoria-icon">mark_email_read</mat-icon>
-      <p class="provisoria-titulo">Revisá tu correo</p>
-      <p class="provisoria-texto">
-        Tu cuenta requiere un cambio de contraseña.<br/>
-        Te enviamos un link para que establezcas tu nueva contraseña.
-      </p>
-      <p class="provisoria-hint">Revisá también la carpeta de spam.</p>
-      <button mat-stroked-button color="primary" (click)="provisoriaEnviada = false">
-        Volver al login
-      </button>
-    </mat-card-content>
-
-    <!-- Formulario normal -->
-    <mat-card-content *ngIf="!provisoriaEnviada" class="card-content">
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email o DNI</mat-label>
-          <input matInput formControlName="identificador" autocomplete="username" />
-          <mat-error *ngIf="form.get('identificador')?.hasError('required')">
-            Este campo es obligatorio.
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Contraseña</mat-label>
-          <input matInput [type]="mostrarContrasena ? 'text' : 'password'"
-                 formControlName="contrasena" autocomplete="current-password"
-                 (keydown)="checkCapsLock($event)"
-                 (blur)="capsLockOn = false" />
-          <button mat-icon-button matSuffix type="button"
-                  (click)="mostrarContrasena = !mostrarContrasena">
-            <mat-icon>{{ mostrarContrasena ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-error *ngIf="form.get('contrasena')?.hasError('required')">
-            Este campo es obligatorio.
-          </mat-error>
-        </mat-form-field>
-
-        <div *ngIf="capsLockOn" class="caps-lock-warning">
-          <mat-icon class="caps-icon">keyboard_capslock</mat-icon>
-          Bloq Mayús activado
+      <div class="feature-strip" aria-label="Módulos principales">
+        <div class="feature-item">
+          <mat-icon>groups</mat-icon>
+          <span>Docentes</span>
         </div>
+        <span class="feature-divider"></span>
+        <div class="feature-item">
+          <mat-icon>assignment_turned_in</mat-icon>
+          <span>Asistencia</span>
+        </div>
+        <span class="feature-divider"></span>
+        <div class="feature-item">
+          <mat-icon>calendar_month</mat-icon>
+          <span>Planificación</span>
+        </div>
+        <span class="feature-divider"></span>
+        <div class="feature-item">
+          <mat-icon>query_stats</mat-icon>
+          <span>Reportes</span>
+        </div>
+      </div>
+    </section>
 
-        <div *ngIf="error" class="error-message">{{ error }}</div>
+    <mat-card class="login-card">
+      <div class="brand-mark brand-mark--card">
+        <img src="logo.jpg" alt="Escudo Robles" class="brand-shield" />
+        <span class="brand-divider"></span>
+        <span class="brand-wordmark brand-wordmark--card">
+          <img src="robles360-auth.png" alt="Robles 360" />
+        </span>
+      </div>
 
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          class="full-width"
-          [disabled]="loading">
-          Ingresar
+      <header class="auth-heading">
+        <span class="auth-kicker"></span>
+        <mat-card-title class="titulo-login">Iniciar sesión</mat-card-title>
+        <p>Ingrese con sus credenciales institucionales.</p>
+      </header>
+
+      <mat-progress-bar *ngIf="loading" mode="indeterminate" />
+
+      <!-- Estado: contraseña provisoria — enlace enviado -->
+      <mat-card-content *ngIf="provisoriaEnviada" class="provisoria-container">
+        <mat-icon class="provisoria-icon">mark_email_read</mat-icon>
+        <p class="provisoria-titulo">Revise su correo</p>
+        <p class="provisoria-texto">
+          Su cuenta requiere un cambio de contraseña.<br />
+          Le enviamos un enlace para que establezca su nueva contraseña.
+        </p>
+        <p class="provisoria-hint">Revise también la carpeta de spam.</p>
+        <button mat-stroked-button color="primary" (click)="provisoriaEnviada = false">
+          Volver al inicio de sesión
         </button>
+      </mat-card-content>
 
-        <div class="forgot-link">
-          <a routerLink="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
-        </div>
-      </form>
-    </mat-card-content>
+      <!-- Formulario normal -->
+      <mat-card-content *ngIf="!provisoriaEnviada" class="card-content">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="auth-field-group">
+            <label class="auth-label" for="login-identificador">Email o DNI</label>
+            <mat-form-field appearance="outline" class="auth-field">
+              <input
+                id="login-identificador"
+                matInput
+                formControlName="identificador"
+                autocomplete="username"
+                placeholder="Ingrese su email o DNI" />
+              <mat-error *ngIf="form.get('identificador')?.hasError('required')">
+                Este campo es obligatorio.
+              </mat-error>
+            </mat-form-field>
+          </div>
 
-  </mat-card>
+          <div class="auth-field-group">
+            <label class="auth-label" for="login-contrasena">Contraseña</label>
+            <mat-form-field appearance="outline" class="auth-field">
+              <input
+                id="login-contrasena"
+                matInput
+                [type]="mostrarContrasena ? 'text' : 'password'"
+                formControlName="contrasena"
+                autocomplete="current-password"
+                placeholder="Ingrese su contraseña"
+                (keydown)="checkCapsLock($event)"
+                (blur)="capsLockOn = false" />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                class="password-toggle"
+                (click)="mostrarContrasena = !mostrarContrasena"
+                aria-label="Mostrar u ocultar contraseña">
+                <mat-icon>{{ mostrarContrasena ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="form.get('contrasena')?.hasError('required')">
+                Este campo es obligatorio.
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div *ngIf="capsLockOn" class="caps-lock-warning">
+            <mat-icon class="caps-icon">keyboard_capslock</mat-icon>
+            Bloq Mayús activado
+          </div>
+
+          <div *ngIf="error" class="error-message">{{ error }}</div>
+
+          <button
+            mat-flat-button
+            type="submit"
+            class="login-submit"
+            [disabled]="loading">
+            Ingresar
+          </button>
+
+          <div class="forgot-link">
+            <a routerLink="/olvide-contrasena">¿Olvidó su contraseña?</a>
+          </div>
+        </form>
+      </mat-card-content>
+
+      <div class="logos-institucionales" aria-label="Logos institucionales">
+        <img src="logo-escmb.png" alt="Pregrado" class="logo-inst logo-inst--pregrado" />
+        <div class="logo-divider"></div>
+        <img src="logo-unc.jpg" alt="UNC" class="logo-inst logo-inst--unc" />
+      </div>
+    </mat-card>
+  </main>
+
+  <footer class="auth-footer">
+    <span>Robles 360 – Sistema de Gestión Académica</span>
+    <span>Universidad Nacional de Córdoba</span>
+  </footer>
 </div>

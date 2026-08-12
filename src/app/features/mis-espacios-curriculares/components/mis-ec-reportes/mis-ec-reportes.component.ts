@@ -437,10 +437,8 @@ export class MisEcReportesComponent implements OnInit {
 
       if (gestion) {
         for (const inst of gestion.instancias) {
-          if (inst.estado === 'Evaluada') {
-            for (const a of [inst.notaOriginal, inst.recuperatorio1, inst.recuperatorio2]) {
-              if (a) a.idBloquesTema.forEach(id => evaluados.add(id));
-            }
+          if ((inst.estadoGeneralIe ?? inst.estado) === 'Evaluada' && inst.notaOriginal) {
+            inst.notaOriginal.idBloquesTema.forEach(id => evaluados.add(id));
           }
         }
       }
