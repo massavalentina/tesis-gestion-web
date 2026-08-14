@@ -17,7 +17,7 @@
           <div class="header-copy">
             <div class="eyebrow">Importación asistida de calificaciones</div>
             <div class="modal-stage">{{ stageSubtitle }}</div>
-            <h2>Importar desde CiDi</h2>
+            <h2>Importar desde PDF</h2>
             <p>
               {{ espacio.nombreMateria }} · Curso {{ espacio.anioNumero }}.º {{ espacio.division }} ·
               Año lectivo {{ espacio.anioLectivo }}
@@ -53,7 +53,7 @@
                 <span class="upload-box__subtitle">
                   {{ selectedFileName
                     ? selectedFileName
-                    : 'La importación no se guarda como borrador. Si salís antes de confirmar, vas a tener que volver a analizar el archivo.' }}
+                    : 'La importación no se guarda como borrador. Si sale antes de confirmar, va a tener que volver a analizar el archivo.' }}
                 </span>
               </label>
 
@@ -96,7 +96,7 @@
                   </div>
                   <div class="metric">
                     <strong>{{ analysis.resumen.evaluacionesDetectadasConNotas }}</strong>
-                    <span>Slots con notas</span>
+                    <span>Columnas con notas</span>
                   </div>
                   <div class="metric">
                     <strong>{{ analysis.resumen.conflictosDeNotas }}</strong>
