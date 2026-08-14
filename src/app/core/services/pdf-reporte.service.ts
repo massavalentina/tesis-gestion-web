@@ -276,18 +276,9 @@ export interface DetalleEstudianteData {
   documento: string;
   teaGeneral: boolean;
   presencias: number;
-  inasistencias: number;
   ausenciasPuras: number;
-  ancCount: number;
-  llegadasTarde: number;
-  llegadasTardeExtendidas: number;
-  llegadasTardeCompletas: number;
   ausentePorLLT: number;
-  retirosAnticipados: number;
-  retirosExpress: number;
-  retirosAnticipadosExtendidos: number;
   ausentePorRA: number;
-  porcentajeAsistencia: number;
   fechaDesde: string | null;
   fechaHasta: string | null;
   registros: DetalleAsistencia[];
@@ -311,16 +302,9 @@ export interface LibretaCalificacionesData {
   espacios: LibretaEspacio[];
   asistencia?: {
     presencias: number;
-    inasistencias: number;
     ausenciasPuras: number;
-    ancCount: number;
-    llegadasTarde: number;
     ausentePorLLT: number;
-    retirosAnticipados: number;
-    retirosExpress: number;
-    retirosAnticipadosExtendidos: number;
     ausentePorRA: number;
-    porcentajeAsistencia: number;
     teaGeneral: boolean;
   };
 }
@@ -460,11 +444,10 @@ export class PdfReporteService {
     autoTable(doc, {
       startY: y,
       margin: { top: HEADER_H + 2 },
-      head: [['Estudiante', 'DNI', 'Inasistencias', 'P', 'A', 'A. LLT', 'A. RA']],
+      head: [['Estudiante', 'DNI', 'P', 'A', 'A. LLT', 'A. RA']],
       body: data.estudiantes.map(est => [
         `${est.apellido}, ${est.nombre}`,
         est.documento,
-        est.teaGeneral ? 'TEA' : est.inasistencias,
         est.presencias,
         est.ausenciasPuras ?? 0,
         est.ausentePorLLT,
@@ -480,13 +463,12 @@ export class PdfReporteService {
       bodyStyles:          { fontSize: 8 },
       alternateRowStyles:  { fillColor: [245, 248, 255] },
       columnStyles: {
-        0: { cellWidth: 68 },
-        1: { cellWidth: 24, halign: 'center' },
-        2: { cellWidth: 24, halign: 'center' },
-        3: { cellWidth: 14, halign: 'center' },
-        4: { cellWidth: 14, halign: 'center' },
-        5: { cellWidth: 17, halign: 'center' },
-        6: { cellWidth: 17, halign: 'center' },
+        0: { cellWidth: 78 },
+        1: { cellWidth: 26, halign: 'center' },
+        2: { cellWidth: 18, halign: 'center' },
+        3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 20, halign: 'center' },
+        5: { cellWidth: 20, halign: 'center' },
       },
       didDrawPage: (hookData) => {
         if (hookData.pageNumber > 1) {
@@ -499,15 +481,6 @@ export class PdfReporteService {
         }
       },
       didParseCell: (hookData) => {
-        // Colorear celda Inasistencias (índice 2) con el color por nivel
-        if (hookData.section === 'body' && hookData.column.index === 2) {
-          const est = data.estudiantes[hookData.row.index];
-          if (est) {
-            const [r, g, b] = badgeColor(est.inasistencias, est.teaGeneral);
-            hookData.cell.styles.textColor = [r, g, b];
-            hookData.cell.styles.fontStyle = 'bold';
-          }
-        }
         // Fila TEA: fondo gris claro
         if (hookData.section === 'body') {
           const est = data.estudiantes[hookData.row.index];
@@ -517,8 +490,6 @@ export class PdfReporteService {
         }
       },
     });
-
-    this.dibujarLeyenda(doc);
     doc.save(`reporte-asistencia-${data.cursoCodigo}-${hoy().replace(/\//g, '-')}.pdf`);
   }
 
@@ -1083,15 +1054,14 @@ export class PdfReporteService {
     doc.setTextColor(0, 0, 0);
     y += 12;
 
-    // ── Fila 1: 4 cards grandes (Presencias | Ausencias | ANC | Inasistencias) ─
+    // ── 4 cards: Presencias | Ausencias | Aus. por LLT | Aus. por RA ─
     const card4W = (pageW - 28) / 4;
     type CardGrande = { label: string | string[]; valor: string | number; color: [number,number,number] };
     const row1: CardGrande[] = [
-      { label: 'Presencias',                     valor: data.presencias,             color: [0,0,0] },
-      { label: 'Ausencias',                       valor: data.ausenciasPuras,         color: [0,0,0] },
-      { label: ['Ausencia no', 'computable'],     valor: data.ancCount,               color: [0,0,0] },
-      { label: 'Inasistencias',                   valor: data.teaGeneral ? 'TEA' : data.inasistencias,
-        color: badgeColor(data.inasistencias, data.teaGeneral) },
+      { label: 'Presencias',                          valor: data.presencias,      color: [0,0,0] },
+      { label: 'Ausencias',                            valor: data.ausenciasPuras,  color: [0,0,0] },
+      { label: ['Ausencia por', 'llegada tarde'],      valor: data.ausentePorLLT,   color: [0,0,0] },
+      { label: ['Ausencia por', 'retiro anticipado'],  valor: data.ausentePorRA,    color: [0,0,0] },
     ];
     row1.forEach((t, i) => {
       const x = 14 + i * card4W;
@@ -1114,47 +1084,6 @@ export class PdfReporteService {
     });
     doc.setTextColor(0, 0, 0);
     y += 22;
-
-    // ── Fila 2: 4 cards chicas — Llegadas tarde ───────────────────────────────
-    const cardChW = (pageW - 28) / 4;
-    type CardChica = { label: string | string[]; valor: string | number };
-    const row2: CardChica[] = [
-      { label: ['Ausencia por', 'llegada tarde'], valor: data.ausentePorLLT },
-      { label: 'LLT',  valor: data.llegadasTarde },
-      { label: 'LLTE', valor: data.llegadasTardeExtendidas },
-      { label: 'LLTC', valor: data.llegadasTardeCompletas },
-    ];
-    const drawCardChica = (t: CardChica, i: number, yBase: number) => {
-      const x = 14 + i * cardChW;
-      doc.setDrawColor(200, 200, 200);
-      doc.setFillColor(248, 249, 252);
-      doc.roundedRect(x, yBase, cardChW - 1, 16, 2, 2, 'FD');
-      doc.setFontSize(6.5);
-      doc.setTextColor(100, 100, 100);
-      if (Array.isArray(t.label)) {
-        doc.text(t.label[0], x + (cardChW - 1) / 2, yBase + 4.5, { align: 'center' });
-        doc.text(t.label[1], x + (cardChW - 1) / 2, yBase + 8,   { align: 'center' });
-      } else {
-        doc.text(t.label, x + (cardChW - 1) / 2, yBase + 6, { align: 'center' });
-      }
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text(String(t.valor), x + (cardChW - 1) / 2, yBase + 13.5, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-    };
-    row2.forEach((t, i) => drawCardChica(t, i, y));
-    y += 20;
-
-    // ── Fila 3: 4 cards chicas — Retiros ─────────────────────────────────────
-    const row3: CardChica[] = [
-      { label: ['Ausencia por', 'retiro anticipado'], valor: data.ausentePorRA },
-      { label: 'RE',  valor: data.retirosExpress },
-      { label: 'RA',  valor: data.retirosAnticipados },
-      { label: 'RAE', valor: data.retirosAnticipadosExtendidos },
-    ];
-    row3.forEach((t, i) => drawCardChica(t, i, y));
-    y += 20;
 
     // ── Tabla de registros ────────────────────────────────────────────────────
     const registrosFiltrados = data.registros.filter(r => {
@@ -2213,32 +2142,16 @@ export class PdfReporteService {
     let p2y = drawPageHeader(doc, p2titulo, subtitulo, logo);
 
     const a = data.asistencia;
-    const tea = a?.teaGeneral ?? false;
 
-    const inasColor = (f: number, t: boolean): [number,number,number] => {
-      if (t || f >= 25) return GRIS;
-      if (f >= 21)      return ROJO;
-      if (f >= 15)      return NARANJA;
-      if (f >= 10)      return AMARILLO;
-      return VERDE;
-    };
-    const condLabel = (f: number, t: boolean): string => {
-      if (t || f >= 25) return 'TEA';
-      if (f >= 21)      return 'Condicional';
-      if (f >= 15)      return 'En riesgo';
-      if (f >= 10)      return 'En riesgo leve';
-      return 'Regular';
-    };
-
-    // ── Fila 1: 4 cards grandes ──────────────────────────────────────────────
+    // ── 4 cards: Presencias | Ausencias | Aus. por LLT | Aus. por RA ─
     const card4W = (CW - 6) / 4;
     type CardG = { label: string | string[]; valor: string | number; color: [number,number,number] };
     p2y += 4;
     const row1: CardG[] = [
-      { label: 'Presencias',           valor: a?.presencias    ?? 0,                                      color: [0,0,0]  },
-      { label: 'Ausencias',            valor: a?.ausenciasPuras ?? 0,                                     color: [0,0,0]  },
-      { label: ['Ausencia no','computable'], valor: a?.ancCount ?? 0,                                     color: [0,0,0]  },
-      { label: 'Inasistencias',        valor: tea ? 'TEA' : (a?.inasistencias ?? 0), color: inasColor(a?.inasistencias ?? 0, tea) },
+      { label: 'Presencias',                          valor: a?.presencias     ?? 0, color: [0,0,0] },
+      { label: 'Ausencias',                            valor: a?.ausenciasPuras ?? 0, color: [0,0,0] },
+      { label: ['Ausencia por','llegada tarde'],       valor: a?.ausentePorLLT  ?? 0, color: [0,0,0] },
+      { label: ['Ausencia por','retiro anticipado'],   valor: a?.ausentePorRA   ?? 0, color: [0,0,0] },
     ];
     row1.forEach((c, i) => {
       const cx = LEFT + i * (card4W + 2);
@@ -2257,74 +2170,6 @@ export class PdfReporteService {
       doc.setFont('helvetica', 'normal');
     });
     p2y += 22;
-
-    // ── Fila 2: 4 cards chicas — llegadas tarde ──────────────────────────────
-    const card4Cw = (CW - 6) / 4;
-    type CardCh = { label: string | string[]; valor: number };
-    const drawCardCh = (c: CardCh, i: number, yBase: number) => {
-      const cx = LEFT + i * (card4Cw + 2);
-      doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
-      doc.roundedRect(cx, yBase, card4Cw, 16, 2, 2, 'FD');
-      doc.setFontSize(6.5); doc.setTextColor(100, 100, 100);
-      if (Array.isArray(c.label)) {
-        doc.text(c.label[0], cx + card4Cw / 2, yBase + 4.5, { align: 'center' });
-        doc.text(c.label[1], cx + card4Cw / 2, yBase + 8,   { align: 'center' });
-      } else {
-        doc.text(c.label, cx + card4Cw / 2, yBase + 6, { align: 'center' });
-      }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
-      doc.text(String(c.valor), cx + card4Cw / 2, yBase + 13.5, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-    };
-    const row2: CardCh[] = [
-      { label: ['Ausencia por','llegada tarde'], valor: a?.ausentePorLLT      ?? 0 },
-      { label: 'LLT',                            valor: a?.llegadasTarde       ?? 0 },
-      { label: 'LLTE',                           valor: 0 },
-      { label: 'LLTC',                           valor: 0 },
-    ];
-    row2.forEach((c, i) => drawCardCh(c, i, p2y));
-    p2y += 20;
-
-    // ── Fila 3: 4 cards chicas — retiros ─────────────────────────────────────
-    const row3: CardCh[] = [
-      { label: ['Ausencia por','retiro anticipado'], valor: a?.ausentePorRA                 ?? 0 },
-      { label: 'RE',                                 valor: a?.retirosExpress               ?? 0 },
-      { label: 'RA',                                 valor: a?.retirosAnticipados           ?? 0 },
-      { label: 'RAE',                                valor: a?.retirosAnticipadosExtendidos ?? 0 },
-    ];
-    row3.forEach((c, i) => drawCardCh(c, i, p2y));
-    p2y += 20;
-
-    // ── Card Condición ────────────────────────────────────────────────────────
-    const faltas = a?.inasistencias ?? 0;
-    doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 249, 252);
-    doc.roundedRect(LEFT, p2y, CW, 16, 2, 2, 'FD');
-    doc.setFontSize(7); doc.setTextColor(100, 100, 100);
-    doc.text('Condición', LEFT + CW / 2, p2y + 6, { align: 'center' });
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.setTextColor(...inasColor(faltas, tea));
-    doc.text(condLabel(faltas, tea), LEFT + CW / 2, p2y + 13, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    p2y += 6;
-
-    // Leyenda condición al pie
-    const p2lyY = pageH - 8;
-    doc.setFontSize(6.5);
-    const p2Ley: [string, [number,number,number]][] = [
-      ['Verde: Regular (0–9 faltas)',        VERDE],
-      ['Amarillo: En riesgo leve (10–14)',   AMARILLO],
-      ['Naranja: En riesgo (15–20)',          NARANJA],
-      ['Rojo: Condicional (21–24)',           ROJO],
-      ['Gris: TEA (25+ faltas)',              GRIS],
-    ];
-    let p2lx = LEFT;
-    p2Ley.forEach(([label, color]) => {
-      doc.setFillColor(...color);
-      doc.circle(p2lx + 1.5, p2lyY - 0.5, 1.5, 'F');
-      doc.setTextColor(80, 80, 80);
-      doc.text(label, p2lx + 4.5, p2lyY);
-      p2lx += 52;
-    });
 
     doc.save(
       `libreta-${data.apellido}-${data.nombre}-${data.codigoCurso}-${data.anioLectivo}.pdf`

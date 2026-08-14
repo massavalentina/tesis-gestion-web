@@ -32,8 +32,6 @@
 
   <!-- Tarjetas resumen (solo si vienen del reporte) -->
   <div class="resumen-cards" *ngIf="presencias !== null">
-
-    <!-- Fila 1: Presencias | Ausencias | Ausencia no computable | Inasistencias -->
     <div class="cards-fila">
       <div class="card card-grande">
         <span class="card-valor card-valor-lg">{{ presencias }}</span>
@@ -44,57 +42,14 @@
         <span class="card-label">Ausencias</span>
       </div>
       <div class="card card-grande">
-        <span class="card-valor card-valor-lg">{{ ancCount ?? 0 }}</span>
-        <span class="card-label card-label-wrap">Ausencia no computable</span>
-      </div>
-      <div class="card card-grande">
-        <span class="card-valor card-valor-lg" [class]="getBadgeClase(inasistencias, teaGeneral)">
-          {{ teaGeneral ? 'TEA' : inasistencias }}
-        </span>
-        <span class="card-label">Inasistencias</span>
-      </div>
-    </div>
-
-    <!-- Fila 2: Llegadas tarde -->
-    <div class="cards-fila">
-      <div class="card card-chica">
-        <span class="card-valor">{{ ausentePorLLT ?? 0 }}</span>
+        <span class="card-valor card-valor-lg">{{ ausentePorLLT ?? 0 }}</span>
         <span class="card-label card-label-wrap">Ausencia por llegada tarde</span>
       </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ llegadasTarde ?? 0 }}</span>
-        <span class="card-label">LLT</span>
-      </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ llegadasTardeExtendidas ?? 0 }}</span>
-        <span class="card-label">LLTE</span>
-      </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ llegadasTardeCompletas ?? 0 }}</span>
-        <span class="card-label">LLTC</span>
-      </div>
-    </div>
-
-    <!-- Fila 3: Retiros -->
-    <div class="cards-fila">
-      <div class="card card-chica">
-        <span class="card-valor">{{ ausentePorRA ?? 0 }}</span>
+      <div class="card card-grande">
+        <span class="card-valor card-valor-lg">{{ ausentePorRA ?? 0 }}</span>
         <span class="card-label card-label-wrap">Ausencia por retiro anticipado</span>
       </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ retirosExpress ?? 0 }}</span>
-        <span class="card-label">RE</span>
-      </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ retirosAnticipados ?? 0 }}</span>
-        <span class="card-label">RA</span>
-      </div>
-      <div class="card card-chica">
-        <span class="card-valor">{{ retirosAnticipadosExtendidos ?? 0 }}</span>
-        <span class="card-label">RAE</span>
-      </div>
     </div>
-
   </div>
 
   <!-- Cargando -->
@@ -114,25 +69,6 @@
     <span>No hay registros de inasistencias o movimientos para este estudiante en el período indicado.</span>
   </div>
 
-  <!-- Nota de inasistencias acumuladas por llegadas tardes -->
-  <div class="llt-acum-banner" *ngIf="(ausentePorLLT ?? 0) > 0">
-    <mat-icon class="llt-acum-ico">schedule</mat-icon>
-    <span>
-      <strong>{{ ausentePorLLT }} inasistencia{{ (ausentePorLLT ?? 0) === 1 ? '' : 's' }}</strong>
-      sumada{{ (ausentePorLLT ?? 0) === 1 ? '' : 's' }} por llegadas tardes
-      <span class="llt-acum-detalle">(LLT = 0,25 falta · LLTE = 0,50 falta · cada 1,0 = 1 inasistencia)</span>
-    </span>
-  </div>
-
-  <!-- Nota de inasistencias acumuladas por retiros anticipados -->
-  <div class="ra-acum-banner" *ngIf="(ausentePorRA ?? 0) > 0">
-    <mat-icon class="ra-acum-ico">directions_run</mat-icon>
-    <span>
-      <strong>{{ ausentePorRA }} inasistencia{{ (ausentePorRA ?? 0) === 1 ? '' : 's' }}</strong>
-      sumada{{ (ausentePorRA ?? 0) === 1 ? '' : 's' }} por retiros anticipados
-      <span class="ra-acum-detalle">(RA = 0,5 falta · RAE turno mañana = 1 falta · RAE turno tarde = 0,5 falta)</span>
-    </span>
-  </div>
 
   <!-- Tabla de registros -->
   <div class="table-wrapper" *ngIf="!cargando && !error && registrosFiltrados.length > 0">

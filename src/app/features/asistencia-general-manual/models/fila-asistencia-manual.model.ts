@@ -19,4 +19,7 @@ export interface FilaAsistenciaManual {
   retiroActivoManana?: RetiroActivo | null;
   /** Retiro activo del turno tarde (null si no tiene) */
   retiroActivoTarde?:  RetiroActivo | null;
+  /** Valor original cargado del backend — para detectar cambios en guardarTodo */
+  originalTipoManianaId?: string | null;
+  originalTipoTardeId?: string | null;
 }

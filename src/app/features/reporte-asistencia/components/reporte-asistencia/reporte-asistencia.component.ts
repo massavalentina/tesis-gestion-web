@@ -102,7 +102,6 @@ export class ReporteAsistenciaComponent implements OnInit {
   columnas = [
     'estudiante',
     'dni',
-    'inasistencias',
     'presencias',
     'ausencias',
     'ausentePorLLT',
@@ -123,7 +122,6 @@ export class ReporteAsistenciaComponent implements OnInit {
         case 'estudiante': return `${item.apellido} ${item.nombre}`;
         case 'dni': return item.documento;
         case 'presencias': return item.presencias;
-        case 'inasistencias': return item.inasistencias;
         case 'ausencias': return item.ausenciasPuras ?? 0;
         case 'ausentePorLLT': return item.ausentePorLLT;
         case 'ausentePorRA': return item.ausentePorRA ?? 0;
@@ -214,16 +212,9 @@ export class ReporteAsistenciaComponent implements OnInit {
       apellido: est.apellido,
       documento: est.documento,
       presencias: est.presencias.toString(),
-      inasistencias: est.inasistencias.toString(),
       ausenciasPuras: (est.ausenciasPuras ?? 0).toString(),
-      llegadasTarde: est.llegadasTarde.toString(),
       ausentePorLLT: est.ausentePorLLT.toString(),
-      retirosAnticipados: est.retirosAnticipados.toString(),
-      retirosExpress: (est.retirosExpress ?? 0).toString(),
-      retirosAnticipadosExtendidos: (est.retirosAnticipadosExtendidos ?? 0).toString(),
       ausentePorRA: (est.ausentePorRA ?? 0).toString(),
-      ancCount: (est.ausentesNoComputables ?? 0).toString(),
-      porcentajeAsistencia: est.porcentajeAsistencia.toString(),
       teaGeneral: est.teaGeneral.toString(),
       origen: 'reporte',
       reporteState_cursoId: this.cursoSeleccionado!.idCurso,

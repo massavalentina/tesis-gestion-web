@@ -353,10 +353,12 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
         const mapa = new Map(asistencias.map(a => [a.documento, a]));
         this.filas = estudiantes.map(est => {
           const ex = mapa.get(est.documento);
+          const tipoManianaId = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null;
+          const tipoTardeId   = ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null;
           return {
             estudiante:      est,
-            tipoManianaId:   ex ? (this.todosTipos.find(t => t.codigo === ex.codigoManana)?.id ?? null) : null,
-            tipoTardeId:     ex ? (this.todosTipos.find(t => t.codigo === ex.codigoTarde)?.id  ?? null) : null,
+            tipoManianaId,
+            tipoTardeId,
             tipoLlegadaManianaId: ex?.codigoLlegadaManana
               ? (this.todosTipos.find(t => t.codigo === ex.codigoLlegadaManana)?.id ?? null)
               : null,
@@ -365,6 +367,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
             valorTotalInasistencia: ex ? ex.valorTotal : null,
             retiroActivoManana: null,
             retiroActivoTarde:  null,
+            originalTipoManianaId: tipoManianaId,
+            originalTipoTardeId:   tipoTardeId,
           };
         });
         this.dataSource.data = [...this.filas];
@@ -400,6 +404,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
           f.valorTotalInasistencia = ex ? ex.valorTotal : null;
           f.retiroActivoManana = null;
           f.retiroActivoTarde  = null;
+          f.originalTipoManianaId = f.tipoManianaId;
+          f.originalTipoTardeId   = f.tipoTardeId;
         });
         this.dataSource.data = [...this.filas];
         this.cargandoTabla   = false;
@@ -759,6 +765,7 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
       f.tipoManianaId = null; f.tipoTardeId = null;
       f.guardado = false; f.error = null;
       f.modificadoManana = false; f.modificadoTarde = false;
+      f.originalTipoManianaId = null; f.originalTipoTardeId = null;
     });
     this.dataSource.data = [...this.filas];
   }
@@ -808,10 +815,12 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
               fila.tipoLlegadaManianaId = tipoId;
             }
           }
+          fila.originalTipoManianaId = fila.tipoManianaId;
         } else {
           fila.modificadoTarde = false;
           if (eraSA) { fila.tipoTardeId = null; fila.guardado = false; }
           else        { fila.guardado = true; }
+          fila.originalTipoTardeId = fila.tipoTardeId;
         }
         this.dataSource.data = [...this.filas];
         this.actualizarValorTest();
@@ -828,8 +837,16 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
 
   guardarTodo(): void {
     this.confirmarGuardar = false;
-    const todos = this.filas.flatMap(f => this.buildDtos(f));
-    if (!todos.length) { this.notify('No hay asistencias definidas.', 'OK'); return; }
+    const todos = this.filas.flatMap(f => {
+      const dtos: RegistrarAsistenciaManual[] = [];
+      const hora = this.horaGlobal ? `${this.horaGlobal}:00` : null;
+      if (f.tipoManianaId && f.tipoManianaId !== f.originalTipoManianaId)
+        dtos.push({ estudianteId: f.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'MANANA', tipoAsistenciaId: f.tipoManianaId, hora });
+      if (f.tipoTardeId && f.tipoTardeId !== f.originalTipoTardeId)
+        dtos.push({ estudianteId: f.estudiante.idEstudiante, fecha: this.fechaHoy, turno: 'TARDE', tipoAsistenciaId: f.tipoTardeId, hora });
+      return dtos;
+    });
+    if (!todos.length) { this.notify('No hay cambios pendientes.', 'OK'); return; }
     this.guardandoLote = true;
 
     const sub = this.service.registrarLote(todos).subscribe({
@@ -852,6 +869,8 @@ export class AsistenciaGeneralManualComponent implements OnInit, AfterViewInit, 
             f.guardado         = !mananaSA && !tardeSA;
             f.modificadoManana = false;
             f.modificadoTarde  = false;
+            f.originalTipoManianaId = f.tipoManianaId;
+            f.originalTipoTardeId   = f.tipoTardeId;
           }
         });
         this.dataSource.data = [...this.filas];

@@ -35,25 +35,9 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
   apellido = '';
   documento = '';
   presencias: number | null = null;
-  inasistencias: number | null = null;
-  llegadasTarde: number | null = null;
-  ausentePorLLT: number | null = null;
-  retirosAnticipados: number | null = null;
-  /** Retiros Express (código RE) */
-  retirosExpress: number | null = null;
-  /** Retiros Anticipados Extendidos (código RAE) */
-  retirosAnticipadosExtendidos: number | null = null;
-  /** Inasistencias acumuladas por retiros anticipados (RA/RAE) */
-  ausentePorRA: number | null = null;
-  /** Ausencias puras (código A al establecimiento) */
   ausenciasPuras: number | null = null;
-  /** Ausencias No Computables (código ANC) */
-  ancCount: number | null = null;
-  /** Llegadas tarde extendidas (LLTE) */
-  llegadasTardeExtendidas: number | null = null;
-  /** Llegadas tarde completas (LLTC) */
-  llegadasTardeCompletas: number | null = null;
-  porcentajeAsistencia: number | null = null;
+  ausentePorLLT: number | null = null;
+  ausentePorRA: number | null = null;
   teaGeneral = false;
   desde: string | null = null;
   hasta: string | null = null;
@@ -87,16 +71,9 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
     this.apellido = q.get('apellido') ?? '';
     this.documento = q.get('documento') ?? '';
     this.presencias = q.has('presencias') ? Number(q.get('presencias')) : null;
-    this.inasistencias = q.has('inasistencias') ? Number(q.get('inasistencias')) : null;
-    this.llegadasTarde = q.has('llegadasTarde') ? Number(q.get('llegadasTarde')) : null;
-    this.ausentePorLLT = q.has('ausentePorLLT') ? Number(q.get('ausentePorLLT')) : null;
-    this.retirosAnticipados = q.has('retirosAnticipados') ? Number(q.get('retirosAnticipados')) : null;
-    this.retirosExpress = q.has('retirosExpress') ? Number(q.get('retirosExpress')) : null;
-    this.retirosAnticipadosExtendidos = q.has('retirosAnticipadosExtendidos') ? Number(q.get('retirosAnticipadosExtendidos')) : null;
-    this.ausentePorRA = q.has('ausentePorRA') ? Number(q.get('ausentePorRA')) : null;
     this.ausenciasPuras = q.has('ausenciasPuras') ? Number(q.get('ausenciasPuras')) : null;
-    this.ancCount = q.has('ancCount') ? Number(q.get('ancCount')) : null;
-    this.porcentajeAsistencia = q.has('porcentajeAsistencia') ? Number(q.get('porcentajeAsistencia')) : null;
+    this.ausentePorLLT = q.has('ausentePorLLT') ? Number(q.get('ausentePorLLT')) : null;
+    this.ausentePorRA = q.has('ausentePorRA') ? Number(q.get('ausentePorRA')) : null;
     this.teaGeneral = q.get('teaGeneral') === 'true';
     this.desde = q.get('desde');
     this.hasta = q.get('hasta');
@@ -126,8 +103,6 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
         this.cargando = false;
         if (this.presencias === null) {
           this.computeResumenFromRegistros();
-        } else {
-          this.computeLLTBreakdownFromRegistros();
         }
       });
   }
@@ -165,31 +140,13 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
       documento: this.documento,
       teaGeneral: this.teaGeneral,
       presencias: this.presencias ?? 0,
-      inasistencias: this.inasistencias ?? 0,
       ausenciasPuras: this.ausenciasPuras ?? 0,
-      ancCount: this.ancCount ?? 0,
-      llegadasTarde: this.llegadasTarde ?? 0,
-      llegadasTardeExtendidas: this.llegadasTardeExtendidas ?? 0,
-      llegadasTardeCompletas: this.llegadasTardeCompletas ?? 0,
       ausentePorLLT: this.ausentePorLLT ?? 0,
-      retirosAnticipados: this.retirosAnticipados ?? 0,
-      retirosExpress: this.retirosExpress ?? 0,
-      retirosAnticipadosExtendidos: this.retirosAnticipadosExtendidos ?? 0,
       ausentePorRA: this.ausentePorRA ?? 0,
-      porcentajeAsistencia: this.porcentajeAsistencia ?? 0,
       fechaDesde: this.desde,
       fechaHasta: this.hasta,
       registros: this.registros,
     });
-  }
-
-  getBadgeClase(inasistencias: number | null, teaGeneral: boolean): string {
-    if (teaGeneral) return 'badge-tea';
-    const v = inasistencias ?? 0;
-    if (v >= 21) return 'badge-rojo';
-    if (v >= 15) return 'badge-naranja';
-    if (v >= 10) return 'badge-amarillo';
-    return 'badge-verde';
   }
 
   getCodigoBadge(codigo: string): string {
@@ -213,64 +170,34 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
     return `${d}/${m}/${y}`;
   }
 
-  private computeLLTBreakdownFromRegistros(): void {
-    const r = this.registros;
-    this.llegadasTarde          = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLT').length;
-    this.llegadasTardeExtendidas = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTE').length;
-    this.llegadasTardeCompletas  = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTC').length;
-  }
-
   private computeResumenFromRegistros(): void {
     const r = this.registros;
-    this.presencias = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'P').length;
+
+    // Presencias: días distintos con código P/LLT/LLTE/LLTC
+    const presenciaCodes = new Set(['P', 'LLT', 'LLTE', 'LLTC']);
+    const fechasPresente = new Set<string>();
+    r.forEach(x => {
+      const cod = (x.codigoManana ?? '').toUpperCase();
+      if (presenciaCodes.has(cod)) fechasPresente.add(x.fecha);
+    });
+    this.presencias = fechasPresente.size;
+
+    // Ausencias: A mañana = 1.0 (con o sin tarde), solo A tarde = 0.5
+    this.ausenciasPuras = r.reduce((acc, x) => {
+      const codM = (x.codigoManana ?? '').toUpperCase();
+      const codT = (x.codigoTarde ?? '').toUpperCase();
+      if (codM === 'A') return acc + 1.0;
+      if (codT === 'A') return acc + 0.5;
+      return acc;
+    }, 0);
+
+    // Ausencia por LLT: nLLT×0.25 + nLLTE×0.5 + nLLTC×1.0
     const nLLT  = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLT').length;
     const nLLTE = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTE').length;
     const nLLTC = r.filter(x => (x.codigoManana ?? '').toUpperCase() === 'LLTC').length;
-    this.llegadasTarde           = nLLT;
-    this.llegadasTardeExtendidas = nLLTE;
-    this.llegadasTardeCompletas  = nLLTC;
-    // LLT = 0.25 falta, LLTE = 0.50 falta → cada 1.0 acumulada = 1 inasistencia completa
-    this.ausentePorLLT = Math.floor(nLLT * 0.25 + nLLTE * 0.5);
+    this.ausentePorLLT = nLLT * 0.25 + nLLTE * 0.5 + nLLTC * 1.0;
 
-    // Contadores de retiros — incluye tanto el código principal como el código de retiro adicional
-    this.retirosAnticipados = r.filter(x => {
-      const codes = [
-        (x.codigoManana ?? '').toUpperCase(),
-        (x.codigoRetiroManana ?? '').toUpperCase(),
-        (x.codigoTarde ?? '').toUpperCase(),
-        (x.codigoRetiroTarde ?? '').toUpperCase(),
-      ];
-      return codes.includes('RA');
-    }).length;
-
-    this.retirosExpress = r.filter(x => {
-      const codes = [
-        (x.codigoManana ?? '').toUpperCase(),
-        (x.codigoRetiroManana ?? '').toUpperCase(),
-        (x.codigoTarde ?? '').toUpperCase(),
-        (x.codigoRetiroTarde ?? '').toUpperCase(),
-      ];
-      return codes.includes('RE');
-    }).length;
-
-    this.retirosAnticipadosExtendidos = r.filter(x => {
-      const codes = [
-        (x.codigoManana ?? '').toUpperCase(),
-        (x.codigoRetiroManana ?? '').toUpperCase(),
-        (x.codigoTarde ?? '').toUpperCase(),
-        (x.codigoRetiroTarde ?? '').toUpperCase(),
-      ];
-      return codes.includes('RAE');
-    }).length;
-
-    // ANC (Ausencia No Computable)
-    this.ancCount = r.filter(x =>
-      (x.codigoManana ?? '').toUpperCase() === 'ANC' ||
-      (x.codigoTarde ?? '').toUpperCase() === 'ANC'
-    ).length;
-
-    // Ausente por Retiro Anticipado: suma de inasistencias generadas por RA/RAE
-    // RA (cualquier turno) = 0.5 | RAE mañana = 1.0 | RAE tarde = 0.5
+    // Ausente por Retiro Anticipado: RA = 0.5, RAE mañana = 1.0, RAE tarde = 0.5
     this.ausentePorRA = r.reduce((acc, x) => {
       const codigosManana = [
         (x.codigoManana ?? '').toUpperCase(),
@@ -290,16 +217,5 @@ export class DetalleAsistenciaEstudianteComponent implements OnInit {
       }
       return acc;
     }, 0);
-
-    this.ausenciasPuras = r.reduce((acc, x) => {
-      if ((x.codigoManana ?? '').toUpperCase() === 'A') acc += 1.0;
-      if ((x.codigoTarde  ?? '').toUpperCase() === 'A') acc += 0.5;
-      return acc;
-    }, 0);
-
-    this.inasistencias = Math.round(r.reduce((acc, x) => acc + x.valorTotal, 0));
-    this.porcentajeAsistencia = r.length > 0
-      ? Math.round(this.presencias / r.length * 100)
-      : 0;
   }
 }

@@ -178,11 +178,7 @@
               <ng-container matColumnDef="manana">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-asistencia">Asistencia</th>
                 <td mat-cell *matCellDef="let fila" class="col-asistencia">
-                  <div *ngIf="fila.estudiante.teaGeneral" class="tea-aviso-desktop">
-                    <mat-icon class="tea-aviso-icon">block</mat-icon>
-                    <span>TEA — sin registro</span>
-                  </div>
-                  <mat-form-field *ngIf="!fila.estudiante.teaGeneral" class="field-turno">
+                  <mat-form-field class="field-turno">
                     <mat-select [(ngModel)]="fila.tipoManianaId"
                                 (ngModelChange)="onTipoManianaChange(fila)"
                                 disableOptionCentering
@@ -207,11 +203,7 @@
               <ng-container matColumnDef="tarde">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-asistencia">Asistencia</th>
                 <td mat-cell *matCellDef="let fila" class="col-asistencia">
-                  <div *ngIf="fila.estudiante.teaGeneral" class="tea-aviso-desktop">
-                    <mat-icon class="tea-aviso-icon">block</mat-icon>
-                    <span>TEA — sin registro</span>
-                  </div>
-                  <mat-form-field *ngIf="!fila.estudiante.teaGeneral" class="field-turno">
+                  <mat-form-field class="field-turno">
                     <mat-select [(ngModel)]="fila.tipoTardeId"
                                 (ngModelChange)="onTipoTardeChange(fila)"
                                 disableOptionCentering
@@ -274,8 +266,7 @@
                             matTooltipPosition="left">
                       <mat-icon>open_in_new</mat-icon>
                     </button>
-                    <button *ngIf="!fila.estudiante.teaGeneral"
-                            mat-icon-button class="btn-icon-primary"
+                    <button mat-icon-button class="btn-icon-primary"
                             (click)="guardarFila(fila)"
                             [disabled]="guardandoLote || fila.guardandoFila"
                             matTooltip="Guardar asistencia de este estudiante (turno activo)"
@@ -303,14 +294,8 @@
                       </span>
                     </div>
 
-                    <!-- TEA: aviso sin selector -->
-                    <div class="movil-tea-aviso" *ngIf="fila.estudiante.teaGeneral">
-                      <mat-icon class="movil-tea-ico">block</mat-icon>
-                      <span>Trayectoria Escolar Asistida — no se registra asistencia</span>
-                    </div>
-
-                    <!-- Subfila 2: selector + acciones (solo si no es TEA) -->
-                    <div class="movil-fila-acciones" *ngIf="!fila.estudiante.teaGeneral">
+                    <!-- Subfila 2: selector + acciones -->
+                    <div class="movil-fila-acciones">
                       <mat-form-field class="field-turno movil-select">
                         <mat-select [ngModel]="getTipoActivo(fila)"
                                     (ngModelChange)="setTipoActivo(fila, $event)"

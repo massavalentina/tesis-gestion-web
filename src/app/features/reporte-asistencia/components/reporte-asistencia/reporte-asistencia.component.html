@@ -100,16 +100,6 @@
         <td mat-cell *matCellDef="let est" class="col-num">{{ est.documento }}</td>
       </ng-container>
 
-      <!-- Columna Inasistencias totales -->
-      <ng-container matColumnDef="inasistencias">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">Inasistencias</th>
-        <td mat-cell *matCellDef="let est" class="col-num">
-          <span class="badge" [class]="getBadgeClase(est.inasistencias, est.teaGeneral)">
-            {{ est.teaGeneral ? 'TEA' : est.inasistencias }}
-          </span>
-        </td>
-      </ng-container>
-
       <!-- Columna Presencias (P) -->
       <ng-container matColumnDef="presencias">
         <th mat-header-cell *matHeaderCellDef mat-sort-header class="col-num">P</th>
@@ -159,13 +149,5 @@
     <span>No hay registros de asistencia para este curso en el período seleccionado.</span>
   </div>
 
-  <!-- Leyenda colores -->
-  <div class="leyenda" *ngIf="dataSource.data.length > 0">
-    <span class="leyenda-item"><span class="badge badge-verde">0</span> Verde: 0–9 faltas</span>
-    <span class="leyenda-item"><span class="badge badge-amarillo">10</span> Amarillo: 10–14 faltas</span>
-    <span class="leyenda-item"><span class="badge badge-naranja">15</span> Naranja: 15–20 faltas</span>
-    <span class="leyenda-item"><span class="badge badge-rojo">21</span> Rojo: 21–24 faltas</span>
-    <span class="leyenda-item"><span class="badge badge-tea">TEA</span> Gris: ≥25 faltas (TEA)</span>
-  </div>
 
 </div>
